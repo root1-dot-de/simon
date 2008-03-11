@@ -1,0 +1,1 @@
+java -cp bin_test_server;bin_test_common;bin de.root1.simon.codesample.server.SampleServer
