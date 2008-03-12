@@ -92,13 +92,14 @@ public class Endpoint extends Thread {
 		this.setName("Endpoint: "+threadName);
 		this.lookupTable = lookupTable;
 
-		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() getting oos");
-		
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() trying to get oos");
 		this.objectOutputStream = new ObjectOutputStream(socket.getOutputStream());
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() got oos");
 		
-		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() getting oss");
-		
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() trying to get ois");
 		this.objectInputStream = new ObjectInputStream(socket.getInputStream());
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() got ois");
+		
 		this.socket = socket;
 		this.objectCacheLifetime = objectCacheLifetime;
 		
