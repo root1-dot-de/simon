@@ -25,8 +25,6 @@ import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.HashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * An endpoint represents one end of the socket-connection between client and server.
@@ -62,16 +60,8 @@ public class Endpoint extends Thread {
 	/** the associated socket */
 	private Socket socket;
 	
-	/*
-	 * Different ThreadPool implementations
-	 * Is used by "ProcessMethodInvocationRunnable"
-	 */
-//	private ExecutorService threadPool = Executors.newCachedThreadPool();
-	private ExecutorService threadPool = Executors.newFixedThreadPool(20);
 
 	private int sendCounter = 0;
-//	private ExecutorService threadPool = Executors.newSingleThreadExecutor();
-
 	private int objectCacheLifetime;
 	
 
@@ -180,7 +170,7 @@ public class Endpoint extends Thread {
 							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
 							
 							// put the data into a runnable					
-							threadPool.execute(new ProcessMethodInvocationRunnable(this,requestID, remoteObjectName, method, args));
+							Simon.getThreadPool().execute(new ProcessMethodInvocationRunnable(this,requestID, remoteObjectName, method, args));
 							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
 							break;
 							
