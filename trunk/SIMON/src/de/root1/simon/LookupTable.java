@@ -109,7 +109,7 @@ public class LookupTable {
                         });
                         map.put(Utils.computeMethodHash(m), m);
                         if (Statics.DEBUG_MODE)
-                        	System.out.println("LookupTable.computeMethodHashMap() -> computing hash: method='"+m+"' hash="+sun.rmi.server.Util.computeMethodHash(m));
+                        	System.out.println("LookupTable.computeMethodHashMap() -> computing hash: method='"+m+"' hash="+Utils.computeMethodHash(m));
                     }
                 }
             } 
