@@ -25,6 +25,7 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 
 import de.root1.simon.utils.SimonClassLoader;
+import de.root1.simon.utils.Utils;
 
 
 public class SimonProxy implements InvocationHandler {
@@ -81,8 +82,8 @@ public class SimonProxy implements InvocationHandler {
 		 * and invokes the method. the result is communicated back to the client 
 		 */
 		if (Statics.DEBUG_MODE)
-        	System.out.println("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+sun.rmi.server.Util.computeMethodHash(method));
-		Object result = endpoint.sendInvocationToRemote(remoteObjectName, sun.rmi.server.Util.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
+        	System.out.println("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
+		Object result = endpoint.sendInvocationToRemote(remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
 		// Check for exceptions ...

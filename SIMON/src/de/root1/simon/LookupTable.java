@@ -23,6 +23,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
 
+import de.root1.simon.utils.Utils;
+
 
 public class LookupTable {
 	
@@ -105,7 +107,7 @@ public class LookupTable {
                                 return null;
                             }
                         });
-                        map.put(sun.rmi.server.Util.computeMethodHash(m), m);
+                        map.put(Utils.computeMethodHash(m), m);
                         if (Statics.DEBUG_MODE)
                         	System.out.println("LookupTable.computeMethodHashMap() -> computing hash: method='"+m+"' hash="+sun.rmi.server.Util.computeMethodHash(m));
                     }
