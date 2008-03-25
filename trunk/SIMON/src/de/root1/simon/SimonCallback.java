@@ -70,7 +70,7 @@ public class SimonCallback implements Serializable {
 	 * 
 	 * TODO: Documentation to be done for method 'getInterfaceName', by 'ACHR'..
 	 * 
-	 * @return
+	 * @return the callbacks interface
 	 */
 	public String getInterfaceName() {
 		return interfaceName;
@@ -80,7 +80,7 @@ public class SimonCallback implements Serializable {
 	 * 
 	 * TODO: Documentation to be done for method 'getInterfaceName', by 'ACHR'..
 	 * 
-	 * @return
+	 * @return the callbacks ID
 	 */
 	public String getId() {
 		return id;
