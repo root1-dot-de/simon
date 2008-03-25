@@ -65,11 +65,23 @@
 		<mkdir dir="${dist}"/>
 		<mkdir dir="${dist}/src"/>
 			
-		<copy todir="${build.doc}">
-            <fileset dir="doc">
-                <include name="**/*"/>
-			</fileset>
-        </copy>
+    	<mkdir dir="${build.doc}"/>
+        <javadoc 	access="public" 
+        		 	author="true" 
+        			classpath="" 
+        			destdir="${build.doc}" 
+        			doctitle="SIMON API Documentation" 
+        			nodeprecated="false" 
+        			nodeprecatedlist="false" 
+        			noindex="false" 
+        			nonavbar="false" 
+        			notree="false" 
+        			packagenames="de.root1.simon.*" 
+        			source="1.5" 
+        			sourcepath="src" 
+        			splitindex="true" 
+        			use="true" 
+        			version="true"/>
 		
 		<copy todir="${build.sources}">
             <fileset dir="${src}">
