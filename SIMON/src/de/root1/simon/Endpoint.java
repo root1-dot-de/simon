@@ -425,7 +425,7 @@ public class Endpoint extends Thread {
 	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
 	 * 
 	 * @param name
-	 * @return
+	 * @return the object we made the lookup for
 	 * @throws SimonRemoteException 
 	 * @throws IOException 
 	 */
