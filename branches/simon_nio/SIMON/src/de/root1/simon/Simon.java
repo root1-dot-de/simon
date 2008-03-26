@@ -44,6 +44,12 @@ public class Simon {
 	 * Is used by "ProcessMethodInvocationRunnable"
 	 */
 	private static ExecutorService threadPool = null;
+	
+	
+	// -------------------
+	// NIO Stuff
+	
+	protected static MethodWorker worker = new MethodWorker();
 
 
 
@@ -84,7 +90,8 @@ public class Simon {
 			
 			if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): connected with server ...");
 			
-			Endpoint endpoint = new Endpoint(socket, objectCacheLifetime, lookupTable, "Client");
+			// FIXME make sure endpoint is feed with all needed data
+			Endpoint endpoint = new Endpoint(objectCacheLifetime, lookupTable, "Client", false, port);
 			endpoint.start();
 			if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): Endpoint thread started");
 			
@@ -175,27 +182,28 @@ public class Simon {
 		lookupTable.putRemoteBinding(name, remoteObject);
 	}
 
-	/**
-	 * 
-	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
-	 * 
-	 * @param proxyObject the proxy-object
-	 * @return the InetAddress on the remote-side
-	 */
-	public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
-		return getSimonProxy(proxyObject).getInetAddress();
-	}
-	
-	/**
-	 * 
-	 * Gets the socket-port used on the remote-side of the given proxy object
-	 * 
-	 * @param proxyObject the proxy-object
-	 * @return the port on the remote-side
-	 */
-	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
-		return getSimonProxy(proxyObject).getPort();
-	}
+	// FIXME reimplement asking for ip-address if client
+//	/**
+//	 * 
+//	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
+//	 * 
+//	 * @param proxyObject the proxy-object
+//	 * @return the InetAddress on the remote-side
+//	 */
+//	public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
+//		return getSimonProxy(proxyObject).getInetAddress();
+//	}
+//	
+//	/**
+//	 * 
+//	 * Gets the socket-port used on the remote-side of the given proxy object
+//	 * 
+//	 * @param proxyObject the proxy-object
+//	 * @return the port on the remote-side
+//	 */
+//	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
+//		return getSimonProxy(proxyObject).getPort();
+//	}
 	
 	/**
 	 * 

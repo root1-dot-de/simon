@@ -39,8 +39,8 @@ public class SampleClient {
 		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
 		
 		server.login(clientCallbackImpl);
-		System.out.println(Simon.getRemoteInetAddress(server));
-		System.out.println(Simon.getRemotePort(server));
+//		System.out.println(Simon.getRemoteInetAddress(server));
+//		System.out.println(Simon.getRemotePort(server));
 		
 	}
 

@@ -16,7 +16,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+// sample from http://rox-xmlrpc.sourceforge.net/niotut/index.html
 public class NioServer implements Runnable {
+	
 	// The host:port combination to listen on
 	private InetAddress hostAddress;
 	private int port;
@@ -29,6 +31,9 @@ public class NioServer implements Runnable {
 
 	// The buffer into which we'll read data when it's available
 	private ByteBuffer readBuffer = ByteBuffer.allocate(8192);
+
+	// Direct buffer. See: http://java.sun.com/j2se/1.4.2/docs/api/java/nio/ByteBuffer.html
+//	private ByteBuffer readBuffer = ByteBuffer.allocateDirect(8192);
 
 	private EchoWorker worker;
 

@@ -20,8 +20,15 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
 
 
 /**
@@ -35,6 +42,15 @@ public class Registry extends Thread {
 	private LookupTable serverLookupTable = null;
 	private ServerSocket server;
 	private int port;
+	
+	// -----------------
+	// NIO Stuff
+	
+
+	
+	// The selector we'll be monitoring
+	private Selector selector;
+	private Endpoint endpoint;
 
 	/**
 	 * TODO Documentation to be done
@@ -57,46 +73,22 @@ public class Registry extends Thread {
 		if (Statics.DEBUG_MODE) System.out.println("Registry.run() -> start");
 		
 		try {
-			
-			// Starte die Registry
-			server = new ServerSocket(port);
-			
-						
-		} catch (BindException e){
-			System.err.println("Unable to bind to port="+port);
-			e.printStackTrace();
-		} catch (IOException e) {
+			endpoint = new Endpoint(Simon.getObjectCacheLifetime(),serverLookupTable, "Simon-Registry", true, port);
+		} catch (IOException e1) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			e1.printStackTrace();
 		}
 		
-		
-		while (!interrupted()) {
-			// Create an unbound socket
-			Socket socket = new Socket();
-			
-			// Wait for connection from client.
-			try {
-				Simon.preSetupSocket(socket);
-				
-				socket = server.accept();
-				
-				Simon.postSetupSocket(socket);
-				
-				if (Statics.DEBUG_MODE) System.out.println("Registry.run() -> client connected: "+socket.getInetAddress());
-				new Endpoint(socket, Simon.getObjectCacheLifetime(), serverLookupTable, this.getName()).start(); // starting endpoint
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-			
-		}
 		if (Statics.DEBUG_MODE) System.out.println("Registry.run() -> end");
 	}
 	
 	public void putBinding(String name, SimonRemote remoteObject) {
 		serverLookupTable.putRemoteBinding(name, remoteObject);
 	}
+	
+
+	
+	
+
 	
 }

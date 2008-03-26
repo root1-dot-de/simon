@@ -111,20 +111,21 @@ public class SimonProxy implements InvocationHandler {
 	}
 	
 	
-
-	protected InetAddress getInetAddress() {
-		return endpoint.getInetAddress();
-	}
-	
-	protected int getPort(){
-		return endpoint.getPort();
-	}
+	// FIXME reimplement aksing for ip-address of client
+//	protected InetAddress getInetAddress() {
+//		return endpoint.getInetAddress();
+//	}
+//	
+//	protected int getPort(){
+//		return endpoint.getPort();
+//	}
 	
 	private String remoteToString() throws SimonRemoteException {
 		// TODO Auto-generated method stub
 		try {
 			return "[Proxy="+remoteObjectName+
-						"|endpoint="+getInetAddress()+":"+getPort()+
+//						"|endpoint="+getInetAddress()+":"+getPort()+
+						"|endpoint"+
 						"|invocationHandler="+super.toString()+
 						"|remote="+endpoint.sendToStringRequest(remoteObjectName)+
 					"]";
