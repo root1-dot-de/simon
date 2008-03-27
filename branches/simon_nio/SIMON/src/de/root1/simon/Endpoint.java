@@ -445,31 +445,6 @@ public class Endpoint extends Thread {
 		// Finally, wake up our selecting thread so it can make the required changes
 		this.selector.wakeup();
 	}
-
-
-	
-	public void readPacket() {
-
-
-		try {
-
-			while (!interrupted()) {
-
-
-		
-		
-		
-			} // end while
-
-		} catch (IOException e){
-			globalEndpointException = new SimonRemoteException("IOException while running receive-loop on endpoint '"+this.getName()+"': "+e.getMessage());
-			wakeAllMonitors();
-		} catch (ClassNotFoundException e) {
-			globalEndpointException = new SimonRemoteException("ClassNotFoundException while running receive-loop on endpoint '"+this.getName()+"': "+e.getMessage());
-			wakeAllMonitors();
-		}
-	}
-
 	
 	/**
 	 * 
@@ -481,15 +456,13 @@ public class Endpoint extends Thread {
 	 * @throws IOException
 	 */
 	private void processEquals(int requestID, String remoteObjectName, Object object) throws IOException{
-			synchronized (objectOutputStream) {
-				objectOutputStream.write(Statics.EQUALS_RETURN_PACKET);
-				objectOutputStream.writeInt(requestID);
-				
-				final boolean equals = lookupTable.getRemoteBinding(remoteObjectName).equals(object);		
-				
-				objectOutputStream.writeBoolean(equals);
-				objectOutputStream.flush();
-			}	
+
+		ByteBuffer bb = ByteBuffer.allocate(6);
+		bb.put(Statics.EQUALS_RETURN_PACKET);
+		bb.putInt(requestID);
+		final boolean equals = lookupTable.getRemoteBinding(remoteObjectName).equals(object);		
+		bb.put(equals ? (byte) 1 : (byte) 0);
+		
 	}
 
 	/**
