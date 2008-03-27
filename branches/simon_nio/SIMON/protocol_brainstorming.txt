@@ -1,0 +1,48 @@
+protected static final byte LOOKUP_PACKET 				= 0x00;
+	objectOutputStream.write(Statics.LOOKUP_PACKET); 	// msg type
+	objectOutputStream.writeInt(requestID); 			// requestid
+	objectOutputStream.writeUTF(name); 					// name of remote object in lookuptable	
+
+protected static final byte LOOKUP_RETURN_PACKET 		= 0x01;
+	objectOutputStream.write(Statics.LOOKUP_RETURN_PACKET);
+	objectOutputStream.writeInt(requestID);
+	objectOutputStream.writeObject(lookupTable.getRemoteBinding(remoteObjectName).getClass().getInterfaces());
+
+protected static final byte INVOCATION_PACKET 			= 0x02;
+	objectOutputStream.write(Statics.INVOCATION_PACKET); 	// msg type (1 byte)
+	objectOutputStream.writeInt(requestID); 				// requestid (4 byte)
+	objectOutputStream.writeUTF(remoteObject);				// name of remote object (x byte)
+	objectOutputStream.writeLong(methodHash);				// methodhash (8 byte)
+	for (int i = 0; i < parameterTypes.length; i++) {		// parameters... (y bytes)
+        wrapValue(parameterTypes[i], args[i], objectOutputStream);
+    }
+
+protected static final byte INVOCATION_RETURN_PACKET 	= 0x03;
+	oos.write(Statics.INVOCATION_RETURN_PACKET);				// msg type (1 byte)
+	oos.writeInt(requestId);									// requestid (4 byte)
+	endpoint.wrapValue(method.getReturnType(), result, oos);	// return value (x byte)
+
+protected static final byte TOSTRING_PACKET			 	= 0x04;
+	objectOutputStream.write(Statics.TOSTRING_PACKET); 			// msg type (1 byte)
+	objectOutputStream.writeInt(requestID); 					// requestid (4 byte)
+	objectOutputStream.writeUTF(remoteObjectName); 				// name of remote object in lookuptable (x byte)
+
+
+protected static final byte TOSTRING_RETURN_PACKET	 	= 0x05;
+	objectOutputStream.write(Statics.TOSTRING_RETURN_PACKET);	// msg type (1 byte)
+	objectOutputStream.writeInt(requestID);						// requestid (4 byte)
+	objectOutputStream.writeUTF(tostring);						// string (x byte)
+
+protected static final byte HASHCODE_PACKET			 	= 0x06;
+	objectOutputStream.write(Statics.HASHCODE_PACKET); 			// msg type (1 byte)
+	objectOutputStream.writeInt(requestID); 					// requestid (4 byte)
+	objectOutputStream.writeUTF(remoteObjectName); 				// name of remote object in lookuptable	(x byte)
+
+protected static final byte HASHCODE_RETURN_PACKET	 	= 0x07;
+
+
+protected static final byte EQUALS_PACKET			 	= 0x08;
+
+
+protected static final byte EQUALS_RETURN_PACKET	 	= 0x09;
+

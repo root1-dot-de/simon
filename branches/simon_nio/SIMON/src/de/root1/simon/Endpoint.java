@@ -18,7 +18,9 @@
  */
 package de.root1.simon;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
@@ -26,6 +28,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -49,11 +52,11 @@ import de.root1.simon.nio.EchoWorker;
  */
 public class Endpoint extends Thread {
 
-	/** the <code>ObjectInputStream</code> associated with the opened socket connection */
-	private ObjectInputStream objectInputStream;
-	
-	/** the <code>ObjectOutputStream</code> associated with the opened socket connection */
-	private ObjectOutputStream objectOutputStream;
+//	/** the <code>ObjectInputStream</code> associated with the opened socket connection */
+//	private ObjectInputStream objectInputStream;
+//	
+//	/** the <code>ObjectOutputStream</code> associated with the opened socket connection */
+//	private ObjectOutputStream objectOutputStream;
 	
 	/** The table that holds all the registered/bind remote objects */
 	private LookupTable lookupTable;
@@ -198,6 +201,7 @@ public class Endpoint extends Thread {
 		while (true) {
 			try {
 				// Process any pending changes
+				// this means read/write interests on channels
 				synchronized (this.pendingChanges) {
 					Iterator changes = this.pendingChanges.iterator();
 					while (changes.hasNext()) {
@@ -221,7 +225,7 @@ public class Endpoint extends Thread {
 					selectedKeys.remove();
 
 					if (!key.isValid()) {
-						continue;
+						continue; // .. with next loop in "while"
 					}
 
 					// Check what event is available and deal with it
@@ -272,17 +276,142 @@ public class Endpoint extends Thread {
 
 		// Clear out our read buffer so it's ready for new data
 		this.readBuffer.clear();
+		
+		// ------------------------		
+		int requestID = -1;
+		int msgType = -1;
+		String remoteObjectName = null;
+		ByteBuffer bb = ByteBuffer.allocate(5); // one byte + 4 byte integer
+		socketChannel.read(bb);
+		
+		// Header: Get type and requestid
+		msgType = bb.get();	
+		requestID = bb.getInt();
+		
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> paket header: msgType="+msgType+" requestID="+requestID);
+
+		if (globalEndpointException==null)
+		
+		// if the received data is a new request ...
+		switch (msgType) {
+			
+			case Statics.INVOCATION_PACKET:
+				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
+				remoteObjectName = objectInputStream.readUTF();
+				final long methodHash = objectInputStream.readLong();
+				
+				final Method method = lookupTable.getMethod(remoteObjectName, methodHash);
+				final Class<?>[] parameterTypes = method.getParameterTypes();			
+				final Object[] args = new Object[parameterTypes.length];
+				
+				// unwrapping the arguments
+				for (int i = 0; i < args.length; i++) {
+					args[i]=unwrapValue(parameterTypes[i], objectInputStream);							
+				}
+				
+				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
+				
+				// put the data into a runnable					
+				Simon.getThreadPool().execute(new ProcessMethodInvocationRunnable(this,requestID, remoteObjectName, method, args));
+				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
+				break;
+				
+			case Statics.LOOKUP_PACKET :
+				processLookup(requestID, objectInputStream.readUTF());
+				break;
+				
+			case Statics.TOSTRING_PACKET :
+				processToString(requestID, objectInputStream.readUTF());
+				break;
+			
+			case Statics.HASHCODE_PACKET :
+				processHashCode(requestID, objectInputStream.readUTF());
+				break;
+			
+			case Statics.EQUALS_PACKET :
+				remoteObjectName = objectInputStream.readUTF();
+				final Object object = objectInputStream.readObject();
+				processEquals(requestID, remoteObjectName, object);
+				break;	
+				
+			case Statics.INVOCATION_RETURN_PACKET :
+				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
+				synchronized (requestResults) {
+					synchronized (requestReturnType) {					
+						//unwrap the return-value
+						requestResults.put(requestID, unwrapValue(requestReturnType.remove(requestID), objectInputStream));
+						if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+requestResults.get(requestID));
+					}
+				}
+				wakeWaitingProcess(requestID);
+				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
+				break;
+				
+			case Statics.LOOKUP_RETURN_PACKET :
+				synchronized (requestResults) {
+					requestResults.put(requestID, objectInputStream.readObject());
+				}
+				wakeWaitingProcess(requestID);
+				break;
+				
+			case Statics.TOSTRING_RETURN_PACKET :
+				synchronized (requestResults) {
+					requestResults.put(requestID, objectInputStream.readUTF());
+				}
+				wakeWaitingProcess(requestID);
+				break;
+			
+			case Statics.HASHCODE_RETURN_PACKET :
+				synchronized (requestResults) {
+					requestResults.put(requestID, objectInputStream.readInt());
+				}
+				wakeWaitingProcess(requestID);
+				break;
+				
+			case Statics.EQUALS_RETURN_PACKET :
+				synchronized (requestResults) {
+					requestResults.put(requestID, objectInputStream.readBoolean());
+				}
+				wakeWaitingProcess(requestID);
+				break;
+				
+			default :
+				interrupt();
+				globalEndpointException = new SimonRemoteException("invalid packet received from endpoint ...");
+				try {
+					objectInputStream.close();
+					objectOutputStream.close();
+				} catch (IOException e) {
+				}
+				break;
+		}
+		
+		// ------------------------
+		
 
 		// Attempt to read off the channel
-		int numRead;
+		int numRead = -1;
 		try {
 			numRead = socketChannel.read(this.readBuffer);
+			
+			// see: http://blog.strainu.ro/programming/java/using-serialization-with-non-blocking-sockets/
+//			InputStream newInputStream = Channels.newInputStream(socketChannel);
+			
+			//we open the channel and connect
+			numRead = socketChannel.read(readBuffer);
+			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(readBuffer.array());
+			ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+			objectInputStream.readObject();
+			
 		} catch (IOException e) {
 			// The remote forcibly closed the connection, cancel
 			// the selection key and close the channel.
 			key.cancel();
 			socketChannel.close();
 			return;
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 		if (numRead == -1) {
@@ -321,114 +450,12 @@ public class Endpoint extends Thread {
 	
 	public void readPacket() {
 
-		int requestID = -1;
-		int msgType = -1;
-		String remoteObjectName = null;
 
 		try {
 
 			while (!interrupted()) {
 
-					// Header: Get type and requestid
-					msgType = objectInputStream.read();	
-					requestID = objectInputStream.readInt();
-					if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> paket header: msgType="+msgType+" requestID="+requestID);
-		
-					if (globalEndpointException==null)
-					
-					// if the received data is a new request ...
-					switch (msgType) {
-						
-						case Statics.INVOCATION_PACKET:
-							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
-							remoteObjectName = objectInputStream.readUTF();
-							final long methodHash = objectInputStream.readLong();
-							
-							final Method method = lookupTable.getMethod(remoteObjectName, methodHash);
-							final Class<?>[] parameterTypes = method.getParameterTypes();			
-							final Object[] args = new Object[parameterTypes.length];
-							
-							// unwrapping the arguments
-							for (int i = 0; i < args.length; i++) {
-								args[i]=unwrapValue(parameterTypes[i], objectInputStream);							
-							}
-							
-							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
-							
-							// put the data into a runnable					
-							Simon.getThreadPool().execute(new ProcessMethodInvocationRunnable(this,requestID, remoteObjectName, method, args));
-							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
-							break;
-							
-						case Statics.LOOKUP_PACKET :
-							processLookup(requestID, objectInputStream.readUTF());
-							break;
-							
-						case Statics.TOSTRING_PACKET :
-							processToString(requestID, objectInputStream.readUTF());
-							break;
-						
-						case Statics.HASHCODE_PACKET :
-							processHashCode(requestID, objectInputStream.readUTF());
-							break;
-						
-						case Statics.EQUALS_PACKET :
-							remoteObjectName = objectInputStream.readUTF();
-							final Object object = objectInputStream.readObject();
-							processEquals(requestID, remoteObjectName, object);
-							break;	
-							
-						case Statics.INVOCATION_RETURN_PACKET :
-							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
-							synchronized (requestResults) {
-								synchronized (requestReturnType) {					
-									//unwrap the return-value
-									requestResults.put(requestID, unwrapValue(requestReturnType.remove(requestID), objectInputStream));
-									if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+requestResults.get(requestID));
-								}
-							}
-							wakeWaitingProcess(requestID);
-							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
-							break;
-							
-						case Statics.LOOKUP_RETURN_PACKET :
-							synchronized (requestResults) {
-								requestResults.put(requestID, objectInputStream.readObject());
-							}
-							wakeWaitingProcess(requestID);
-							break;
-							
-						case Statics.TOSTRING_RETURN_PACKET :
-							synchronized (requestResults) {
-								requestResults.put(requestID, objectInputStream.readUTF());
-							}
-							wakeWaitingProcess(requestID);
-							break;
-						
-						case Statics.HASHCODE_RETURN_PACKET :
-							synchronized (requestResults) {
-								requestResults.put(requestID, objectInputStream.readInt());
-							}
-							wakeWaitingProcess(requestID);
-							break;
-							
-						case Statics.EQUALS_RETURN_PACKET :
-							synchronized (requestResults) {
-								requestResults.put(requestID, objectInputStream.readBoolean());
-							}
-							wakeWaitingProcess(requestID);
-							break;
-							
-						default :
-							interrupt();
-							globalEndpointException = new SimonRemoteException("invalid packet received from endpoint ...");
-							try {
-								objectInputStream.close();
-								objectOutputStream.close();
-							} catch (IOException e) {
-							}
-							break;
-					}
+
 		
 		
 		
@@ -815,109 +842,9 @@ public class Endpoint extends Thread {
 //	}
 	
 	
-	/**
-     * wrap the value with the according write method
-     */
-    protected void wrapValue(Class<?> type, Object value, ObjectOutputStream objectOutputStream) throws IOException {
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> start");
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> value="+value);
-    	
-    	if (type == void.class || value instanceof Throwable) {
-    		objectOutputStream.writeObject(value);
-        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
-    	}
-    	else
-    	if (type.isPrimitive()) {
-        	if (type == boolean.class) {
-        		if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> boolean");
-            	objectOutputStream.writeBoolean(((Boolean) value).booleanValue());
-            } else if (type == byte.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> byte");
-            	objectOutputStream.writeByte(((Byte) value).byteValue());
-            } else if (type == char.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> char");
-            	objectOutputStream.writeChar(((Character) value).charValue());
-            } else if (type == short.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> short");
-            	objectOutputStream.writeShort(((Short) value).shortValue());
-            } else if (type == int.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> int");
-                objectOutputStream.writeInt(((Integer) value).intValue());
-            } else if (type == long.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> long");
-            	objectOutputStream.writeLong(((Long) value).longValue());
-            } else if (type == float.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> float");
-            	objectOutputStream.writeFloat(((Float) value).floatValue());
-            } else if (type == double.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> double");
-            	objectOutputStream.writeDouble(((Double) value).doubleValue());
-            } else {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> unknown");
-                throw new IOException("Unknown primitive: " + type);
-            }
-        } else {
-        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> non primitive object");
-        	objectOutputStream.writeObject(value);
-        }
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> end");
-    }
+	
 
-    /**
-     * unwrap the value with the according read method
-     */
-    protected Object unwrapValue(Class<?> type, ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> start");
-    	
-    	if (type == void.class ) {
-    		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> void, reading an object, may be 'null' or a 'Throwable'");
-    		return objectInputStream.readObject();
-    	}
-    	else
-    	if (type.isPrimitive()) {
-        	if (type == boolean.class) {
-        		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> boolean -> end");
-                return Boolean.valueOf(objectInputStream.readBoolean());
-            } else if (type == byte.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> byte -> end");
-                return Byte.valueOf(objectInputStream.readByte());
-            } else if (type == char.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> char -> end");
-                return Character.valueOf(objectInputStream.readChar());
-            } else if (type == short.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> short -> end");
-                return Short.valueOf(objectInputStream.readShort());
-            } else if (type == int.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> int -> end");
-                return Integer.valueOf(objectInputStream.readInt());
-            } else if (type == long.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> long -> end");
-                return Long.valueOf(objectInputStream.readLong());
-            } else if (type == float.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> float -> end");
-                return Float.valueOf(objectInputStream.readFloat());
-            } else if (type == double.class) {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> double -> end");
-                return Double.valueOf(objectInputStream.readDouble());
-            } else {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> unknown -> end");
-                throw new IOException("Unknown primitive: " + type);
-            }
-        } else {
-        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> non primitive object -> end");
-            return objectInputStream.readObject();
-        }
-    }
 
-	/**
-	 * Register the new SocketChannel with our Selector, indicating
-	 * we'd like to be notified when there's data waiting to be read
-	 * @param socketChannel
-	 * @throws ClosedChannelException 
-	 */
-	public void registerSocketChannel(SocketChannel socketChannel) throws ClosedChannelException {
-				
-	}
 
 
 	
