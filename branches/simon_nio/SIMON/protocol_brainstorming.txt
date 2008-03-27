@@ -1,4 +1,16 @@
 #################################################################################################
+# TODO:
+#
+
+- We have pakets which are fixed in size, and we have packets, which are not. 
+- Sending the paket size should depend on the paket type
+- That means, there should be a packet-handler, checking the type and deciding what to do with it.
+- And because Strings and object have a dynamic size: Each dynamic "part" should know his own length
+- And this means, the serialization should be extended for strings and objects.
+- Before serialization, we know what type it is. And for the return-value, we know what we expect.
+- "Unknown" Types, are also objects -> Object.class
+
+#################################################################################################
 # Overall packet structure for NIO implementation:
 #
 
