@@ -1,48 +1,106 @@
-protected static final byte LOOKUP_PACKET 				= 0x00;
-	objectOutputStream.write(Statics.LOOKUP_PACKET); 	// msg type
-	objectOutputStream.writeInt(requestID); 			// requestid
-	objectOutputStream.writeUTF(name); 					// name of remote object in lookuptable	
+#################################################################################################
+# Overall packet structure for NIO implementation:
+#
 
-protected static final byte LOOKUP_RETURN_PACKET 		= 0x01;
-	objectOutputStream.write(Statics.LOOKUP_RETURN_PACKET);
-	objectOutputStream.writeInt(requestID);
-	objectOutputStream.writeObject(lookupTable.getRemoteBinding(remoteObjectName).getClass().getInterfaces());
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	1		|	Byte	|	packet type
+|	1		|	4		|	Integer	|	length of following paket
+|	5		|	x		|	n/a		|	packet, see description below
++-----------+-----------+-----------+------------------------------------------------------------
 
-protected static final byte INVOCATION_PACKET 			= 0x02;
-	objectOutputStream.write(Statics.INVOCATION_PACKET); 	// msg type (1 byte)
-	objectOutputStream.writeInt(requestID); 				// requestid (4 byte)
-	objectOutputStream.writeUTF(remoteObject);				// name of remote object (x byte)
-	objectOutputStream.writeLong(methodHash);				// methodhash (8 byte)
-	for (int i = 0; i < parameterTypes.length; i++) {		// parameters... (y bytes)
-        wrapValue(parameterTypes[i], args[i], objectOutputStream);
-    }
+packet descriptions:
 
-protected static final byte INVOCATION_RETURN_PACKET 	= 0x03;
-	oos.write(Statics.INVOCATION_RETURN_PACKET);				// msg type (1 byte)
-	oos.writeInt(requestId);									// requestid (4 byte)
-	endpoint.wrapValue(method.getReturnType(), result, oos);	// return value (x byte)
++------------------------------------------------------------------------------------------------
+|	LOOKUP_PACKET = 0x00		
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	String	|	name of remote object in lookuptable
++-----------+-----------+-----------+------------------------------------------------------------
 
-protected static final byte TOSTRING_PACKET			 	= 0x04;
-	objectOutputStream.write(Statics.TOSTRING_PACKET); 			// msg type (1 byte)
-	objectOutputStream.writeInt(requestID); 					// requestid (4 byte)
-	objectOutputStream.writeUTF(remoteObjectName); 				// name of remote object in lookuptable (x byte)
++------------------------------------------------------------------------------------------------
+|	LOOKUP_RETURN_PACKET = 0x01		
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	Object	|	requested remote object interface
++-----------+-----------+-----------+------------------------------------------------------------
 
++------------------------------------------------------------------------------------------------
+|	INVOCATION_PACKET = 0x02		
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	String	|	name of remote object
+|	5+x		|	8		|	Long	|	method-hash
+|	5+x+8	|	y		|	n/a		|	method parameters: array of primitives and objects
++-----------+-----------+-----------+------------------------------------------------------------
 
-protected static final byte TOSTRING_RETURN_PACKET	 	= 0x05;
-	objectOutputStream.write(Statics.TOSTRING_RETURN_PACKET);	// msg type (1 byte)
-	objectOutputStream.writeInt(requestID);						// requestid (4 byte)
-	objectOutputStream.writeUTF(tostring);						// string (x byte)
++------------------------------------------------------------------------------------------------
+|	INVOCATION_RETURN_PACKET = 0x03		
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	n/a		|	return value from method invocation: primitive or object
++-----------+-----------+-----------+------------------------------------------------------------
 
-protected static final byte HASHCODE_PACKET			 	= 0x06;
-	objectOutputStream.write(Statics.HASHCODE_PACKET); 			// msg type (1 byte)
-	objectOutputStream.writeInt(requestID); 					// requestid (4 byte)
-	objectOutputStream.writeUTF(remoteObjectName); 				// name of remote object in lookuptable	(x byte)
++------------------------------------------------------------------------------------------------
+|	TOSTRING_PACKET	= 0x04
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	String	|	name of remote object in lookuptable
++-----------+-----------+-----------+------------------------------------------------------------
 
-protected static final byte HASHCODE_RETURN_PACKET	 	= 0x07;
++------------------------------------------------------------------------------------------------
+|	TOSTRING_RETURN_PACKET = 0x05	
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	String	|	String representation of remote object
++-----------+-----------+-----------+------------------------------------------------------------
 
++------------------------------------------------------------------------------------------------
+|	HASHCODE_PACKET	= 0x06	
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	String	|	name of remote object in lookuptable
++-----------+-----------+-----------+------------------------------------------------------------
 
-protected static final byte EQUALS_PACKET			 	= 0x08;
++------------------------------------------------------------------------------------------------
+|	HASHCODE_RETURN_PACKET = 0x07
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	4		|	Integer	|	hash code of remote object
++-----------+-----------+-----------+------------------------------------------------------------
 
++------------------------------------------------------------------------------------------------
+|	EQUALS_PACKET = 0x08
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	x		|	String	|	name of remote object in lookuptable
+|	5+x		|	y		|	Object	|	object to compare with
++-----------+-----------+-----------+------------------------------------------------------------
 
-protected static final byte EQUALS_RETURN_PACKET	 	= 0x09;
-
++------------------------------------------------------------------------------------------------
+|	EQUALS_RETURN_PACKET = 0x09
++-----------+-----------+-----------+------------------------------------------------------------
+|	index	|	length	|	type	|	description
++-----------+-----------+-----------+------------------------------------------------------------
+|	0		|	4		|	Integer	|	request id
+|	5		|	1		|	Boolean	|	true or false return value
++-----------+-----------+-----------+------------------------------------------------------------
