@@ -13,7 +13,12 @@
 - "Unknown" Types, are also objects -> Object.class; Same counts for "Exceptions".
 
 Notes:
-String serialisieren Overhead: 11 Bytes (Konstant)
+- String serialization with ObjectOutputStream -> Overhead: 11 Bytes (this seems to be constant)
+- invokeXYZ is done by the client. Each invoke method waits for the result before finishing.
+  The result is received by the PacketProcessor. And the PP must store the result in a Map and 
+  notify the waiting invoke-method.
+  
+
 
 #################################################################################################
 # Overall packet structure for NIO implementation:

@@ -23,6 +23,7 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.nio.ByteBuffer;
 
 import de.root1.simon.utils.SimonClassLoader;
 
@@ -40,6 +41,7 @@ public final class ProcessMethodInvocationRunnable implements Runnable {
 	final private String serverObject; 
 	final private Method method; 
 	final private Object[] args; 
+	private ByteBuffer bb = ByteBuffer.allocate(4096);
 
 	/**
 	 * 
@@ -70,13 +72,7 @@ public final class ProcessMethodInvocationRunnable implements Runnable {
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
-		processMethodInvocation();
-	}
 	
-	/**
-	 * Executes the requested invocation
-	 */
-	private void processMethodInvocation() {
 		if (Statics.DEBUG_MODE) System.out.println("ProcessMethodInvocationRunnable.processMethodInvocation() -> begin. requestID="+requestId);
 		Object result = null;
 		
@@ -115,13 +111,13 @@ public final class ProcessMethodInvocationRunnable implements Runnable {
 				result = e.getTargetException();
 			} 
 			
-			final ObjectOutputStream oos = endpoint.getObjectOutputStream();
-			synchronized (oos) {
+//			synchronized (oos) {
+			byte
 				oos.write(Statics.INVOCATION_RETURN_PACKET);
 				oos.writeInt(requestId);
 				endpoint.wrapValue(method.getReturnType(), result, oos);
 				oos.flush();
-			}
+//			}
 		} catch (IOException e){
 			/* 
 			 * TODO Was tun bei einer IOException?

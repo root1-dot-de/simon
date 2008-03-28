@@ -79,15 +79,17 @@ public class Utils {
     	try {
     	
 	    	if (type == void.class || value instanceof Throwable) {
-	           	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
+	           	
+	    		if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
 	           	bb.put(objectToBytes(value));
-	    	}
-	    	else 
-//	    	if (type == String.class) {
-//	    		if (Statics.DEBUG_MODE)	System.out.println("Endpoint.wrapValue() -> String");
-//	           	bb.put(stringToBytes(((String) value).toString()));
-//	    	}
-	    	if (type.isPrimitive()) {
+	           	
+	    	} else if (type == String.class) {
+	    		
+	    		if (Statics.DEBUG_MODE)	System.out.println("Endpoint.wrapValue() -> String");
+	           	bb.put(stringToBytes(((String) value).toString()));
+	           	
+	    	} else 	if (type.isPrimitive()) {
+	    		
 	        	if (type == boolean.class) {
 	        		
 	        		if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> boolean");
@@ -132,21 +134,34 @@ public class Utils {
 	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> unknown");
 	                throw new IOException("Unknown primitive: " + type);
 	            }
+	        	
 	        } else {
+	        	
 	        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> non primitive object");
 	        	bb = bb.put(objectToBytes(value));
+	        	
 	        }
     	} catch (BufferOverflowException e){
     		if (Statics.DEBUG_MODE) System.out.println("Utils.wrapValue() Buffer too small. Doubling!");
-    		ByteBuffer bb_new = ByteBuffer.allocate(bb.capacity()*2);
-    		bb.flip();
-    		bb_new.put(bb);
-    		bb = wrapValue(type, value, bb_new);
+    		bb = wrapValue(type, value, doubleByteBuffer(bb));
     	}
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> size at end: "+bb.capacity()+" position at end: "+bb.position());
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> end");
     	return bb;
     }
+
+	/**
+	 * Doubles the capacity of an ByteBuffer
+	 * Already stored bytes in the buffer will be transfered to the new buffer
+	 * @param bb the ByteBuffer to double
+	 * @return the doubled ByteBuffer
+	 */
+	public static ByteBuffer doubleByteBuffer(ByteBuffer bb) {
+		ByteBuffer bb_new = ByteBuffer.allocate(bb.capacity()*2);
+		bb.flip();
+		bb_new.put(bb);
+		return bb_new;
+	}
 
     public static byte[] stringToBytes(String value) {
     	byte[] bb;
@@ -171,11 +186,17 @@ public class Utils {
     	
     	
     	if (type == void.class ) {
+    		
     		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> void, reading an object, may be 'null' or a 'Throwable'");
     		return getObject(bb);
-    	}
-    	else
-    	if (type.isPrimitive()) {
+    		
+    	} else if (type == String.class) {
+    		
+    		if (Statics.DEBUG_MODE)	System.out.println("Endpoint.unwrapValue() -> String -> end");
+           	return getString(bb);
+           	
+    	} else 	if (type.isPrimitive()) {
+    		
         	if (type == boolean.class) {
         
         		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> boolean -> end");
@@ -220,9 +241,12 @@ public class Utils {
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> unknown -> end");
                 throw new IOException("Unknown primitive: " + type);
             }
+        	
         } else {
+        	
         	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> non primitive object -> end");
         	return getObject(bb);
+        	
         }
     }
     
