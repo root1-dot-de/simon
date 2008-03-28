@@ -41,6 +41,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import de.root1.simon.nio.ChangeRequest;
 import de.root1.simon.nio.EchoWorker;
@@ -101,6 +103,8 @@ public class Endpoint extends Thread {
 	private ServerSocketChannel serverChannel;
 	private int port = 0;
 	
+	private ExecutorService packetReadPool = null;
+	
 
 	/**
 	 * 
@@ -119,6 +123,9 @@ public class Endpoint extends Thread {
 		this.setName("Endpoint: "+threadName);
 		this.lookupTable = lookupTable;
 		this.port = port;
+		
+		// FIXME should be configurable
+		packetReadPool = Executors.newSingleThreadExecutor();
 		
 		this.objectCacheLifetime = objectCacheLifetime;
 		if (isServer) this.selector = this.initSelector();
@@ -232,7 +239,7 @@ public class Endpoint extends Thread {
 					if (key.isAcceptable()){
 						accept(key);
 					} else if (key.isReadable()) {
-						this.read(key);
+						packetReadPool.execute(new PacketReadProcessor(key));
 					} else if (key.isWritable()) {
 						this.write(key);
 					}
@@ -271,160 +278,160 @@ public class Endpoint extends Thread {
 	
 
 
-	private void read(SelectionKey key) throws IOException {
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-
-		// Clear out our read buffer so it's ready for new data
-		this.readBuffer.clear();
-		
-		// ------------------------		
-		int requestID = -1;
-		int msgType = -1;
-		String remoteObjectName = null;
-		ByteBuffer bb = ByteBuffer.allocate(5); // one byte + 4 byte integer
-		socketChannel.read(bb);
-		
-		// Header: Get type and requestid
-		msgType = bb.get();	
-		requestID = bb.getInt();
-		
-		if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> paket header: msgType="+msgType+" requestID="+requestID);
-
-		if (globalEndpointException==null)
-		
-		// if the received data is a new request ...
-		switch (msgType) {
-			
-			case Statics.INVOCATION_PACKET:
-				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
-				remoteObjectName = objectInputStream.readUTF();
-				final long methodHash = objectInputStream.readLong();
-				
-				final Method method = lookupTable.getMethod(remoteObjectName, methodHash);
-				final Class<?>[] parameterTypes = method.getParameterTypes();			
-				final Object[] args = new Object[parameterTypes.length];
-				
-				// unwrapping the arguments
-				for (int i = 0; i < args.length; i++) {
-					args[i]=unwrapValue(parameterTypes[i], objectInputStream);							
-				}
-				
-				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
-				
-				// put the data into a runnable					
-				Simon.getThreadPool().execute(new ProcessMethodInvocationRunnable(this,requestID, remoteObjectName, method, args));
-				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
-				break;
-				
-			case Statics.LOOKUP_PACKET :
-				processLookup(requestID, objectInputStream.readUTF());
-				break;
-				
-			case Statics.TOSTRING_PACKET :
-				processToString(requestID, objectInputStream.readUTF());
-				break;
-			
-			case Statics.HASHCODE_PACKET :
-				processHashCode(requestID, objectInputStream.readUTF());
-				break;
-			
-			case Statics.EQUALS_PACKET :
-				remoteObjectName = objectInputStream.readUTF();
-				final Object object = objectInputStream.readObject();
-				processEquals(requestID, remoteObjectName, object);
-				break;	
-				
-			case Statics.INVOCATION_RETURN_PACKET :
-				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
-				synchronized (requestResults) {
-					synchronized (requestReturnType) {					
-						//unwrap the return-value
-						requestResults.put(requestID, unwrapValue(requestReturnType.remove(requestID), objectInputStream));
-						if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+requestResults.get(requestID));
-					}
-				}
-				wakeWaitingProcess(requestID);
-				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
-				break;
-				
-			case Statics.LOOKUP_RETURN_PACKET :
-				synchronized (requestResults) {
-					requestResults.put(requestID, objectInputStream.readObject());
-				}
-				wakeWaitingProcess(requestID);
-				break;
-				
-			case Statics.TOSTRING_RETURN_PACKET :
-				synchronized (requestResults) {
-					requestResults.put(requestID, objectInputStream.readUTF());
-				}
-				wakeWaitingProcess(requestID);
-				break;
-			
-			case Statics.HASHCODE_RETURN_PACKET :
-				synchronized (requestResults) {
-					requestResults.put(requestID, objectInputStream.readInt());
-				}
-				wakeWaitingProcess(requestID);
-				break;
-				
-			case Statics.EQUALS_RETURN_PACKET :
-				synchronized (requestResults) {
-					requestResults.put(requestID, objectInputStream.readBoolean());
-				}
-				wakeWaitingProcess(requestID);
-				break;
-				
-			default :
-				interrupt();
-				globalEndpointException = new SimonRemoteException("invalid packet received from endpoint ...");
-				try {
-					objectInputStream.close();
-					objectOutputStream.close();
-				} catch (IOException e) {
-				}
-				break;
-		}
-		
-		// ------------------------
-		
-
-		// Attempt to read off the channel
-		int numRead = -1;
-		try {
-			numRead = socketChannel.read(this.readBuffer);
-			
-			// see: http://blog.strainu.ro/programming/java/using-serialization-with-non-blocking-sockets/
-//			InputStream newInputStream = Channels.newInputStream(socketChannel);
-			
-			//we open the channel and connect
-			numRead = socketChannel.read(readBuffer);
-			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(readBuffer.array());
-			ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
-			objectInputStream.readObject();
-			
-		} catch (IOException e) {
-			// The remote forcibly closed the connection, cancel
-			// the selection key and close the channel.
-			key.cancel();
-			socketChannel.close();
-			return;
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		if (numRead == -1) {
-			// Remote entity shut the socket down cleanly. Do the
-			// same from our end and cancel the channel.
-			key.channel().close();
-			key.cancel();
-			return;
-		}
-
-		// Hand the data off to our worker thread
-		Simon.worker.processData(this, socketChannel, this.readBuffer.array(), numRead);
-	}
+//	private void read(SelectionKey key) throws IOException {
+//		SocketChannel socketChannel = (SocketChannel) key.channel();
+//
+//		// Clear out our read buffer so it's ready for new data
+//		this.readBuffer.clear();
+//		
+//		// ------------------------		
+//		int requestID = -1;
+//		int msgType = -1;
+//		String remoteObjectName = null;
+//		ByteBuffer bb = ByteBuffer.allocate(5); // one byte + 4 byte integer
+//		socketChannel.read(bb);
+//		
+//		// Header: Get type and requestid
+//		msgType = bb.get();	
+//		requestID = bb.getInt();
+//		
+//		if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> paket header: msgType="+msgType+" requestID="+requestID);
+//
+//		if (globalEndpointException==null)
+//		
+//		// if the received data is a new request ...
+//		switch (msgType) {
+//			
+//			case Statics.INVOCATION_PACKET:
+//				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
+//				remoteObjectName = objectInputStream.readUTF();
+//				final long methodHash = objectInputStream.readLong();
+//				
+//				final Method method = lookupTable.getMethod(remoteObjectName, methodHash);
+//				final Class<?>[] parameterTypes = method.getParameterTypes();			
+//				final Object[] args = new Object[parameterTypes.length];
+//				
+//				// unwrapping the arguments
+//				for (int i = 0; i < args.length; i++) {
+//					args[i]=unwrapValue(parameterTypes[i], objectInputStream);							
+//				}
+//				
+//				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
+//				
+//				// put the data into a runnable					
+//				Simon.getThreadPool().execute(new ProcessMethodInvocationRunnable(this,requestID, remoteObjectName, method, args));
+//				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
+//				break;
+//				
+//			case Statics.LOOKUP_PACKET :
+//				processLookup(requestID, objectInputStream.readUTF());
+//				break;
+//				
+//			case Statics.TOSTRING_PACKET :
+//				processToString(requestID, objectInputStream.readUTF());
+//				break;
+//			
+//			case Statics.HASHCODE_PACKET :
+//				processHashCode(requestID, objectInputStream.readUTF());
+//				break;
+//			
+//			case Statics.EQUALS_PACKET :
+//				remoteObjectName = objectInputStream.readUTF();
+//				final Object object = objectInputStream.readObject();
+//				processEquals(requestID, remoteObjectName, object);
+//				break;	
+//				
+//			case Statics.INVOCATION_RETURN_PACKET :
+//				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
+//				synchronized (requestResults) {
+//					synchronized (requestReturnType) {					
+//						//unwrap the return-value
+//						requestResults.put(requestID, unwrapValue(requestReturnType.remove(requestID), objectInputStream));
+//						if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+requestResults.get(requestID));
+//					}
+//				}
+//				wakeWaitingProcess(requestID);
+//				if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
+//				break;
+//				
+//			case Statics.LOOKUP_RETURN_PACKET :
+//				synchronized (requestResults) {
+//					requestResults.put(requestID, objectInputStream.readObject());
+//				}
+//				wakeWaitingProcess(requestID);
+//				break;
+//				
+//			case Statics.TOSTRING_RETURN_PACKET :
+//				synchronized (requestResults) {
+//					requestResults.put(requestID, objectInputStream.readUTF());
+//				}
+//				wakeWaitingProcess(requestID);
+//				break;
+//			
+//			case Statics.HASHCODE_RETURN_PACKET :
+//				synchronized (requestResults) {
+//					requestResults.put(requestID, objectInputStream.readInt());
+//				}
+//				wakeWaitingProcess(requestID);
+//				break;
+//				
+//			case Statics.EQUALS_RETURN_PACKET :
+//				synchronized (requestResults) {
+//					requestResults.put(requestID, objectInputStream.readBoolean());
+//				}
+//				wakeWaitingProcess(requestID);
+//				break;
+//				
+//			default :
+//				interrupt();
+//				globalEndpointException = new SimonRemoteException("invalid packet received from endpoint ...");
+//				try {
+//					objectInputStream.close();
+//					objectOutputStream.close();
+//				} catch (IOException e) {
+//				}
+//				break;
+//		}
+//		
+//		// ------------------------
+//		
+//
+//		// Attempt to read off the channel
+//		int numRead = -1;
+//		try {
+//			numRead = socketChannel.read(this.readBuffer);
+//			
+//			// see: http://blog.strainu.ro/programming/java/using-serialization-with-non-blocking-sockets/
+////			InputStream newInputStream = Channels.newInputStream(socketChannel);
+//			
+//			//we open the channel and connect
+//			numRead = socketChannel.read(readBuffer);
+//			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(readBuffer.array());
+//			ObjectInputStream objectInputStream = new ObjectInputStream(byteArrayInputStream);
+//			objectInputStream.readObject();
+//			
+//		} catch (IOException e) {
+//			// The remote forcibly closed the connection, cancel
+//			// the selection key and close the channel.
+//			key.cancel();
+//			socketChannel.close();
+//			return;
+//		} catch (ClassNotFoundException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//
+//		if (numRead == -1) {
+//			// Remote entity shut the socket down cleanly. Do the
+//			// same from our end and cancel the channel.
+//			key.channel().close();
+//			key.cancel();
+//			return;
+//		}
+//
+//		// Hand the data off to our worker thread
+//		Simon.worker.processData(this, socketChannel, this.readBuffer.array(), numRead);
+//	}
 	
 	public void send(SocketChannel socket, byte[] data) {
 		synchronized (this.pendingChanges) {
@@ -446,64 +453,11 @@ public class Endpoint extends Thread {
 		this.selector.wakeup();
 	}
 	
-	/**
-	 * 
-	 * processes a request for a "equls()" call on a remote-object
-	 * 
-	 * @param requestID
-	 * @param remoteObjectName
-	 * @praram object
-	 * @throws IOException
-	 */
-	private void processEquals(int requestID, String remoteObjectName, Object object) throws IOException{
 
-		ByteBuffer bb = ByteBuffer.allocate(6);
-		bb.put(Statics.EQUALS_RETURN_PACKET);
-		bb.putInt(requestID);
-		final boolean equals = lookupTable.getRemoteBinding(remoteObjectName).equals(object);		
-		bb.put(equals ? (byte) 1 : (byte) 0);
-		
-	}
 
-	/**
-	 * 
-	 * processes a request for a "hashCode()" call on a remote-object
-	 * 
-	 * @param requestID
-	 * @param remoteObjectName
-	 * @throws IOException
-	 */
-	private void processHashCode(int requestID, String remoteObjectName) throws IOException {
-		synchronized (objectOutputStream) {
-			objectOutputStream.write(Statics.HASHCODE_RETURN_PACKET);
-			objectOutputStream.writeInt(requestID);
-			
-			final int hashcode = lookupTable.getRemoteBinding(remoteObjectName).hashCode();		
-			
-			objectOutputStream.writeInt(hashcode);
-			objectOutputStream.flush();
-		}	
-	}
+	
 
-	/**
-	 * 
-	 *processes a request for a "toString()" call on a remote-object
-	 * 
-	 * @param requestID
-	 * @param remoteObjectName
-	 * @throws IOException
-	 */
-	private void processToString(int requestID, String remoteObjectName) throws IOException {
-		synchronized (objectOutputStream) {
-			objectOutputStream.write(Statics.TOSTRING_RETURN_PACKET);
-			objectOutputStream.writeInt(requestID);
-			
-			final String tostring = lookupTable.getRemoteBinding(remoteObjectName).toString();		
-			
-			objectOutputStream.writeUTF(tostring);
-			objectOutputStream.flush();
-		}	
-	}
+	
 
 	/**
 	 * Wake the process with the related requestID
@@ -531,256 +485,9 @@ public class Endpoint extends Thread {
 		}
 	}
 
-	/**
-	 * 
-	 * processes a lookup
-	 * @throws IOException 
-	 */
-	private void processLookup(int requestID, String remoteObjectName) throws IOException{
-		
-		synchronized (objectOutputStream) {
-			objectOutputStream.write(Statics.LOOKUP_RETURN_PACKET);
-			objectOutputStream.writeInt(requestID);
-			objectOutputStream.writeObject(lookupTable.getRemoteBinding(remoteObjectName).getClass().getInterfaces());
-			objectOutputStream.flush();
-		}	
 
-	}
 
-	/**
-	 * sends a requested invocation to the server
-	 * 
-	 * @param remoteObject
-	 * @param methodName
-	 * @param parameterTypes
-	 * @param args
-	 * @param returnType 
-	 * @return the method's result
-	 * @throws SimonRemoteException if there's a problem with the communication
-	 * @throws IOException 
-	 */
-	protected Object sendInvocationToRemote(String remoteObject, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
-		final int requestID = generateRequestID();
-		if (Statics.DEBUG_MODE) System.out.println("Endpoint.sendInvocationToRemote() -> begin. requestID="+requestID);
-		if (globalEndpointException!=null) throw globalEndpointException;
-
-		final Object monitor = new Object();
-		
-		// memory the return-type for later unwrap
-		requestReturnType.put(requestID, returnType);
-		idMonitorMap.put(requestID, monitor);
-		
-		/*
-		 * register callback objects in the lookup-table
-		 */
-		if (args != null) {
-			for (int i = 0; i < args.length; i++) {
-				if (args[i] instanceof SimonRemote) {
-					SimonCallback sc = new SimonCallback((SimonRemote)args[i]);
-					lookupTable.putRemoteBinding(sc.getId(), (SimonRemote)args[i]);
-					args[i] = sc; // overwrite arg with wrapped callback-interface
-				}
-			}
-		}
-
-		synchronized (monitor) {
-
-			synchronized (objectOutputStream) {			
-				sendCounter++;
-				if (sendCounter==Integer.MAX_VALUE) sendCounter=0;
-				
-				objectOutputStream.write(Statics.INVOCATION_PACKET); // msg type
-				objectOutputStream.writeInt(requestID); // requestid
-				
-				objectOutputStream.writeUTF(remoteObject);
-				objectOutputStream.writeLong(methodHash);
-				
-				for (int i = 0; i < parameterTypes.length; i++) {
-		            wrapValue(parameterTypes[i], args[i], objectOutputStream);
-		        }
-				
-				objectOutputStream.flush();
-				if (sendCounter%objectCacheLifetime==0){
-					objectOutputStream.reset();
-				}
-				
-			}
-				// got to sleep until result is present
-				try {
-					monitor.wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-		}
-		if (Statics.DEBUG_MODE) System.out.println("Endpoint.sendInvocationToRemote() -> end. requestID="+requestID);
-		return requestResults.remove(requestID);
-	}
-
-	/**
-	 * 
-	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
-	 * 
-	 * @param name
-	 * @return the object we made the lookup for
-	 * @throws SimonRemoteException 
-	 * @throws IOException 
-	 */
-	public Object sendLookup(String name) throws SimonRemoteException, IOException {
-		if (globalEndpointException!=null) throw globalEndpointException;
-
-		final int requestID = generateRequestID();
-		final Object monitor = new Object();
-		
-		synchronized (idMonitorMap) {
-			idMonitorMap.put(requestID, monitor);
-		}
-
-		synchronized (monitor) {
-		
-			synchronized (objectOutputStream) {
-				objectOutputStream.write(Statics.LOOKUP_PACKET); // msg type
-				objectOutputStream.writeInt(requestID); // requestid
-				objectOutputStream.writeUTF(name); // name of remote object in lookuptable	
-				objectOutputStream.flush();
-			}			
-
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			
-			
-		}
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
-		// get result
-		return requestResults.remove(requestID);
-	}
 	
-	/**
-	 * 
-	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
-	 * 
-	 * @param remoteObjectName
-	 * @return
-	 * @throws IOException 
-	 */
-	protected String sendToStringRequest(String remoteObjectName) throws IOException {
-		if (globalEndpointException!=null) throw globalEndpointException;
-
-		final int requestID = generateRequestID();
-		final Object monitor = new Object();
-		
-		synchronized (idMonitorMap) {
-			idMonitorMap.put(requestID, monitor);
-		}
-
-		synchronized (monitor) {
-		
-			synchronized (objectOutputStream) {
-				objectOutputStream.write(Statics.TOSTRING_PACKET); // msg type
-				objectOutputStream.writeInt(requestID); // requestid
-				objectOutputStream.writeUTF(remoteObjectName); // name of remote object in lookuptable	
-				objectOutputStream.flush();
-			}			
-
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			
-			
-		}
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
-		// get result
-		return (String) requestResults.remove(requestID);
-	}
-
-	/**
-	 * 
-	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
-	 * 
-	 * @param remoteObjectName
-	 * @return
-	 * @throws IOException 
-	 */
-	protected int sendHashCodeRequest(String remoteObjectName) throws IOException {
-		if (globalEndpointException!=null) throw globalEndpointException;
-
-		final int requestID = generateRequestID();
-		final Object monitor = new Object();
-		
-		synchronized (idMonitorMap) {
-			idMonitorMap.put(requestID, monitor);
-		}
-
-		synchronized (monitor) {
-		
-			synchronized (objectOutputStream) {
-				objectOutputStream.write(Statics.HASHCODE_PACKET); // msg type
-				objectOutputStream.writeInt(requestID); // requestid
-				objectOutputStream.writeUTF(remoteObjectName); // name of remote object in lookuptable	
-				objectOutputStream.flush();
-			}			
-
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			
-			
-		}
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
-		// get result
-		return (Integer) requestResults.remove(requestID);
-	}
-
-	protected boolean sendEqualsRequest(String remoteObjectName, Object object) throws IOException {
-		if (globalEndpointException!=null) throw globalEndpointException;
-
-		final int requestID = generateRequestID();
-		final Object monitor = new Object();
-		
-		synchronized (idMonitorMap) {
-			idMonitorMap.put(requestID, monitor);
-		}
-
-		synchronized (monitor) {
-		
-			synchronized (objectOutputStream) {
-				objectOutputStream.write(Statics.EQUALS_PACKET); // msg type
-				objectOutputStream.writeInt(requestID); // requestid
-				objectOutputStream.writeUTF(remoteObjectName); // name of remote object in lookuptable
-				objectOutputStream.writeObject(object); // object to compare with
-				objectOutputStream.flush();
-			}			
-
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			
-			
-		}
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
-		// get result
-		return (Boolean) requestResults.remove(requestID);
-	}
 	
 	/**
 	 * for internal use only
@@ -789,13 +496,7 @@ public class Endpoint extends Thread {
 		return lookupTable;
 	}
 
-	/**
-	 * for internal use only
-	 * @return
-	 */
-	protected ObjectOutputStream getObjectOutputStream() {
-		return objectOutputStream;
-	}
+
 
 	// FIXME reimplement asking for ip-address of client ...
 //	/**

@@ -21,10 +21,12 @@ package de.root1.simon.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.security.DigestOutputStream;
@@ -69,141 +71,149 @@ public class Utils {
 	/**
      * wrap the value with the according write method
      */
-    protected void wrapValue(Class<?> type, Object value, SocketChannel socketChannel) throws IOException {
+    public static ByteBuffer wrapValue(Class<?> type, Object value, ByteBuffer bb) throws IOException {
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> start");
+    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> size at start: "+bb.capacity()+" position at start: "+bb.position());
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> value="+value);
     	
-    	ByteBuffer bb;
+    	try {
     	
-    	
-    	if (type == void.class || value instanceof Throwable) {
-           	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
-           	bb = objectToByteBuffer(value);
+	    	if (type == void.class || value instanceof Throwable) {
+	           	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
+	           	bb.put(objectToBytes(value));
+	    	}
+	    	else 
+//	    	if (type == String.class) {
+//	    		if (Statics.DEBUG_MODE)	System.out.println("Endpoint.wrapValue() -> String");
+//	           	bb.put(stringToBytes(((String) value).toString()));
+//	    	}
+	    	if (type.isPrimitive()) {
+	        	if (type == boolean.class) {
+	        		
+	        		if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> boolean");
+	            	bb.put((byte) (((Boolean) value).booleanValue() ? 1 : 0));
+	            	
+	            } else if (type == byte.class) {
+	            	
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> byte");
+	            	bb.put(((Byte) value).byteValue());
+	            	
+	            } else if (type == char.class) {
+	            	
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> char");
+	            	bb.putChar(((Character) value).charValue());
+	            	
+	            } else if (type == short.class) {
+	
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> short");
+	            	bb.putShort(((Short) value).shortValue());
+	            	
+	            } else if (type == int.class) {
+	            	
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> int");
+	            	bb.putInt(((Integer) value).intValue());
+	                
+	            } else if (type == long.class) {
+	            	
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> long");
+	            	bb.putLong(((Long) value).longValue());
+	            	
+	            } else if (type == float.class) {
+	            	
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> float");
+	            	bb.putFloat(((Float) value).floatValue());
+	            	
+	            } else if (type == double.class) {
+	            	
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> double");
+	            	bb.putDouble(((Double) value).doubleValue());
+	            	
+	            } else {
+	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> unknown");
+	                throw new IOException("Unknown primitive: " + type);
+	            }
+	        } else {
+	        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> non primitive object");
+	        	bb = bb.put(objectToBytes(value));
+	        }
+    	} catch (BufferOverflowException e){
+    		if (Statics.DEBUG_MODE) System.out.println("Utils.wrapValue() Buffer too small. Doubling!");
+    		ByteBuffer bb_new = ByteBuffer.allocate(bb.capacity()*2);
+    		bb.flip();
+    		bb_new.put(bb);
+    		bb = wrapValue(type, value, bb_new);
     	}
-    	else
-    	if (type.isPrimitive()) {
-        	if (type == boolean.class) {
-        		
-        		if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> boolean");
-            	bb = ByteBuffer.allocate(1);
-            	bb.put((byte) (((Boolean) value).booleanValue() ? 1 : 0));
-            	
-            } else if (type == byte.class) {
-            	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> byte");
-            	bb = ByteBuffer.allocate(1);
-            	bb.put(((Byte) value).byteValue());
-            	
-            } else if (type == char.class) {
-            	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> char");
-            	bb = ByteBuffer.allocate(2);
-            	bb.putChar(((Character) value).charValue());
-            	
-            } else if (type == short.class) {
-
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> short");
-            	bb = ByteBuffer.allocate(2);
-            	bb.putShort(((Short) value).shortValue());
-            	
-            } else if (type == int.class) {
-            	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> int");
-            	bb = ByteBuffer.allocate(4);
-            	bb.putInt(((Integer) value).intValue());
-                
-            } else if (type == long.class) {
-            	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> long");
-            	bb = ByteBuffer.allocate(8);
-            	bb.putLong(((Long) value).longValue());
-            	
-            } else if (type == float.class) {
-            	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> float");
-            	bb = ByteBuffer.allocate(4);
-            	bb.putFloat(((Float) value).floatValue());
-            	
-            } else if (type == double.class) {
-            	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> double");
-            	bb = ByteBuffer.allocate(8);
-            	bb.putDouble(((Double) value).doubleValue());
-            	
-            } else {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> unknown");
-                throw new IOException("Unknown primitive: " + type);
-            }
-        } else {
-        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> non primitive object");
-        	bb = objectToByteBuffer(value);
-        }
-    	socketChannel.write(bb);
+    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> size at end: "+bb.capacity()+" position at end: "+bb.position());
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> end");
+    	return bb;
     }
 
-    /**
+    public static byte[] stringToBytes(String value) {
+    	byte[] bb;
+		bb = new byte[value.length()+4];
+		
+		int v = bb.length-4;
+		bb[0] = (byte)((v >>> 24) & 0xFF);
+		bb[1] = (byte)((v >>> 16) & 0xFF);
+	    bb[2] = (byte)((v >>>  8) & 0xFF);
+	    bb[3] = (byte)((v >>>  0) & 0xFF);
+	    
+	    System.arraycopy(value.getBytes(), 0, bb, 4, v);
+	    if (Statics.DEBUG_MODE) System.out.println("Utils.stringToBytes() size="+bb.length);
+		return bb;
+	}
+
+	/**
      * unwrap the value with the according read method
      */
-    protected Object unwrapValue(Class<?> type, SocketChannel socketChannel) throws IOException, ClassNotFoundException {
+    public static Object unwrapValue(Class<?> type, ByteBuffer bb) throws IOException, ClassNotFoundException {
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> start");
     	
-    	ByteBuffer bb;
     	
     	if (type == void.class ) {
     		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> void, reading an object, may be 'null' or a 'Throwable'");
-    		return readObjectFromSocketChannel(socketChannel);
+    		return getObject(bb);
     	}
     	else
     	if (type.isPrimitive()) {
         	if (type == boolean.class) {
         
         		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> boolean -> end");
-        		bb = ByteBuffer.allocate(1);
-        		socketChannel.read(bb);
         		return Boolean.valueOf(bb.get()==1 ? true : false);
                 
             } else if (type == byte.class) {
             	
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> byte -> end");
-                bb = ByteBuffer.allocate(1);
-                socketChannel.read(bb);
             	return Byte.valueOf(bb.get());
                 
             } else if (type == char.class) {
             	
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> char -> end");
-                bb = ByteBuffer.allocate(2);
             	return Character.valueOf(bb.getChar());
                 
             } else if (type == short.class) {
 
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> short -> end");
-                bb = ByteBuffer.allocate(2);
             	return Short.valueOf(bb.getShort());
                 
             } else if (type == int.class) {
             	
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> int -> end");
-                bb = ByteBuffer.allocate(4);
             	return Integer.valueOf(bb.getInt());
                 
             } else if (type == long.class) {
             	
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> long -> end");
-                bb = ByteBuffer.allocate(8);
             	return Long.valueOf(bb.getLong());
                 
             } else if (type == float.class) {
 
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> float -> end");
-                bb = ByteBuffer.allocate(4);
             	return Float.valueOf(bb.getFloat());
                 
             } else if (type == double.class) {
             	
             	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> double -> end");
-                bb = ByteBuffer.allocate(8);
             	return Double.valueOf(bb.getDouble());
                 
             } else {
@@ -212,33 +222,42 @@ public class Utils {
             }
         } else {
         	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> non primitive object -> end");
-        	return readObjectFromSocketChannel(socketChannel);
+        	return getObject(bb);
         }
     }
     
     /**
-     * Converts an object to a bytebuffer.
+     * Converts an object to a byte[]
      * For "easy" reading, the first 4 bytes are an integer, 
      * indicating the length of following object
      * 
      * @param object the object to convert
-     * @param bb the target bytebuffer where the length and the object is stored
+     * @param bb the target byte[] where the length and the object is stored
      * @throws IOException if there's a problem with the serialisation of the object
      */
-    public static ByteBuffer objectToByteBuffer(Object object) throws IOException{
-    	ByteBuffer bb;
+    public static byte[] objectToBytes(Object object) throws IOException{
+    	byte[] bb;
     	ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
+	
 		oos.writeObject(object);
-		bb = ByteBuffer.allocate(baos.size()+4);
-		bb.putLong(baos.size());
-		bb.put(baos.toByteArray());
+		oos.close();
+		bb = new byte[baos.size()+4];
+		
+		int v = baos.size();
+		bb[0] = (byte)((v >>> 24) & 0xFF);
+		bb[1] = (byte)((v >>> 16) & 0xFF);
+	    bb[2] = (byte)((v >>>  8) & 0xFF);
+	    bb[3] = (byte)((v >>>  0) & 0xFF);
+	    
+	    System.arraycopy(baos.toByteArray(), 0, bb, 4, v);
+	    if (Statics.DEBUG_MODE) System.out.println("Utils.objectToBytes() size="+bb.length);
 		return bb;
     }
     
     /**
      * 
-     * Returns the object stored in this ByteBuffer.
+     * Returns the Object stored in this ByteBuffer.
      * The bytebuffer has to have the correct size 
      * and must be completely filled with the serialized 
      * object. That means: No extra bytes "before" the 
@@ -250,7 +269,7 @@ public class Utils {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public static Object byteBufferToObject(ByteBuffer bb) throws IOException, ClassNotFoundException{
+    public static Object getObject(ByteBuffer bb) throws IOException, ClassNotFoundException{
     	byte[] b = null;
     	
     	if (bb.hasArray())
@@ -265,20 +284,24 @@ public class Utils {
     }
     
     /**
-     * reads directly an object from the socketchannel
      * 
-     * @param socketChannel the channelt o read from
-     * @return the read object
+     * Returns the String stored in this ByteBuffer.
+     * The bytebuffer has to have the correct size 
+     * and must be completely filled with the String's 
+     * bytes. That means: No extra bytes "before" the 
+     * String in the buffer, and no empty/unused bytes 
+     * "after" the String in the buffer
+     * 
+     * @param bb the bytebuffer containing the String's bytes
+     * @return the String stored in the bytebuffer
      * @throws IOException
      * @throws ClassNotFoundException
-     */
-    private static Object readObjectFromSocketChannel(SocketChannel socketChannel) throws IOException, ClassNotFoundException{
-    	ByteBuffer object;
-    	ByteBuffer objectHeader = ByteBuffer.allocate(4);
-		socketChannel.read(objectHeader);
-		object = ByteBuffer.allocate(objectHeader.getInt());
-		socketChannel.read(object);
-		return byteBufferToObject(object);
+     */  
+    public static String getString(ByteBuffer bb){
+    	int length = bb.getInt();
+    	byte[] stringInBytes = new byte[length];
+    	bb.get(stringInBytes);
+    	return new String(stringInBytes);
     }
 
 }

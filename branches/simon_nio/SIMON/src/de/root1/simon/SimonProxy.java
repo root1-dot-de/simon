@@ -127,7 +127,7 @@ public class SimonProxy implements InvocationHandler {
 //						"|endpoint="+getInetAddress()+":"+getPort()+
 						"|endpoint"+
 						"|invocationHandler="+super.toString()+
-						"|remote="+endpoint.sendToStringRequest(remoteObjectName)+
+						"|remote="+endpoint.invokeToString(remoteObjectName)+
 					"]";
 		} catch (IOException e) {
 			throw new SimonRemoteException(e.getMessage());
@@ -135,7 +135,7 @@ public class SimonProxy implements InvocationHandler {
 	}
 	
 	private int remoteHashCode() throws IOException {
-		return endpoint.sendHashCodeRequest(remoteObjectName);
+		return endpoint.invokeHashCode(remoteObjectName);
 	}
 	
 	private boolean remoteEquals(Object object) throws IOException {

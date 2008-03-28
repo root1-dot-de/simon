@@ -103,7 +103,7 @@ public class Simon {
 			 * first contact server for lookup of interfaces
 			 * this request blocks!
 			 */
-			Class<?>[] listenerInterfaces = (Class<?>[]) endpoint.sendLookup(remoteObjectName);
+			Class<?>[] listenerInterfaces = (Class<?>[]) endpoint.invokeLookup(remoteObjectName);
 			
 			/*
 			 * This class gets the interfaces and directs the method-calls
