@@ -102,6 +102,8 @@ public class Endpoint extends Thread {
 	private ExecutorService packetPool = null;
 	private ExecutorService invocationPool = null;
 
+	private List<SelectionKey> readFromKey = new ArrayList<SelectionKey>();
+
 	
 
 	/**
@@ -259,18 +261,24 @@ public class Endpoint extends Thread {
 					// Check what event is available and deal with it
 					if (key.isAcceptable()){ // used by the server
 						
+						if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> "+key+" is acceptable");
 						accept(key);
 						
 					} else if (key.isConnectable()) { // used by the client
 						
+						if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> "+key+" is connectable");
 						this.finishConnection(key);
 						
-					} else if (key.isReadable()) {
-						
+					} else if (key.isReadable() && !readFromKey.contains(key)) {
+						synchronized (readFromKey) {
+							readFromKey.add(key);	
+						}
+						if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> "+key+" is readable");
 						packetPool.execute(new PacketProcessor(getLookupTable(),key,this));
 						
 					} else if (key.isWritable()) {
 						
+						if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> "+key+" is writeable");
 						this.write(key);
 						
 					}
@@ -285,6 +293,7 @@ public class Endpoint extends Thread {
 	}
 	
 	private void finishConnection(SelectionKey key) throws IOException {
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.finishConnection() -> start");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 	
 		// Finish the connection. If the connection operation failed
@@ -299,8 +308,9 @@ public class Endpoint extends Thread {
 		}
 	
 		// Register an interest in writing on this channel
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.finishConnection() -> register for read-mode");
 		key.interestOps(SelectionKey.OP_WRITE);
-
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.finishConnection() -> end");
 	}
 	
 	
@@ -329,11 +339,12 @@ public class Endpoint extends Thread {
 	 * @throws IOException
 	 */
 	private void write(SelectionKey key) throws IOException {
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.write() -> start");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.write() -> sending to ip: "+socketChannel.socket().getInetAddress().toString()+"");
 		synchronized (this.pendingData) {
 			List<ByteBuffer> queue = this.pendingData.get(socketChannel);
-
+			if (Statics.DEBUG_MODE) System.out.println("Endpoint.write() -> "+queue.size()+" packets to send");
 			// Write until there's not more data ...
 			while (!queue.isEmpty()) {
 								
@@ -348,6 +359,7 @@ public class Endpoint extends Thread {
 					break;
 				}
 				queue.remove(0);
+				if (Statics.DEBUG_MODE) System.out.println("Endpoint.write() -> packet sent");
 			}
 
 			if (queue.isEmpty()) {
@@ -355,8 +367,10 @@ public class Endpoint extends Thread {
 				// in writing on this socket. Switch back to waiting for
 				// data.
 				key.interestOps(SelectionKey.OP_READ);
+				if (Statics.DEBUG_MODE) System.out.println("Endpoint.write() -> switch back to read-mode");
 			}
 		}
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.write() -> end");
 	}
 	
 	/**
@@ -394,6 +408,7 @@ public class Endpoint extends Thread {
 	 * @throws IOException 
 	 */
 	public Object invokeLookup(String name) throws SimonRemoteException, IOException {
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.invokeLookup() -> start");
 		if (globalEndpointException!=null) throw globalEndpointException;
 
 		final int requestID = generateRequestID(); 
@@ -410,9 +425,18 @@ public class Endpoint extends Thread {
 		packet.put(Statics.LOOKUP_PACKET); 		// msg type
 		packet.putInt(requestID); 				// requestid
 		packet.put(Utils.stringToBytes(name)); 	// name of remote object in lookuptable	
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.invokeLookup() -> requestid="+requestID);
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.invokeLookup() -> packet length="+packet.position());
 		
 		// send the packet to the connected client-socket-channel
 		send(clientSocketChannel, packet);
+		try {
+			System.err.println("SLEEPING!");
+			Thread.sleep(10000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 
 		// got to sleep until result is present
@@ -430,6 +454,7 @@ public class Endpoint extends Thread {
 		
 		// get result
 		synchronized (requestResults) {
+			if (Statics.DEBUG_MODE) System.out.println("Endpoint.invokeLookup() -> end");
 			return requestResults.remove(requestID);			
 		}
 	}
@@ -724,6 +749,10 @@ public class Endpoint extends Thread {
 
 	protected synchronized Class<?> removeRequestReturnType(int requestID) {
 		return requestReturnType.remove(requestID);
+	}
+	
+	protected synchronized void removeFromReadFrom(SelectionKey key){
+		readFromKey.remove(key);
 	}
 
 

@@ -39,19 +39,27 @@ class PacketProcessor implements Runnable {
 	}
 
 	public void run() {
-		
+		if (Statics.DEBUG_MODE) System.out.println("PacketProcessor.run() -> reading from: "+key);
 		socketChannel = (SocketChannel) key.channel();
 		try {
 			
 			// read the header which includes packet type id and packet size
-			socketChannel.read(packetHeader);
+			int read = socketChannel.read(packetHeader);
+			if (Statics.DEBUG_MODE) System.out.println("PacketProcessor.run() -> read header: "+read+" bytes.");
 			
 			// Header: Get type and length
-			msgType = packetHeader.get();	
+			packetHeader.rewind();
+			msgType = packetHeader.get();
+			if (Statics.DEBUG_MODE) System.out.println("PacketProcessor.run() -> msgType: "+msgType);
 			packetLength = packetHeader.getInt();
+			if (Statics.DEBUG_MODE) System.out.println("PacketProcessor.run() -> packet length: "+packetLength);
 			
 			packetBody = ByteBuffer.allocate(packetLength);
 			
+			socketChannel.read(packetBody);
+			packetBody.rewind();
+			
+			endpoint.removeFromReadFrom(key);
 			requestID = packetBody.getInt();
 			
 			// if the received data is a new request ...

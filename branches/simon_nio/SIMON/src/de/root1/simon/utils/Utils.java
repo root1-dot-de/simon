@@ -173,8 +173,9 @@ public class Utils {
 	    bb[2] = (byte)((v >>>  8) & 0xFF);
 	    bb[3] = (byte)((v >>>  0) & 0xFF);
 	    
+	    
 	    System.arraycopy(value.getBytes(), 0, bb, 4, v);
-	    if (Statics.DEBUG_MODE) System.out.println("Utils.stringToBytes() size="+bb.length);
+	    if (Statics.DEBUG_MODE) System.out.println("Utils.stringToBytes() size=4+"+(bb.length-4));
 		return bb;
 	}
 
@@ -323,8 +324,10 @@ public class Utils {
      */  
     public static String getString(ByteBuffer bb){
     	int length = bb.getInt();
+    	if (Statics.DEBUG_MODE) System.out.println("Utils.getString() -> length="+length);
     	byte[] stringInBytes = new byte[length];
     	bb.get(stringInBytes);
+    	if (Statics.DEBUG_MODE) System.out.println("Utils.getString() -> string="+new String(stringInBytes));
     	return new String(stringInBytes);
     }
 
