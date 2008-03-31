@@ -69,7 +69,7 @@ public class Utils {
 	}
 	
 	/**
-     * wrap the value with the according write method
+     * wrap the value into the given bytebuffer
      */
     public static ByteBuffer wrapValue(Class<?> type, Object value, ByteBuffer bb) throws IOException {
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> start");
@@ -179,7 +179,7 @@ public class Utils {
 	}
 
 	/**
-     * unwrap the value with the according read method
+     * unwrap the value from the given bytebuffer
      */
     public static Object unwrapValue(Class<?> type, ByteBuffer bb) throws IOException, ClassNotFoundException {
     	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> start");

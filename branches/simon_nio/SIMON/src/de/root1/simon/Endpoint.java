@@ -37,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import de.root1.simon.nio.ChangeRequest;
+import de.root1.simon.utils.Utils;
 
 /**
  * An endpoint represents one end of the socket-connection between client and server.
@@ -91,11 +92,16 @@ public class Endpoint extends Thread {
 //	private ByteBuffer readBuffer = ByteBuffer.allocate(8192);
 	
 	// The channel on which we'll accept connections
-	private ServerSocketChannel serverChannel;
+	private ServerSocketChannel serverSocketChannel;
+	
+	// this channel is used by the client-endpoint for sending data to the server 
+	private SocketChannel clientSocketChannel;
+	
 	private int port = 0;
 	
 	private ExecutorService packetPool = null;
 	private ExecutorService invocationPool = null;
+
 	
 
 	/**
@@ -121,7 +127,18 @@ public class Endpoint extends Thread {
 		invocationPool = Executors.newSingleThreadExecutor();
 		
 		this.objectCacheLifetime = objectCacheLifetime;
-		if (isServer) this.selector = this.initSelector();
+		if (isServer) {
+			
+			this.selector = initSelectorServer();
+			
+		} else {
+			
+			this.selector = initSelectorClient();
+			connectToServer();
+			
+		}
+
+		// run the local thread
 		start();
 		
 		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() -> end");
@@ -144,23 +161,28 @@ public class Endpoint extends Thread {
 	 * is to create and initialize a non-blocking server channel and a selector. 
 	 * It must and then register the server channel with that selector. 
 	 */
-	private Selector initSelector() throws IOException {
+	private Selector initSelectorServer() throws IOException {
 		// Create a new selector
 		Selector socketSelector = SelectorProvider.provider().openSelector();
 
 		// Create a new non-blocking server socket channel
-		this.serverChannel = ServerSocketChannel.open();
-		serverChannel.configureBlocking(false);
+		this.serverSocketChannel = ServerSocketChannel.open();
+		serverSocketChannel.configureBlocking(false);
 
 		// Bind the server socket to the specified address and port
 		InetSocketAddress isa = new InetSocketAddress("0.0.0.0", port);
-		serverChannel.socket().bind(isa);
+		serverSocketChannel.socket().bind(isa);
 
 		// Register the server socket channel, indicating an interest in 
 		// accepting new connections
-		serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
+		serverSocketChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
 
 		return socketSelector;
+	}
+	
+	private Selector initSelectorClient() throws IOException {
+		// Create a new selector
+		return SelectorProvider.provider().openSelector();
 	}
 	
 	/*
@@ -207,9 +229,15 @@ public class Endpoint extends Thread {
 					while (changes.hasNext()) {
 						ChangeRequest change = (ChangeRequest) changes.next();
 						switch (change.type) {
-						case ChangeRequest.CHANGEOPS:
-							SelectionKey key = change.socket.keyFor(this.selector);
-							key.interestOps(change.ops);
+
+							case ChangeRequest.CHANGEOPS:
+								SelectionKey key = change.socket.keyFor(this.selector);
+								key.interestOps(change.ops);
+
+							case ChangeRequest.REGISTER:
+								change.socket.register(this.selector, change.ops);
+								break;
+								
 						}
 					}
 					this.pendingChanges.clear();
@@ -229,18 +257,69 @@ public class Endpoint extends Thread {
 					}
 
 					// Check what event is available and deal with it
-					if (key.isAcceptable()){
+					if (key.isAcceptable()){ // used by the server
+						
 						accept(key);
+						
+					} else if (key.isConnectable()) { // used by the client
+						
+						this.finishConnection(key);
+						
 					} else if (key.isReadable()) {
+						
 						packetPool.execute(new PacketProcessor(getLookupTable(),key,this));
+						
 					} else if (key.isWritable()) {
+						
 						this.write(key);
+						
 					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
+				// TODO richtig platziert?
+				// FIXME Exception richtig fangen
+				wakeAllMonitors();
 			}
 		}
+	}
+	
+	private void finishConnection(SelectionKey key) throws IOException {
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+	
+		// Finish the connection. If the connection operation failed
+		// this will raise an IOException.
+		try {
+			socketChannel.finishConnect();
+		} catch (IOException e) {
+			// Cancel the channel's registration with our selector
+			System.err.println("Exception in finishConnection(): "+e);
+			key.cancel();
+			return;
+		}
+	
+		// Register an interest in writing on this channel
+		key.interestOps(SelectionKey.OP_WRITE);
+
+	}
+	
+	
+	private void connectToServer() throws IOException {
+		System.out.println("Endpoint.connectToServer() -> start");
+		clientSocketChannel = SocketChannel.open();
+		clientSocketChannel.configureBlocking(false);
+	
+		// Kick off connection establishment
+		clientSocketChannel.connect(new InetSocketAddress("127.0.0.1", this.port));
+	
+		// Queue a channel registration since the caller is not the 
+		// selecting thread. As part of the registration we'll register
+		// an interest in connection events. These are raised when a channel
+		// is ready to complete connection establishment.
+		synchronized(this.pendingChanges) {
+			this.pendingChanges.add(new ChangeRequest(clientSocketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
+		}
+		System.out.println("Endpoint.connectToServer() -> end");
 	}
 	
 	/**
@@ -257,7 +336,12 @@ public class Endpoint extends Thread {
 
 			// Write until there's not more data ...
 			while (!queue.isEmpty()) {
+								
 				ByteBuffer buf = (ByteBuffer) queue.get(0);
+				
+				// "drop" empty buffer rest
+				buf.flip();
+				
 				socketChannel.write(buf);
 				if (buf.remaining() > 0) {
 					// ... or the socket's buffer fills up
@@ -277,8 +361,10 @@ public class Endpoint extends Thread {
 	
 	/**
 	 * Sends the data to the socketchannel
+	 * Be warned: only the data from start to position is sent
 	 */
-	protected void send(SocketChannel socketChannel, ByteBuffer data) {
+	protected void send(SocketChannel socketChannel, ByteBuffer packet) {
+			
 		synchronized (this.pendingChanges) {
 			// Indicate we want the interest ops set changed
 			this.pendingChanges.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
@@ -290,31 +376,275 @@ public class Endpoint extends Thread {
 					queue = new ArrayList<ByteBuffer>();
 					this.pendingData.put(socketChannel, queue);
 				}
-				queue.add(data);
+				queue.add(packet);
 			}
 		}
 
 		// Finally, wake up our selecting thread so it can make the required changes
 		this.selector.wakeup();
 	}
+
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
+	 * 
+	 * @param name
+	 * @return the object we made the lookup for
+	 * @throws SimonRemoteException 
+	 * @throws IOException 
+	 */
+	public Object invokeLookup(String name) throws SimonRemoteException, IOException {
+		if (globalEndpointException!=null) throw globalEndpointException;
+
+		final int requestID = generateRequestID(); 
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(requestID);
+		
+		// create the data packet:
+		// 1 byte  					-> packet type
+		// 4 bytes 					-> request ID
+		// 4 bytes + string.length 	-> String length as integer + following string
+		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+name.length()));
+		
+		// put the data in the packet
+		packet.put(Statics.LOOKUP_PACKET); 		// msg type
+		packet.putInt(requestID); 				// requestid
+		packet.put(Utils.stringToBytes(name)); 	// name of remote object in lookuptable	
+		
+		// send the packet to the connected client-socket-channel
+		send(clientSocketChannel, packet);
+		
+
+		// got to sleep until result is present
+		try {
+			monitor.wait();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+			
+			
+		// check if there was an error while sleeping
+		if (globalEndpointException!=null) throw globalEndpointException;
+		
+		// get result
+		synchronized (requestResults) {
+			return requestResults.remove(requestID);			
+		}
+	}
+
+	/**
+	 * sends a requested invocation to the server
+	 * 
+	 * @param remoteObject
+	 * @param methodName
+	 * @param parameterTypes
+	 * @param args
+	 * @param returnType 
+	 * @return the method's result
+	 * @throws SimonRemoteException if there's a problem with the communication
+	 * @throws IOException 
+	 */	 
+ 	protected Object invokeMethod(String remoteObject, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
+ 		final int requestID = generateRequestID();
+ 		if (Statics.DEBUG_MODE) System.out.println("Endpoint.sendInvocationToRemote() -> begin. requestID="+requestID);
+
+ 		if (globalEndpointException!=null) throw globalEndpointException;
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(requestID);
+		
+		// memory the return-type for later unwrap
+		requestReturnType.put(requestID, returnType);
+		
+		// register callback objects in the lookup-table
+		if (args != null) {
+			for (int i = 0; i < args.length; i++) {
+				if (args[i] instanceof SimonRemote) {
+					SimonCallback sc = new SimonCallback((SimonRemote)args[i]);
+					lookupTable.putRemoteBinding(sc.getId(), (SimonRemote)args[i]);
+					args[i] = sc; // overwrite arg with wrapped callback-interface
+				}
+			}
+		}
+
+//		FIXME this was used for caching. now it's useless
+//		sendCounter++;
+//		if (sendCounter==Integer.MAX_VALUE) sendCounter=0;
+
+		// here we have to allocate more, because atm we don't know big the parameters are 
+		ByteBuffer packet = ByteBuffer.allocate(4096);
+		
+		packet.put(Statics.INVOCATION_PACKET);
+		packet.putInt(requestID);
+		packet.put(Utils.stringToBytes(remoteObject));
+		packet.putLong(methodHash);
+		
+		for (int i = 0; i < parameterTypes.length; i++) {
+            Utils.wrapValue(parameterTypes[i], args[i], packet);
+        }
+		
+		send(clientSocketChannel, packet);
+				
+//		FIXME this was used for caching. now it's useless
+//		objectOutputStream.flush();
+//		if (sendCounter%objectCacheLifetime==0){
+//			objectOutputStream.reset();
+//		}
+				
+		// got to sleep until result is present
+		try {
+			monitor.wait();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		
+		if (Statics.DEBUG_MODE) System.out.println("Endpoint.sendInvocationToRemote() -> end. requestID="+requestID);
+		return requestResults.remove(requestID);
+	}
+
 	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
+	 * 
+	 * @param remoteObjectName
+	 * @return
+	 * @throws IOException 
+	 */
+	protected String invokeToString(String remoteObjectName) throws IOException {
+		if (globalEndpointException!=null) throw globalEndpointException;
+
+		final int requestID = generateRequestID();
+
+		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(requestID);
+
+		// --
+		// create the data packet:
+		// 1 byte  					-> packet type
+		// 4 bytes 					-> request ID
+		// 4 bytes + string.length 	-> String length as integer + following string
+		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+remoteObjectName.length()));
+		
+		// put the data in the packet
+		packet.put(Statics.TOSTRING_PACKET); 		// msg type
+		packet.putInt(requestID); 				// requestid
+		packet.put(Utils.stringToBytes(remoteObjectName)); 	// name of remote object in lookuptable	
+		
+		// send the packet to the connected client-socket-channel
+		send(clientSocketChannel, packet);
+		
+
+		// got to sleep until result is present
+		try {
+			monitor.wait();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+			
+			
+		// check if there was an error while sleeping
+		if (globalEndpointException!=null) throw globalEndpointException;
+		
+		// get result
+		synchronized (requestResults) {
+			return (String)requestResults.remove(requestID);			
+		}		
+	}
+
+	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
+	 * 
+	 * @param remoteObjectName
+	 * @return
+	 * @throws IOException 
+	 */
+	protected int invokeHashCode(String remoteObjectName) throws IOException {
+		if (globalEndpointException!=null) throw globalEndpointException;
+
+		final int requestID = generateRequestID();
+		
+		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(requestID);
+
+		// create the data packet:
+		// 1 byte  					-> packet type
+		// 4 bytes 					-> request ID
+		// 4 bytes + string.length 	-> String length as integer + following string
+		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+remoteObjectName.length()));
+		
+		// put the data in the packet
+		packet.put(Statics.HASHCODE_PACKET); 		// msg type
+		packet.putInt(requestID); 				// requestid
+		packet.put(Utils.stringToBytes(remoteObjectName)); 	// name of remote object in lookuptable	
+		
+		// send the packet to the connected client-socket-channel
+		send(clientSocketChannel, packet);
+		
+
+		// got to sleep until result is present
+		try {
+			monitor.wait();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+			
+			
+		// check if there was an error while sleeping
+		if (globalEndpointException!=null) throw globalEndpointException;
+		
+		// get result
+		synchronized (requestResults) {
+			return (Integer)requestResults.remove(requestID);			
+		}		
+	}
 
 
-	
+	protected boolean invokeEquals(String remoteObjectName, Object object) throws IOException {
+		if (globalEndpointException!=null) throw globalEndpointException;
 
-	
+		final int requestID = generateRequestID();
+		
+		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(requestID);
+
+		ByteBuffer packet = ByteBuffer.allocate(4096);
+
+		packet.put(Statics.EQUALS_PACKET);
+		packet.putInt(requestID);
+		packet.put(Utils.stringToBytes(remoteObjectName));
+		packet.put(Utils.objectToBytes(object));
+		
+		send(clientSocketChannel, packet);
+		
+		// got to sleep until result is present
+		try {
+			monitor.wait();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+			
+			
+		// check if there was an error while sleeping
+		if (globalEndpointException!=null) throw globalEndpointException;
+		
+		// get result
+		return (Boolean) requestResults.remove(requestID);
+	}
 
 	/**
 	 * Wake the process with the related requestID
 	 * 
 	 * @param requestID the process to wake  
 	 */
-	private void wakeWaitingProcess(int requestID) {
+	protected void wakeWaitingProcess(int requestID) {
 		synchronized (idMonitorMap) {						
 			final Object monitor = idMonitorMap.get(requestID);
-			synchronized (monitor) {
+//			synchronized (monitor) {
 				monitor.notify(); // wake the waiting method
-			}
+//			}
 			idMonitorMap.remove(requestID);
 		}
 	}
@@ -372,6 +702,21 @@ public class Endpoint extends Thread {
 	
 	
 	
+	/**
+	 * 
+	 * create a monitor that waits for the request-result that 
+	 * is associated with the given request-id
+	 * 
+	 * @param requestID
+	 * @return the monitor used for waiting for the result
+	 */
+	private Object createMonitor(final int requestID) {
+		final Object monitor = new Object();
+		synchronized (idMonitorMap) {
+			idMonitorMap.put(requestID, monitor);
+		}
+		return monitor;
+	}
 
 
 

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 public class NioClient implements Runnable {
+
 	// The host:port combination to connect to
 	private InetAddress hostAddress;
 	private int port;

@@ -45,13 +45,6 @@ public class Simon {
 	 */
 	private static ExecutorService threadPool = null;
 	
-	
-	// -------------------
-	// NIO Stuff
-	
-	protected static MethodWorker worker = new MethodWorker();
-
-
 
 	/**
 	 * Creates a registry
@@ -124,53 +117,53 @@ public class Simon {
 		return proxy;
 	}
 
-	/**
-	 * 
-	 * Sets some post socket-specific parameters and tuning settings
-	 * 
-	 * @param socket
-	 * @throws IOException
-	 * @throws SocketException
-	 */
-	protected static void postSetupSocket(Socket socket)
-			throws IOException, SocketException {
-		/*
-		 * Disable the Nagle-algorithm. See also
-		 * http://de.wikipedia.org/wiki/Nagle-Algorithmus
-		 */
-		socket.setTcpNoDelay(true); 
-		
-		// Priority: low latency > bandwidth > connection time
-		socket.setPerformancePreferences(0, 2, 1); 
-	}
+//	/**
+//	 * 
+//	 * Sets some post socket-specific parameters and tuning settings
+//	 * 
+//	 * @param socket
+//	 * @throws IOException
+//	 * @throws SocketException
+//	 */
+//	protected static void postSetupSocket(Socket socket)
+//			throws IOException, SocketException {
+//		/*
+//		 * Disable the Nagle-algorithm. See also
+//		 * http://de.wikipedia.org/wiki/Nagle-Algorithmus
+//		 */
+//		socket.setTcpNoDelay(true); 
+//		
+//		// Priority: low latency > bandwidth > connection time
+//		socket.setPerformancePreferences(0, 2, 1); 
+//	}
 
-	/**
-	 * 
-	 * Sets some pre socket-specific parameters and tuning settings
-	 * 
-	 * @param socket
-	 * @throws SocketException
-	 */
-	protected static void preSetupSocket(Socket socket) throws SocketException {
-		/*
-		 * Detect MacOS ...
-		 * See: 
-		 * Identifying Mac OS X in Java, http://developer.apple.com/technotes/tn2002/tn2110.html
-		 */
-		String lcOSName = System.getProperty("os.name").toLowerCase();
-		boolean MAC_OS_X = lcOSName.startsWith("mac os x");
-		
-		/*
-		 * MAC OS uses per default IPv6 setting which cannot handle setTrafficClass() method.
-		 * It's possible to set a system property (java.net.preferIPv4Stack" -> true) to perfer IPv4,
-		 * which is able to handle the method, but setting system properties are problematically with java applets.
-		 * According to a few sites on the web which refers to a RFC blablabla, the traffic-class is since 1998 obselete
-		 * So we just disable the method for mac os.
-		 */
-		if (!MAC_OS_X) {
-			socket.setTrafficClass(0x10); // prefer low delay			
-		}
-	}
+//	/**
+//	 * 
+//	 * Sets some pre socket-specific parameters and tuning settings
+//	 * 
+//	 * @param socket
+//	 * @throws SocketException
+//	 */
+//	protected static void preSetupSocket(Socket socket) throws SocketException {
+//		/*
+//		 * Detect MacOS ...
+//		 * See: 
+//		 * Identifying Mac OS X in Java, http://developer.apple.com/technotes/tn2002/tn2110.html
+//		 */
+//		String lcOSName = System.getProperty("os.name").toLowerCase();
+//		boolean MAC_OS_X = lcOSName.startsWith("mac os x");
+//		
+//		/*
+//		 * MAC OS uses per default IPv6 setting which cannot handle setTrafficClass() method.
+//		 * It's possible to set a system property (java.net.preferIPv4Stack" -> true) to perfer IPv4,
+//		 * which is able to handle the method, but setting system properties are problematically with java applets.
+//		 * According to a few sites on the web which refers to a RFC blablabla, the traffic-class is since 1998 obselete
+//		 * So we just disable the method for mac os.
+//		 */
+//		if (!MAC_OS_X) {
+//			socket.setTrafficClass(0x10); // prefer low delay			
+//		}
+//	}
 	
 	/**
 	 * Binds a Object to the registry
@@ -205,22 +198,22 @@ public class Simon {
 //		return getSimonProxy(proxyObject).getPort();
 //	}
 	
-	/**
-	 * 
-	 * Checks the given objekt for a SimonProxy invocationhandler wrapped in a simple proxy
-	 * 
-	 * @param o the object to check
-	 * @return the extrected SimonProxy
-	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocationhandler
-	 */
-	private static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
-		if (o instanceof Proxy) {
-			InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
-			if (invocationHandler instanceof SimonProxy){
-				return (SimonProxy) invocationHandler;
-			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy");
-		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy");
-	}
+//	/**
+//	 * 
+//	 * Checks the given objekt for a SimonProxy invocationhandler wrapped in a simple proxy
+//	 * 
+//	 * @param o the object to check
+//	 * @return the extrected SimonProxy
+//	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocationhandler
+//	 */
+//	private static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
+//		if (o instanceof Proxy) {
+//			InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
+//			if (invocationHandler instanceof SimonProxy){
+//				return (SimonProxy) invocationHandler;
+//			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy");
+//		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy");
+//	}
 
 	/**
 	 * 
@@ -229,6 +222,7 @@ public class Simon {
 	 * 
 	 * @param value the int value to set
 	 * @throws IllegalArgumentException if objectCacheLifetime is <1
+	 * @deprecated this method doesn't have any effect on the use of simon
 	 */
 	public static void setObjectCacheLifetime(int value) throws IllegalArgumentException{
 		if (value<1) throw new IllegalArgumentException("objectCacheLifetime must be >=1");
@@ -247,6 +241,7 @@ public class Simon {
 	/**
 	 * Returns the reference to the worker thread pool
 	 * @return the threadPool
+	 * @deprecated this method doesn't have any effect on the use of simon
 	 */
 	protected static ExecutorService getThreadPool() {
 		if (threadPool==null){
@@ -266,6 +261,7 @@ public class Simon {
 	 * if size has value >=1, the pool has a fixed size by the given value
 	 * 
 	 * @param size the size of the used worker thread pool
+	 * @deprecated this method doesn't have any effect on the use of simon
 	 */
 	public static void setWorkerThreadPoolSize(int size) {
 		if (threadPool!=null) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");

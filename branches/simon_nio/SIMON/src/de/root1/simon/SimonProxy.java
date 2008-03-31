@@ -83,7 +83,7 @@ public class SimonProxy implements InvocationHandler {
 		 */
 		if (Statics.DEBUG_MODE)
         	System.out.println("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
-		Object result = endpoint.sendInvocationToRemote(remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
+		Object result = endpoint.invokeMethod(remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
 		// Check for exceptions ...
