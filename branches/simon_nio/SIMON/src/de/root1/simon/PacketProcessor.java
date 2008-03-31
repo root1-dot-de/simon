@@ -22,8 +22,8 @@ import de.root1.simon.utils.Utils;
 class PacketProcessor implements Runnable {
 
 	private SelectionKey key = null;
-	private ByteBuffer bbHeader = ByteBuffer.allocate(5); // one byte + 4 byte integer containing the packet length
-	private ByteBuffer bbPacket; // the packet itself
+	private ByteBuffer packetHeader = ByteBuffer.allocate(5); // one byte + 4 byte integer containing the packet length
+	private ByteBuffer packetBody; // the packet itself
 	private int requestID = -1;
 	private int msgType = -1;
 	private int packetLength = -1;
@@ -44,23 +44,23 @@ class PacketProcessor implements Runnable {
 		try {
 			
 			// read the header which includes packet type id and packet size
-			socketChannel.read(bbHeader);
+			socketChannel.read(packetHeader);
 			
 			// Header: Get type and length
-			msgType = bbHeader.get();	
-			packetLength = bbHeader.getInt();
+			msgType = packetHeader.get();	
+			packetLength = packetHeader.getInt();
 			
-			bbPacket = ByteBuffer.allocate(packetLength);
+			packetBody = ByteBuffer.allocate(packetLength);
 			
-			requestID = bbPacket.getInt();
+			requestID = packetBody.getInt();
 			
 			// if the received data is a new request ...
 			switch (msgType) {
 				
 				case Statics.INVOCATION_PACKET:
 					if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
-					remoteObjectName = Utils.getString(bbPacket);
-					final long methodHash = bbPacket.getLong();
+					remoteObjectName = Utils.getString(packetBody);
+					final long methodHash = packetBody.getLong();
 					
 					final Method method = lookupTable.getMethod(remoteObjectName, methodHash);
 					final Class<?>[] parameterTypes = method.getParameterTypes();			
@@ -68,76 +68,64 @@ class PacketProcessor implements Runnable {
 					
 					// unwrapping the arguments
 					for (int i = 0; i < args.length; i++) {
-						args[i]=Utils.unwrapValue(parameterTypes[i], bbPacket);							
+						args[i]=Utils.unwrapValue(parameterTypes[i], packetBody);							
 					}
 					
 					if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
-					
-					// put the data into a runnable
-					// TODO is this thread-safe?
-//					endpoint.getInvocationPool().execute(new ProcessMethodInvocationRunnable(endpoint,requestID, remoteObjectName, method, args));
 					processInvokeMethod(remoteObjectName, method, args);
-					
 					if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.LOOKUP_PACKET :
-					processLookup(Utils.getString(bbPacket));
+					processLookup(Utils.getString(packetBody));
 					break;
 					
 				case Statics.TOSTRING_PACKET :
-					processToString(Utils.getString(bbPacket));
+					processToString(Utils.getString(packetBody));
 					break;
 				
 				case Statics.HASHCODE_PACKET :
-					processHashCode(Utils.getString(bbPacket));
+					processHashCode(Utils.getString(packetBody));
 					break;
 				
 				case Statics.EQUALS_PACKET :
-					remoteObjectName = Utils.getString(bbPacket);
-					final Object object = Utils.getObject(bbPacket);
+					remoteObjectName = Utils.getString(packetBody);
+					final Object object = Utils.getObject(packetBody);
 					processEquals(remoteObjectName, object);
 					break;	
 					
 				case Statics.INVOCATION_RETURN_PACKET :
 					if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
-					synchronized (requestResults) {
-						synchronized (requestReturnType) {					
-							//unwrap the return-value
-							requestResults.put(requestID, unwrapValue(requestReturnType.remove(requestID), objectInputStream));
-							if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+requestResults.get(requestID));
-						}
-					}
-					wakeWaitingProcess(requestID);
+					
+					//unwrap the return-value
+					Object result = Utils.unwrapValue(endpoint.removeRequestReturnType(requestID), packetBody);
+					
+					if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
+
+					endpoint.putResultToQueue(requestID, result);
+					endpoint.wakeWaitingProcess(requestID);
+					
 					if (Statics.DEBUG_MODE) System.out.println("Endpoint.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.LOOKUP_RETURN_PACKET :
-					synchronized (requestResults) {
-						requestResults.put(requestID, objectInputStream.readObject());
-					}
-					wakeWaitingProcess(requestID);
+					endpoint.putResultToQueue(requestID, Utils.getObject(packetBody));
+					endpoint.wakeWaitingProcess(requestID);
 					break;
 					
 				case Statics.TOSTRING_RETURN_PACKET :
-					synchronized (requestResults) {
-						requestResults.put(requestID, objectInputStream.readUTF());
-					}
-					wakeWaitingProcess(requestID);
+					endpoint.putResultToQueue(requestID, Utils.getString(packetBody));
+					endpoint.wakeWaitingProcess(requestID);
 					break;
 				
 				case Statics.HASHCODE_RETURN_PACKET :
-					synchronized (requestResults) {
-						requestResults.put(requestID, objectInputStream.readInt());
-					}
-					wakeWaitingProcess(requestID);
+					endpoint.putResultToQueue(requestID, packetBody.getInt());
+					endpoint.wakeWaitingProcess(requestID);
 					break;
 					
 				case Statics.EQUALS_RETURN_PACKET :
-					synchronized (requestResults) {
-						requestResults.put(requestID, objectInputStream.readBoolean());
-					}
-					wakeWaitingProcess(requestID);
+					endpoint.putResultToQueue(requestID, (Boolean.valueOf(packetBody.get()==1 ? true : false)));
+					endpoint.wakeWaitingProcess(requestID);
 					break;
 					
 				default :
@@ -288,8 +276,8 @@ class PacketProcessor implements Runnable {
 			
 			packet.put(Statics.INVOCATION_RETURN_PACKET);
 			packet.putInt(requestID);
+			packet = Utils.wrapValue(method.getReturnType(), result, packet); // wrap the result
 			
-			packet = Utils.wrapValue(method.getReturnType(), result, packet);
 			endpoint.send(socketChannel, packet);
 				
 		} catch (IOException e){

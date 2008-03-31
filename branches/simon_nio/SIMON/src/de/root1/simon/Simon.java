@@ -26,7 +26,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -71,21 +70,20 @@ public class Simon {
 			// Create an unbound socket
 			Socket socket = new Socket();
 			
-			preSetupSocket(socket);
+//			preSetupSocket(socket);
 
 			// This method will block no more than timeoutMs.
 			// If the timeout occurs, SocketTimeoutException is thrown.
 			int timeoutMs = 2000; // 2 seconds
 			socket.connect(sockaddr, timeoutMs);
 			
-			postSetupSocket(socket);
+//			postSetupSocket(socket);
 			
 			
 			if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): connected with server ...");
 			
 			// FIXME make sure endpoint is feed with all needed data
 			Endpoint endpoint = new Endpoint(objectCacheLifetime, lookupTable, "Client", false, port);
-			endpoint.start();
 			if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): Endpoint thread started");
 			
 			

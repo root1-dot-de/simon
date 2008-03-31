@@ -19,11 +19,12 @@
 package de.root1.simon.codesample.server;
 
 import de.root1.simon.Simon;
+import de.root1.simon.Statics;
 
 public class SampleServer {
 	
 	public static void main(String[] args) {
-//		Statics.DEBUG_MODE = true;
+		Statics.DEBUG_MODE = true;
 		ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
 		Simon.createRegistry(2000);
 		Simon.bind("server", serverImpl);

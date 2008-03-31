@@ -22,13 +22,14 @@ import java.io.IOException;
 
 import de.root1.simon.Simon;
 import de.root1.simon.SimonRemoteException;
+import de.root1.simon.Statics;
 import de.root1.simon.codesample.common.ServerInterface;
 
 public class SampleClient {
 	
 	public static void main(String[] args) throws SimonRemoteException, IOException {
 		
-//		Statics.DEBUG_MODE = true;
+		Statics.DEBUG_MODE = true;
 		
 		// Callbackobjekt anlegen
 		ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();

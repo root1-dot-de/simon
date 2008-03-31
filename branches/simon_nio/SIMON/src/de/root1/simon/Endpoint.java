@@ -416,10 +416,12 @@ public class Endpoint extends Thread {
 		
 
 		// got to sleep until result is present
-		try {
-			monitor.wait();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 			
 			
@@ -642,9 +644,9 @@ public class Endpoint extends Thread {
 	protected void wakeWaitingProcess(int requestID) {
 		synchronized (idMonitorMap) {						
 			final Object monitor = idMonitorMap.get(requestID);
-//			synchronized (monitor) {
+			synchronized (monitor) {
 				monitor.notify(); // wake the waiting method
-//			}
+			}
 			idMonitorMap.remove(requestID);
 		}
 	}
@@ -661,7 +663,9 @@ public class Endpoint extends Thread {
 	}
 
 
-
+	protected synchronized void putResultToQueue(int requestID, Object result){
+		requestResults.put(requestID,result);
+	}
 	
 	
 	/**
@@ -716,6 +720,10 @@ public class Endpoint extends Thread {
 			idMonitorMap.put(requestID, monitor);
 		}
 		return monitor;
+	}
+
+	protected synchronized Class<?> removeRequestReturnType(int requestID) {
+		return requestReturnType.remove(requestID);
 	}
 
 

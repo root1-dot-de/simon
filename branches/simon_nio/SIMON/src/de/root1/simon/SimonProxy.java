@@ -111,7 +111,7 @@ public class SimonProxy implements InvocationHandler {
 	}
 	
 	
-	// FIXME reimplement aksing for ip-address of client
+	// FIXME reimplement asking for ip-address of client
 //	protected InetAddress getInetAddress() {
 //		return endpoint.getInetAddress();
 //	}
@@ -139,7 +139,7 @@ public class SimonProxy implements InvocationHandler {
 	}
 	
 	private boolean remoteEquals(Object object) throws IOException {
-		return endpoint.sendEqualsRequest(remoteObjectName, object);
+		return endpoint.invokeEquals(remoteObjectName, object);
 	}
 
 }
