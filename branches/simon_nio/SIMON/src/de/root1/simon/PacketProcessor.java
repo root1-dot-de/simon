@@ -48,21 +48,21 @@ class PacketProcessor implements Runnable {
 			msgType = p.getMsgType();
 			requestID = p.getRequestID();
 			
-			endpoint.removeFromReadFrom(socketChannel);			
+//			endpoint.removeFromReadFrom(socketChannel);			
 			Utils.debug("PacketProcessor.run() -> msgType="+msgType);
 			Utils.debug("PacketProcessor.run() -> requestID="+requestID);
 
 			
 			packetBody = p.getBody();
 			
-			if (Statics.DEBUG_MODE){
-				byte[] b = packetBody.array();
-				for (int i = 0; i < b.length; i++) {
-					byte c = b[i];
-					Utils.debug("PacketProcessor.run() -> body b["+i+"]="+c);
-					
-				}
-			}
+//			if (Statics.DEBUG_MODE){
+//				byte[] b = packetBody.array();
+//				for (int i = 0; i < b.length; i++) {
+//					byte c = b[i];
+//					Utils.debug("PacketProcessor.run() -> body b["+i+"]="+c);
+//					
+//				}
+//			}
 			
 			
 			// if the received data is a new request ...
@@ -120,8 +120,10 @@ class PacketProcessor implements Runnable {
 					break;
 					
 				case Statics.LOOKUP_RETURN_PACKET :
+					Utils.debug("Endpoint.run() -> LOOKUP_RETURN_PACKET -> start. requestID="+requestID);
 					endpoint.putResultToQueue(requestID, Utils.getObject(packetBody));
 					endpoint.wakeWaitingProcess(requestID);
+					Utils.debug("Endpoint.run() -> LOOKUP_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.TOSTRING_RETURN_PACKET :

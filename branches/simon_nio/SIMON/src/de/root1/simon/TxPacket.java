@@ -71,5 +71,16 @@ public class TxPacket {
 		return bb;
 	}
 	
+	public int getBodySize(){
+		return bodySize;
+	}
+	
+	public int getRequestID(){
+		return requestID;
+	}
+	
+	public byte getMsgType(){
+		return msgType;
+	}
 	
 }

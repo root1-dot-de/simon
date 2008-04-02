@@ -226,6 +226,8 @@ public class Endpoint extends Thread {
 		super.run();
 		
 		while (true) {
+			Utils.debug("");
+			Utils.debug("");
 			try {
 				// Process any pending changes
 				// this means read/write interests on channels
@@ -248,23 +250,27 @@ public class Endpoint extends Thread {
 					}
 					this.pendingChanges.clear();
 				}
+				// -------------
 
-				// Wait for an event one of the registered channels
-				Utils.debug("Endpoint.run() -> selector.select() -> waiting for data event");
+				Utils.debug("Endpoint.run() -> selector.select() -> Wait for an event one of the registered channels");
 				int numOfselectableKeys = this.selector.select();
 
 				if (numOfselectableKeys>0) {
+
 					Utils.debug("Endpoint.run() -> "+numOfselectableKeys+" keys available");
+
 					// Iterate over the set of keys for which events are available
 					Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
 					while (selectedKeys.hasNext()) {
+					
 						SelectionKey key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
 						
 						Utils.debug("Endpoint.run() -> key has ready Ops: "+key.readyOps());
 						
 						if (!key.isValid()) {
-							continue; // .. with next loop in "while"
+							Utils.debug("Endpoint.run() -> key is invalid!");
+							continue; // .. with next in "while"
 						}
 	
 						// Check what event is available and deal with it
@@ -280,29 +286,24 @@ public class Endpoint extends Thread {
 							
 						} else if (key.isReadable()) {
 
-							if (readFromKey.contains(key)) {
-								Utils.debug("Endpoint.run() -> "+key+" is currently reading. skipping event.");
-							} else {
-								synchronized (readFromKey) {
-									readFromKey.add((SocketChannel)key.channel());	
-								}
-								Utils.debug("Endpoint.run() -> "+key+" is readable");
-								packetPool.execute(new PacketProcessor(getLookupTable(),(SocketChannel)key.channel(),this));
-//								key.interestOps(SelectionKey.OP_WRITE);
-							}
+							key.interestOps(0);
+							Utils.debug("Endpoint.run() -> "+key+" is readable");
+							packetPool.execute(new PacketProcessor(getLookupTable(),(SocketChannel)key.channel(),this));
 							
 						} else if (key.isWritable()) {
 							
 							Utils.debug("Endpoint.run() -> "+key+" is writeable");
 							this.write(key);
-//							key.interestOps(SelectionKey.OP_READ);
-
 							
 						}
 					}
+
 				} else {
+				
 					Utils.debug("Endpoint.run() -> no keys available -> 0 ");
+					
 				}
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 				// TODO richtig platziert?
@@ -312,6 +313,12 @@ public class Endpoint extends Thread {
 		}
 	}
 	
+	/**
+	 * 
+	 * Finish clients connection to the server
+	 * @param key the client's <code>SelectionKey</code>
+	 * @throws IOException
+	 */
 	private void finishConnection(SelectionKey key) throws IOException {
 		Utils.debug("Endpoint.finishConnection() -> start");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -327,9 +334,8 @@ public class Endpoint extends Thread {
 			return;
 		}
 	
-		// Register an interest in writing on this channel
-		Utils.debug("Endpoint.finishConnection() -> register for read-mode");
-		key.interestOps(SelectionKey.OP_WRITE);
+		Utils.debug("Endpoint.finishConnection() -> register for write-mode AND read-mode");
+		key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
 		Utils.debug("Endpoint.finishConnection() -> end");
 	}
 	
@@ -361,6 +367,7 @@ public class Endpoint extends Thread {
 	private void write(SelectionKey key) throws IOException {
 		
 		Utils.debug("Endpoint.write() -> start");
+		key.interestOps(0);
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		Utils.debug("Endpoint.write() -> sending to ip: "+socketChannel.socket().getInetAddress().toString()+"");
 		
@@ -431,7 +438,7 @@ public class Endpoint extends Thread {
 	 * Be warned: only the data from start to position is sent
 	 */
 	protected void send(SocketChannel socketChannel, ByteBuffer packet) {
-			
+		Utils.debug("Endpoint.send() -> start");			
 		synchronized (this.pendingChanges) {
 			// Indicate we want the interest ops set changed
 			this.pendingChanges.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
@@ -445,11 +452,18 @@ public class Endpoint extends Thread {
 				}
 				Utils.debug("Endpoint.send() -> added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
 				queue.add(packet);
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		}
 
 		// Finally, wake up our selecting thread so it can make the required changes
 		this.selector.wakeup();
+		Utils.debug("Endpoint.send() -> end");
 	}
 
 	/**
@@ -468,6 +482,13 @@ public class Endpoint extends Thread {
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
+		
+		try {
+			Thread.sleep(10000);
+		} catch (InterruptedException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		
 		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
 		
@@ -725,11 +746,15 @@ public class Endpoint extends Thread {
 	 */
 	protected void wakeWaitingProcess(int requestID) {
 		synchronized (idMonitorMap) {						
-			final Object monitor = idMonitorMap.get(requestID);
-			synchronized (monitor) {
-				monitor.notify(); // wake the waiting method
+			final Object monitor = idMonitorMap.remove(requestID);
+			if (monitor!=null) {
+				synchronized (monitor) {
+					monitor.notify(); // wake the waiting method
+				}
+			} else {
+				Utils.debug("Endpoint.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
 			}
-			idMonitorMap.remove(requestID);
+			
 		}
 	}
 
@@ -799,7 +824,9 @@ public class Endpoint extends Thread {
 	private Object createMonitor(final int requestID) {
 		final Object monitor = new Object();
 		synchronized (idMonitorMap) {
+			Utils.debug("Endpoint.createMonitor() -> monitor for requestID="+requestID+" -> monitor="+monitor+" mapsize="+idMonitorMap.size());
 			idMonitorMap.put(requestID, monitor);
+			Utils.debug("Endpoint.createMonitor() -> monitor for requestID="+requestID+" new mapsize="+idMonitorMap.size());
 		}
 		return monitor;
 	}

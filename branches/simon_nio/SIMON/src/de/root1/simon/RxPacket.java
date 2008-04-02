@@ -19,7 +19,7 @@ public class RxPacket {
 		int headerRead = 0;
 		while (headerRead!=9) {
 			headerRead += socketChannel.read(header);
-			Utils.debug("RxPacket.RxPacket() -> read "+headerRead+" of 9 bytes");
+			Utils.debug("RxPacket.RxPacket() -> header: read "+headerRead+" of 9 bytes");
 		}
 		header.rewind();
 		
@@ -32,10 +32,10 @@ public class RxPacket {
 		int bodyRead = 0;
 		while (bodyRead!=bodySize) {
 			bodyRead += socketChannel.read(body);
-			Utils.debug("RxPacket.RxPacket() -> read "+bodyRead+" of "+bodySize+" bytes");
+			Utils.debug("RxPacket.RxPacket() -> body: read "+bodyRead+" of "+bodySize+" bytes");
 		}
 		body.rewind();
-		Utils.debug("RxPacket.RxPacket() -> msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
+		Utils.debug("RxPacket.RxPacket() -> got complete packet ... msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
 	}
 
 	public  byte getMsgType() {
