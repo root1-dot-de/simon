@@ -1,4 +1,4 @@
-package de.root1.simon.nio;
+package de.root1.simon;
 import java.nio.channels.SocketChannel;
 
 public class ChangeRequest {
@@ -13,5 +13,18 @@ public class ChangeRequest {
 		this.socket = socket;
 		this.type = type;
 		this.ops = ops;
+	}
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("[socket=");
+		sb.append(socket);
+		sb.append("|type=");
+		sb.append(type);
+		sb.append("|ops=");
+		sb.append(ops);
+		sb.append("]");
+		return sb.toString();
 	}
 }

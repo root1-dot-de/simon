@@ -43,7 +43,7 @@ public class LookupTable {
 	}
 	
 	public synchronized void putRemoteBinding(String name, SimonRemote remoteObject) {
-		if (Statics.DEBUG_MODE) System.out.println("LookupTable.putRemoteBinding() -> name="+name+"  object="+remoteObject);
+		Utils.debug("LookupTable.putRemoteBinding() -> name="+name+"  object="+remoteObject);
 		bindings.put(name,remoteObject);	
 		
 		simonRemoteTo_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
@@ -52,22 +52,22 @@ public class LookupTable {
 	
 	public synchronized SimonRemote getRemoteBinding(String name){
 		if (!bindings.containsKey(name)) throw new IllegalArgumentException("Lookuptable.getBinding(): name="+name+" not found");
-		if (Statics.DEBUG_MODE) System.out.println("LookupTable.getRemoteBinding() -> name="+name+" resolves to object='"+bindings.get(name)+"'");
+		Utils.debug("LookupTable.getRemoteBinding() -> name="+name+" resolves to object='"+bindings.get(name)+"'");
 		return bindings.get(name);
 	}
 	
 	public synchronized void releaseRemoteBinding(String name){
-//		if (Statics.DEBUG_MODE) System.out.println("\t\tLookupTable#releaseBinding: name="+name);
+//		Utils.debug("\t\tLookupTable#releaseBinding: name="+name);
 		bindings.remove(name);
 	}
 	
 	public synchronized Method getMethod(SimonRemote remoteObject, long methodHash){
-		if (Statics.DEBUG_MODE) System.out.println("LookupTable.getMethod() -> hash="+methodHash+" resolves to method='"+simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash)+"'");
+		Utils.debug("LookupTable.getMethod() -> hash="+methodHash+" resolves to method='"+simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash)+"'");
 		return simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash);
 	}
 	
 	public synchronized Method getMethod(String remoteObject, long methodHash){
-		if (Statics.DEBUG_MODE) System.out.println("LookupTable.getMethod() -> hash="+methodHash+" resoves to method='"+simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
+		Utils.debug("LookupTable.getMethod() -> hash="+methodHash+" resoves to method='"+simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
 		return simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
 	}
 	
@@ -76,21 +76,17 @@ public class LookupTable {
 	
 	
 	protected HashMap<Long,Method> computeMethodHashMap(Class<?> remoteClass) {
-		if (Statics.DEBUG_MODE)
-        	System.out.println("LookupTable.computeMethodHashMap() -> start. computing for remoteclass='"+remoteClass+"'");
+		Utils.debug("LookupTable.computeMethodHashMap() -> start. computing for remoteclass='"+remoteClass+"'");
         HashMap<Long,Method> map = new HashMap<Long,Method>();
         
         for (Class<?> cl = remoteClass; cl != null; cl = cl.getSuperclass()) {
-        	if (Statics.DEBUG_MODE)
-            	System.out.println("LookupTable.computeMethodHashMap() -> examin superclass='"+cl+"' for interfaces");
+        	Utils.debug("LookupTable.computeMethodHashMap() -> examin superclass='"+cl+"' for interfaces");
         	
             for (Class<?> intf : cl.getInterfaces()) {
-            	if (Statics.DEBUG_MODE)
-                	System.out.println("LookupTable.computeMethodHashMap() -> examin superclass' interface='"+intf+"'");
+            	Utils.debug("LookupTable.computeMethodHashMap() -> examin superclass' interface='"+intf+"'");
                 if (SimonRemote.class.isAssignableFrom(intf)) {
 
-                	if (Statics.DEBUG_MODE)
-                    	System.out.println("LookupTable.computeMethodHashMap() -> SimonRemote is assignable from '"+intf+"'");
+                	Utils.debug("LookupTable.computeMethodHashMap() -> SimonRemote is assignable from '"+intf+"'");
                 	
                     for (Method method : intf.getMethods()) {
                     	
@@ -108,14 +104,12 @@ public class LookupTable {
                             }
                         });
                         map.put(Utils.computeMethodHash(m), m);
-                        if (Statics.DEBUG_MODE)
-                        	System.out.println("LookupTable.computeMethodHashMap() -> computing hash: method='"+m+"' hash="+Utils.computeMethodHash(m));
+                        Utils.debug("LookupTable.computeMethodHashMap() -> computing hash: method='"+m+"' hash="+Utils.computeMethodHash(m));
                     }
                 }
             } 
         }
-        if (Statics.DEBUG_MODE)
-        	System.out.println("LookupTable.computeMethodHashMap() -> end");
+        Utils.debug("LookupTable.computeMethodHashMap() -> end");
         return map;
     }
 

@@ -30,6 +30,8 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
 
+import de.root1.simon.utils.Utils;
+
 
 /**
  * TODO Documentation to be done
@@ -70,7 +72,7 @@ public class Registry extends Thread {
 	public void run() {
 		// TODO Auto-generated method stub
 		super.run();
-		if (Statics.DEBUG_MODE) System.out.println("Registry.run() -> start");
+		Utils.debug("Registry.run() -> start");
 		
 		try {
 			endpoint = new Endpoint(Simon.getObjectCacheLifetime(),serverLookupTable, "Simon-Registry", true, port);
@@ -79,7 +81,7 @@ public class Registry extends Thread {
 			e1.printStackTrace();
 		}
 		
-		if (Statics.DEBUG_MODE) System.out.println("Registry.run() -> end");
+		Utils.debug("Registry.run() -> end");
 	}
 	
 	public void putBinding(String name, SimonRemote remoteObject) {

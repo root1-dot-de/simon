@@ -15,6 +15,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import de.root1.simon.ChangeRequest;
+
 public class NioClient implements Runnable {
 
 	// The host:port combination to connect to
@@ -234,6 +236,8 @@ public class NioClient implements Runnable {
 			t.setDaemon(true);
 			t.start();
 			RspHandler handler = new RspHandler();
+			client.send("Hello World".getBytes(), handler);
+			client.send("Hello WorldHello WorldHello WorldHello WorldHello WorldHello WorldHello WorldHello WorldHello WorldHello WorldHello WorldHello World".getBytes(), handler);
 			client.send("Hello World".getBytes(), handler);
 			handler.waitForResponse();
 		} catch (Exception e) {

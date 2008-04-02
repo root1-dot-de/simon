@@ -32,10 +32,17 @@ import java.nio.channels.SocketChannel;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 import de.root1.simon.Statics;
 
 public class Utils {
+	
+	
+	private static DecimalFormat df2 = new DecimalFormat("00");
+	private static DecimalFormat df3 = new DecimalFormat("000");
 
 	/**
 	 * Compute the "method hash" of a remote method. The method hash is a long
@@ -72,15 +79,15 @@ public class Utils {
      * wrap the value into the given bytebuffer
      */
     public static ByteBuffer wrapValue(Class<?> type, Object value, ByteBuffer bb) throws IOException {
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> start");
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> size at start: "+bb.capacity()+" position at start: "+bb.position());
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> value="+value);
+    	Utils.debug("Endpoint.wrapValue() -> start");
+    	Utils.debug("Endpoint.wrapValue() -> size at start: "+bb.capacity()+" position at start: "+bb.position());
+    	Utils.debug("Endpoint.wrapValue() -> value="+value);
     	
     	try {
     	
 	    	if (type == void.class || value instanceof Throwable) {
 	           	
-	    		if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
+	    		Utils.debug("Endpoint.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
 	           	bb.put(objectToBytes(value));
 	           	
 	    	} else if (type == String.class) {
@@ -92,61 +99,61 @@ public class Utils {
 	    		
 	        	if (type == boolean.class) {
 	        		
-	        		if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> boolean");
+	        		Utils.debug("Endpoint.wrapValue() -> boolean");
 	            	bb.put((byte) (((Boolean) value).booleanValue() ? 1 : 0));
 	            	
 	            } else if (type == byte.class) {
 	            	
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> byte");
+	            	Utils.debug("Endpoint.wrapValue() -> byte");
 	            	bb.put(((Byte) value).byteValue());
 	            	
 	            } else if (type == char.class) {
 	            	
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> char");
+	            	Utils.debug("Endpoint.wrapValue() -> char");
 	            	bb.putChar(((Character) value).charValue());
 	            	
 	            } else if (type == short.class) {
 	
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> short");
+	            	Utils.debug("Endpoint.wrapValue() -> short");
 	            	bb.putShort(((Short) value).shortValue());
 	            	
 	            } else if (type == int.class) {
 	            	
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> int");
+	            	Utils.debug("Endpoint.wrapValue() -> int");
 	            	bb.putInt(((Integer) value).intValue());
 	                
 	            } else if (type == long.class) {
 	            	
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> long");
+	            	Utils.debug("Endpoint.wrapValue() -> long");
 	            	bb.putLong(((Long) value).longValue());
 	            	
 	            } else if (type == float.class) {
 	            	
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> float");
+	            	Utils.debug("Endpoint.wrapValue() -> float");
 	            	bb.putFloat(((Float) value).floatValue());
 	            	
 	            } else if (type == double.class) {
 	            	
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> double");
+	            	Utils.debug("Endpoint.wrapValue() -> double");
 	            	bb.putDouble(((Double) value).doubleValue());
 	            	
 	            } else {
-	            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> unknown");
+	            	Utils.debug("Endpoint.wrapValue() -> unknown");
 	                throw new IOException("Unknown primitive: " + type);
 	            }
 	        	
 	        } else {
 	        	
-	        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> non primitive object");
+	        	Utils.debug("Endpoint.wrapValue() -> non primitive object");
 	        	bb = bb.put(objectToBytes(value));
 	        	
 	        }
     	} catch (BufferOverflowException e){
-    		if (Statics.DEBUG_MODE) System.out.println("Utils.wrapValue() Buffer too small. Doubling!");
+    		Utils.debug("Utils.wrapValue() Buffer too small. Doubling!");
     		bb = wrapValue(type, value, doubleByteBuffer(bb));
     	}
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> size at end: "+bb.capacity()+" position at end: "+bb.position());
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.wrapValue() -> end");
+    	Utils.debug("Endpoint.wrapValue() -> size at end: "+bb.capacity()+" position at end: "+bb.position());
+    	Utils.debug("Endpoint.wrapValue() -> end");
     	return bb;
     }
 
@@ -168,14 +175,19 @@ public class Utils {
 		bb = new byte[value.length()+4];
 		
 		int v = bb.length-4;
+
+	    System.arraycopy(integerToBytes(v), 0, bb, 0, 4);
+	    System.arraycopy(value.getBytes(), 0, bb, 4, v);
+	    Utils.debug("Utils.stringToBytes() size=4+"+(bb.length-4));
+		return bb;
+	}
+
+	public static Object integerToBytes(int v) {
+		byte[] bb = new byte[4];
 		bb[0] = (byte)((v >>> 24) & 0xFF);
 		bb[1] = (byte)((v >>> 16) & 0xFF);
 	    bb[2] = (byte)((v >>>  8) & 0xFF);
 	    bb[3] = (byte)((v >>>  0) & 0xFF);
-	    
-	    
-	    System.arraycopy(value.getBytes(), 0, bb, 4, v);
-	    if (Statics.DEBUG_MODE) System.out.println("Utils.stringToBytes() size=4+"+(bb.length-4));
 		return bb;
 	}
 
@@ -183,12 +195,12 @@ public class Utils {
      * unwrap the value from the given bytebuffer
      */
     public static Object unwrapValue(Class<?> type, ByteBuffer bb) throws IOException, ClassNotFoundException {
-    	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> start");
+    	Utils.debug("Endpoint.unwrapValue() -> start");
     	
     	
     	if (type == void.class ) {
     		
-    		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> void, reading an object, may be 'null' or a 'Throwable'");
+    		Utils.debug("Endpoint.unwrapValue() -> void, reading an object, may be 'null' or a 'Throwable'");
     		return getObject(bb);
     		
     	} else if (type == String.class) {
@@ -200,52 +212,52 @@ public class Utils {
     		
         	if (type == boolean.class) {
         
-        		if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> boolean -> end");
+        		Utils.debug("Endpoint.unwrapValue() -> boolean -> end");
         		return Boolean.valueOf(bb.get()==1 ? true : false);
                 
             } else if (type == byte.class) {
             	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> byte -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> byte -> end");
             	return Byte.valueOf(bb.get());
                 
             } else if (type == char.class) {
             	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> char -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> char -> end");
             	return Character.valueOf(bb.getChar());
                 
             } else if (type == short.class) {
 
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> short -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> short -> end");
             	return Short.valueOf(bb.getShort());
                 
             } else if (type == int.class) {
             	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> int -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> int -> end");
             	return Integer.valueOf(bb.getInt());
                 
             } else if (type == long.class) {
             	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> long -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> long -> end");
             	return Long.valueOf(bb.getLong());
                 
             } else if (type == float.class) {
 
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> float -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> float -> end");
             	return Float.valueOf(bb.getFloat());
                 
             } else if (type == double.class) {
             	
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> double -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> double -> end");
             	return Double.valueOf(bb.getDouble());
                 
             } else {
-            	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> unknown -> end");
+            	Utils.debug("Endpoint.unwrapValue() -> unknown -> end");
                 throw new IOException("Unknown primitive: " + type);
             }
         	
         } else {
         	
-        	if (Statics.DEBUG_MODE) System.out.println("Endpoint.unwrapValue() -> non primitive object -> end");
+        	Utils.debug("Endpoint.unwrapValue() -> non primitive object -> end");
         	return getObject(bb);
         	
         }
@@ -266,17 +278,19 @@ public class Utils {
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
 	
 		oos.writeObject(object);
-		oos.close();
-		bb = new byte[baos.size()+4];
-		
-		int v = baos.size();
-		bb[0] = (byte)((v >>> 24) & 0xFF);
-		bb[1] = (byte)((v >>> 16) & 0xFF);
-	    bb[2] = (byte)((v >>>  8) & 0xFF);
-	    bb[3] = (byte)((v >>>  0) & 0xFF);
-	    
-	    System.arraycopy(baos.toByteArray(), 0, bb, 4, v);
-	    if (Statics.DEBUG_MODE) System.out.println("Utils.objectToBytes() size="+bb.length);
+		oos.flush();
+//		oos.close();
+//		bb = new byte[baos.size()+4];
+//		
+//		int v = baos.size();
+//		bb[0] = (byte)((v >>> 24) & 0xFF);
+//		bb[1] = (byte)((v >>> 16) & 0xFF);
+//	    bb[2] = (byte)((v >>>  8) & 0xFF);
+//	    bb[3] = (byte)((v >>>  0) & 0xFF);
+//	    
+//	    System.arraycopy(baos.toByteArray(), 0, bb, 4, v);
+		bb = baos.toByteArray();
+	    Utils.debug("Utils.objectToBytes() object="+object+" size="+bb.length);
 		return bb;
     }
     
@@ -300,7 +314,7 @@ public class Utils {
     	if (bb.hasArray())
     		b = bb.array();
     	else
-    		throw new IllegalArgumentException("given ByteBuffer has now byte[] access");
+    		throw new IllegalArgumentException("given ByteBuffer has no byte[] access");
     	
     	ByteArrayInputStream bais = new ByteArrayInputStream(b);
     	ObjectInputStream ois = new ObjectInputStream(bais);
@@ -324,11 +338,27 @@ public class Utils {
      */  
     public static String getString(ByteBuffer bb){
     	int length = bb.getInt();
-    	if (Statics.DEBUG_MODE) System.out.println("Utils.getString() -> length="+length);
+    	Utils.debug("Utils.getString() -> length="+length);
     	byte[] stringInBytes = new byte[length];
     	bb.get(stringInBytes);
-    	if (Statics.DEBUG_MODE) System.out.println("Utils.getString() -> string="+new String(stringInBytes));
+    	Utils.debug("Utils.getString() -> string="+new String(stringInBytes));
     	return new String(stringInBytes);
     }
+    
+	public synchronized static void debug(String msg) {
+		if (Statics.DEBUG_MODE) {
+			Calendar cal = GregorianCalendar.getInstance();
+			StringBuffer sb = new StringBuffer();
+			sb.append(df2.format(cal.get(Calendar.HOUR_OF_DAY)));
+			sb.append(":");
+			sb.append(df2.format(cal.get(Calendar.MINUTE)));
+			sb.append(".");
+			sb.append(df3.format(cal.get(Calendar.MILLISECOND)));
+			sb.append(" - ");
+			sb.append(msg);
+			System.out.println(sb.toString());
+			System.out.flush();
+		}
+	}
 
 }

@@ -24,6 +24,7 @@ import de.root1.simon.Simon;
 import de.root1.simon.SimonRemoteException;
 import de.root1.simon.Statics;
 import de.root1.simon.codesample.common.ServerInterface;
+import de.root1.simon.utils.Utils;
 
 public class SampleClient {
 	
@@ -38,7 +39,7 @@ public class SampleClient {
 		
 //		ServerInterface server = (ServerInterface) Simon.lookup(args[0], 2000, "server");
 		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
-		
+		Utils.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		server.login(clientCallbackImpl);
 //		System.out.println(Simon.getRemoteInetAddress(server));
 //		System.out.println(Simon.getRemotePort(server));

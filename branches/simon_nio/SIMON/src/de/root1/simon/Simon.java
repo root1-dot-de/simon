@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import de.root1.simon.utils.SimonClassLoader;
+import de.root1.simon.utils.Utils;
 
 
 public class Simon {
@@ -58,7 +59,7 @@ public class Simon {
 	
 	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, ConnectException {
 		getThreadPool(); // make sure that there is a thread pool
-		if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): START");
+		Utils.debug("Simon.lookup() -> START");
 		Object proxy = null;
 		
 		
@@ -68,23 +69,23 @@ public class Simon {
 			SocketAddress sockaddr = new InetSocketAddress(addr, port);
 
 			// Create an unbound socket
-			Socket socket = new Socket();
+//			Socket socket = new Socket();
 			
 //			preSetupSocket(socket);
 
 			// This method will block no more than timeoutMs.
 			// If the timeout occurs, SocketTimeoutException is thrown.
-			int timeoutMs = 2000; // 2 seconds
-			socket.connect(sockaddr, timeoutMs);
+//			int timeoutMs = 2000; // 2 seconds
+//			socket.connect(sockaddr, timeoutMs);
 			
 //			postSetupSocket(socket);
 			
 			
-			if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): connected with server ...");
+			Utils.debug("Simon.lookup() -> connected with server ...");
 			
 			// FIXME make sure endpoint is feed with all needed data
 			Endpoint endpoint = new Endpoint(objectCacheLifetime, lookupTable, "Client", false, port);
-			if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): Endpoint thread started");
+			Utils.debug("Simon.lookup() -> Endpoint thread started");
 			
 			
 			// ab hier serverantwort auswerten
@@ -100,7 +101,7 @@ public class Simon {
 			 * This class gets the interfaces and directs the method-calls
 			 */
 			SimonProxy handler = new SimonProxy(endpoint, remoteObjectName);
-			if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): Proxy created");
+			Utils.debug("Simon.lookup() -> Proxy created");
 			
 			 /* 
 		     * Create the proxy-object with the needed interfaces
@@ -111,7 +112,7 @@ public class Simon {
 			throw new ConnectException(e.getMessage());
 		}
 		
-		if (Statics.DEBUG_MODE) System.out.println("Simon#lookup(): END");
+		Utils.debug("Simon.lookup() -> END");
 		return proxy;
 	}
 

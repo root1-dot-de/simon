@@ -16,6 +16,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import de.root1.simon.ChangeRequest;
+
 // sample from http://rox-xmlrpc.sourceforge.net/niotut/index.html
 public class NioServer implements Runnable {
 	
@@ -139,6 +141,7 @@ public class NioServer implements Runnable {
 		int numRead;
 		try {
 			numRead = socketChannel.read(this.readBuffer);
+			System.out.println("numread="+numRead);
 		} catch (IOException e) {
 			// The remote forcibly closed the connection, cancel
 			// the selection key and close the channel.
