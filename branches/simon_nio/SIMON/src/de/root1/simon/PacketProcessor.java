@@ -44,9 +44,13 @@ class PacketProcessor implements Runnable {
 		try {
 			
 			RxPacket p = new RxPacket(socketChannel);
+			
+			msgType = p.getMsgType();
+			requestID = p.getRequestID();
+			
 			endpoint.removeFromReadFrom(socketChannel);			
-			Utils.debug("PacketProcessor.run() -> msgType="+p.getMsgType());
-			Utils.debug("PacketProcessor.run() -> requestID="+p.getRequestID());
+			Utils.debug("PacketProcessor.run() -> msgType="+msgType);
+			Utils.debug("PacketProcessor.run() -> requestID="+requestID);
 
 			
 			packetBody = p.getBody();
@@ -232,21 +236,25 @@ class PacketProcessor implements Runnable {
 
 		byte[] remoteObjectInterface = Utils.objectToBytes(lookupTable.getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
 
+		TxPacket p = new TxPacket();
+		p.setHeader(Statics.LOOKUP_RETURN_PACKET, requestID);
+		p.put(remoteObjectInterface);
+		p.setComplete();
 		// create the data packet:
 		// 1 byte  							-> packet type
 		// 4 byte  							-> packet length
 		// == 5 bytes header
 		// 4 bytes 							-> request ID
 		// 4 bytes objects length + object 	-> object 
-		int packetLength = 4+remoteObjectInterface.length;
-		ByteBuffer packet = ByteBuffer.allocate(5+packetLength);
-				
-		packet.put(Statics.LOOKUP_RETURN_PACKET);	// packet type
-		packet.putInt(packetLength);				// packet length
-		packet.putInt(requestID);					// request id
-		packet.put(remoteObjectInterface);			// object
+//		int packetLength = 4+remoteObjectInterface.length;
+//		ByteBuffer packet = ByteBuffer.allocate(5+packetLength);
+//				
+//		packet.put(Statics.LOOKUP_RETURN_PACKET);	// packet type
+//		packet.putInt(packetLength);				// packet length
+//		packet.putInt(requestID);					// request id
+//		packet.put(remoteObjectInterface);			// object
 		
-		endpoint.send(socketChannel,packet);
+		endpoint.send(socketChannel,p.getByteBuffer());
 		Utils.debug("PacketProcessor.processLookup() -> end. requestID="+requestID);
 	}
 	

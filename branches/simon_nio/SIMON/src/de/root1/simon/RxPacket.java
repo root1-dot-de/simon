@@ -12,6 +12,7 @@ public class RxPacket {
 	private  byte msgType;
 	private  int requestID;
 	private  ByteBuffer body;
+	private int bodySize;
 	
 	RxPacket(SocketChannel socketChannel) throws IOException {
 		header = ByteBuffer.allocate(9);
@@ -21,16 +22,20 @@ public class RxPacket {
 			Utils.debug("RxPacket.RxPacket() -> read "+headerRead+" of 9 bytes");
 		}
 		header.rewind();
+		
 		msgType = header.get();
 		requestID = header.getInt();
-		int bodyLength = header.getInt();
-		body = ByteBuffer.allocate(bodyLength);
+		bodySize = header.getInt();
+		
+		body = ByteBuffer.allocate(bodySize);
 		
 		int bodyRead = 0;
-		while (bodyRead!=bodyLength) {
+		while (bodyRead!=bodySize) {
 			bodyRead += socketChannel.read(body);
-			Utils.debug("RxPacket.RxPacket() -> read "+bodyRead+" of "+bodyLength+" bytes");
+			Utils.debug("RxPacket.RxPacket() -> read "+bodyRead+" of "+bodySize+" bytes");
 		}
+		body.rewind();
+		Utils.debug("RxPacket.RxPacket() -> msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
 	}
 
 	public  byte getMsgType() {
@@ -42,8 +47,6 @@ public class RxPacket {
 	}
 
 	public  ByteBuffer getBody() {
-		body.rewind();
-		body.flip();
 		return body;
 	}
 

@@ -13,12 +13,20 @@ public class TxPacket {
 
 	private boolean headerOkay = false;
 	private boolean setComplete = false;
+
+	private int bodySize;
+
+	private byte msgType;
+
+	private int requestID;
 	
 	public void setHeader(byte type, int requestID) {
+		this.msgType = type;
+		this.requestID = requestID;
 		bb.put(type);
 		bb.putInt(requestID);
 		Utils.debug("TxPacket.setHeader() -> position1="+bb.position());
-		bb.position(bb.position()+4); // skip next 4 bytes. they are reserved for the packet size
+		bb.position(bb.position()+4); // skip next 4 bytes. they are reserved for the body size
 		Utils.debug("TxPacket.setHeader() -> position2="+bb.position());
 		headerOkay  = true;
 	}
@@ -46,8 +54,9 @@ public class TxPacket {
 	public void setComplete(){
 		int pos = bb.position();
 		Utils.debug("TxPacket.setComplete() -> position1="+bb.position());
-		bb.position(5);
-		bb.putInt(pos-9);
+		bb.position(5); // positioniere den Zeiger für das einfügen der Länge des Packet-Bodys
+		bodySize = pos-9;
+		bb.putInt(bodySize); // Die position - den Header von 9 Bytes ergibt den Body
 		bb.position(pos);
 		Utils.debug("TxPacket.setComplete() -> position2="+bb.position());
 //		bb.rewind();
@@ -58,6 +67,7 @@ public class TxPacket {
 	
 	public ByteBuffer getByteBuffer(){
 		if (!setComplete) throw new IllegalStateException("packet not completed!");
+		Utils.debug("TxPacket.getByteBuffer() -> msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
 		return bb;
 	}
 	

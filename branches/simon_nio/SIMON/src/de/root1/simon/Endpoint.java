@@ -280,22 +280,22 @@ public class Endpoint extends Thread {
 							
 						} else if (key.isReadable()) {
 
-//							if (readFromKey.contains(key)) {
-//								Utils.debug("Endpoint.run() -> "+key+" is currently reading. skipping event.");
-//							} else {
-//								synchronized (readFromKey) {
-//									readFromKey.add((SocketChannel)key.channel());	
-//								}
+							if (readFromKey.contains(key)) {
+								Utils.debug("Endpoint.run() -> "+key+" is currently reading. skipping event.");
+							} else {
+								synchronized (readFromKey) {
+									readFromKey.add((SocketChannel)key.channel());	
+								}
 								Utils.debug("Endpoint.run() -> "+key+" is readable");
 								packetPool.execute(new PacketProcessor(getLookupTable(),(SocketChannel)key.channel(),this));
-								key.interestOps(SelectionKey.OP_WRITE);
-//							}
+//								key.interestOps(SelectionKey.OP_WRITE);
+							}
 							
 						} else if (key.isWritable()) {
 							
 							Utils.debug("Endpoint.run() -> "+key+" is writeable");
 							this.write(key);
-							key.interestOps(SelectionKey.OP_READ);
+//							key.interestOps(SelectionKey.OP_READ);
 
 							
 						}
