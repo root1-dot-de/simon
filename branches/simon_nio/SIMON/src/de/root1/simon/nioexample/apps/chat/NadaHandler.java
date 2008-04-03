@@ -1,4 +1,4 @@
-package de.root1.simon.nioexample.apps.nadachat;
+package de.root1.simon.nioexample.apps.chat;
 
 import de.root1.simon.nioexample.interfaces.IChannelFacade;
 import de.root1.simon.nioexample.interfaces.IInputHandler;
