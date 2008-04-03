@@ -9,7 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class NadaProtocol implements IInputHandlerFactory {
+public class ChatProtocol implements IInputHandlerFactory {
 
 	Map<IChannelFacade, NadaUser> users = Collections
 			.synchronizedMap(new HashMap<IChannelFacade, NadaUser>());
@@ -18,7 +18,7 @@ public class NadaProtocol implements IInputHandlerFactory {
 	// Implementation of InputHandlerFactory interface
 	public IInputHandler newHandler() throws IllegalAccessException,
 			InstantiationException {
-		return new NadaHandler(this);
+		return new ChatHandler(this);
 	}
 	// --------------------------------------------------
 

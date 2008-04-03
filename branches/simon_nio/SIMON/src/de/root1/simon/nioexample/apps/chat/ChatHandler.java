@@ -6,10 +6,10 @@ import de.root1.simon.nioexample.interfaces.IInputQueue;
 
 import java.nio.ByteBuffer;
 
-public class NadaHandler implements IInputHandler {
-	private final NadaProtocol protocol;
+public class ChatHandler implements IInputHandler {
+	private final ChatProtocol protocol;
 
-	public NadaHandler(NadaProtocol protocol) {
+	public ChatHandler(ChatProtocol protocol) {
 		this.protocol = protocol;
 	}
 
