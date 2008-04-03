@@ -1,38 +1,42 @@
-/*
- * Copyright (c) 2004-2006 Ronsoft Technologies (http://ronsoft.com)
- * Contact Ron Hitchens (ron@ronsoft.com) with questions about this code.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * The use of the Apache License does not indicate that this project is
- * affiliated with the Apache Software Foundation.
- */
-
 package de.root1.simon.nioexample.interfaces;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 
 /**
- * Created by IntelliJ IDEA. User: ron Date: Apr 7, 2006 Time: 11:56:30 AM
+ * 
+ * TODO Documentation to be done
+ *
  */
 public interface IDispatcher {
+	
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @throws IOException
+	 */
 	void dispatch() throws IOException;
 
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 */
 	void shutdown();
 
-	IChannelFacade registerChannel(SelectableChannel channel,
-			IInputHandler handler) throws IOException;
+	/**
+	 * 
+	 * registers a given channel with the dispatcher
+	 * @param channel the channel to register
+	 * @param handler the handler to be associated with the channel
+	 * @return
+	 * @throws IOException
+	 */
+	IChannelFacade registerChannel(SelectableChannel channel, IInputHandler handler) throws IOException;
 
+	/**
+	 * 
+	 * unregisters a given key from the dispatcher
+	 * @param key
+	 */
 	void unregisterChannel(IChannelFacade key);
 }

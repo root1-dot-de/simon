@@ -15,17 +15,40 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * 
+ * TODO Documentation to be done
+ *
+ *
+ */
 public class Acceptor {
+	
+	/** the dispatcher */
 	private final IDispatcher dispatcher;
+	
+	/** for creating an inputhandler */
 	private final IInputHandlerFactory inputHandlerFactory;
+	
+	/** the socketchannel the server is listening on */
 	private final ServerSocketChannel listenSocket;
+	
+	/** the internal listener object/class */
 	private final Listener listener;
+	
+	/** a list with threads... for what???? */
 	private final List<Thread> threads = new ArrayList<Thread>();
+	
 	private Logger logger = Logger.getLogger(getClass().getName());
 	private volatile boolean running = true;
 
-	public Acceptor(ServerSocketChannel listenSocket, IDispatcher dispatcher,
-			IInputHandlerFactory inputHandlerFactory) {
+	/**
+	 * 
+	 * Creates a new Acceptor runnable
+	 * @param listenSocket the ServerSocketChannel to listen for new connections on
+	 * @param dispatcher the used dispatcher 
+	 * @param inputHandlerFactory the used input handler factory
+	 */
+	public Acceptor(ServerSocketChannel listenSocket, IDispatcher dispatcher, IInputHandlerFactory inputHandlerFactory) {
 		this.listenSocket = listenSocket;
 		this.dispatcher = dispatcher;
 		this.inputHandlerFactory = inputHandlerFactory;
@@ -33,6 +56,14 @@ public class Acceptor {
 		listener = new Listener();
 	}
 
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param socketAddress
+	 * @param dispatcher
+	 * @param inputHandlerFactory
+	 * @throws IOException
+	 */
 	public Acceptor(SocketAddress socketAddress, IDispatcher dispatcher,
 			IInputHandlerFactory inputHandlerFactory) throws IOException {
 		this(ServerSocketChannel.open(), dispatcher, inputHandlerFactory);
@@ -40,11 +71,26 @@ public class Acceptor {
 		listenSocket.socket().bind(socketAddress);
 	}
 
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param port
+	 * @param dispatcher
+	 * @param inputHandlerFactory
+	 * @throws IOException
+	 */
 	public Acceptor(int port, IDispatcher dispatcher,
 			IInputHandlerFactory inputHandlerFactory) throws IOException {
 		this(new InetSocketAddress(port), dispatcher, inputHandlerFactory);
 	}
 
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 *
+	 * @author achristian
+	 *
+	 */
 	private class Listener implements Runnable {
 		public void run() {
 			while (running) {
@@ -85,19 +131,26 @@ public class Acceptor {
 		}
 	}
 
+	/**
+	 * starts a new acceptor-thread
+	 * @return the started aceptor thread
+	 */
 	public synchronized Thread newThread() {
+		
 		Thread thread = new Thread(listener);
-
 		threads.add(thread);
-
 		thread.start();
 
 		return thread;
 	}
 
+	/**
+	 * Shuts down each started acceptor 
+	 */
 	public synchronized void shutdown() {
 		running = false;
 
+		// signal each thread the shutdown
 		for (Iterator it = threads.iterator(); it.hasNext();) {
 			Thread thread = (Thread) it.next();
 
@@ -106,6 +159,7 @@ public class Acceptor {
 			}
 		}
 
+		// wait for each thread to die
 		for (Iterator it = threads.iterator(); it.hasNext();) {
 			Thread thread = (Thread) it.next();
 
@@ -114,7 +168,7 @@ public class Acceptor {
 			} catch (InterruptedException e) {
 				// nothing
 			}
-
+			// remove the thread
 			it.remove();
 		}
 

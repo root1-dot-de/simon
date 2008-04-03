@@ -17,11 +17,11 @@ public class EchoServer {
 	}
 
 	public static void main(String[] args) throws IOException {
-		Executor executor = Executors.newCachedThreadPool();
+		Executor dispatcherPool = Executors.newCachedThreadPool();
 
 		IByteBufferFactory bufFactory = new DumbBufferFactory(1024);
 
-		Dispatcher dispatcher = new Dispatcher(executor, bufFactory);
+		Dispatcher dispatcher = new Dispatcher(dispatcherPool, bufFactory);
 
 		Acceptor acceptor = new Acceptor(1234, dispatcher,
 				new GenericInputHandlerFactory(EchoHandler.class));

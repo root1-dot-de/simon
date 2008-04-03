@@ -20,7 +20,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Dispatcher
+ *
+ */
 public class Dispatcher implements IDispatcher, Runnable {
+	
 	private final Logger logger = Logger.getLogger(getClass().getName());
 	private final ReadWriteLock selectorGuard = new ReentrantReadWriteLock();
 	private final Executor executor;
@@ -29,8 +34,15 @@ public class Dispatcher implements IDispatcher, Runnable {
 	private final IByteBufferFactory bufferFactory;
 	private volatile boolean dispatching = true;
 
-	public Dispatcher(Executor executor, IByteBufferFactory bufferFactory)
-			throws IOException {
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param executor
+	 * @param bufferFactory
+	 * @throws IOException
+	 */
+	public Dispatcher(Executor executor, IByteBufferFactory bufferFactory) throws IOException {
+	
 		this.executor = executor;
 		this.bufferFactory = bufferFactory;
 
@@ -38,6 +50,10 @@ public class Dispatcher implements IDispatcher, Runnable {
 		selector = Selector.open();
 	}
 
+	/**
+	 *  Places THIS class in a Thread and starts it
+	 * @return the started thread
+	 */
 	public Thread start() {
 		Thread thread = new Thread(this);
 
@@ -46,41 +62,48 @@ public class Dispatcher implements IDispatcher, Runnable {
 		return thread;
 	}
 
-	// ----------------------------------------------------
-	// Implementation of Runnable interface
-
+	/*
+	 * Implementation of <code>Runnable</code> interface
+	 * @see java.lang.Runnable#run()
+	 */
 	public void run() {
+		
+		// do the dispatching ...
 		try {
 			dispatch();
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Unexpected I/O Exception", e);
 		}
 
+		// TODO Was passiert hier ...
 		Set<SelectionKey> keys = selector.selectedKeys();
 
 		for (SelectionKey key : keys) {
-			HandlerAdapter adapter = (HandlerAdapter) key.attachment();
 
+			HandlerAdapter adapter = (HandlerAdapter) key.attachment();
 			unregisterChannel(adapter);
+			
 		}
 
 		try {
 			selector.close();
 		} catch (IOException e) {
-			logger.log(Level.WARNING,
-					"Unexpected I/O Exception closing selector", e);
+			logger.log(Level.WARNING, "Unexpected I/O Exception closing selector", e);
 		}
 	}
 
-	// ----------------------------------------------------
-	// Implementation of Dispatcher interface
-
+	/*
+	 * Implementation of <code>IDispatcher</code> interface
+	 * @see de.root1.simon.nioexample.interfaces.IDispatcher#dispatch()
+	 */
 	public void dispatch() throws IOException {
+		
 		while (dispatching) {
+		
 			selectorGuardBarrier();
 
 			selector.select();
-
+			
 			checkStatusChangeQueue();
 
 			Set<SelectionKey> keys = selector.selectedKeys();
@@ -101,6 +124,7 @@ public class Dispatcher implements IDispatcher, Runnable {
 		selector.wakeup();
 	}
 
+	
 	public IChannelFacade registerChannel(SelectableChannel channel,
 			IInputHandler handler) throws IOException {
 		channel.configureBlocking(false);
@@ -148,11 +172,12 @@ public class Dispatcher implements IDispatcher, Runnable {
 	// ------------------------------------------------
 	// package-local called from HandlerAdapter
 
-	// Place the given HandlerAdapter instance on the status change queue.
-	// The loop and nested try/catch blocks are to properly handle the
-	// InterruptedException that might be thrown when adding to the
-	// completion queue. That exception is unlikely to ever happen here,
-	// but this is the proper code to handle the general case.
+	/** Place the given HandlerAdapter instance on the status change queue.
+	 * The loop and nested try/catch blocks are to properly handle the
+	 * InterruptedException that might be thrown when adding to the
+	 * completion queue. That exception is unlikely to ever happen here,
+	 * but this is the proper code to handle the general case.
+	 */
 	void enqueueStatusChange(HandlerAdapter adapter) {
 		boolean interrupted = false;
 
@@ -176,6 +201,9 @@ public class Dispatcher implements IDispatcher, Runnable {
 	// private methods that always run in the selection
 	// thread, and hence do not need the selectorGuard.
 
+	/**
+	 * TODO Documentation to be done
+	 */
 	private void invokeHandler(HandlerAdapter adapter) {
 		adapter.prepareToRun();
 		adapter.key().interestOps(0);
@@ -183,6 +211,10 @@ public class Dispatcher implements IDispatcher, Runnable {
 		executor.execute(new HandlerFutureTask(adapter));
 	}
 
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 */
 	private void checkStatusChangeQueue() {
 		HandlerAdapter adapter;
 
@@ -195,6 +227,11 @@ public class Dispatcher implements IDispatcher, Runnable {
 		}
 	}
 
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param adapter
+	 */
 	private void resumeSelection(HandlerAdapter adapter) {
 		SelectionKey key = adapter.key();
 
@@ -236,13 +273,14 @@ public class Dispatcher implements IDispatcher, Runnable {
 		selectorGuard.readLock().unlock();
 	}
 
-	// --------------------------------------------------------
-	// Specialized FutureTask class that wraps a HandlerAdapter instance
-	// for execution by the thread pool Executor. This class overrides
-	// the done() method to place the contained HandlerAdapter object
-	// onto a BlockingQueue for the selection thread to see.
-
+	/**
+	 * Specialized FutureTask class that wraps a HandlerAdapter instance
+	 * for execution by the thread pool Executor. This class overrides
+	 * the done() method to place the contained HandlerAdapter object
+	 * onto a BlockingQueue for the selection thread to see.
+	 */
 	private class HandlerFutureTask extends FutureTask<HandlerAdapter> {
+		
 		private final HandlerAdapter adapter;
 
 		public HandlerFutureTask(HandlerAdapter adapter) {
@@ -264,6 +302,7 @@ public class Dispatcher implements IDispatcher, Runnable {
 				// InputHandler and HandlerAdapter classes to add
 				// methods for handling these exceptions. This
 				// method is still running in the worker thread.
+				
 			} catch (ExecutionException e) {
 				adapter.die();
 				logger.log(Level.WARNING, "Handler died", e.getCause());
