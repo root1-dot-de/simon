@@ -253,7 +253,7 @@ public class Endpoint extends Thread {
 				// -------------
 
 				Utils.debug("Endpoint.run() -> selector.select() -> Wait for an event one of the registered channels");
-				int numOfselectableKeys = this.selector.select();
+				int numOfselectableKeys = selector.select();
 
 				if (numOfselectableKeys>0) {
 
