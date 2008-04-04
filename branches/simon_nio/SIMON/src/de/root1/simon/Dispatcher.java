@@ -249,7 +249,7 @@ public class Dispatcher implements Runnable {
 				}
 				// -------------
 
-				Utils.debug("Dispatcher.run() -> selector.select() -> Wait for an event one of the registered channels");
+				Utils.debug("Dispatcher.run() -> selector.select() -> Wait for an event on one of the registered channels");
 				int numOfselectableKeys = selector.select();
 
 				if (numOfselectableKeys>0) {
@@ -263,7 +263,7 @@ public class Dispatcher implements Runnable {
 						SelectionKey key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
 						
-						Utils.debug("Dispatcher.run() -> key has ready Ops: "+key.readyOps());
+						Utils.debug("Dispatcher.run() -> key has ready op: "+Utils.printSelectionKeyValue(key.interestOps()));
 						
 						if (!key.isValid()) {
 							Utils.debug("Dispatcher.run() -> key is invalid!");

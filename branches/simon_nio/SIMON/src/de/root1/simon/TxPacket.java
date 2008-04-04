@@ -25,9 +25,7 @@ public class TxPacket {
 		this.requestID = requestID;
 		bb.put(type);
 		bb.putInt(requestID);
-		Utils.debug("TxPacket.setHeader() -> position1="+bb.position());
 		bb.position(bb.position()+4); // skip next 4 bytes. they are reserved for the body size
-		Utils.debug("TxPacket.setHeader() -> position2="+bb.position());
 		headerOkay  = true;
 	}
 	

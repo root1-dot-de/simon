@@ -1,7 +1,5 @@
 package de.root1.simon.nioexample.impl;
 
-import de.root1.simon.nioexample.interfaces.IDispatcher;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -14,6 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import de.root1.simon.nioexample.interfaces.IDispatcher;
 
 /**
  * 
@@ -95,6 +95,7 @@ public class Acceptor {
 		public void run() {
 			while (running) {
 				try {
+					System.out.println("Listener waiting for accept ...! "+this);
 					SocketChannel client = listenSocket.accept();
 
 					if (client == null) {

@@ -28,6 +28,7 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
@@ -368,5 +369,36 @@ public class Utils {
 			System.out.flush();
 		}
 	}
+	
+	
+   	public static String printSelectionKeyValue(int key) {
 
+		StringBuilder sb = new StringBuilder();
+
+		if ((key & SelectionKey.OP_ACCEPT) == SelectionKey.OP_ACCEPT) {
+			sb.append("OP_ACCEPT, ");
+		}
+
+		if ((key & SelectionKey.OP_CONNECT) == SelectionKey.OP_CONNECT) {
+			sb.append("OP_CONNECT, ");
+		}
+
+		if ((key & SelectionKey.OP_WRITE) == SelectionKey.OP_WRITE) {
+			sb.append("OP_WRITE, ");
+		}
+
+		if ((key & SelectionKey.OP_READ) == SelectionKey.OP_READ) {
+			sb.append("OP_READ, ");
+		}
+
+		String txt = sb.toString();
+		txt = txt.trim();
+
+		if (txt.length() > 0) {
+			txt = txt.substring(0, txt.length() - 1);
+		}
+
+		return txt + " (" + key + ")";
+	}
+	
 }

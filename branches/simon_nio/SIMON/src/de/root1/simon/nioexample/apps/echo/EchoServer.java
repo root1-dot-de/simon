@@ -28,5 +28,7 @@ public class EchoServer {
 
 		dispatcher.start();
 		acceptor.newThread();
+		acceptor.newThread();
+		acceptor.newThread();
 	}
 }
