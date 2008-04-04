@@ -114,7 +114,7 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */
 	public Dispatcher(int objectCacheLifetime, LookupTable lookupTable, String threadName, boolean isServer, int port) throws IOException {
-		Utils.debug("Dispatcher.Endpoint() -> start");
+		Utils.debug("Dispatcher.Dispatcher() -> start");
 		if (objectCacheLifetime<1) throw new IllegalArgumentException("objectCacheLifetime must be >=1");
 		
 		// FIXME set the name of the thread?!
@@ -125,6 +125,7 @@ public class Dispatcher implements Runnable {
 		// FIXME should be configurable
 		eventHandlerPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory("EventHandler"));
 		invocationPool = Executors.newSingleThreadExecutor();
+		
 		
 		this.objectCacheLifetime = objectCacheLifetime;
 		if (isServer) {
