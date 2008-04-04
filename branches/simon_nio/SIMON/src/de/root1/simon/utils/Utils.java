@@ -37,6 +37,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 
 import de.root1.simon.Statics;
+import de.root1.simon.TxPacket;
 
 public class Utils {
 	
@@ -78,9 +79,9 @@ public class Utils {
 	/**
      * wrap the value into the given bytebuffer
      */
-    public static ByteBuffer wrapValue(Class<?> type, Object value, ByteBuffer bb) throws IOException {
+    public static TxPacket wrapValue(Class<?> type, Object value, TxPacket bb) throws IOException {
     	Utils.debug("Endpoint.wrapValue() -> start");
-    	Utils.debug("Endpoint.wrapValue() -> size at start: "+bb.capacity()+" position at start: "+bb.position());
+//    	Utils.debug("Endpoint.wrapValue() -> size at start: "+bb.capacity()+" position at start: "+bb.position());
     	Utils.debug("Endpoint.wrapValue() -> value="+value);
     	
     	try {
@@ -145,14 +146,16 @@ public class Utils {
 	        } else {
 	        	
 	        	Utils.debug("Endpoint.wrapValue() -> non primitive object");
-	        	bb = bb.put(objectToBytes(value));
+//	        	bb = 
+	        		bb.put(objectToBytes(value));
 	        	
 	        }
     	} catch (BufferOverflowException e){
-    		Utils.debug("Utils.wrapValue() Buffer too small. Doubling!");
-    		bb = wrapValue(type, value, doubleByteBuffer(bb));
+    		// this is already handle by TxPacket
+//    		Utils.debug("Utils.wrapValue() Buffer too small. Doubling!");
+//    		bb = wrapValue(type, value, doubleByteBuffer(bb));
     	}
-    	Utils.debug("Endpoint.wrapValue() -> size at end: "+bb.capacity()+" position at end: "+bb.position());
+//    	Utils.debug("Endpoint.wrapValue() -> size at end: "+bb.capacity()+" position at end: "+bb.position());
     	Utils.debug("Endpoint.wrapValue() -> end");
     	return bb;
     }
@@ -280,17 +283,17 @@ public class Utils {
 		oos.writeObject(object);
 		oos.flush();
 //		oos.close();
-//		bb = new byte[baos.size()+4];
-//		
-//		int v = baos.size();
-//		bb[0] = (byte)((v >>> 24) & 0xFF);
-//		bb[1] = (byte)((v >>> 16) & 0xFF);
-//	    bb[2] = (byte)((v >>>  8) & 0xFF);
-//	    bb[3] = (byte)((v >>>  0) & 0xFF);
-//	    
-//	    System.arraycopy(baos.toByteArray(), 0, bb, 4, v);
-		bb = baos.toByteArray();
-	    Utils.debug("Utils.objectToBytes() object="+object+" size="+bb.length);
+		bb = new byte[baos.size()+4];
+		
+		int v = baos.size();
+		bb[0] = (byte)((v >>> 24) & 0xFF);
+		bb[1] = (byte)((v >>> 16) & 0xFF);
+	    bb[2] = (byte)((v >>>  8) & 0xFF);
+	    bb[3] = (byte)((v >>>  0) & 0xFF);
+	    
+	    System.arraycopy(baos.toByteArray(), 0, bb, 4, v);
+//		bb = baos.toByteArray();
+	    Utils.debug("Utils.objectToBytes() object="+object+" byte[].length="+bb.length);
 		return bb;
     }
     
@@ -311,12 +314,17 @@ public class Utils {
     public static Object getObject(ByteBuffer bb) throws IOException, ClassNotFoundException{
     	byte[] b = null;
     	
-    	if (bb.hasArray())
-    		b = bb.array();
-    	else
-    		throw new IllegalArgumentException("given ByteBuffer has no byte[] access");
+//    	if (bb.hasArray())
+//    		b = bb.array();
+//    	else
+//    		throw new IllegalArgumentException("given ByteBuffer has no byte[] access");
     	
-    	ByteArrayInputStream bais = new ByteArrayInputStream(b);
+    	int length = bb.getInt();
+    	byte[] objectInBytes = new byte[length];
+    	bb.get(objectInBytes);
+    	
+//    	ByteArrayInputStream bais = new ByteArrayInputStream(b);
+    	ByteArrayInputStream bais = new ByteArrayInputStream(objectInBytes);
     	ObjectInputStream ois = new ObjectInputStream(bais);
     	
     	return ois.readObject();

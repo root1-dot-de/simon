@@ -41,7 +41,67 @@ public class TxPacket {
 		}
 	}
 	
+	public void putLong(Long l){
+		if (!headerOkay) throw new IllegalStateException("header not set");
+		try {
+			bb.putLong(l);
+		} catch (BufferOverflowException e){
+			bb = Utils.doubleByteBuffer(bb);
+			putLong(l);
+		}
+	}
+	
+	public void putChar(char c){
+		if (!headerOkay) throw new IllegalStateException("header not set");
+		try {
+			bb.putChar(c);
+		} catch (BufferOverflowException e){
+			bb = Utils.doubleByteBuffer(bb);
+			putChar(c);
+		}
+	}
+	
+	public void putShort(short s){
+		if (!headerOkay) throw new IllegalStateException("header not set");
+		try {
+			bb.putShort(s);
+		} catch (BufferOverflowException e){
+			bb = Utils.doubleByteBuffer(bb);
+			putShort(s);
+		}
+	}
+	
+	public void putFloat(float f){
+		if (!headerOkay) throw new IllegalStateException("header not set");
+		try {
+			bb.putFloat(f);
+		} catch (BufferOverflowException e){
+			bb = Utils.doubleByteBuffer(bb);
+			putFloat(f);
+		}
+	}
+	
+	public void putDouble(double d){
+		if (!headerOkay) throw new IllegalStateException("header not set");
+		try {
+			bb.putDouble(d);
+		} catch (BufferOverflowException e){
+			bb = Utils.doubleByteBuffer(bb);
+			putDouble(d);
+		}
+	}
+	
 	public void put(byte[] b){
+		if (!headerOkay) throw new IllegalStateException("header not set");
+		try {
+			bb.put(b);
+		} catch (BufferOverflowException e){
+			bb = Utils.doubleByteBuffer(bb);
+			put(b);
+		}
+	}
+	
+	public void put(byte b){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
 			bb.put(b);

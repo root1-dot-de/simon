@@ -30,7 +30,7 @@ public class SampleClient {
 	
 	public static void main(String[] args) throws SimonRemoteException, IOException {
 		
-//		Statics.DEBUG_MODE = true;
+		Statics.DEBUG_MODE = true;
 		
 		// Callbackobjekt anlegen
 		ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();

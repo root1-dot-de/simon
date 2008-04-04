@@ -28,11 +28,12 @@ public class ServerInterfaceImpl implements ServerInterface {
 	private static final long serialVersionUID = 1L;
 
 	public void login(ClientCallbackInterface clientCallback) throws SimonRemoteException {
-		clientCallback.callback("Dies ist der Callback. " +
-//				"Deine Adresse lautet "+Simon.getRemoteInetAddress(clientCallback)+" "+
-//				"und du bist verbunden auf dem lokalen Port "+Simon.getRemotePort(clientCallback));
-		"Deine Adresse lautet xyz "+
-		"und du bist verbunden auf dem lokalen Port abc");
+//		clientCallback.callback("Dies ist der Callback. " +
+////				"Deine Adresse lautet "+Simon.getRemoteInetAddress(clientCallback)+" "+
+////				"und du bist verbunden auf dem lokalen Port "+Simon.getRemotePort(clientCallback));
+//		"Deine Adresse lautet xyz "+
+//		"und du bist verbunden auf dem lokalen Port abc");
+		System.err.println("Hallo Welt auf dem Server");
 	}
 
 }

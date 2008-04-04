@@ -19,50 +19,47 @@ import de.root1.simon.utils.Utils;
  * 
  * @author ACHR
  */
-class PacketProcessor implements Runnable {
+class EventHandler implements Runnable {
 
 	private ByteBuffer packetHeader = ByteBuffer.allocate(5); // one byte + 4 byte integer containing the packet length
 	private ByteBuffer packetBody; // the packet itself
-	private int requestID = -1;
-	private int msgType = -1;
-	private int packetLength = -1;
 	private String remoteObjectName;
-	private final LookupTable lookupTable;
-	private final Endpoint endpoint;
-	private SocketChannel socketChannel;
+	private final Dispatcher dispatcher;
+	private RxPacket rxPacket;
+	private byte msgType;
+	private int requestID;
+	private SelectionKey key;
 
-	public PacketProcessor(LookupTable lookupTable, SocketChannel socketChannel, Endpoint endpoint) {
-		Utils.debug("PacketProcessor.PacketProcessor() -> created for key="+socketChannel);
-		this.socketChannel = socketChannel;
-		this.lookupTable = lookupTable;
-		this.endpoint = endpoint;
+
+	public EventHandler(SelectionKey key, Dispatcher dispatcher, RxPacket rxPacket) {
+		Utils.debug("EventHandler.EventHandler() -> created for requestID="+rxPacket.getRequestID());
+		this.key = key;
+		this.dispatcher = dispatcher;
+		this.rxPacket = rxPacket;
 	}
 
 	public void run() {
-		Utils.debug("PacketProcessor.run() -> reading from: "+socketChannel);
+		Utils.debug("EventHandler.run() -> interpreting packet");
 //		socketChannel = (SocketChannel) key.channel();
 		try {
 			
-			RxPacket p = new RxPacket(socketChannel);
 			
-			msgType = p.getMsgType();
-			requestID = p.getRequestID();
-			
-//			endpoint.removeFromReadFrom(socketChannel);			
-			Utils.debug("PacketProcessor.run() -> msgType="+msgType);
-			Utils.debug("PacketProcessor.run() -> requestID="+requestID);
+			msgType = rxPacket.getMsgType();
+			requestID = rxPacket.getRequestID();
+			//			endpoint.removeFromReadFrom(socketChannel);			
+			Utils.debug("EventHandler.run() -> msgType="+msgType);
+			Utils.debug("EventHandler.run() -> requestID="+requestID);
 
+			packetBody = rxPacket.getBody();
 			
-			packetBody = p.getBody();
-			
-//			if (Statics.DEBUG_MODE){
-//				byte[] b = packetBody.array();
-//				for (int i = 0; i < b.length; i++) {
-//					byte c = b[i];
-//					Utils.debug("PacketProcessor.run() -> body b["+i+"]="+c);
-//					
-//				}
-//			}
+			if (Statics.DEBUG_MODE){
+				byte[] b = packetBody.array();
+				for (int i = 0; i < b.length; i++) {
+					byte c = b[i];
+					Utils.debug("EventHandler.run() -> body b["+i+"]="+c);
+					
+				}
+			}
 			
 			
 			// if the received data is a new request ...
@@ -73,7 +70,7 @@ class PacketProcessor implements Runnable {
 					remoteObjectName = Utils.getString(packetBody);
 					final long methodHash = packetBody.getLong();
 					
-					final Method method = lookupTable.getMethod(remoteObjectName, methodHash);
+					final Method method = dispatcher.getLookupTable().getMethod(remoteObjectName, methodHash);
 					final Class<?>[] parameterTypes = method.getParameterTypes();			
 					final Object[] args = new Object[parameterTypes.length];
 					
@@ -106,50 +103,51 @@ class PacketProcessor implements Runnable {
 					break;	
 					
 				case Statics.INVOCATION_RETURN_PACKET :
-					Utils.debug("Endpoint.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
+					Utils.debug("EventHandler.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
 					
 					//unwrap the return-value
-					Object result = Utils.unwrapValue(endpoint.removeRequestReturnType(requestID), packetBody);
+					Object result = Utils.unwrapValue(dispatcher.removeRequestReturnType(requestID), packetBody);
 					
-					Utils.debug("Endpoint.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
+					Utils.debug("EventHandler.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
 
-					endpoint.putResultToQueue(requestID, result);
-					endpoint.wakeWaitingProcess(requestID);
+					dispatcher.putResultToQueue(requestID, result);
+					dispatcher.wakeWaitingProcess(requestID);
 					
-					Utils.debug("Endpoint.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
+					Utils.debug("EventHandler.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.LOOKUP_RETURN_PACKET :
-					Utils.debug("Endpoint.run() -> LOOKUP_RETURN_PACKET -> start. requestID="+requestID);
-					endpoint.putResultToQueue(requestID, Utils.getObject(packetBody));
-					endpoint.wakeWaitingProcess(requestID);
-					Utils.debug("Endpoint.run() -> LOOKUP_RETURN_PACKET -> end. requestID="+requestID);
+					Utils.debug("EventHandler.run() -> LOOKUP_RETURN_PACKET -> start. requestID="+requestID);
+					dispatcher.putResultToQueue(requestID, Utils.getObject(packetBody));
+					dispatcher.wakeWaitingProcess(requestID);
+					Utils.debug("EventHandler.run() -> LOOKUP_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.TOSTRING_RETURN_PACKET :
-					endpoint.putResultToQueue(requestID, Utils.getString(packetBody));
-					endpoint.wakeWaitingProcess(requestID);
+					dispatcher.putResultToQueue(requestID, Utils.getString(packetBody));
+					dispatcher.wakeWaitingProcess(requestID);
 					break;
 				
 				case Statics.HASHCODE_RETURN_PACKET :
-					endpoint.putResultToQueue(requestID, packetBody.getInt());
-					endpoint.wakeWaitingProcess(requestID);
+					dispatcher.putResultToQueue(requestID, packetBody.getInt());
+					dispatcher.wakeWaitingProcess(requestID);
 					break;
 					
 				case Statics.EQUALS_RETURN_PACKET :
-					endpoint.putResultToQueue(requestID, (Boolean.valueOf(packetBody.get()==1 ? true : false)));
-					endpoint.wakeWaitingProcess(requestID);
+					dispatcher.putResultToQueue(requestID, (Boolean.valueOf(packetBody.get()==1 ? true : false)));
+					dispatcher.wakeWaitingProcess(requestID);
 					break;
 					
 				default :
 //					interrupt();
-//					globalEndpointException = new SimonRemoteException("invalid packet received from endpoint ...");
-					try {
-						socketChannel.close();
+//					globalEventHandlerException = new SimonRemoteException("invalid packet received from EventHandler ...");
+//					try {
+//						socketChannel.close();
 //						key.cancel();
-					} catch (IOException e) {
-					}
-					throw new SimonRemoteException("invalid packet received from endpoint ...");
+//					} catch (IOException e) {
+//					}
+					// FIXME do something!
+					throw new SimonRemoteException("invalid packet received from EventHandler ...");
 //					break;
 			}
 
@@ -174,14 +172,14 @@ class PacketProcessor implements Runnable {
 	 */
 	private void processHashCode(String remoteObjectName) throws IOException {
 		
-		final int hashcode = lookupTable.getRemoteBinding(remoteObjectName).hashCode();		
+		final int hashcode = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();		
 		
 		ByteBuffer packet = ByteBuffer.allocate(1+4+4);
 		packet.put(Statics.HASHCODE_RETURN_PACKET);
 		packet.putInt(requestID);
 		packet.putInt(hashcode);
 		
-		endpoint.send(socketChannel,packet);
+		dispatcher.send(key,packet);
 		
 	}
 	
@@ -195,14 +193,14 @@ class PacketProcessor implements Runnable {
 	 */
 	private void processToString(String remoteObjectName) throws IOException {
 
-		final String tostring = lookupTable.getRemoteBinding(remoteObjectName).toString();		
+		final String tostring = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();		
 		
 		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+tostring.length()));
 		packet.put(Statics.TOSTRING_RETURN_PACKET);
 		packet.putInt(requestID);
 		packet.put(Utils.stringToBytes(tostring));
 		
-		endpoint.send(socketChannel,packet);
+		dispatcher.send(key,packet);
 		
 	}
 	
@@ -217,14 +215,14 @@ class PacketProcessor implements Runnable {
 	 */
 	private void processEquals(String remoteObjectName, Object object) throws IOException{
 
-		final boolean equals = lookupTable.getRemoteBinding(remoteObjectName).equals(object);		
+		final boolean equals = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).equals(object);		
 
 		ByteBuffer packet = ByteBuffer.allocate(1+4+1);
 		packet.put(Statics.EQUALS_RETURN_PACKET);
 		packet.putInt(requestID);
 		packet.put(equals ? (byte) 1 : (byte) 0);
 		
-		endpoint.send(socketChannel,packet);
+		dispatcher.send(key,packet);
 		
 	}
 	
@@ -234,9 +232,9 @@ class PacketProcessor implements Runnable {
 	 * @throws IOException 
 	 */
 	private void processLookup(String remoteObjectName) throws IOException{
-		Utils.debug("PacketProcessor.processLookup() -> start. requestID="+requestID);
+		Utils.debug("EventHandler.processLookup() -> start. requestID="+requestID);
 
-		byte[] remoteObjectInterface = Utils.objectToBytes(lookupTable.getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
+		byte[] remoteObjectInterface = Utils.objectToBytes(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
 
 		TxPacket p = new TxPacket();
 		p.setHeader(Statics.LOOKUP_RETURN_PACKET, requestID);
@@ -256,12 +254,12 @@ class PacketProcessor implements Runnable {
 //		packet.putInt(requestID);					// request id
 //		packet.put(remoteObjectInterface);			// object
 		
-		endpoint.send(socketChannel,p.getByteBuffer());
-		Utils.debug("PacketProcessor.processLookup() -> end. requestID="+requestID);
+		dispatcher.send(key,p.getByteBuffer());
+		Utils.debug("EventHandler.processLookup() -> end. requestID="+requestID);
 	}
 	
 	private void processInvokeMethod(String remoteObjectName, Method method, Object[] args){
-		Utils.debug("PacketProcessor.processInvokeMethod() -> begin. requestID="+requestID);
+		Utils.debug("EventHandler.processInvokeMethod() -> begin. requestID="+requestID);
 		Object result = null;
 		
 		try {			
@@ -279,19 +277,19 @@ class PacketProcessor implements Runnable {
 						listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
 						// reimplant the proxy object
-						args[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(endpoint, simonCallback.getId()));
+						args[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, simonCallback.getId()));
 						
 					} 
 				} 
 			} 
 			
 			try {
-				Utils.debug("PacketProcessor.processInvokeMethod() -> start invoking method='"+method+"'. requestID="+requestID);
-				result = method.invoke(endpoint.getLookupTable().getRemoteBinding(remoteObjectName), args);
-				Utils.debug("PacketProcessor.processInvokeMethod() -> end invoking method='"+method+"'. requestID="+requestID+" result="+result);				
+				Utils.debug("EventHandler.processInvokeMethod() -> start invoking method='"+method+"'. requestID="+requestID);
+				result = method.invoke(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName), args);
+				Utils.debug("EventHandler.processInvokeMethod() -> end invoking method='"+method+"'. requestID="+requestID+" result="+result);				
 				// Search for SimonRemote in result
 				if (result instanceof SimonRemote){
-					endpoint.getLookupTable().putRemoteBinding(result.toString(), (SimonRemote)result);
+					dispatcher.getLookupTable().putRemoteBinding(result.toString(), (SimonRemote)result);
 					result = new SimonCallback((SimonRemote)result);
 				}
 				
@@ -299,13 +297,15 @@ class PacketProcessor implements Runnable {
 				result = e.getTargetException();
 			} 
 			
-			ByteBuffer packet = ByteBuffer.allocate(4096);
+//			ByteBuffer packet = ByteBuffer.allocate(4096);
 			// FIXME größe des pakets muss an index 1 "eingepflanzt" werden.
-			packet.put(Statics.INVOCATION_RETURN_PACKET);
-			packet.putInt(requestID);
-			packet = Utils.wrapValue(method.getReturnType(), result, packet); // wrap the result
 			
-			endpoint.send(socketChannel, packet);
+			TxPacket packet = new TxPacket();
+			packet.setHeader(Statics.INVOCATION_RETURN_PACKET, requestID);
+			
+			packet = Utils.wrapValue(method.getReturnType(), result, packet); // wrap the result
+			packet.setComplete();
+			dispatcher.send(key, packet.getByteBuffer());
 				
 		} catch (IOException e){
 			/* 
@@ -322,7 +322,7 @@ class PacketProcessor implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		Utils.debug("PacketProcessor.processInvokeMethod() -> end. requestID="+requestID);
+		Utils.debug("EventHandler.processInvokeMethod() -> end. requestID="+requestID);
 	}
 	
 	

@@ -52,7 +52,7 @@ public class Registry extends Thread {
 	
 	// The selector we'll be monitoring
 	private Selector selector;
-	private Endpoint endpoint;
+	private Dispatcher endpoint;
 
 	/**
 	 * TODO Documentation to be done
@@ -75,7 +75,9 @@ public class Registry extends Thread {
 		Utils.debug("Registry.run() -> start");
 		
 		try {
-			endpoint = new Endpoint(Simon.getObjectCacheLifetime(),serverLookupTable, "Simon-Registry", true, port);
+			endpoint = new Dispatcher(Simon.getObjectCacheLifetime(),serverLookupTable, "Simon-Registry", true, port);
+			// FIXME start registry in a "better" way
+			new Thread(endpoint).start();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

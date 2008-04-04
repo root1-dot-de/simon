@@ -45,14 +45,8 @@ import de.root1.simon.utils.Utils;
  * 
  * @author ACHR
  */
-public class Endpoint extends Thread {
+public class Dispatcher implements Runnable {
 
-//	/** the <code>ObjectInputStream</code> associated with the opened socket connection */
-//	private ObjectInputStream objectInputStream;
-//	
-//	/** the <code>ObjectOutputStream</code> associated with the opened socket connection */
-//	private ObjectOutputStream objectOutputStream;
-	
 	/** The table that holds all the registered/bind remote objects */
 	private LookupTable lookupTable;
 	
@@ -100,10 +94,12 @@ public class Endpoint extends Thread {
 	
 	private int port = 0;
 	
-	private ExecutorService packetPool = null;
+	private ExecutorService eventHandlerPool = null;
 	private ExecutorService invocationPool = null;
 
 	private List<SocketChannel> readFromKey = new ArrayList<SocketChannel>();
+
+	private SelectionKey clientKey;
 
 	
 
@@ -117,34 +113,36 @@ public class Endpoint extends Thread {
 	 * @throws IOException 
 	 * @throws IOException 
 	 */
-	public Endpoint(int objectCacheLifetime, LookupTable lookupTable, String threadName, boolean isServer, int port) throws IOException {
-		Utils.debug("Endpoint.Endpoint() -> start");
+	public Dispatcher(int objectCacheLifetime, LookupTable lookupTable, String threadName, boolean isServer, int port) throws IOException {
+		Utils.debug("Dispatcher.Endpoint() -> start");
 		if (objectCacheLifetime<1) throw new IllegalArgumentException("objectCacheLifetime must be >=1");
 		
-		this.setName("Endpoint: "+threadName);
+		// FIXME set the name of the thread?!
+//		this.setName("Endpoint: "+threadName);
 		this.lookupTable = lookupTable;
 		this.port = port;
 		
 		// FIXME should be configurable
-		packetPool = Executors.newSingleThreadExecutor();
+		eventHandlerPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory("EventHandler"));
 		invocationPool = Executors.newSingleThreadExecutor();
 		
 		this.objectCacheLifetime = objectCacheLifetime;
 		if (isServer) {
-			Utils.debug("Endpoint.Endpoint() -> initSelectorServer()");
+			Utils.debug("Dispatcher.Endpoint() -> initSelectorServer()");
 			this.selector = initSelectorServer();
 			
 		} else {
-			Utils.debug("Endpoint.Endpoint() -> initSelectorClient()");
+			Utils.debug("Dispatcher.Endpoint() -> initSelectorClient()");
 			this.selector = initSelectorClient();
 			connectToServer();
 			
 		}
 
 		// run the local thread
-		start();
+		// FIXME has to be done by the pool or the acceptor.
+		//start();
 		
-		Utils.debug("Endpoint.Endpoint() -> end");
+		Utils.debug("Dispatcher.Endpoint() -> end");
 	}
 
 
@@ -203,27 +201,26 @@ public class Endpoint extends Thread {
 	 * (I couldn't resist) of our run() method. 
 	 */
 	private void accept(SelectionKey key) throws IOException {
-		Utils.debug("Endpoint.accept(): Start");
+		Utils.debug("Dispatcher.accept(): Start");
 		// For an accept to be pending the channel must be a server socket channel.
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
 
 		// Accept the connection and make it non-blocking
 		SocketChannel socketChannel = serverSocketChannel.accept();
 		Socket socket = socketChannel.socket();
-		Utils.debug("Endpoint.accept(): Client: "+socket.getInetAddress());
+		Utils.debug("Dispatcher.accept(): Client: "+socket.getInetAddress());
 		socketChannel.configureBlocking(false);
 
 		socketChannel.register(selector, SelectionKey.OP_READ);
-		Utils.debug("Endpoint.accept(): End");
+		Utils.debug("Dispatcher.accept(): End");
 	}
 	
 	/**
 	 * The main receive-loop
 	 * @see java.lang.Thread#run()
 	 */
-	@Override
 	public void run() {
-		super.run();
+//		super.run();
 		
 		while (true) {
 			Utils.debug("");
@@ -235,7 +232,7 @@ public class Endpoint extends Thread {
 					Iterator<ChangeRequest> changes = this.pendingChanges.iterator();
 					while (changes.hasNext()) {
 						ChangeRequest change = (ChangeRequest) changes.next();
-						Utils.debug("Endpoint.run() -> changeRequest -> "+change);
+						Utils.debug("Dispatcher.run() -> changeRequest -> "+change);
 						switch (change.type) {
 
 							case ChangeRequest.CHANGEOPS:
@@ -252,12 +249,12 @@ public class Endpoint extends Thread {
 				}
 				// -------------
 
-				Utils.debug("Endpoint.run() -> selector.select() -> Wait for an event one of the registered channels");
+				Utils.debug("Dispatcher.run() -> selector.select() -> Wait for an event one of the registered channels");
 				int numOfselectableKeys = selector.select();
 
 				if (numOfselectableKeys>0) {
 
-					Utils.debug("Endpoint.run() -> "+numOfselectableKeys+" keys available");
+					Utils.debug("Dispatcher.run() -> "+numOfselectableKeys+" keys available");
 
 					// Iterate over the set of keys for which events are available
 					Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
@@ -266,33 +263,40 @@ public class Endpoint extends Thread {
 						SelectionKey key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
 						
-						Utils.debug("Endpoint.run() -> key has ready Ops: "+key.readyOps());
+						Utils.debug("Dispatcher.run() -> key has ready Ops: "+key.readyOps());
 						
 						if (!key.isValid()) {
-							Utils.debug("Endpoint.run() -> key is invalid!");
+							Utils.debug("Dispatcher.run() -> key is invalid!");
 							continue; // .. with next in "while"
 						}
 	
 						// Check what event is available and deal with it
 						if (key.isAcceptable()){ // used by the server
 							
-							Utils.debug("Endpoint.run() -> "+key+" is acceptable");
+							Utils.debug("Dispatcher.run() -> "+key+" is acceptable");
 							accept(key);
 							
 						} else if (key.isConnectable()) { // used by the client
 							
-							Utils.debug("Endpoint.run() -> "+key+" is connectable");
+							Utils.debug("Dispatcher.run() -> "+key+" is connectable");
 							this.finishConnection(key);
 							
 						} else if (key.isReadable()) {
 
-							key.interestOps(0);
-							Utils.debug("Endpoint.run() -> "+key+" is readable");
-							packetPool.execute(new PacketProcessor(getLookupTable(),(SocketChannel)key.channel(),this));
+							SocketChannel socketChannel =(SocketChannel) key.channel();
+							
+							RxPacket p = new RxPacket(socketChannel);
+							
+							int msgType = p.getMsgType();
+							int requestID = p.getRequestID();
+							ByteBuffer packetBody = p.getBody();
+							
+							Utils.debug("Dispatcher.run() -> "+key+" is readable");
+							eventHandlerPool.execute(new EventHandler(key,this,p));
 							
 						} else if (key.isWritable()) {
 							
-							Utils.debug("Endpoint.run() -> "+key+" is writeable");
+							Utils.debug("Dispatcher.run() -> "+key+" is writeable");
 							this.write(key);
 							
 						}
@@ -300,13 +304,12 @@ public class Endpoint extends Thread {
 
 				} else {
 				
-					Utils.debug("Endpoint.run() -> no keys available -> 0 ");
+					Utils.debug("Dispatcher.run() -> no keys available -> 0 ");
 					
 				}
 				
 			} catch (Exception e) {
 				e.printStackTrace();
-				// TODO richtig platziert?
 				// FIXME Exception richtig fangen
 				wakeAllMonitors();
 			}
@@ -320,7 +323,7 @@ public class Endpoint extends Thread {
 	 * @throws IOException
 	 */
 	private void finishConnection(SelectionKey key) throws IOException {
-		Utils.debug("Endpoint.finishConnection() -> start");
+		Utils.debug("Dispatcher.finishConnection() -> start");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 	
 		// Finish the connection. If the connection operation failed
@@ -334,14 +337,14 @@ public class Endpoint extends Thread {
 			return;
 		}
 	
-		Utils.debug("Endpoint.finishConnection() -> register for write-mode AND read-mode");
-		key.interestOps(SelectionKey.OP_WRITE | SelectionKey.OP_READ);
-		Utils.debug("Endpoint.finishConnection() -> end");
+		Utils.debug("Dispatcher.finishConnection() -> register for read-mode");
+		key.interestOps(SelectionKey.OP_READ);
+		Utils.debug("Dispatcher.finishConnection() -> end");
 	}
 	
 	
 	private void connectToServer() throws IOException {
-		Utils.debug("Endpoint.connectToServer() -> start");
+		Utils.debug("Dispatcher.connectToServer() -> start");
 		clientSocketChannel = SocketChannel.open();
 		clientSocketChannel.configureBlocking(false);
 	
@@ -352,10 +355,12 @@ public class Endpoint extends Thread {
 		// selecting thread. As part of the registration we'll register
 		// an interest in connection events. These are raised when a channel
 		// is ready to complete connection establishment.
-		synchronized(this.pendingChanges) {
-			this.pendingChanges.add(new ChangeRequest(clientSocketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
-		}
-		Utils.debug("Endpoint.connectToServer() -> end");
+//		synchronized(this.pendingChanges) {
+//			this.pendingChanges.add(new ChangeRequest(clientSocketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
+//		}
+		
+		clientKey = clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
+		Utils.debug("Dispatcher.connectToServer() -> end");
 	}
 	
 	/**
@@ -365,80 +370,52 @@ public class Endpoint extends Thread {
 	 * @throws IOException
 	 */
 	private void write(SelectionKey key) throws IOException {
-		
-		Utils.debug("Endpoint.write() -> start");
-		key.interestOps(0);
+		Utils.debug("Dispatcher.write() -> start");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		Utils.debug("Endpoint.write() -> sending to ip: "+socketChannel.socket().getInetAddress().toString()+"");
-		
-		synchronized (this.pendingData) {
-			List<ByteBuffer> queue = this.pendingData.get(socketChannel);
-			Utils.debug("Endpoint.write() -> "+queue.size()+" packets to send");
-			// Write until there's not more data ...
-			while (!queue.isEmpty()) {
-								
-				ByteBuffer buf = (ByteBuffer) queue.get(0);
-				
-				// "drop" empty buffer rest
-//				buf.flip();
-//				buf.rewind();
-				
-				Utils.debug("Endpoint.write() -> sending "+buf.limit()+" bytes");
-				Utils.debug("Endpoint.write() -> buf capacity="+buf.capacity());
-				Utils.debug("Endpoint.write() -> buf limit="+buf.limit());
-				Utils.debug("Endpoint.write() -> buf position="+buf.position());
-				Utils.debug("Endpoint.write() -> buf remaining="+buf.remaining());
-				
-				if (Statics.DEBUG_MODE){
-					byte[] b = buf.array();
-					for (int i = 0; i < 9; i++) {
-						byte c = b[i];
-						Utils.debug("Endpoint.write() -> send packet header b["+i+"]="+c+" key="+key);
-						
-					}
-					for (int i = 9; i < buf.remaining(); i++) {
-						byte c = b[i];
-						Utils.debug("Endpoint.write() -> send packet body b["+(i-9)+"]="+c+" key="+key);
-					}
+		Utils.debug("Dispatcher.write() -> sende daten für key="+key+" channel="+socketChannel);
+	    synchronized (this.pendingData) {
+	      List queue = (List) this.pendingData.get(socketChannel);
+	      
+	      // Write until there's not more data ...
+	      while (!queue.isEmpty()) {
+	        ByteBuffer buf = (ByteBuffer) queue.get(0);
+	        
+	        if (Statics.DEBUG_MODE){
+				byte[] b = buf.array();
+				for (int i = 9; i < buf.limit(); i++) {
+					byte c = b[i];
+					Utils.debug("Dispatcher.write() -> body b["+(i-9)+"]="+c);
+					
 				}
-				
-				int write = socketChannel.write(buf);
-				Utils.debug("Endpoint.write() -> buf capacity="+buf.capacity());
-				Utils.debug("Endpoint.write() -> buf limit="+buf.limit());
-				Utils.debug("Endpoint.write() -> buf position="+buf.position());
-				Utils.debug("Endpoint.write() -> buf remaining="+buf.remaining());
-				if (buf.remaining() > 0) {
-					// ... or the socket's buffer fills up
-					break;
-				}
-				queue.remove(0);
-				Utils.debug("Endpoint.write() -> packet sent");
 			}
-
-			if (queue.isEmpty()) {
-				// We wrote away all data, so we're no longer interested
-				// in writing on this socket. Switch back to waiting for
-				// data.
-				key.interestOps(SelectionKey.OP_READ);
-				
-				// --
-//				synchronized(this.pendingChanges) {
-//					this.pendingChanges.add(new ChangeRequest(socketChannel, ChangeRequest.REGISTER, SelectionKey.OP_READ));
-//				}
-				// --
-				
-				Utils.debug("Endpoint.write() -> switched back to read-mode");
-			}
-		}
-		Utils.debug("Endpoint.write() -> end");
+	        
+	        socketChannel.write(buf);
+	        if (buf.remaining() > 0) {
+	          // ... or the socket's buffer fills up
+	          break;
+	        }
+	        queue.remove(0);
+	      }
+	      
+	      if (queue.isEmpty()) {
+	        // We wrote away all data, so we're no longer interested
+	        // in writing on this socket. Switch back to waiting for
+	        // data.
+	        key.interestOps(SelectionKey.OP_READ);
+	      }
+	    }
+		Utils.debug("Dispatcher.write() -> end");
 	}
 	
 	/**
 	 * Sends the data to the socketchannel
 	 * Be warned: only the data from start to position is sent
 	 */
-	protected void send(SocketChannel socketChannel, ByteBuffer packet) {
-		Utils.debug("Endpoint.send() -> start");			
+	protected void send(SelectionKey key, ByteBuffer packet) {
+		
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		Utils.debug("Dispatcher.send() -> start");			
+		Utils.debug("Dispatcher.send() -> sende daten für key="+key+" channel="+socketChannel);
 		synchronized (this.pendingChanges) {
 			// Indicate we want the interest ops set changed
 			this.pendingChanges.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
@@ -450,20 +427,20 @@ public class Endpoint extends Thread {
 					queue = new ArrayList<ByteBuffer>();
 					this.pendingData.put(socketChannel, queue);
 				}
-				Utils.debug("Endpoint.send() -> added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
+				Utils.debug("Dispatcher.send() -> added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
 				queue.add(packet);
-				try {
-					Thread.sleep(10000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+//				try {
+//					Thread.sleep(10000);
+//				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
 			}
 		}
 
 		// Finally, wake up our selecting thread so it can make the required changes
 		this.selector.wakeup();
-		Utils.debug("Endpoint.send() -> end");
+		Utils.debug("Dispatcher.send() -> end");
 	}
 
 	/**
@@ -477,18 +454,11 @@ public class Endpoint extends Thread {
 	 */
 	public Object invokeLookup(String remoteObjectName) throws SimonRemoteException, IOException {
 		final int requestID = generateRequestID(); 
-		Utils.debug("Endpoint.invokeLookup() -> start for requestID="+requestID);
+		Utils.debug("Dispatcher.invokeLookup() -> start for requestID="+requestID);
 		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
-		
-		try {
-			Thread.sleep(10000);
-		} catch (InterruptedException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 		
 		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
 		
@@ -514,8 +484,9 @@ public class Endpoint extends Thread {
 
 		
 		// send the packet to the connected client-socket-channel
-		send(clientSocketChannel, packet);	
-		Utils.debug("Endpoint.invokeLookup() -> data send. waiting for answer for requestID="+requestID);
+//		send(clientSocketChannel, packet);
+		send(clientKey, packet);	
+		Utils.debug("Dispatcher.invokeLookup() -> data send. waiting for answer for requestID="+requestID);
 		// got to sleep until result is present
 		synchronized (monitor) {
 			try {
@@ -525,14 +496,14 @@ public class Endpoint extends Thread {
 			}
 		}
 			
-		Utils.debug("Endpoint.invokeLookup() -> got answer for requestID="+requestID);
+		Utils.debug("Dispatcher.invokeLookup() -> got answer for requestID="+requestID);
 			
 		// check if there was an error while sleeping
 		if (globalEndpointException!=null) throw globalEndpointException;
 		
 		// get result
 		synchronized (requestResults) {
-			Utils.debug("Endpoint.invokeLookup() -> end. requestID="+requestID);
+			Utils.debug("Dispatcher.invokeLookup() -> end. requestID="+requestID);
 			return requestResults.remove(requestID);			
 		}
 	}
@@ -540,7 +511,7 @@ public class Endpoint extends Thread {
 	/**
 	 * sends a requested invocation to the server
 	 * 
-	 * @param remoteObject
+	 * @param remoteObjectName
 	 * @param methodName
 	 * @param parameterTypes
 	 * @param args
@@ -549,9 +520,9 @@ public class Endpoint extends Thread {
 	 * @throws SimonRemoteException if there's a problem with the communication
 	 * @throws IOException 
 	 */	 
- 	protected Object invokeMethod(String remoteObject, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
+ 	protected Object invokeMethod(String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
  		final int requestID = generateRequestID();
- 		Utils.debug("Endpoint.sendInvocationToRemote() -> begin. requestID="+requestID);
+ 		Utils.debug("Dispatcher.sendInvocationToRemote() -> begin. requestID="+requestID);
 
  		if (globalEndpointException!=null) throw globalEndpointException;
 
@@ -577,18 +548,21 @@ public class Endpoint extends Thread {
 //		if (sendCounter==Integer.MAX_VALUE) sendCounter=0;
 
 		// here we have to allocate more, because atm we don't know big the parameters are 
-		ByteBuffer packet = ByteBuffer.allocate(4096);
 		
-		packet.put(Statics.INVOCATION_PACKET);
-		packet.putInt(requestID);
-		packet.put(Utils.stringToBytes(remoteObject));
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.INVOCATION_PACKET, requestID);
+		
+		packet.put(Utils.stringToBytes(remoteObjectName));
 		packet.putLong(methodHash);
 		
 		for (int i = 0; i < parameterTypes.length; i++) {
             Utils.wrapValue(parameterTypes[i], args[i], packet);
         }
 		
-		send(clientSocketChannel, packet);
+		packet.setComplete();
+		
+//		send(clientSocketChannel, packet);
+		send(clientKey, packet.getByteBuffer());
 				
 //		FIXME this was used for caching. now it's useless
 //		objectOutputStream.flush();
@@ -597,13 +571,14 @@ public class Endpoint extends Thread {
 //		}
 				
 		// got to sleep until result is present
-		try {
-			monitor.wait();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		
-		Utils.debug("Endpoint.sendInvocationToRemote() -> end. requestID="+requestID);
+		Utils.debug("Dispatcher.sendInvocationToRemote() -> end. requestID="+requestID);
 		return requestResults.remove(requestID);
 	}
 
@@ -637,7 +612,8 @@ public class Endpoint extends Thread {
 		packet.put(Utils.stringToBytes(remoteObjectName)); 	// name of remote object in lookuptable	
 		
 		// send the packet to the connected client-socket-channel
-		send(clientSocketChannel, packet);
+//		send(clientSocketChannel, packet);
+		send(clientKey, packet);
 		
 
 		// got to sleep until result is present
@@ -686,7 +662,8 @@ public class Endpoint extends Thread {
 		packet.put(Utils.stringToBytes(remoteObjectName)); 	// name of remote object in lookuptable	
 		
 		// send the packet to the connected client-socket-channel
-		send(clientSocketChannel, packet);
+//		send(clientSocketChannel, packet);
+		send(clientKey, packet);
 		
 
 		// got to sleep until result is present
@@ -722,7 +699,8 @@ public class Endpoint extends Thread {
 		packet.put(Utils.stringToBytes(remoteObjectName));
 		packet.put(Utils.objectToBytes(object));
 		
-		send(clientSocketChannel, packet);
+//		send(clientSocketChannel, packet);
+		send(clientKey, packet);
 		
 		// got to sleep until result is present
 		try {
@@ -752,7 +730,7 @@ public class Endpoint extends Thread {
 					monitor.notify(); // wake the waiting method
 				}
 			} else {
-				Utils.debug("Endpoint.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
+				Utils.debug("Dispatcher.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
 			}
 			
 		}
@@ -824,9 +802,9 @@ public class Endpoint extends Thread {
 	private Object createMonitor(final int requestID) {
 		final Object monitor = new Object();
 		synchronized (idMonitorMap) {
-			Utils.debug("Endpoint.createMonitor() -> monitor for requestID="+requestID+" -> monitor="+monitor+" mapsize="+idMonitorMap.size());
+			Utils.debug("Dispatcher.createMonitor() -> monitor for requestID="+requestID+" -> monitor="+monitor+" mapsize="+idMonitorMap.size());
 			idMonitorMap.put(requestID, monitor);
-			Utils.debug("Endpoint.createMonitor() -> monitor for requestID="+requestID+" new mapsize="+idMonitorMap.size());
+			Utils.debug("Dispatcher.createMonitor() -> monitor for requestID="+requestID+" new mapsize="+idMonitorMap.size());
 		}
 		return monitor;
 	}

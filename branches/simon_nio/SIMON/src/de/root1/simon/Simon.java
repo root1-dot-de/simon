@@ -55,6 +55,8 @@ public class Simon {
 		getThreadPool(); // make sure that there is a thread pool ....
 		registry = new Registry(lookupTable, port);
 		registry.start();
+		
+		
 	}
 	
 	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, ConnectException {
@@ -84,7 +86,9 @@ public class Simon {
 			Utils.debug("Simon.lookup() -> connected with server ...");
 			
 			// FIXME make sure endpoint is feed with all needed data
-			Endpoint endpoint = new Endpoint(objectCacheLifetime, lookupTable, "Client", false, port);
+			Dispatcher endpoint = new Dispatcher(objectCacheLifetime, lookupTable, "Client", false, port);
+			// FIXME should the invoke-methods should be "outside" the dispatcher ??
+			new Thread(endpoint).start();
 			Utils.debug("Simon.lookup() -> Endpoint thread started");
 			
 			

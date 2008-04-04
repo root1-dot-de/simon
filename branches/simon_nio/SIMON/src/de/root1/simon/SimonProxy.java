@@ -35,7 +35,7 @@ public class SimonProxy implements InvocationHandler {
 	private String remoteObjectName;
 	
 	/** local socket-endpoint for communication with remote */
-	private Endpoint endpoint;
+	private Dispatcher endpoint;
 	
 	/**
 	 * 
@@ -44,7 +44,7 @@ public class SimonProxy implements InvocationHandler {
 	 * @param endpoint reference to the endpoint
 	 * @param remoteObjectName name of the remoteobject
 	 */
-	public SimonProxy(Endpoint endpoint, String remoteObjectName) {
+	public SimonProxy(Dispatcher endpoint, String remoteObjectName) {
 		this.endpoint = endpoint;
 		this.remoteObjectName = remoteObjectName;
 	}
