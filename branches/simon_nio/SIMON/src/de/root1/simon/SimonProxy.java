@@ -56,24 +56,24 @@ public class SimonProxy implements InvocationHandler {
 		 */
 		if (!method.toString().contains("throws "+SimonRemoteException.class.getName())){
 			
-			try{
-				// redirect invocation
-				if (method.toString().equalsIgnoreCase(Statics.EQUALS_METHOD_SIGNATURE)){
-					return remoteEquals(args[0]);
-				}
-				else
-				if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)){
-					return remoteHashCode();
-				}
-				else
-				if (method.toString().equalsIgnoreCase(Statics.TOSTRING_METHOD_SIGNATURE)){
-					return remoteToString();
-				}else
-					throw new SimonRemoteException("'"+method.getName()+"' is whether a remote method, nor is it callable over remote.");
-				
-			} catch (IOException e){
-				throw new SimonRemoteException("Could not process invocation of method '"+method.getName()+"'. Underlying exception: "+e.getMessage());
-			}
+//			try{
+//				// redirect invocation
+//				if (method.toString().equalsIgnoreCase(Statics.EQUALS_METHOD_SIGNATURE)){
+//					return remoteEquals(args[0]);
+//				}
+//				else
+//				if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)){
+//					return remoteHashCode();
+//				}
+//				else
+//				if (method.toString().equalsIgnoreCase(Statics.TOSTRING_METHOD_SIGNATURE)){
+//					return remoteToString();
+//				}else
+//					throw new SimonRemoteException("'"+method.getName()+"' is whether a remote method, nor is it callable over remote.");
+//				
+//			} catch (IOException e){
+//				throw new SimonRemoteException("Could not process invocation of method '"+method.getName()+"'. Underlying exception: "+e.getMessage());
+//			}
 		}
 		
 		/*
@@ -83,7 +83,8 @@ public class SimonProxy implements InvocationHandler {
 		 */
 		if (Statics.DEBUG_MODE)
         	System.out.println("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
-		Object result = endpoint.invokeMethod(remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
+		Object result =null;
+//		= endpoint.invokeMethod(remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
 		// Check for exceptions ...
@@ -120,26 +121,26 @@ public class SimonProxy implements InvocationHandler {
 //		return endpoint.getPort();
 //	}
 	
-	private String remoteToString() throws SimonRemoteException {
-		// TODO Auto-generated method stub
-		try {
-			return "[Proxy="+remoteObjectName+
-//						"|endpoint="+getInetAddress()+":"+getPort()+
-						"|endpoint"+
-						"|invocationHandler="+super.toString()+
-						"|remote="+endpoint.invokeToString(remoteObjectName)+
-					"]";
-		} catch (IOException e) {
-			throw new SimonRemoteException(e.getMessage());
-		}
-	}
-	
-	private int remoteHashCode() throws IOException {
-		return endpoint.invokeHashCode(remoteObjectName);
-	}
-	
-	private boolean remoteEquals(Object object) throws IOException {
-		return endpoint.invokeEquals(remoteObjectName, object);
-	}
+//	private String remoteToString() throws SimonRemoteException {
+//		// TODO Auto-generated method stub
+//		try {
+//			return "[Proxy="+remoteObjectName+
+////						"|endpoint="+getInetAddress()+":"+getPort()+
+//						"|endpoint"+
+//						"|invocationHandler="+super.toString()+
+//						"|remote="+endpoint.invokeToString(remoteObjectName)+
+//					"]";
+//		} catch (IOException e) {
+//			throw new SimonRemoteException(e.getMessage());
+//		}
+//	}
+//	
+//	private int remoteHashCode() throws IOException {
+//		return endpoint.invokeHashCode(remoteObjectName);
+//	}
+//	
+//	private boolean remoteEquals(Object object) throws IOException {
+//		return endpoint.invokeEquals(remoteObjectName, object);
+//	}
 
 }

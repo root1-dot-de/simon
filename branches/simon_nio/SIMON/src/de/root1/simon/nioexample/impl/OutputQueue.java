@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.io.IOException;
 
 class OutputQueue implements IOutputQueue {
+	
 	private final IByteBufferFactory bufferFactory;
 	private final IChannelFacade facade;
 	private final LinkedList<ByteBuffer> queue;
@@ -26,6 +27,7 @@ class OutputQueue implements IOutputQueue {
 		return (active == null) && (queue.size() == 0);
 	}
 
+	
 	public synchronized int drainTo(ByteChannel channel) throws IOException {
 		int bytesWritten = 0;
 
@@ -55,6 +57,9 @@ class OutputQueue implements IOutputQueue {
 
 	// -- not needed by framework
 
+	/*
+	 * 
+	 */
 	public synchronized boolean enqueue(ByteBuffer byteBuffer) {
 		if (byteBuffer.remaining() == 0) {
 			return false;

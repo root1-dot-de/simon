@@ -86,7 +86,8 @@ public class Simon {
 			Utils.debug("Simon.lookup() -> connected with server ...");
 			
 			// FIXME make sure endpoint is feed with all needed data
-			Dispatcher endpoint = new Dispatcher(objectCacheLifetime, lookupTable, "Client", false, port);
+			Dispatcher endpoint = null;
+//			= new Dispatcher(lookupTable, "Client", false, port);
 			// FIXME should the invoke-methods should be "outside" the dispatcher ??
 			new Thread(endpoint).start();
 			Utils.debug("Simon.lookup() -> Endpoint thread started");

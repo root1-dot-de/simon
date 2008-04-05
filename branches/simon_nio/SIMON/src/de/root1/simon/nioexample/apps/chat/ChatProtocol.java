@@ -1,8 +1,8 @@
 package de.root1.simon.nioexample.apps.chat;
 
-import de.root1.simon.nioexample.impl.IInputHandlerFactory;
 import de.root1.simon.nioexample.interfaces.IChannelFacade;
 import de.root1.simon.nioexample.interfaces.IInputHandler;
+import de.root1.simon.nioexample.interfaces.IInputHandlerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;

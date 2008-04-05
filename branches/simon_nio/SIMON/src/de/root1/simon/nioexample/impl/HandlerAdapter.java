@@ -15,7 +15,15 @@ import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
 import java.net.SocketException;
 
+/**
+ * 
+ * TODO Documentation to be done
+ *
+ * @author achristian
+ *
+ */
 class HandlerAdapter implements Callable<HandlerAdapter>, IChannelFacade {
+
 	private final Dispatcher dispatcher;
 	private final IInputQueue inputQueue;
 	private final IOutputQueue outputQueue;
@@ -29,8 +37,14 @@ class HandlerAdapter implements Callable<HandlerAdapter>, IChannelFacade {
 	private volatile boolean running = false;
 	private volatile boolean dead = false;
 
-	public HandlerAdapter(IInputHandler clientHandler, Dispatcher dispatcher,
-			IByteBufferFactory bufferFactory) {
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param clientHandler
+	 * @param dispatcher
+	 * @param bufferFactory
+	 */
+	public HandlerAdapter(IInputHandler clientHandler, Dispatcher dispatcher, IByteBufferFactory bufferFactory) {
 		this.dispatcher = dispatcher;
 		this.clientHandler = clientHandler;
 
@@ -53,6 +67,7 @@ class HandlerAdapter implements Callable<HandlerAdapter>, IChannelFacade {
 			while ((message = clientHandler.nextMessage(this)) != null) {
 				clientHandler.handleInput(message, this);
 			}
+			
 		} finally {
 			synchronized (stateChangeLock) {
 				running = false;
@@ -64,7 +79,6 @@ class HandlerAdapter implements Callable<HandlerAdapter>, IChannelFacade {
 
 	// ------------------------------------------------------------
 	// Implementation of ChannelFacade interface
-
 	public IInputQueue inputQueue() {
 		return inputQueue;
 	}

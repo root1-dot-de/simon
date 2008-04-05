@@ -23,8 +23,7 @@ public class EchoServer {
 
 		Dispatcher dispatcher = new Dispatcher(dispatcherPool, bufFactory);
 
-		Acceptor acceptor = new Acceptor(1234, dispatcher,
-				new GenericInputHandlerFactory(EchoHandler.class));
+		Acceptor acceptor = new Acceptor(1234, dispatcher, new GenericInputHandlerFactory(EchoHandler.class));
 
 		dispatcher.start();
 		acceptor.newThread();

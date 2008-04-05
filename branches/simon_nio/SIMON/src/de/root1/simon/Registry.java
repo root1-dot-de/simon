@@ -74,14 +74,15 @@ public class Registry extends Thread {
 		super.run();
 		Utils.debug("Registry.run() -> start");
 		
-		try {
-			endpoint = new Dispatcher(Simon.getObjectCacheLifetime(),serverLookupTable, "Simon-Registry", true, port);
+//		try {
+			endpoint = null;
+//			new Dispatcher(serverLookupTable, "Simon-Registry", true, port);
 			// FIXME start registry in a "better" way
 			new Thread(endpoint).start();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
+//		} catch (IOException e1) {
+//			// TODO Auto-generated catch block
+//			e1.printStackTrace();
+//		}
 		
 		Utils.debug("Registry.run() -> end");
 	}
