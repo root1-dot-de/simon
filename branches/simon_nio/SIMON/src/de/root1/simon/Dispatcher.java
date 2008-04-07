@@ -104,11 +104,12 @@ public class Dispatcher implements Runnable {
 	 * @param objectCacheLifetime 
 	 * 
 	 * @param lookupTable the reference to an instance of <code>LookupTable</code>
+	 * @param threadPool 
 	 * @param threadName used for naming the <code>Endpoint</code>-thread.
 	 * @throws IOException 
 	 * @throws IOException 
 	 */
-	public Dispatcher(LookupTable lookupTable) throws IOException {
+	public Dispatcher(LookupTable lookupTable, ExecutorService threadPool) throws IOException {
 		Utils.debug("Dispatcher.Dispatcher() -> start");
 		
 		// FIXME set the name of the thread?!
@@ -116,8 +117,7 @@ public class Dispatcher implements Runnable {
 		this.lookupTable = lookupTable;
 		
 		// FIXME should be configurable
-		eventHandlerPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory("EventHandler"));
-		invocationPool = Executors.newSingleThreadExecutor();
+		eventHandlerPool = threadPool;
 		
 //		if (isServer) {
 //			Utils.debug("Dispatcher.Endpoint() -> initSelectorServer()");

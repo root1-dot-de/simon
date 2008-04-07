@@ -20,8 +20,6 @@ public class Acceptor implements Runnable {
 	private ServerSocketChannel serverChannel;
 	private Selector socketSelector;
 	private Dispatcher dispatcher;
-	private LookupTable lookupTable;
-	private Thread dispatcherThread;
 
 	/**
 	 * 
@@ -29,20 +27,14 @@ public class Acceptor implements Runnable {
 	 * 
 	 * @throws IOException
 	 */
-	Acceptor(LookupTable lookupTable) throws IOException {
+	Acceptor(Dispatcher dispatcher, int serverPort) throws IOException {
 	
 		Utils.debug("Acceptor.Acceptor() -> init ...");
 		
+		this.serverPort = serverPort;
+		this.dispatcher = dispatcher;
 		
 		initSelector();
-		
-		this.lookupTable = lookupTable;
-		
-		dispatcher = new Dispatcher(lookupTable);
-		
-		dispatcherThread = new Thread(dispatcher,"Simon-Server-Dispatcher");
-		dispatcherThread.start();
-		
 	}
 
 	public void run() {

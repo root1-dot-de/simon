@@ -37,7 +37,6 @@ public class Simon {
 	
 	private static Registry registry;
 	private static LookupTable lookupTable = new LookupTable();
-	private static int objectCacheLifetime = 1000;
 	
 	/*
 	 * Different ThreadPool implementations
@@ -52,15 +51,11 @@ public class Simon {
 	 * @param port
 	 */
 	public static void createRegistry(int port){
-		getThreadPool(); // make sure that there is a thread pool ....
-		registry = new Registry(lookupTable, port);
+		registry = new Registry(lookupTable, port, getThreadPool());
 		registry.start();
-		
-		
 	}
 	
 	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, ConnectException {
-		getThreadPool(); // make sure that there is a thread pool
 		Utils.debug("Simon.lookup() -> START");
 		Object proxy = null;
 		
@@ -229,23 +224,21 @@ public class Simon {
 	 * @deprecated this method doesn't have any effect on the use of simon
 	 */
 	public static void setObjectCacheLifetime(int value) throws IllegalArgumentException{
-		if (value<1) throw new IllegalArgumentException("objectCacheLifetime must be >=1");
-		objectCacheLifetime = value;
 	}
 	
 	/**
 	 * Gets the number of times a remote-invocation has to be called until the object-cache is cleared.
 	 * 
 	 * @return int value 
+	 * @deprecated this will from now on return -1 ...!!!
 	 */
 	public static int getObjectCacheLifetime(){
-		return objectCacheLifetime;
+		return -1;
 	}
 
 	/**
 	 * Returns the reference to the worker thread pool
 	 * @return the threadPool
-	 * @deprecated this method doesn't have any effect on the use of simon
 	 */
 	protected static ExecutorService getThreadPool() {
 		if (threadPool==null){
@@ -265,7 +258,6 @@ public class Simon {
 	 * if size has value >=1, the pool has a fixed size by the given value
 	 * 
 	 * @param size the size of the used worker thread pool
-	 * @deprecated this method doesn't have any effect on the use of simon
 	 */
 	public static void setWorkerThreadPoolSize(int size) {
 		if (threadPool!=null) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");

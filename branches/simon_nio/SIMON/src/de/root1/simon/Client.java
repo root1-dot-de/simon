@@ -11,6 +11,8 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import de.root1.simon.utils.Utils;
 
@@ -35,8 +37,9 @@ public class Client {
 	 * @throws IOException 
 	 */
 	public Client() throws IOException {
+		ExecutorService threadPool = Executors.newCachedThreadPool();
 		lookupTable = new LookupTable();
-		dispatcher = new Dispatcher(lookupTable);
+		dispatcher = new Dispatcher(lookupTable,threadPool);
 		
 				
 		

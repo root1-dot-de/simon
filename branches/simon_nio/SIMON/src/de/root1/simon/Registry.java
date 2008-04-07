@@ -29,6 +29,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
+import java.util.concurrent.ExecutorService;
 
 import de.root1.simon.utils.Utils;
 
@@ -52,16 +53,19 @@ public class Registry extends Thread {
 	
 	// The selector we'll be monitoring
 	private Selector selector;
-	private Dispatcher endpoint;
+	private Dispatcher dispatcher;
+	private Acceptor acceptor;
+	private ExecutorService threadPool;
 
 	/**
 	 * TODO Documentation to be done
 	 * @param lookupTable
 	 * @param port
 	 */
-	public Registry(LookupTable lookupTable, int port) {
+	public Registry(LookupTable lookupTable, int port, ExecutorService threadPool) {
 		this.serverLookupTable = lookupTable;
 		this.port = port;
+		this.threadPool = threadPool;
 		this.setName("SimonRegistry");
 	}
 
@@ -74,22 +78,22 @@ public class Registry extends Thread {
 		super.run();
 		Utils.debug("Registry.run() -> start");
 		
-//		try {
-			endpoint = null;
-//			new Dispatcher(serverLookupTable, "Simon-Registry", true, port);
-			// FIXME start registry in a "better" way
-			new Thread(endpoint).start();
-//		} catch (IOException e1) {
-//			// TODO Auto-generated catch block
-//			e1.printStackTrace();
-//		}
+		try {
+			
+			dispatcher = new Dispatcher(serverLookupTable, threadPool);
+			new Thread(dispatcher,"Simon.Registry.Dispatcher").start();
+
+			acceptor = new Acceptor(dispatcher,port);
+			new Thread(acceptor,"Simon.Registry.Acceptor").start();
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		Utils.debug("Registry.run() -> end");
 	}
 	
-	public void putBinding(String name, SimonRemote remoteObject) {
-		serverLookupTable.putRemoteBinding(name, remoteObject);
-	}
 	
 
 	
