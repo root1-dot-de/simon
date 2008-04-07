@@ -26,6 +26,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.AbstractSelector;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -55,37 +60,21 @@ public class Simon {
 		registry.start();
 	}
 	
-	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, ConnectException {
+	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException {
 		Utils.debug("Simon.lookup() -> START");
 		Object proxy = null;
 		
+		Dispatcher dispatcher = new Dispatcher(lookupTable,getThreadPool());
 		
-			
-		try {	
-			InetAddress addr = InetAddress.getByName(host);
-			SocketAddress sockaddr = new InetSocketAddress(addr, port);
-
-			// Create an unbound socket
-//			Socket socket = new Socket();
-			
-//			preSetupSocket(socket);
-
-			// This method will block no more than timeoutMs.
-			// If the timeout occurs, SocketTimeoutException is thrown.
-//			int timeoutMs = 2000; // 2 seconds
-//			socket.connect(sockaddr, timeoutMs);
-			
-//			postSetupSocket(socket);
-			
+		Thread clientDispatcherThread = new Thread(dispatcher,"Simon.Dispatcher");
+		clientDispatcherThread.start();
+		try {
+			Client client = new Client(dispatcher);
+			client.connect(host, port);
+			dispatcher.setClientKey(client.getKey());
 			
 			Utils.debug("Simon.lookup() -> connected with server ...");
 			
-			// FIXME make sure endpoint is feed with all needed data
-			Dispatcher endpoint = null;
-//			= new Dispatcher(lookupTable, "Client", false, port);
-			// FIXME should the invoke-methods should be "outside" the dispatcher ??
-			new Thread(endpoint).start();
-			Utils.debug("Simon.lookup() -> Endpoint thread started");
 			
 			
 			// ab hier serverantwort auswerten
@@ -95,12 +84,12 @@ public class Simon {
 			 * first contact server for lookup of interfaces
 			 * this request blocks!
 			 */
-			Class<?>[] listenerInterfaces = (Class<?>[]) endpoint.invokeLookup(remoteObjectName);
+			Class<?>[] listenerInterfaces = (Class<?>[]) dispatcher.invokeLookup(remoteObjectName);
 			
 			/*
 			 * This class gets the interfaces and directs the method-calls
 			 */
-			SimonProxy handler = new SimonProxy(endpoint, remoteObjectName);
+			SimonProxy handler = new SimonProxy(dispatcher, remoteObjectName);
 			Utils.debug("Simon.lookup() -> Proxy created");
 			
 			 /* 

@@ -33,9 +33,10 @@ public class SimonProxy implements InvocationHandler {
 	
 	/** name of the corresponding remoteobject in the remote-lookuptable */
 	private String remoteObjectName;
+;
 	
 	/** local socket-endpoint for communication with remote */
-	private Dispatcher endpoint;
+	private Dispatcher dispatcher;
 	
 	/**
 	 * 
@@ -44,8 +45,8 @@ public class SimonProxy implements InvocationHandler {
 	 * @param endpoint reference to the endpoint
 	 * @param remoteObjectName name of the remoteobject
 	 */
-	public SimonProxy(Dispatcher endpoint, String remoteObjectName) {
-		this.endpoint = endpoint;
+	public SimonProxy(Dispatcher dispatcher, String remoteObjectName) {
+		this.dispatcher = dispatcher;
 		this.remoteObjectName = remoteObjectName;
 	}
 
@@ -83,8 +84,7 @@ public class SimonProxy implements InvocationHandler {
 		 */
 		if (Statics.DEBUG_MODE)
         	System.out.println("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
-		Object result =null;
-//		= endpoint.invokeMethod(remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
+		Object result = dispatcher.invokeMethod(remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
 		// Check for exceptions ...
@@ -99,7 +99,7 @@ public class SimonProxy implements InvocationHandler {
 			Class<?>[] listenerInterfaces = new Class<?>[1];
 			listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
-			SimonProxy handler = new SimonProxy(endpoint, simonCallback.getId());
+			SimonProxy handler = new SimonProxy(dispatcher, simonCallback.getId());
 
 			// reimplant the proxy object
 			result = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, handler);
@@ -121,19 +121,19 @@ public class SimonProxy implements InvocationHandler {
 //		return endpoint.getPort();
 //	}
 	
-//	private String remoteToString() throws SimonRemoteException {
-//		// TODO Auto-generated method stub
-//		try {
-//			return "[Proxy="+remoteObjectName+
-////						"|endpoint="+getInetAddress()+":"+getPort()+
-//						"|endpoint"+
-//						"|invocationHandler="+super.toString()+
-//						"|remote="+endpoint.invokeToString(remoteObjectName)+
-//					"]";
-//		} catch (IOException e) {
-//			throw new SimonRemoteException(e.getMessage());
-//		}
-//	}
+	private String remoteToString() throws SimonRemoteException {
+		// TODO Auto-generated method stub
+		try {
+			return "[Proxy="+remoteObjectName+
+//						"|endpoint="+getInetAddress()+":"+getPort()+
+						"|endpoint"+
+						"|invocationHandler="+super.toString()+
+						"|remote="+dispatcher.invokeToString(remoteObjectName)+
+					"]";
+		} catch (IOException e) {
+			throw new SimonRemoteException(e.getMessage());
+		}
+	}
 //	
 //	private int remoteHashCode() throws IOException {
 //		return endpoint.invokeHashCode(remoteObjectName);
