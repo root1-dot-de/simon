@@ -23,6 +23,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -92,7 +93,6 @@ public class Dispatcher implements Runnable {
 	private ExecutorService eventHandlerPool = null;
 	private ExecutorService invocationPool = null;
 
-	private List<SocketChannel> readFromKey = new ArrayList<SocketChannel>();
 
 	private SelectionKey clientKey;
 
@@ -114,7 +114,6 @@ public class Dispatcher implements Runnable {
 		// FIXME set the name of the thread?!
 //		this.setName("Endpoint: "+threadName);
 		this.lookupTable = lookupTable;
-		this.port = port;
 		
 		// FIXME should be configurable
 		eventHandlerPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory("EventHandler"));
@@ -212,19 +211,21 @@ public class Dispatcher implements Runnable {
 	 * @see java.lang.Thread#run()
 	 */
 	public void run() {
-//		super.run();
 		
 		while (true) {
 			Utils.debug("");
 			Utils.debug("");
 			try {
-				// Process any pending changes
-				// this means read/write interests on channels
+				// Process any pending selector changes
+				// this means read/write interests and registrations
 				synchronized (this.pendingChanges) {
+					
 					Iterator<ChangeRequest> changes = this.pendingChanges.iterator();
 					while (changes.hasNext()) {
+						
 						ChangeRequest change = (ChangeRequest) changes.next();
 						Utils.debug("Dispatcher.run() -> changeRequest -> "+change);
+						
 						switch (change.type) {
 
 							case ChangeRequest.CHANGEOPS:
@@ -275,28 +276,22 @@ public class Dispatcher implements Runnable {
 							
 						} else if (key.isReadable()) {
 
-							SocketChannel socketChannel =(SocketChannel) key.channel();
-							
-							RxPacket p = new RxPacket(socketChannel);
-							
-							int msgType = p.getMsgType();
-							int requestID = p.getRequestID();
-							ByteBuffer packetBody = p.getBody();
-							
 							Utils.debug("Dispatcher.run() -> "+key+" is readable");
-							eventHandlerPool.execute(new EventHandler(key,this,p));
+							key.interestOps(0); // deregister for read-events
+							handleRead(key);
 							
 						} else if (key.isWritable()) {
 							
 							Utils.debug("Dispatcher.run() -> "+key+" is writeable");
-							this.write(key);
+							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
+							handleWrite(key);
 							
 						}
 					}
 
 				} else {
 				
-					Utils.debug("Dispatcher.run() -> no keys available -> 0 ");
+					Utils.debug("Dispatcher.run() -> no keys available");
 					
 				}
 				
@@ -307,7 +302,42 @@ public class Dispatcher implements Runnable {
 			}
 		}
 	}
+
+
+
+	private void handleRead(SelectionKey key) {
+		eventHandlerPool.execute(new ReadEventHandler(key,this));
+	}
 	
+	private void handleWrite(SelectionKey key) throws IOException {
+		Utils.debug("Dispatcher.write() -> start");
+	    SocketChannel socketChannel = (SocketChannel) key.channel();
+
+	    synchronized (this.pendingData) {
+	      List<ByteBuffer> queue = (List<ByteBuffer>) this.pendingData.get(socketChannel);
+	      
+	      // Write until there's not more data ...
+	      while (!queue.isEmpty()) {
+	        ByteBuffer buf = (ByteBuffer) queue.get(0);
+	        socketChannel.write(buf);
+	        if (buf.remaining() > 0) {
+	          // ... or the socket's buffer fills up
+	          break;
+	        }
+	        queue.remove(0);
+	      }
+	      
+	      if (queue.isEmpty()) {
+	        // We wrote away all data, so we're no longer interested
+	        // in writing on this socket. Switch back to waiting for
+	        // data.
+	        key.interestOps(SelectionKey.OP_READ);
+	      }
+	    }
+	}
+
+
+
 	/**
 	 * 
 	 * Finish clients connection to the server
@@ -355,49 +385,6 @@ public class Dispatcher implements Runnable {
 		Utils.debug("Dispatcher.connectToServer() -> end");
 	}
 	
-	/**
-	 * Is called from the run() loop
-	 *
-	 * @param key
-	 * @throws IOException
-	 */
-	private void write(SelectionKey key) throws IOException {
-		Utils.debug("Dispatcher.write() -> start");
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		Utils.debug("Dispatcher.write() -> sende daten für key="+key+" channel="+socketChannel);
-	    synchronized (this.pendingData) {
-	      List queue = (List) this.pendingData.get(socketChannel);
-	      
-	      // Write until there's not more data ...
-	      while (!queue.isEmpty()) {
-	        ByteBuffer buf = (ByteBuffer) queue.get(0);
-	        
-	        if (Statics.DEBUG_MODE){
-				byte[] b = buf.array();
-				for (int i = 9; i < buf.limit(); i++) {
-					byte c = b[i];
-					Utils.debug("Dispatcher.write() -> body b["+(i-9)+"]="+c);
-					
-				}
-			}
-	        
-	        socketChannel.write(buf);
-	        if (buf.remaining() > 0) {
-	          // ... or the socket's buffer fills up
-	          break;
-	        }
-	        queue.remove(0);
-	      }
-	      
-	      if (queue.isEmpty()) {
-	        // We wrote away all data, so we're no longer interested
-	        // in writing on this socket. Switch back to waiting for
-	        // data.
-	        key.interestOps(SelectionKey.OP_READ);
-	      }
-	    }
-		Utils.debug("Dispatcher.write() -> end");
-	}
 	
 	/**
 	 * Sends the data to the socketchannel
@@ -408,31 +395,33 @@ public class Dispatcher implements Runnable {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		Utils.debug("Dispatcher.send() -> start");			
 		Utils.debug("Dispatcher.send() -> sende daten für key="+key+" channel="+socketChannel);
-		synchronized (this.pendingChanges) {
-			// Indicate we want the interest ops set changed
-			this.pendingChanges.add(new ChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE));
+		
 
-			// And queue the data we want written
-			synchronized (this.pendingData) {
-				List<ByteBuffer> queue = this.pendingData.get(socketChannel);
-				if (queue == null) {
-					queue = new ArrayList<ByteBuffer>();
-					this.pendingData.put(socketChannel, queue);
-				}
-				Utils.debug("Dispatcher.send() -> added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
-				queue.add(packet);
-//				try {
-//					Thread.sleep(10000);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
+		// And queue the data we want written
+		synchronized (this.pendingData) {
+			List<ByteBuffer> queue = this.pendingData.get(socketChannel);
+			if (queue == null) {
+				queue = new ArrayList<ByteBuffer>();
+				this.pendingData.put(socketChannel, queue);
 			}
+			Utils.debug("Dispatcher.send() -> added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
+			queue.add(packet);
 		}
 
-		// Finally, wake up our selecting thread so it can make the required changes
-		this.selector.wakeup();
+		selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE);
+
 		Utils.debug("Dispatcher.send() -> end");
+	}
+
+
+
+	private void selectorChangeRequest(SocketChannel socketChannel, int type, int operation) {
+		synchronized (this.pendingChanges) {
+			// Indicate we want the interest ops set changed
+			this.pendingChanges.add(new ChangeRequest(socketChannel, type, operation));
+		}
+		// Finally, wake up our selecting thread so it can make the required changes
+		selector.wakeup();
 	}
 
 	/**
@@ -521,6 +510,7 @@ public class Dispatcher implements Runnable {
 	}
 
 	/** 
+	 * TODO should be placed outside the dispatcher?
 	 * wake all waiting processes. This is only called due to global errors ...
 	 */
 	private void wakeAllMonitors() {
@@ -545,37 +535,6 @@ public class Dispatcher implements Runnable {
 	}
 
 	/**
-	 * TODO Documentation to be done
-	 * @return
-	 */
-	public ExecutorService getInvocationPool() {
-		return invocationPool;
-	}
-
-
-
-
-
-	// FIXME reimplement asking for ip-address of client ...
-//	/**
-//	 * for internal use only
-//	 * @return
-//	 */
-//	protected InetAddress getInetAddress() {
-//		return socket.getInetAddress();
-//	}
-//	
-//	/**
-//	 * for internal use only
-//	 * @return
-//	 */
-//	protected int getPort(){
-//		return socket.getPort();
-//	}
-	
-	
-	
-	/**
 	 * 
 	 * create a monitor that waits for the request-result that 
 	 * is associated with the given request-id
@@ -583,7 +542,7 @@ public class Dispatcher implements Runnable {
 	 * @param requestID
 	 * @return the monitor used for waiting for the result
 	 */
-	private Object createMonitor(final int requestID) {
+	Object createMonitor(final int requestID) {
 		final Object monitor = new Object();
 		synchronized (idMonitorMap) {
 			Utils.debug("Dispatcher.createMonitor() -> monitor for requestID="+requestID+" -> monitor="+monitor+" mapsize="+idMonitorMap.size());
@@ -593,23 +552,40 @@ public class Dispatcher implements Runnable {
 		return monitor;
 	}
 
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'removeRequestReturnType', by 'ACHR'..
+	 * 
+	 * @param requestID
+	 * @return
+	 */
 	protected synchronized Class<?> removeRequestReturnType(int requestID) {
 		return requestReturnType.remove(requestID);
 	}
 	
-	protected synchronized void removeFromReadFrom(SocketChannel channel){
-		readFromKey.remove(channel);
+	/**
+	 * Registers a channel with the dispatcher's selector
+	 * @param channel
+	 * @throws ClosedChannelException 
+	 */
+	public void registerChannel(SocketChannel channel) throws ClosedChannelException {
+		Utils.debug("Dispatcher.registerChannel() -> start");
+		selectorChangeRequest(channel, ChangeRequest.REGISTER, SelectionKey.OP_READ);
+		Utils.debug("Dispatcher.registerChannel() -> end");
 	}
 
 
 
-	/**
-	 * TODO Documentation to be done
-	 * @param socketChannel
-	 * @throws ClosedChannelException 
-	 */
-	public void registerChannel(SocketChannel socketChannel) throws ClosedChannelException {
-		socketChannel.register(selector, SelectionKey.OP_READ);
+	public void changeOpForReadiness(SocketChannel channel) {
+		Utils.debug("Dispatcher.registerChannel() -> start");
+		selectorChangeRequest(channel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
+		Utils.debug("Dispatcher.registerChannel() -> end");
+	}
+	
+	public Object getResult(int requestID){
+		synchronized (requestResults) {
+			return requestResults.remove(requestID);			
+		}
 	}
 
 

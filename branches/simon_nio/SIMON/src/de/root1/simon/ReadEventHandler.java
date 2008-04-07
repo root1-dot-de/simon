@@ -19,31 +19,37 @@ import de.root1.simon.utils.Utils;
  * 
  * @author ACHR
  */
-class EventHandler implements Runnable {
+class ReadEventHandler implements Runnable {
 
 	private ByteBuffer packetHeader = ByteBuffer.allocate(5); // one byte + 4 byte integer containing the packet length
 	private ByteBuffer packetBody; // the packet itself
 	private String remoteObjectName;
 	private final Dispatcher dispatcher;
-	private RxPacket rxPacket;
 	private byte msgType;
 	private int requestID;
 	private SelectionKey key;
 
 
-	public EventHandler(SelectionKey key, Dispatcher dispatcher, RxPacket rxPacket) {
-		Utils.debug("EventHandler.EventHandler() -> created for requestID="+rxPacket.getRequestID());
+	public ReadEventHandler(SelectionKey key, Dispatcher dispatcher) {
+		Utils.debug("EventHandler.EventHandler() -> created");
 		this.key = key;
 		this.dispatcher = dispatcher;
-		this.rxPacket = rxPacket;
 	}
 
 	public void run() {
-		Utils.debug("EventHandler.run() -> interpreting packet");
+		Utils.debug("EventHandler.run() -> reading packet");
 //		socketChannel = (SocketChannel) key.channel();
 		try {
 			
+			SocketChannel socketChannel =(SocketChannel) key.channel();
 			
+			RxPacket rxPacket = new RxPacket(socketChannel);
+		
+			
+			dispatcher.changeOpForReadiness(socketChannel);
+			
+			
+			Utils.debug("EventHandler.run() -> interpreting packet ...");
 			msgType = rxPacket.getMsgType();
 			requestID = rxPacket.getRequestID();
 			//			endpoint.removeFromReadFrom(socketChannel);			

@@ -31,12 +31,12 @@ public class LookupTable {
 	/**
 	 * Maps the remote object name to the remoteobject
 	 */
-	HashMap<String, SimonRemote> bindings = new HashMap<String, SimonRemote>();
+	private HashMap<String, SimonRemote> bindings = new HashMap<String, SimonRemote>();
 	
 	/**
 	 * Maps the remoteobject to the map with the hash-mapped methods.
 	 */
-	HashMap<SimonRemote, HashMap<Long, Method>> simonRemoteTo_hashToMethod_Map = new HashMap<SimonRemote, HashMap<Long, Method>>();
+	private HashMap<SimonRemote, HashMap<Long, Method>> simonRemoteTo_hashToMethod_Map = new HashMap<SimonRemote, HashMap<Long, Method>>();
 	
 	public LookupTable() {
 		// TODO Auto-generated constructor stub

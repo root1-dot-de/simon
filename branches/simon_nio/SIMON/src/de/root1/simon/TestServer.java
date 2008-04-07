@@ -17,7 +17,9 @@ public class TestServer {
 		
 		Statics.DEBUG_MODE = true;
 		
-		Acceptor a = new Acceptor();
+		LookupTable lookupTable = new LookupTable();
+		lookupTable.putRemoteBinding("server", new SimonRemote() {});
+		Acceptor a = new Acceptor(lookupTable);
 		Thread t = new Thread(a);
 		t.start();
 	}

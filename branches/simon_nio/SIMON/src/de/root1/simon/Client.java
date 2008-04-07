@@ -28,6 +28,7 @@ public class Client {
 	private SocketChannel clientSocketChannel;
 	private Selector selector;
 	private SelectionKey key;
+	private int requestIdCounter;
 	
 	/**
 	 * TODO Documentation to be done
@@ -94,6 +95,68 @@ public class Client {
 		
 		Utils.debug("Client.connect() -> end");
 	}
+	
+	/**
+	 * 
+	 * Generates a request ID
+	 * 
+	 * @return a request ID
+	 */
+	Integer generateRequestID() {
+		return requestIdCounter++;
+	}
+	
+	
+	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
+	 * 
+	 * @param remoteObjectName
+	 * @return the object we made the lookup for
+	 * @throws SimonRemoteException 
+	 * @throws IOException 
+	 */
+	public Object invokeLookup(String remoteObjectName) throws SimonRemoteException, IOException {
+		final int requestID = generateRequestID(); 
+		Utils.debug("Client.invokeLookup() -> start for requestID="+requestID);
+//		if (globalEndpointException!=null) throw globalEndpointException;
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = dispatcher.createMonitor(requestID);
+		
+		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
+		
+		TxPacket p = new TxPacket();
+		p.setHeader(Statics.LOOKUP_PACKET, requestID);
+		p.put(remoteObject);
+		p.setComplete();
+		ByteBuffer packet = p.getByteBuffer();
+		
+		
+		// send the packet to the connected client-socket-channel
+		dispatcher.send(key, packet);	
+		Utils.debug("Client.invokeLookup() -> data send. waiting for answer for requestID="+requestID);
+		// got to sleep until result is present
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+			
+		Utils.debug("Dispatcher.invokeLookup() -> got answer for requestID="+requestID);
+			
+//		// check if there was an error while sleeping
+//		if (globalEndpointException!=null) throw globalEndpointException;
+		
+		// get result
+		Utils.debug("Dispatcher.invokeLookup() -> end. requestID="+requestID);
+		return dispatcher.getResult(requestID);			
+	}	
+	
+	
 	
 	/**
 	 * sends a requested invocation to the server
@@ -310,6 +373,7 @@ public class Client {
 		Statics.DEBUG_MODE = true;
 		
 		Client client = new Client();
+		client.invokeLookup("server");
 		
 	}
 

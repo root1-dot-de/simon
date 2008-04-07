@@ -14,6 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import de.root1.simon.nioexample.interfaces.IDispatcher;
+import de.root1.simon.nioexample.interfaces.IInputHandlerFactory;
 
 /**
  * 
