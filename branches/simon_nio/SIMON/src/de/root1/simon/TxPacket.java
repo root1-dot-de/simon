@@ -94,7 +94,7 @@ public class TxPacket {
 			if (bb.limit()-bb.position()<b.length){
 				bb = Utils.doubleByteBuffer(bb);
 				put(b);
-			}
+			} else
 			
 			bb.put(b);
 //		} catch (BufferOverflowException e){
