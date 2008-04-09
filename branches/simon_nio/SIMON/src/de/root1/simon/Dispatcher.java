@@ -49,7 +49,8 @@ public class Dispatcher implements Runnable {
 	private int requestIdCounter = 0;
 	
 	/** The map that holds the relation between the request ID and the corresponding monitor */
-	private HashMap<Integer, Object> idMonitorMap = new HashMap<Integer, Object>();
+//	private HashMap<Integer, Object> idMonitorMap = new HashMap<Integer, Object>();
+	private HashMap<Integer, MonitorResult> idMonitorMap = new HashMap<Integer, MonitorResult>();
 	
 	/** The map that holds the relation between the request ID and the received result */
 	private HashMap<Integer, Object> requestResults = new HashMap<Integer, Object>();
@@ -259,6 +260,11 @@ public class Dispatcher implements Runnable {
 		Utils.debug("Dispatcher.send() -> start");			
 		Utils.debug("Dispatcher.send() -> sende daten für key="+key+" channel="+socketChannel);
 		
+//		packet.position(1);
+//		int reqID = packet.getInt();
+//		packet.rewind();
+//		System.out.println(System.nanoTime()+" Dispatcher.send() -> sende reqID="+reqID);
+		
 
 		// And queue the data we want written
 		synchronized (this.pendingData) {
@@ -282,9 +288,9 @@ public class Dispatcher implements Runnable {
 		synchronized (this.pendingChanges) {
 			// Indicate we want the interest ops set changed
 			this.pendingChanges.add(new ChangeRequest(socketChannel, type, operation));
+			selector.wakeup();
 		}
 		// Finally, wake up our selecting thread so it can make the required changes
-		selector.wakeup();
 	}
 
 	/**
@@ -302,7 +308,8 @@ public class Dispatcher implements Runnable {
 		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+//		final Object monitor = createMonitor(requestID);
+		final MonitorResult monitor = createMonitor(requestID);
 		
 		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
 		
@@ -316,13 +323,14 @@ public class Dispatcher implements Runnable {
 		Utils.debug("Dispatcher.invokeLookup() -> data send. waiting for answer for requestID="+requestID);
 		
 		// got to sleep until result is present
-		synchronized (monitor) {
+//		synchronized (monitor) {
 			try {
-				monitor.wait();
+//				monitor.wait();
+				monitor.waitForResult();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
+//		}
 			
 		Utils.debug("Dispatcher.invokeLookup() -> got answer for requestID="+requestID);
 			
@@ -355,7 +363,8 @@ public class Dispatcher implements Runnable {
  		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+//		final Object monitor = createMonitor(requestID);
+		final MonitorResult monitor = createMonitor(requestID);
 		
 		// memory the return-type for later unwrap
 		requestReturnType.put(requestID, returnType);
@@ -385,15 +394,20 @@ public class Dispatcher implements Runnable {
 		send(key, packet.getByteBuffer());
 				
 		// got to sleep until result is present
-		synchronized (monitor) {
+//		synchronized (monitor) {
 			try {
-				monitor.wait();
+//				System.out.println(System.nanoTime()+" Dispatcher invoke method. monitor="+monitor+" Wait for result for reqID="+requestID);
+//				monitor.wait();
+				monitor.waitForResult();
+//				System.out.println(System.nanoTime()+" Dispatcher invoke method. monitor="+monitor+" Wait for result for reqID="+requestID+" finished");
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-		}
+//		}
 		Utils.debug("Dispatcher.sendInvocationToRemote() -> end. requestID="+requestID);
-		return requestResults.remove(requestID);
+		synchronized (requestResults) {
+			return requestResults.remove(requestID);
+		}
 	}
 
 	
@@ -521,14 +535,19 @@ public class Dispatcher implements Runnable {
 	 * @param requestID the process to wake  
 	 */
 	protected void wakeWaitingProcess(int requestID) {
-		synchronized (idMonitorMap) {						
-			final Object monitor = idMonitorMap.remove(requestID);
+		synchronized (idMonitorMap) {
+//			System.out.println("waking id="+requestID);
+//			final Object monitor = idMonitorMap.remove(requestID);
+			final MonitorResult monitor = idMonitorMap.remove(requestID);
 			if (monitor!=null) {
-				synchronized (monitor) {
-					monitor.notify(); // wake the waiting method
-				}
+//				synchronized (monitor) {
+//					monitor.notify(); // wake the waiting method
+					monitor.wakeUp(); // wake the waiting method
+//					System.out.println("id="+requestID+" monitor="+monitor+" waked");
+//				}
 			} else {
 				Utils.debug("Dispatcher.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
+//				System.out.println("Dispatcher.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
 			}
 			
 		}
@@ -567,8 +586,10 @@ public class Dispatcher implements Runnable {
 	 * @param requestID
 	 * @return the monitor used for waiting for the result
 	 */
-	Object createMonitor(final int requestID) {
-		final Object monitor = new Object();
+//	Object createMonitor(final int requestID) {
+	private MonitorResult createMonitor(final int requestID) {
+//		final Object monitor = new Object();
+		final MonitorResult monitor = new MonitorResult();
 		synchronized (idMonitorMap) {
 			Utils.debug("Dispatcher.createMonitor() -> monitor for requestID="+requestID+" -> monitor="+monitor+" mapsize="+idMonitorMap.size());
 			idMonitorMap.put(requestID, monitor);

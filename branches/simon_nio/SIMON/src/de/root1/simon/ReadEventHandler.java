@@ -49,6 +49,7 @@ class ReadEventHandler implements Runnable {
 			Utils.debug("ReadEventHandler.run() -> interpreting packet ...");
 			msgType = rxPacket.getMsgType();
 			requestID = rxPacket.getRequestID();
+//			System.out.println(System.nanoTime()+" ReadEventHandler.run() -> interpreting packet ..."+requestID);
 			//			endpoint.removeFromReadFrom(socketChannel);			
 			Utils.debug("ReadEventHandler.run() -> msgType="+msgType);
 			Utils.debug("EventHandler.run() -> requestID="+requestID);
@@ -112,10 +113,10 @@ class ReadEventHandler implements Runnable {
 					Object result = Utils.unwrapValue(dispatcher.removeRequestReturnType(requestID), packetBody);
 					
 					Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
-
+//					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result");
 					dispatcher.putResultToQueue(requestID, result);
 					dispatcher.wakeWaitingProcess(requestID);
-					
+//					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result finished");
 					Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
