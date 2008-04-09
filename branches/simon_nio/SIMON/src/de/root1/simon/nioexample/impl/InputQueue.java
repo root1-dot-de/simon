@@ -1,11 +1,11 @@
 package de.root1.simon.nioexample.impl;
 
-import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
-import de.root1.simon.nioexample.interfaces.IInputQueue;
-
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
-import java.io.IOException;
+
+import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
+import de.root1.simon.nioexample.interfaces.IInputQueue;
 
 class InputQueue implements IInputQueue {
 	private final IByteBufferFactory bufferFactory;

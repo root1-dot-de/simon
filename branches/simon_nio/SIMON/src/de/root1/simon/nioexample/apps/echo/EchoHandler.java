@@ -1,10 +1,10 @@
 package de.root1.simon.nioexample.apps.echo;
 
+import java.nio.ByteBuffer;
+
 import de.root1.simon.nioexample.interfaces.IChannelFacade;
 import de.root1.simon.nioexample.interfaces.IInputHandler;
 import de.root1.simon.nioexample.interfaces.IInputQueue;
-
-import java.nio.ByteBuffer;
 
 public class EchoHandler implements IInputHandler {
 

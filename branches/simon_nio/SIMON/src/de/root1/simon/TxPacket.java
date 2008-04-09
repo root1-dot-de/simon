@@ -1,9 +1,7 @@
 package de.root1.simon;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 
 import de.root1.simon.utils.Utils;
 

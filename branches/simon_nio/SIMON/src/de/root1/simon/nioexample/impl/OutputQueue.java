@@ -1,14 +1,14 @@
 package de.root1.simon.nioexample.impl;
 
-import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
-import de.root1.simon.nioexample.interfaces.IChannelFacade;
-import de.root1.simon.nioexample.interfaces.IOutputQueue;
-
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SelectionKey;
 import java.util.LinkedList;
-import java.io.IOException;
+
+import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
+import de.root1.simon.nioexample.interfaces.IChannelFacade;
+import de.root1.simon.nioexample.interfaces.IOutputQueue;
 
 class OutputQueue implements IOutputQueue {
 	

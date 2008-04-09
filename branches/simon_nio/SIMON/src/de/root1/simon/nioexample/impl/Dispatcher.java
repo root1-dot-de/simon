@@ -1,10 +1,5 @@
 package de.root1.simon.nioexample.impl;
 
-import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
-import de.root1.simon.nioexample.interfaces.IChannelFacade;
-import de.root1.simon.nioexample.interfaces.IDispatcher;
-import de.root1.simon.nioexample.interfaces.IInputHandler;
-
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -12,13 +7,18 @@ import java.nio.channels.Selector;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
+import de.root1.simon.nioexample.interfaces.IChannelFacade;
+import de.root1.simon.nioexample.interfaces.IDispatcher;
+import de.root1.simon.nioexample.interfaces.IInputHandler;
 
 /**
  * Dispatcher

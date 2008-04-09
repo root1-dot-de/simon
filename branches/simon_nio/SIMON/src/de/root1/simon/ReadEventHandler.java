@@ -7,8 +7,6 @@ import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
@@ -21,7 +19,6 @@ import de.root1.simon.utils.Utils;
  */
 class ReadEventHandler implements Runnable {
 
-	private ByteBuffer packetHeader = ByteBuffer.allocate(5); // one byte + 4 byte integer containing the packet length
 	private ByteBuffer packetBody; // the packet itself
 	private String remoteObjectName;
 	private final Dispatcher dispatcher;
@@ -261,6 +258,7 @@ class ReadEventHandler implements Runnable {
 //		packet.put(remoteObjectInterface);			// object
 		
 		dispatcher.send(key,p.getByteBuffer());
+		
 		Utils.debug("ReadEventHandler.processLookup() -> end. requestID="+requestID);
 	}
 	
@@ -283,7 +281,7 @@ class ReadEventHandler implements Runnable {
 						listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
 						// reimplant the proxy object
-						args[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, simonCallback.getId()));
+						args[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, key, simonCallback.getId()));
 						
 					} 
 				} 
@@ -302,9 +300,6 @@ class ReadEventHandler implements Runnable {
 			} catch (InvocationTargetException e){
 				result = e.getTargetException();
 			} 
-			
-//			ByteBuffer packet = ByteBuffer.allocate(4096);
-			// FIXME größe des pakets muss an index 1 "eingepflanzt" werden.
 			
 			TxPacket packet = new TxPacket();
 			packet.setHeader(Statics.INVOCATION_RETURN_PACKET, requestID);

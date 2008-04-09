@@ -19,18 +19,8 @@
 package de.root1.simon;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.AbstractSelector;
-import java.nio.channels.spi.SelectorProvider;
-import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -71,25 +61,20 @@ public class Simon {
 		try {
 			Client client = new Client(dispatcher);
 			client.connect(host, port);
-			dispatcher.setClientKey(client.getKey());
 			
 			Utils.debug("Simon.lookup() -> connected with server ...");
-			
-			
-			
-			// ab hier serverantwort auswerten
 			
 			/*
 			 * Create array with interfaces the proxy should have
 			 * first contact server for lookup of interfaces
 			 * this request blocks!
 			 */
-			Class<?>[] listenerInterfaces = (Class<?>[]) dispatcher.invokeLookup(remoteObjectName);
+			Class<?>[] listenerInterfaces = (Class<?>[]) dispatcher.invokeLookup(client.getKey(), remoteObjectName);
 			
 			/*
 			 * This class gets the interfaces and directs the method-calls
 			 */
-			SimonProxy handler = new SimonProxy(dispatcher, remoteObjectName);
+			SimonProxy handler = new SimonProxy(dispatcher, client.getKey(), remoteObjectName);
 			Utils.debug("Simon.lookup() -> Proxy created");
 			
 			 /* 

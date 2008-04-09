@@ -1,8 +1,8 @@
 package de.root1.simon.nioexample.impl;
 
-import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
-
 import java.nio.ByteBuffer;
+
+import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
 
 public class DumbBufferFactory implements IByteBufferFactory {
 	private int capacity;

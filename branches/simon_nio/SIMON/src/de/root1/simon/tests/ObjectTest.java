@@ -3,7 +3,6 @@ package de.root1.simon.tests;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import de.root1.simon.Statics;
 import de.root1.simon.utils.Utils;
 
 public class ObjectTest {

@@ -19,16 +19,6 @@
 package de.root1.simon;
 
 import java.io.IOException;
-import java.net.BindException;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
-import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 
 import de.root1.simon.utils.Utils;
@@ -43,7 +33,6 @@ import de.root1.simon.utils.Utils;
 public class Registry extends Thread {
 	
 	private LookupTable serverLookupTable = null;
-	private ServerSocket server;
 	private int port;
 	
 	// -----------------
@@ -52,7 +41,6 @@ public class Registry extends Thread {
 
 	
 	// The selector we'll be monitoring
-	private Selector selector;
 	private Dispatcher dispatcher;
 	private Acceptor acceptor;
 	private ExecutorService threadPool;

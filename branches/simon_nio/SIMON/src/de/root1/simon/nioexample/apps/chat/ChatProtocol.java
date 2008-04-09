@@ -1,13 +1,13 @@
 package de.root1.simon.nioexample.apps.chat;
 
-import de.root1.simon.nioexample.interfaces.IChannelFacade;
-import de.root1.simon.nioexample.interfaces.IInputHandler;
-import de.root1.simon.nioexample.interfaces.IInputHandlerFactory;
-
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import de.root1.simon.nioexample.interfaces.IChannelFacade;
+import de.root1.simon.nioexample.interfaces.IInputHandler;
+import de.root1.simon.nioexample.interfaces.IInputHandlerFactory;
 
 public class ChatProtocol implements IInputHandlerFactory {
 

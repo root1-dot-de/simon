@@ -1,8 +1,8 @@
 package de.root1.simon.nioexample.interfaces;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
-import java.io.IOException;
 
 /**
  * 

@@ -1,19 +1,19 @@
 package de.root1.simon.nioexample.impl;
 
-import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
-import de.root1.simon.nioexample.interfaces.IChannelFacade;
-import de.root1.simon.nioexample.interfaces.IInputHandler;
-import de.root1.simon.nioexample.interfaces.IInputQueue;
-import de.root1.simon.nioexample.interfaces.IOutputQueue;
-
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.Callable;
-import java.net.SocketException;
+
+import de.root1.simon.nioexample.interfaces.IByteBufferFactory;
+import de.root1.simon.nioexample.interfaces.IChannelFacade;
+import de.root1.simon.nioexample.interfaces.IInputHandler;
+import de.root1.simon.nioexample.interfaces.IInputQueue;
+import de.root1.simon.nioexample.interfaces.IOutputQueue;
 
 /**
  * 

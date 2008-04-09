@@ -19,26 +19,19 @@
 package de.root1.simon;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import de.root1.simon.utils.Utils;
 
@@ -79,23 +72,7 @@ public class Dispatcher implements Runnable {
 	// Maps a SocketChannel to a list of ByteBuffer instances
 	private Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<SocketChannel, List<ByteBuffer>>();
 	
-//	// The buffer into which we'll read data when it's available
-//	private ByteBuffer readBuffer = ByteBuffer.allocate(8192);
-	
-	// The channel on which we'll accept connections
-	private ServerSocketChannel serverSocketChannel;
-	
-	// this channel is used by the client-endpoint for sending data to the server 
-	private SocketChannel clientSocketChannel;
-	
-	private int port = 0;
-	
 	private ExecutorService eventHandlerPool = null;
-	private ExecutorService invocationPool = null;
-
-
-	private SelectionKey clientKey;
-
 	
 
 	/**
@@ -119,19 +96,7 @@ public class Dispatcher implements Runnable {
 		// FIXME should be configurable
 		eventHandlerPool = threadPool;
 		
-//		if (isServer) {
-//			Utils.debug("Dispatcher.Endpoint() -> initSelectorServer()");
-//			this.selector = initSelectorServer();
-//			
-//		} else {
-//			Utils.debug("Dispatcher.Endpoint() -> initSelectorClient()");
-			this.selector = initSelectorClient();
-//			connectToServer();
-//		}
-
-		// run the local thread
-		// FIXME has to be done by the pool or the acceptor.
-		//start();
+		selector = initSelectorClient();
 		
 		Utils.debug("Dispatcher.Dispatcher() -> end");
 	}
@@ -148,63 +113,12 @@ public class Dispatcher implements Runnable {
 		return requestIdCounter++;
 	}
 	
-	/*
-	 * Creating the selector and server channel
-	 * The astute will have noticed the call to initSelector() in the constructor. 
-	 * Needless to say this method doesn't exist yet. So let's write it. It's job 
-	 * is to create and initialize a non-blocking server channel and a selector. 
-	 * It must and then register the server channel with that selector. 
-	 */
-	private Selector initSelectorServer() throws IOException {
-		// Create a new selector
-		Selector socketSelector = SelectorProvider.provider().openSelector();
-
-		// Create a new non-blocking server socket channel
-		this.serverSocketChannel = ServerSocketChannel.open();
-		serverSocketChannel.configureBlocking(false);
-
-		// Bind the server socket to the specified address and port
-		InetSocketAddress isa = new InetSocketAddress("0.0.0.0", port);
-		serverSocketChannel.socket().bind(isa);
-
-		// Register the server socket channel, indicating an interest in 
-		// accepting new connections
-		serverSocketChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
-
-		return socketSelector;
-	}
 	
 	private Selector initSelectorClient() throws IOException {
 		// Create a new selector
 		return SelectorProvider.provider().openSelector();
 	}
 	
-	/*
-	 * Accepting connections
-	 * Right. At this point we have a server socket channel ready and waiting and we've 
-	 * indicated that we'd like to know when a new connection is available to be accepted.
-	 * Now we need to actually accept it. Which brings us to our "select loop". This is 
-	 * where most of the action kicks off. In a nutshell our selecting thread sits in a 
-	 * loop waiting until one of the channels registered with the selector is in a state 
-	 * that matches the interest operations we've registered for it. In this case the 
-	 * operation we're waiting for on the server socket channel is an accept 
-	 * (indicated by OP_ACCEPT). So let's take a look at the first iteration 
-	 * (I couldn't resist) of our run() method. 
-	 */
-	private void accept(SelectionKey key) throws IOException {
-		Utils.debug("Dispatcher.accept(): Start");
-		// For an accept to be pending the channel must be a server socket channel.
-		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
-
-		// Accept the connection and make it non-blocking
-		SocketChannel socketChannel = serverSocketChannel.accept();
-		Socket socket = socketChannel.socket();
-		Utils.debug("Dispatcher.accept(): Client: "+socket.getInetAddress());
-		socketChannel.configureBlocking(false);
-
-		socketChannel.register(selector, SelectionKey.OP_READ);
-		Utils.debug("Dispatcher.accept(): End");
-	}
 	
 	/**
 	 * The main receive-loop
@@ -266,13 +180,11 @@ public class Dispatcher implements Runnable {
 						// Check what event is available and deal with it
 						if (key.isAcceptable()){ // used by the server
 							
-							Utils.debug("Dispatcher.run() -> "+key+" is acceptable");
-							accept(key);
+							Utils.debug("Dispatcher.run() -> "+key+" is acceptable. Accepting is done by the 'Acceptor'!");
 							
 						} else if (key.isConnectable()) { // used by the client
 							
-							Utils.debug("Dispatcher.run() -> "+key+" is connectable");
-							this.finishConnection(key);
+							Utils.debug("Dispatcher.run() -> "+key+" is connectable.  FinishConnection is done by the 'Client'!");
 							
 						} else if (key.isReadable()) {
 
@@ -336,56 +248,6 @@ public class Dispatcher implements Runnable {
 	    }
 	    Utils.debug("Dispatcher.handleWrite() -> end");
 	}
-
-
-
-	/**
-	 * 
-	 * Finish clients connection to the server
-	 * @param key the client's <code>SelectionKey</code>
-	 * @throws IOException
-	 */
-	private void finishConnection(SelectionKey key) throws IOException {
-		Utils.debug("Dispatcher.finishConnection() -> start");
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-	
-		// Finish the connection. If the connection operation failed
-		// this will raise an IOException.
-		try {
-			socketChannel.finishConnect();
-		} catch (IOException e) {
-			// Cancel the channel's registration with our selector
-			System.err.println("Exception in finishConnection(): "+e);
-			key.cancel();
-			return;
-		}
-	
-		Utils.debug("Dispatcher.finishConnection() -> register for read-mode");
-		key.interestOps(SelectionKey.OP_READ);
-		Utils.debug("Dispatcher.finishConnection() -> end");
-	}
-	
-	
-	private void connectToServer() throws IOException {
-		Utils.debug("Dispatcher.connectToServer() -> start");
-		clientSocketChannel = SocketChannel.open();
-		clientSocketChannel.configureBlocking(false);
-	
-		// Kick off connection establishment
-		clientSocketChannel.connect(new InetSocketAddress("127.0.0.1", this.port));
-	
-		// Queue a channel registration since the caller is not the 
-		// selecting thread. As part of the registration we'll register
-		// an interest in connection events. These are raised when a channel
-		// is ready to complete connection establishment.
-//		synchronized(this.pendingChanges) {
-//			this.pendingChanges.add(new ChangeRequest(clientSocketChannel, ChangeRequest.REGISTER, SelectionKey.OP_CONNECT));
-//		}
-		
-		clientKey = clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
-		Utils.debug("Dispatcher.connectToServer() -> end");
-	}
-	
 	
 	/**
 	 * Sends the data to the socketchannel
@@ -434,9 +296,9 @@ public class Dispatcher implements Runnable {
 	 * @throws SimonRemoteException 
 	 * @throws IOException 
 	 */
-	public Object invokeLookup(String remoteObjectName) throws SimonRemoteException, IOException {
+	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws SimonRemoteException, IOException {
 		final int requestID = generateRequestID(); 
-		Utils.debug("Dispatcher.invokeLookup() -> start for requestID="+requestID);
+		Utils.debug("Dispatcher.invokeLookup() -> start for requestID="+requestID+" key="+key);
 		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
@@ -444,31 +306,15 @@ public class Dispatcher implements Runnable {
 		
 		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
 		
-		TxPacket p = new TxPacket();
-		p.setHeader(Statics.LOOKUP_PACKET, requestID);
-		p.put(remoteObject);
-		p.setComplete();
-		ByteBuffer packet = p.getByteBuffer();
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.LOOKUP_PACKET, requestID);
+		packet.put(remoteObject);
+		packet.setComplete();
 		
-		// create the data packet:
-		// 1 byte  					-> packet type
-		// 4 byte  					-> packet length
-		// 4 bytes 					-> request ID
-		// 4 bytes + string.length 	-> String length as integer + following string
-//		int packetLength = 4+(4+remoteObjectName.length());
-//		ByteBuffer packet = ByteBuffer.allocate(5+packetLength);
-//		
-//		// put the data in the packet
-//		packet.put(Statics.LOOKUP_PACKET); 		// msg type
-//		packet.putInt(packetLength); 			// packet length
-//		packet.putInt(requestID); 				// requestid
-//		packet.put(Utils.stringToBytes(remoteObjectName)); 	// name of remote object in lookuptable	
-
-		
-		// send the packet to the connected client-socket-channel
-//		send(clientSocketChannel, packet);
-		send(clientKey, packet);	
+		// send the packet to the connected channel
+		send(key, packet.getByteBuffer());	
 		Utils.debug("Dispatcher.invokeLookup() -> data send. waiting for answer for requestID="+requestID);
+		
 		// got to sleep until result is present
 		synchronized (monitor) {
 			try {
@@ -502,9 +348,9 @@ public class Dispatcher implements Runnable {
 	 * @throws SimonRemoteException if there's a problem with the communication
 	 * @throws IOException 
 	 */	 
- 	protected Object invokeMethod(String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
+ 	protected Object invokeMethod(SelectionKey key, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
  		final int requestID = generateRequestID();
- 		Utils.debug("Dispatcher.sendInvocationToRemote() -> begin. requestID="+requestID);
+ 		Utils.debug("Dispatcher.sendInvocationToRemote() -> begin. requestID="+requestID+" key="+key);
 
  		if (globalEndpointException!=null) throw globalEndpointException;
 
@@ -525,15 +371,9 @@ public class Dispatcher implements Runnable {
 			}
 		}
 
-//		FIXME this was used for caching. now it's useless
-//		sendCounter++;
-//		if (sendCounter==Integer.MAX_VALUE) sendCounter=0;
-
-		// here we have to allocate more, because atm we don't know big the parameters are 
 		
 		TxPacket packet = new TxPacket();
 		packet.setHeader(Statics.INVOCATION_PACKET, requestID);
-		
 		packet.put(Utils.stringToBytes(remoteObjectName));
 		packet.putLong(methodHash);
 		
@@ -542,15 +382,7 @@ public class Dispatcher implements Runnable {
         }
 		
 		packet.setComplete();
-		
-//		send(clientSocketChannel, packet);
-		send(clientKey, packet.getByteBuffer());
-				
-//		FIXME this was used for caching. now it's useless
-//		objectOutputStream.flush();
-//		if (sendCounter%objectCacheLifetime==0){
-//			objectOutputStream.reset();
-//		}
+		send(key, packet.getByteBuffer());
 				
 		// got to sleep until result is present
 		synchronized (monitor) {
@@ -573,7 +405,7 @@ public class Dispatcher implements Runnable {
 	 * @return
 	 * @throws IOException 
 	 */
-	protected String invokeToString(String remoteObjectName) throws IOException {
+	protected String invokeToString(SelectionKey key, String remoteObjectName) throws IOException {
 		if (globalEndpointException!=null) throw globalEndpointException;
 
 		final int requestID = generateRequestID();
@@ -581,21 +413,14 @@ public class Dispatcher implements Runnable {
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
 
-		// --
-		// create the data packet:
-		// 1 byte  					-> packet type
-		// 4 bytes 					-> request ID
-		// 4 bytes + string.length 	-> String length as integer + following string
-		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+remoteObjectName.length()));
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.TOSTRING_PACKET, requestID);
+		packet.put(Utils.stringToBytes(remoteObjectName));
+		packet.setComplete();
 		
-		// put the data in the packet
-		packet.put(Statics.TOSTRING_PACKET); 		// msg type
-		packet.putInt(requestID); 				// requestid
-		packet.put(Utils.stringToBytes(remoteObjectName)); 	// name of remote object in lookuptable	
 		
 		// send the packet to the connected client-socket-channel
-//		send(clientSocketChannel, packet);
-		send(clientKey, packet);
+		send(key, packet.getByteBuffer());
 		
 
 		// got to sleep until result is present
@@ -624,7 +449,7 @@ public class Dispatcher implements Runnable {
 	 * @return
 	 * @throws IOException 
 	 */
-	protected int invokeHashCode(String remoteObjectName) throws IOException {
+	protected int invokeHashCode(SelectionKey key, String remoteObjectName) throws IOException {
 		if (globalEndpointException!=null) throw globalEndpointException;
 
 		final int requestID = generateRequestID();
@@ -632,20 +457,12 @@ public class Dispatcher implements Runnable {
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
 
-		// create the data packet:
-		// 1 byte  					-> packet type
-		// 4 bytes 					-> request ID
-		// 4 bytes + string.length 	-> String length as integer + following string
-		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+remoteObjectName.length()));
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.HASHCODE_PACKET, requestID);
+		packet.put(Utils.stringToBytes(remoteObjectName));
+		packet.setComplete();
 		
-		// put the data in the packet
-		packet.put(Statics.HASHCODE_PACKET); 		// msg type
-		packet.putInt(requestID); 				// requestid
-		packet.put(Utils.stringToBytes(remoteObjectName)); 	// name of remote object in lookuptable	
-		
-		// send the packet to the connected client-socket-channel
-//		send(clientSocketChannel, packet);
-		send(clientKey, packet);
+		send(key, packet.getByteBuffer());
 		
 
 		// got to sleep until result is present
@@ -666,7 +483,7 @@ public class Dispatcher implements Runnable {
 	}
 
 
-	protected boolean invokeEquals(String remoteObjectName, Object object) throws IOException {
+	protected boolean invokeEquals(SelectionKey key, String remoteObjectName, Object object) throws IOException {
 		if (globalEndpointException!=null) throw globalEndpointException;
 
 		final int requestID = generateRequestID();
@@ -674,15 +491,13 @@ public class Dispatcher implements Runnable {
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
 
-		ByteBuffer packet = ByteBuffer.allocate(4096);
-
-		packet.put(Statics.EQUALS_PACKET);
-		packet.putInt(requestID);
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.EQUALS_PACKET, requestID);
 		packet.put(Utils.stringToBytes(remoteObjectName));
 		packet.put(Utils.objectToBytes(object));
+		packet.setComplete();
 		
-//		send(clientSocketChannel, packet);
-		send(clientKey, packet);
+		send(key, packet.getByteBuffer());
 		
 		// got to sleep until result is present
 		try {
@@ -778,7 +593,7 @@ public class Dispatcher implements Runnable {
 	 * @param channel
 	 * @throws ClosedChannelException 
 	 */
-	public void registerChannel(SocketChannel channel) throws ClosedChannelException {
+	protected void registerChannel(SocketChannel channel) throws ClosedChannelException {
 		Utils.debug("Dispatcher.registerChannel() -> start");
 		selectorChangeRequest(channel, ChangeRequest.REGISTER, SelectionKey.OP_READ);
 		Utils.debug("Dispatcher.registerChannel() -> end");
@@ -792,19 +607,10 @@ public class Dispatcher implements Runnable {
 		Utils.debug("Dispatcher.registerChannel() -> end");
 	}
 	
-	public Object getResult(int requestID){
+	protected Object getResult(int requestID){
 		synchronized (requestResults) {
 			return requestResults.remove(requestID);			
 		}
 	}
 	
-	protected void setClientKey(SelectionKey clientKey){
-		this.clientKey = clientKey;
-	}
-
-
-
-
-	
-
 }

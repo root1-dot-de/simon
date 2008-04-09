@@ -5,14 +5,12 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import de.root1.simon.utils.Utils;
 
@@ -55,15 +53,14 @@ public class Client {
 		// an interest in connection events. These are raised when a channel
 		// is ready to complete connection establishment.
 		
-		SelectionKey clientKey = clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
-		
+//		SelectionKey clientKey = 
+			clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
 		selector.select();
 		
 		Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
 		while (selectedKeys.hasNext()) {
 			key = (SelectionKey) selectedKeys.next();
 			selectedKeys.remove();
-			
 			if (key.isConnectable()){
 				
 				SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -102,6 +99,10 @@ public class Client {
 
 	public SelectionKey getKey() {
 		return key;
+	}
+	
+	public SelectableChannel getChannelToServer() {
+		return key.channel();
 	}
 	
 	
