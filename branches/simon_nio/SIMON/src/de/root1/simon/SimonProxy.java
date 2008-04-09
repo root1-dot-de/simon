@@ -84,7 +84,7 @@ public class SimonProxy implements InvocationHandler {
 		 * server gets according to the methodname and parametertypes the method
 		 * and invokes the method. the result is communicated back to the client 
 		 */
-		Utils.debug("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
+		//Utils.debug("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
 		Object result = dispatcher.invokeMethod(key, remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
@@ -107,7 +107,7 @@ public class SimonProxy implements InvocationHandler {
 			
 			
 		}
-    	Utils.debug("SimonProxy.invoke() -> end. result="+result);
+    	//Utils.debug("SimonProxy.invoke() -> end. result="+result);
 		return  result;
 	}
 	

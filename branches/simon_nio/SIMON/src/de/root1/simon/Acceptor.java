@@ -28,7 +28,7 @@ public class Acceptor implements Runnable {
 	 */
 	Acceptor(Dispatcher dispatcher, int serverPort) throws IOException {
 	
-		Utils.debug("Acceptor.Acceptor() -> init ...");
+		//Utils.debug("Acceptor.Acceptor() -> init ...");
 		
 		this.serverPort = serverPort;
 		this.dispatcher = dispatcher;
@@ -40,7 +40,7 @@ public class Acceptor implements Runnable {
 		while (isRunning) {
 			try {
 
-				Utils.debug("Acceptor.run() -> Selecting ...");
+				//Utils.debug("Acceptor.run() -> Selecting ...");
 				// Wait for an event one of the registered channels
 				this.socketSelector.select();
 
@@ -65,18 +65,18 @@ public class Acceptor implements Runnable {
 				e.printStackTrace();
 			}
 		}
-		Utils.debug("Acceptor.run() -> shutdown!");
+		//Utils.debug("Acceptor.run() -> shutdown!");
 	}
 	
 	private void accept(SelectionKey key) throws IOException {
-		Utils.debug("Acceptor.accept(): Start");
+		//Utils.debug("Acceptor.accept(): Start");
 		
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel(); // get the key's channeö
 		
 		SocketChannel clientChannel = serverSocketChannel.accept(); // get the connected client channel
 		
 		Socket socket = clientChannel.socket();
-		Utils.debug("Acceptor.accept(): Client: "+socket.getInetAddress());
+		//Utils.debug("Acceptor.accept(): Client: "+socket.getInetAddress());
 		clientChannel.configureBlocking(false);
 		
 		key.cancel(); // cancel registration on acceptor-selector
@@ -84,7 +84,7 @@ public class Acceptor implements Runnable {
 		
 		dispatcher.registerChannel(clientChannel); // register channel on dispatcher
 		
-		Utils.debug("Acceptor.accept(): End");
+		//Utils.debug("Acceptor.accept(): End");
 	}
 
 	

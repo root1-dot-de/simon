@@ -89,12 +89,18 @@ public class TxPacket {
 	
 	public void put(byte[] b){
 		if (!headerOkay) throw new IllegalStateException("header not set");
-		try {
+//		try {
+			
+			if (bb.limit()-bb.position()<b.length){
+				bb = Utils.doubleByteBuffer(bb);
+				put(b);
+			}
+			
 			bb.put(b);
-		} catch (BufferOverflowException e){
-			bb = Utils.doubleByteBuffer(bb);
-			put(b);
-		}
+//		} catch (BufferOverflowException e){
+//			bb = Utils.doubleByteBuffer(bb);
+//			put(b);
+//		}
 	}
 	
 	public void put(byte b){
@@ -109,21 +115,21 @@ public class TxPacket {
 
 	public void setComplete(){
 		int pos = bb.position();
-		Utils.debug("TxPacket.setComplete() -> position1="+bb.position());
+		//Utils.debug("TxPacket.setComplete() -> position1="+bb.position());
 		bb.position(5); // positioniere den Zeiger für das einfügen der Länge des Packet-Bodys
 		bodySize = pos-9;
 		bb.putInt(bodySize); // Die position - den Header von 9 Bytes ergibt den Body
 		bb.position(pos);
-		Utils.debug("TxPacket.setComplete() -> position2="+bb.position());
+		//Utils.debug("TxPacket.setComplete() -> position2="+bb.position());
 //		bb.rewind();
 		bb.flip();
-		Utils.debug("TxPacket.setComplete() -> bb="+bb);
+		//Utils.debug("TxPacket.setComplete() -> bb="+bb);
 		setComplete = true;
 	}
 	
 	public ByteBuffer getByteBuffer(){
 		if (!setComplete) throw new IllegalStateException("packet not completed!");
-		Utils.debug("TxPacket.getByteBuffer() -> msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
+		//Utils.debug("TxPacket.getByteBuffer() -> msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
 		return bb;
 	}
 	

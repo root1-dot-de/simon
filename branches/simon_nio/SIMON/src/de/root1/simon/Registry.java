@@ -64,7 +64,7 @@ public class Registry extends Thread {
 	public void run() {
 		// TODO Auto-generated method stub
 		super.run();
-		Utils.debug("Registry.run() -> start");
+		//Utils.debug("Registry.run() -> start");
 		
 		try {
 			
@@ -79,7 +79,7 @@ public class Registry extends Thread {
 			e.printStackTrace();
 		}
 		
-		Utils.debug("Registry.run() -> end");
+		//Utils.debug("Registry.run() -> end");
 	}
 	
 	

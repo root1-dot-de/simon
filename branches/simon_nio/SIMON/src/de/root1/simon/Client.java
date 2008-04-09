@@ -41,7 +41,7 @@ public class Client {
 	public void connect(String host, int port) throws IOException{
 		
 		selector = SelectorProvider.provider().openSelector();
-		Utils.debug("Client.connect() -> start");
+		//Utils.debug("Client.connect() -> start");
 		clientSocketChannel = SocketChannel.open();
 		clientSocketChannel.configureBlocking(false);
 	
@@ -68,9 +68,9 @@ public class Client {
 				// Finish the connection. If the connection operation failed
 				// this will raise an IOException.
 				try {
-					Utils.debug("Client.connect() -> finishing connection");
+					//Utils.debug("Client.connect() -> finishing connection");
 					socketChannel.finishConnect();
-					Utils.debug("Client.connect() -> register on dispatcher");
+					//Utils.debug("Client.connect() -> register on dispatcher");
 					dispatcher.registerChannel(socketChannel);
 					
 				} catch (IOException e) {
@@ -84,7 +84,7 @@ public class Client {
 			
 		}
 		
-		Utils.debug("Client.connect() -> end");
+		//Utils.debug("Client.connect() -> end");
 	}
 	
 	/**

@@ -51,7 +51,7 @@ public class Simon {
 	}
 	
 	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException {
-		Utils.debug("Simon.lookup() -> START");
+		//Utils.debug("Simon.lookup() -> START");
 		Object proxy = null;
 		
 		Dispatcher dispatcher = new Dispatcher(lookupTable,getThreadPool());
@@ -62,7 +62,7 @@ public class Simon {
 			Client client = new Client(dispatcher);
 			client.connect(host, port);
 			
-			Utils.debug("Simon.lookup() -> connected with server ...");
+			//Utils.debug("Simon.lookup() -> connected with server ...");
 			
 			/*
 			 * Create array with interfaces the proxy should have
@@ -75,7 +75,7 @@ public class Simon {
 			 * This class gets the interfaces and directs the method-calls
 			 */
 			SimonProxy handler = new SimonProxy(dispatcher, client.getKey(), remoteObjectName);
-			Utils.debug("Simon.lookup() -> Proxy created");
+			//Utils.debug("Simon.lookup() -> Proxy created");
 			
 			 /* 
 		     * Create the proxy-object with the needed interfaces
@@ -86,7 +86,7 @@ public class Simon {
 			throw new ConnectException(e.getMessage());
 		}
 		
-		Utils.debug("Simon.lookup() -> END");
+		//Utils.debug("Simon.lookup() -> END");
 		return proxy;
 	}
 

@@ -28,13 +28,13 @@ class ReadEventHandler implements Runnable {
 
 
 	public ReadEventHandler(SelectionKey key, Dispatcher dispatcher) {
-		Utils.debug("ReadEventHandler.EventHandler() -> created");
+		//Utils.debug("ReadEventHandler.EventHandler() -> created");
 		this.key = key;
 		this.dispatcher = dispatcher;
 	}
 
 	public void run() {
-		Utils.debug("ReadEventHandler.run() -> reading packet");
+		//Utils.debug("ReadEventHandler.run() -> reading packet");
 //		socketChannel = (SocketChannel) key.channel();
 		try {
 			
@@ -46,13 +46,13 @@ class ReadEventHandler implements Runnable {
 			dispatcher.changeOpForReadiness(socketChannel);
 			
 			
-			Utils.debug("ReadEventHandler.run() -> interpreting packet ...");
+			//Utils.debug("ReadEventHandler.run() -> interpreting packet ...");
 			msgType = rxPacket.getMsgType();
 			requestID = rxPacket.getRequestID();
 //			System.out.println(System.nanoTime()+" ReadEventHandler.run() -> interpreting packet ..."+requestID);
 			//			endpoint.removeFromReadFrom(socketChannel);			
-			Utils.debug("ReadEventHandler.run() -> msgType="+msgType);
-			Utils.debug("EventHandler.run() -> requestID="+requestID);
+			//Utils.debug("ReadEventHandler.run() -> msgType="+msgType);
+			//Utils.debug("EventHandler.run() -> requestID="+requestID);
 
 			packetBody = rxPacket.getBody();
 			
@@ -60,7 +60,7 @@ class ReadEventHandler implements Runnable {
 				byte[] b = packetBody.array();
 				for (int i = 0; i < b.length; i++) {
 					byte c = b[i];
-					Utils.debug("ReadEventHandler.run() -> body b["+i+"]="+c);
+					//Utils.debug("ReadEventHandler.run() -> body b["+i+"]="+c);
 					
 				}
 			}
@@ -70,7 +70,7 @@ class ReadEventHandler implements Runnable {
 			switch (msgType) {
 				
 				case Statics.INVOCATION_PACKET:
-					Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
+					//Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
 					remoteObjectName = Utils.getString(packetBody);
 					final long methodHash = packetBody.getLong();
 					
@@ -83,9 +83,9 @@ class ReadEventHandler implements Runnable {
 						args[i]=Utils.unwrapValue(parameterTypes[i], packetBody);							
 					}
 					
-					Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
+					//Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
 					processInvokeMethod(remoteObjectName, method, args);
-					Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
+					//Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.LOOKUP_PACKET :
@@ -107,24 +107,24 @@ class ReadEventHandler implements Runnable {
 					break;	
 					
 				case Statics.INVOCATION_RETURN_PACKET :
-					Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
+					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
 					
 					//unwrap the return-value
 					Object result = Utils.unwrapValue(dispatcher.removeRequestReturnType(requestID), packetBody);
 					
-					Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
+					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
 //					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result");
 					dispatcher.putResultToQueue(requestID, result);
 					dispatcher.wakeWaitingProcess(requestID);
 //					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result finished");
-					Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
+					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.LOOKUP_RETURN_PACKET :
-					Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> start. requestID="+requestID);
+					//Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> start. requestID="+requestID);
 					dispatcher.putResultToQueue(requestID, Utils.getObject(packetBody));
 					dispatcher.wakeWaitingProcess(requestID);
-					Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> end. requestID="+requestID);
+					//Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.TOSTRING_RETURN_PACKET :
@@ -236,7 +236,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException 
 	 */
 	private void processLookup(String remoteObjectName) throws IOException{
-		Utils.debug("ReadEventHandler.processLookup() -> start. requestID="+requestID);
+		//Utils.debug("ReadEventHandler.processLookup() -> start. requestID="+requestID);
 
 		byte[] remoteObjectInterface = Utils.objectToBytes(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
 
@@ -260,11 +260,11 @@ class ReadEventHandler implements Runnable {
 		
 		dispatcher.send(key,p.getByteBuffer());
 		
-		Utils.debug("ReadEventHandler.processLookup() -> end. requestID="+requestID);
+		//Utils.debug("ReadEventHandler.processLookup() -> end. requestID="+requestID);
 	}
 	
 	private void processInvokeMethod(String remoteObjectName, Method method, Object[] args){
-		Utils.debug("ReadEventHandler.processInvokeMethod() -> begin. requestID="+requestID);
+		//Utils.debug("ReadEventHandler.processInvokeMethod() -> begin. requestID="+requestID);
 		Object result = null;
 		
 		try {			
@@ -289,9 +289,9 @@ class ReadEventHandler implements Runnable {
 			} 
 			
 			try {
-				Utils.debug("ReadEventHandler.processInvokeMethod() -> start invoking method='"+method+"'. requestID="+requestID);
+				//Utils.debug("ReadEventHandler.processInvokeMethod() -> start invoking method='"+method+"'. requestID="+requestID);
 				result = method.invoke(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName), args);
-				Utils.debug("ReadEventHandler.processInvokeMethod() -> end invoking method='"+method+"'. requestID="+requestID+" result="+result);				
+				//Utils.debug("ReadEventHandler.processInvokeMethod() -> end invoking method='"+method+"'. requestID="+requestID+" result="+result);				
 				// Search for SimonRemote in result
 				if (result instanceof SimonRemote){
 					dispatcher.getLookupTable().putRemoteBinding(result.toString(), (SimonRemote)result);
@@ -324,7 +324,7 @@ class ReadEventHandler implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		Utils.debug("ReadEventHandler.processInvokeMethod() -> end. requestID="+requestID);
+		//Utils.debug("ReadEventHandler.processInvokeMethod() -> end. requestID="+requestID);
 	}
 	
 	
