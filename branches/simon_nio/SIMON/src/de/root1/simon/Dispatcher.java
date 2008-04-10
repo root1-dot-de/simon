@@ -49,8 +49,8 @@ public class Dispatcher implements Runnable {
 	private int requestIdCounter = 0;
 	
 	/** The map that holds the relation between the request ID and the corresponding monitor */
-//	private HashMap<Integer, Object> idMonitorMap = new HashMap<Integer, Object>();
-	private HashMap<Integer, MonitorResult> idMonitorMap = new HashMap<Integer, MonitorResult>();
+	private HashMap<Integer, Object> idMonitorMap = new HashMap<Integer, Object>();
+//	private HashMap<Integer, MonitorResult> idMonitorMap = new HashMap<Integer, MonitorResult>();
 	
 	/** The map that holds the relation between the request ID and the received result */
 	private HashMap<Integer, Object> requestResults = new HashMap<Integer, Object>();
@@ -308,8 +308,7 @@ public class Dispatcher implements Runnable {
 		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
-//		final Object monitor = createMonitor(requestID);
-		final MonitorResult monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(requestID);
 		
 		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
 		
@@ -322,15 +321,20 @@ public class Dispatcher implements Runnable {
 		send(key, packet.getByteBuffer());	
 		//Utils.debug("Dispatcher.invokeLookup() -> data send. waiting for answer for requestID="+requestID);
 		
+		// check if need to wait for the result
+		synchronized (requestResults) {
+			if (requestResults.containsKey(requestID))
+				return requestResults.remove(requestID);
+		}
+		
 		// got to sleep until result is present
-//		synchronized (monitor) {
+		synchronized (monitor) {
 			try {
-//				monitor.wait();
-				monitor.waitForResult();
+				monitor.wait();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-//		}
+		}
 			
 		//Utils.debug("Dispatcher.invokeLookup() -> got answer for requestID="+requestID);
 			
@@ -363,8 +367,7 @@ public class Dispatcher implements Runnable {
  		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
-//		final Object monitor = createMonitor(requestID);
-		final MonitorResult monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(requestID);
 		
 		// memory the return-type for later unwrap
 		requestReturnType.put(requestID, returnType);
@@ -392,18 +395,21 @@ public class Dispatcher implements Runnable {
 		
 		packet.setComplete();
 		send(key, packet.getByteBuffer());
-				
+			
+		// check if need to wait for the result
+		synchronized (requestResults) {
+			if (requestResults.containsKey(requestID))
+				return requestResults.remove(requestID);
+		}
+		
 		// got to sleep until result is present
-//		synchronized (monitor) {
+		synchronized (monitor) {
 			try {
-//				System.out.println(System.nanoTime()+" Dispatcher invoke method. monitor="+monitor+" Wait for result for reqID="+requestID);
-//				monitor.wait();
-				monitor.waitForResult();
-//				System.out.println(System.nanoTime()+" Dispatcher invoke method. monitor="+monitor+" Wait for result for reqID="+requestID+" finished");
+				monitor.wait();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-//		}
+		}
 		//Utils.debug("Dispatcher.sendInvocationToRemote() -> end. requestID="+requestID);
 		synchronized (requestResults) {
 			return requestResults.remove(requestID);
@@ -436,7 +442,6 @@ public class Dispatcher implements Runnable {
 		// send the packet to the connected client-socket-channel
 		send(key, packet.getByteBuffer());
 		
-
 		// got to sleep until result is present
 		try {
 			monitor.wait();
@@ -478,6 +483,11 @@ public class Dispatcher implements Runnable {
 		
 		send(key, packet.getByteBuffer());
 		
+		// check if need to wait for the result
+		synchronized (requestResults) {
+			if (requestResults.containsKey(requestID))
+				return (Integer)requestResults.remove(requestID);
+		}
 
 		// got to sleep until result is present
 		try {
@@ -512,6 +522,11 @@ public class Dispatcher implements Runnable {
 		packet.setComplete();
 		
 		send(key, packet.getByteBuffer());
+		// check if need to wait for the result
+		synchronized (requestResults) {
+			if (requestResults.containsKey(requestID))
+				return (Boolean)requestResults.remove(requestID);
+		}
 		
 		// got to sleep until result is present
 		try {
@@ -537,14 +552,14 @@ public class Dispatcher implements Runnable {
 	protected void wakeWaitingProcess(int requestID) {
 		synchronized (idMonitorMap) {
 //			System.out.println("waking id="+requestID);
-//			final Object monitor = idMonitorMap.remove(requestID);
-			final MonitorResult monitor = idMonitorMap.remove(requestID);
+			final Object monitor = idMonitorMap.remove(requestID);
+//			final MonitorResult monitor = idMonitorMap.remove(requestID);
 			if (monitor!=null) {
-//				synchronized (monitor) {
-//					monitor.notify(); // wake the waiting method
-					monitor.wakeUp(); // wake the waiting method
+				synchronized (monitor) {
+					monitor.notify(); // wake the waiting method
+//					monitor.wakeUp(); // wake the waiting method
 //					System.out.println("id="+requestID+" monitor="+monitor+" waked");
-//				}
+				}
 			} else {
 				//Utils.debug("Dispatcher.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
 //				System.out.println("Dispatcher.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
@@ -566,6 +581,13 @@ public class Dispatcher implements Runnable {
 	}
 
 
+	/**
+	 * This method is called from worker-threads which processed an invocation and have data 
+	 * ready that has to be returned to the "caller"
+	 * 
+	 * @param requestID the request id that is waiting for the result
+	 * @param result the result itself
+	 */
 	protected synchronized void putResultToQueue(int requestID, Object result){
 		requestResults.put(requestID,result);
 	}
@@ -587,9 +609,8 @@ public class Dispatcher implements Runnable {
 	 * @return the monitor used for waiting for the result
 	 */
 //	Object createMonitor(final int requestID) {
-	private MonitorResult createMonitor(final int requestID) {
-//		final Object monitor = new Object();
-		final MonitorResult monitor = new MonitorResult();
+	private Object createMonitor(final int requestID) {
+		final Object monitor = new Object();
 		synchronized (idMonitorMap) {
 			//Utils.debug("Dispatcher.createMonitor() -> monitor for requestID="+requestID+" -> monitor="+monitor+" mapsize="+idMonitorMap.size());
 			idMonitorMap.put(requestID, monitor);
