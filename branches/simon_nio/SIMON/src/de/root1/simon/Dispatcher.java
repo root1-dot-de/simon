@@ -394,16 +394,17 @@ public class Dispatcher implements Runnable {
         }
 		
 		packet.setComplete();
-		send(key, packet.getByteBuffer());
-			
-		// check if need to wait for the result
-		synchronized (requestResults) {
-			if (requestResults.containsKey(requestID))
-				return requestResults.remove(requestID);
-		}
-		
-		// got to sleep until result is present
 		synchronized (monitor) {
+		send(key, packet.getByteBuffer());
+		
+//		System.out.println(System.nanoTime()+" data for reqid="+requestID+" sent");	
+		// check if need to wait for the result
+			synchronized (requestResults) {
+				if (requestResults.containsKey(requestID))
+					return requestResults.remove(requestID);
+			}
+		
+			// got to sleep until result is present
 			try {
 				monitor.wait();
 			} catch (InterruptedException e) {
@@ -588,8 +589,14 @@ public class Dispatcher implements Runnable {
 	 * @param requestID the request id that is waiting for the result
 	 * @param result the result itself
 	 */
-	protected synchronized void putResultToQueue(int requestID, Object result){
-		requestResults.put(requestID,result);
+	protected void putResultToQueue(int requestID, Object result){
+		final Object monitor = idMonitorMap.get(requestID);
+		synchronized (monitor) {
+			synchronized (requestResults) {
+				requestResults.put(requestID,result);
+			}
+			monitor.notify();
+		}
 	}
 	
 	

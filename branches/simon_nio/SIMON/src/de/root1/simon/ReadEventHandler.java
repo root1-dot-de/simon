@@ -115,7 +115,7 @@ class ReadEventHandler implements Runnable {
 					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
 //					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result");
 					dispatcher.putResultToQueue(requestID, result);
-					dispatcher.wakeWaitingProcess(requestID);
+//					dispatcher.wakeWaitingProcess(requestID);
 //					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result finished");
 					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
 					break;
@@ -123,23 +123,23 @@ class ReadEventHandler implements Runnable {
 				case Statics.LOOKUP_RETURN_PACKET :
 					//Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> start. requestID="+requestID);
 					dispatcher.putResultToQueue(requestID, Utils.getObject(packetBody));
-					dispatcher.wakeWaitingProcess(requestID);
+//					dispatcher.wakeWaitingProcess(requestID);
 					//Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.TOSTRING_RETURN_PACKET :
 					dispatcher.putResultToQueue(requestID, Utils.getString(packetBody));
-					dispatcher.wakeWaitingProcess(requestID);
+//					dispatcher.wakeWaitingProcess(requestID);
 					break;
 				
 				case Statics.HASHCODE_RETURN_PACKET :
 					dispatcher.putResultToQueue(requestID, packetBody.getInt());
-					dispatcher.wakeWaitingProcess(requestID);
+//					dispatcher.wakeWaitingProcess(requestID);
 					break;
 					
 				case Statics.EQUALS_RETURN_PACKET :
 					dispatcher.putResultToQueue(requestID, (Boolean.valueOf(packetBody.get()==1 ? true : false)));
-					dispatcher.wakeWaitingProcess(requestID);
+//					dispatcher.wakeWaitingProcess(requestID);
 					break;
 					
 				default :

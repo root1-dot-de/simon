@@ -21,16 +21,17 @@ package de.root1.simon;
 public class Statics {
 	
 	public static boolean 	 	DEBUG_MODE 					= false;
-	public static final byte LOOKUP_PACKET 				= 0x00;
-	public static final byte LOOKUP_RETURN_PACKET 		= 0x01;
-	public static final byte INVOCATION_PACKET 			= 0x02;
-	public static final byte INVOCATION_RETURN_PACKET 	= 0x03;
-	public static final byte TOSTRING_PACKET			 	= 0x04;
-	public static final byte TOSTRING_RETURN_PACKET	 	= 0x05;
-	public static final byte HASHCODE_PACKET			 	= 0x06;
-	public static final byte HASHCODE_RETURN_PACKET	 	= 0x07;
-	public static final byte EQUALS_PACKET			 	= 0x08;
-	public static final byte EQUALS_RETURN_PACKET	 	= 0x09;
+	public static final int 	REMOTE_INVOKE_TIMEOUT		= 5000;	
+	public static final byte 	LOOKUP_PACKET 				= 0x00;
+	public static final byte 	LOOKUP_RETURN_PACKET 		= 0x01;
+	public static final byte 	INVOCATION_PACKET 			= 0x02;
+	public static final byte 	INVOCATION_RETURN_PACKET 	= 0x03;
+	public static final byte 	TOSTRING_PACKET			 	= 0x04;
+	public static final byte 	TOSTRING_RETURN_PACKET	 	= 0x05;
+	public static final byte 	HASHCODE_PACKET			 	= 0x06;
+	public static final byte 	HASHCODE_RETURN_PACKET	 	= 0x07;
+	public static final byte 	EQUALS_PACKET			 	= 0x08;
+	public static final byte 	EQUALS_RETURN_PACKET	 	= 0x09;
 	
 	protected static final String TOSTRING_METHOD_SIGNATURE = "public java.lang.String java.lang.Object.toString()";
 	protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
