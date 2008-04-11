@@ -300,6 +300,8 @@ public class Utils {
      */
     public static Object getObject(ByteBuffer bb) throws IOException, ClassNotFoundException{
     	
+    	// TODO for optimization, see: http://www.theserverside.com/discussions/thread.tss?thread_id=21568
+    	
     	byte[] objectInBytes = new byte[bb.getInt()]; // read object size and create a byte[] for it
     	bb.get(objectInBytes); // put the object to the byte[]
     	
