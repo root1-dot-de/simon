@@ -268,6 +268,9 @@ public class Utils {
     	byte[] bb;
     	ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
+    	
+//    	ByteBufferOutputStream baos = new ByteBufferOutputStream();
+//		ObjectOutputStream oos = new ObjectOutputStream(baos);
 	
 		oos.writeObject(object);
 		oos.flush();
@@ -302,11 +305,13 @@ public class Utils {
     	
     	// TODO for optimization, see: http://www.theserverside.com/discussions/thread.tss?thread_id=21568
     	
-    	byte[] objectInBytes = new byte[bb.getInt()]; // read object size and create a byte[] for it
-    	bb.get(objectInBytes); // put the object to the byte[]
+    	bb.getInt();
+//    	byte[] objectInBytes = new byte[bb.getInt()]; // read object size and create a byte[] for it
+//    	bb.get(objectInBytes); // put the object to the byte[]
     	
     	// use the byte[] for deserializing the inherited object
-    	ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(objectInBytes));
+//    	ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(objectInBytes));
+    	ObjectInputStream ois = new ObjectInputStream(new ByteBufferInputStream(bb));
     	
     	// read and return the object from the stream
     	return ois.readObject();
