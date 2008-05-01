@@ -18,9 +18,9 @@
  */
 package de.root1.simon.codesample.server;
 
-import de.root1.simon.SimonRemoteException;
 import de.root1.simon.codesample.common.ClientCallbackInterface;
 import de.root1.simon.codesample.common.ServerInterface;
+import de.root1.simon.exceptions.SimonRemoteException;
 
 public class ServerInterfaceImpl implements ServerInterface {
 

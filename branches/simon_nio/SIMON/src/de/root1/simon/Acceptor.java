@@ -2,13 +2,14 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.Socket;
+//import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
+import java.util.logging.Level;
 
 import de.root1.simon.utils.Utils;
 
@@ -27,20 +28,22 @@ public class Acceptor implements Runnable {
 	 * @throws IOException
 	 */
 	Acceptor(Dispatcher dispatcher, int serverPort) throws IOException {
-	
+		Utils.logger.fine("begin");
 		//Utils.debug("Acceptor.Acceptor() -> init ...");
 		
 		this.serverPort = serverPort;
 		this.dispatcher = dispatcher;
 		
 		initSelector();
+		Utils.logger.fine("end");
 	}
 
 	public void run() {
+		Utils.logger.fine("begin");
 		while (isRunning) {
 			try {
 
-				//Utils.debug("Acceptor.run() -> Selecting ...");
+				Utils.logger.finer("waiting for selection");
 				// Wait for an event one of the registered channels
 				this.socketSelector.select();
 
@@ -48,9 +51,11 @@ public class Acceptor implements Runnable {
 				Iterator<SelectionKey> selectedKeys = this.socketSelector.selectedKeys().iterator();
 				
 				while (selectedKeys.hasNext()) {
-				
 					SelectionKey key = (SelectionKey) selectedKeys.next();
 					selectedKeys.remove();
+					
+					if (Utils.logger.isLoggable(Level.FINER))
+						Utils.logger.finer("selected: "+key);
 
 					if (!key.isValid()) {
 						continue;
@@ -65,26 +70,25 @@ public class Acceptor implements Runnable {
 				e.printStackTrace();
 			}
 		}
-		//Utils.debug("Acceptor.run() -> shutdown!");
+		Utils.logger.fine("end");
 	}
 	
 	private void accept(SelectionKey key) throws IOException {
-		//Utils.debug("Acceptor.accept(): Start");
+		Utils.logger.fine("begin");
 		
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel(); // get the key's channeö
 		
 		SocketChannel clientChannel = serverSocketChannel.accept(); // get the connected client channel
 		
-		Socket socket = clientChannel.socket();
+//		Socket socket = clientChannel.socket();
 		//Utils.debug("Acceptor.accept(): Client: "+socket.getInetAddress());
 		clientChannel.configureBlocking(false);
 		
 		key.cancel(); // cancel registration on acceptor-selector
 		
-		
 		dispatcher.registerChannel(clientChannel); // register channel on dispatcher
 		
-		//Utils.debug("Acceptor.accept(): End");
+		Utils.logger.fine("end");	
 	}
 
 	
@@ -92,6 +96,7 @@ public class Acceptor implements Runnable {
 	 * Interrupts the acceptor-thread for a server shutdown
 	 */
 	public void shutdown(){
+		Utils.logger.fine("begin");
 		if (serverChannel!=null){
 			try {
 				serverChannel.close();
@@ -100,9 +105,11 @@ public class Acceptor implements Runnable {
 				// nothing to do
 			}
 		}
+		Utils.logger.fine("end");
 	}
 	
 	private void initSelector() throws IOException {
+		Utils.logger.fine("begin");
 		socketSelector = SelectorProvider.provider().openSelector();
 		// Create a new non-blocking server socket channel
 		this.serverChannel = ServerSocketChannel.open();
@@ -115,5 +122,6 @@ public class Acceptor implements Runnable {
 		// Register the server socket channel, indicating an interest in 
 		// accepting new connections
 		serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
+		Utils.logger.fine("end");
 	} 
 }

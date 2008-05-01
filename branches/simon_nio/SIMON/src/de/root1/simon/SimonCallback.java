@@ -1,6 +1,8 @@
 package de.root1.simon;
 
 import java.io.Serializable;
+import java.util.logging.Level;
+import de.root1.simon.utils.Utils;
 
 
 public class SimonCallback implements Serializable {
@@ -16,6 +18,8 @@ public class SimonCallback implements Serializable {
 	 */
 	private String interfaceName = null;
 	private String id = null;
+	
+	
 
 	/**
 	 * 
@@ -24,8 +28,7 @@ public class SimonCallback implements Serializable {
 	 * @param callback
 	 */
 	public SimonCallback(SimonRemote callback) {
-		if (Statics.DEBUG_MODE)
-			System.out.println("SimonCallback.SimonCallback() -> start");
+		Utils.logger.fine("begin");
 		this.id = callback.toString();
 
 		// get the interfaces the arg has implemented
@@ -36,16 +39,16 @@ public class SimonCallback implements Serializable {
 			
 
 			String callbackInterfaceClassNameTemp = callbackInterfaceClass.getName();
-			if (Statics.DEBUG_MODE)
-				System.out.println("SimonCallback.SimonCallback() -> Checking interfacename='"+callbackInterfaceClassNameTemp+"' for '"+SimonRemote.class.getName()+"'");
+			if (Utils.logger.isLoggable(Level.FINER))
+				Utils.logger.finer("Checking interfacename='"+callbackInterfaceClassNameTemp+"' for '"+SimonRemote.class.getName()+"'");
 			
 			// Get the interfaces of the implementing interface
 			Class<?>[] callbackInterfaceSubInterfaces = callbackInterfaceClass.getInterfaces();
 			
 			boolean isSimonRemote = false;
 			for (Class<?> callbackInterfaceSubInterface : callbackInterfaceSubInterfaces) {
-				if (Statics.DEBUG_MODE)
-					System.out.println("SimonCallback.SimonCallback() -> Checking child interfaces for '"+callbackInterfaceClassNameTemp+"': child="+callbackInterfaceSubInterface);
+				if (Utils.logger.isLoggable(Level.FINER))
+					Utils.logger.finer("Checking child interfaces for '"+callbackInterfaceClassNameTemp+"': child="+callbackInterfaceSubInterface);
 				if (callbackInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
 					isSimonRemote = true;
 					break;
@@ -54,16 +57,15 @@ public class SimonCallback implements Serializable {
 			
 			if (isSimonRemote){
 				interfaceName = callbackInterfaceClassNameTemp;
-				if (Statics.DEBUG_MODE)
-					System.out.println("SimonCallback.SimonCallback() -> SimonRemote found in arg: interfaceName='"+interfaceName+"'");
+				if (Utils.logger.isLoggable(Level.FINER))
+					Utils.logger.finer("SimonRemote found in arg: interfaceName='"+interfaceName+"'");
 				break;
 
 			} else {
 				interfaceName = null;
 			}
 		}
-		if (Statics.DEBUG_MODE)
-			System.out.println("SimonCallback.SimonCallback() -> end");
+		Utils.logger.fine("end");
 	}
 
 	/**

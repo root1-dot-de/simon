@@ -32,7 +32,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
 
+import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -88,7 +90,7 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */
 	public Dispatcher(LookupTable lookupTable, ExecutorService threadPool) throws IOException {
-		//Utils.debug("Dispatcher.Dispatcher() -> start");
+		Utils.logger.fine("begin");
 		
 		// FIXME set the name of the thread?!
 //		this.setName("Endpoint: "+threadName);
@@ -99,9 +101,8 @@ public class Dispatcher implements Runnable {
 		
 		selector = initSelectorClient();
 		
-		//Utils.debug("Dispatcher.Dispatcher() -> end");
+		Utils.logger.fine("end");
 	}
-
 
 
 	/**
@@ -110,7 +111,7 @@ public class Dispatcher implements Runnable {
 	 * 
 	 * @return a request ID
 	 */
-	Integer generateRequestID() {
+	private Integer generateRequestID() {
 		return requestIdCounter++;
 	}
 	
@@ -126,10 +127,8 @@ public class Dispatcher implements Runnable {
 	 * @see java.lang.Thread#run()
 	 */
 	public void run() {
-		
+		Utils.logger.fine("begin");
 		while (true) {
-			//Utils.debug("");
-			//Utils.debug("");
 			try {
 				// Process any pending selector changes
 				// this means read/write interests and registrations
@@ -139,7 +138,9 @@ public class Dispatcher implements Runnable {
 					while (changes.hasNext()) {
 						
 						ChangeRequest change = (ChangeRequest) changes.next();
-						//Utils.debug("Dispatcher.run() -> changeRequest -> "+change);
+						
+						if (Utils.logger.isLoggable(Level.FINER))
+							Utils.logger.finer("changerequest: "+change);
 						
 						switch (change.type) {
 
@@ -157,13 +158,14 @@ public class Dispatcher implements Runnable {
 				}
 				// -------------
 
-				//Utils.debug("Dispatcher.run() -> selector.select() -> Wait for an event on one of the registered channels");
+				Utils.logger.finer("Wait for an event on one of the registered channels");
 				int numOfselectableKeys = selector.select();
 
 				if (numOfselectableKeys>0) {
 
-					//Utils.debug("Dispatcher.run() -> "+numOfselectableKeys+" keys available");
-
+					if (Utils.logger.isLoggable(Level.FINER))
+						Utils.logger.finer(numOfselectableKeys+ " keys ready");	
+					
 					// Iterate over the set of keys for which events are available
 					Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
 					while (selectedKeys.hasNext()) {
@@ -171,31 +173,38 @@ public class Dispatcher implements Runnable {
 						SelectionKey key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
 						
-						//Utils.debug("Dispatcher.run() -> key has ready op: "+Utils.printSelectionKeyValue(key.interestOps()));
+						if (Utils.logger.isLoggable(Level.FINER))
+							Utils.logger.finer("key has ready op: "+Utils.printSelectionKeyValue(key.interestOps()));	
 						
 						if (!key.isValid()) {
-							//Utils.debug("Dispatcher.run() -> key is invalid!");
+							if (Utils.logger.isLoggable(Level.FINER))
+								Utils.logger.finer("key is invalid: "+key);
 							continue; // .. with next in "while"
 						}
 	
 						// Check what event is available and deal with it
 						if (key.isAcceptable()){ // used by the server
-							
-							//Utils.debug("Dispatcher.run() -> "+key+" is acceptable. Accepting is done by the 'Acceptor'!");
+							if (Utils.logger.isLoggable(Level.FINER))
+								Utils.logger.finer(key+" is acceptable. Accepting is done by the 'Acceptor'!");
 							
 						} else if (key.isConnectable()) { // used by the client
-							
-							//Utils.debug("Dispatcher.run() -> "+key+" is connectable.  FinishConnection is done by the 'Client'!");
+
+							if (Utils.logger.isLoggable(Level.FINER))
+								Utils.logger.finer(key+" is connectable.  FinishConnection is done by the 'Client'!");
 							
 						} else if (key.isReadable()) {
 
-							//Utils.debug("Dispatcher.run() -> "+key+" is readable");
+							if (Utils.logger.isLoggable(Level.FINER))
+								Utils.logger.finer(key+" is readable");
+							
 							key.interestOps(0); // deregister for read-events
 							handleRead(key);
 							
 						} else if (key.isWritable()) {
 							
-							//Utils.debug("Dispatcher.run() -> "+key+" is writeable");
+							if (Utils.logger.isLoggable(Level.FINER))
+								Utils.logger.finer(key+" is writeable");
+
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
 							handleWrite(key);
 							
@@ -204,13 +213,14 @@ public class Dispatcher implements Runnable {
 
 				} else {
 				
-					//Utils.debug("Dispatcher.run() -> no keys available");
-					
+						Utils.logger.finer("no keys available");
 				}
 				
 			} catch (Exception e) {
 				e.printStackTrace();
 				// FIXME Exception richtig fangen
+				Utils.logger.severe("Exception: "+e);
+
 				wakeAllMonitors();
 			}
 		}
@@ -219,11 +229,13 @@ public class Dispatcher implements Runnable {
 
 
 	private void handleRead(SelectionKey key) {
+		Utils.logger.fine("begin");
 		eventHandlerPool.execute(new ReadEventHandler(key,this));
+		Utils.logger.fine("end");
 	}
 	
 	private void handleWrite(SelectionKey key) throws IOException {
-		//Utils.debug("Dispatcher.handleWrite() -> start");
+		Utils.logger.fine("begin");
 	    SocketChannel socketChannel = (SocketChannel) key.channel();
 
 	    synchronized (this.pendingData) {
@@ -247,7 +259,7 @@ public class Dispatcher implements Runnable {
 	        key.interestOps(SelectionKey.OP_READ);
 	      }
 	    }
-	    //Utils.debug("Dispatcher.handleWrite() -> end");
+	    Utils.logger.fine("end");	
 	}
 	
 	/**
@@ -255,17 +267,13 @@ public class Dispatcher implements Runnable {
 	 * Be warned: only the data from start to position is sent
 	 */
 	protected void send(SelectionKey key, ByteBuffer packet) {
+		Utils.logger.fine("begin");
 		
 		SocketChannel socketChannel = (SocketChannel) key.channel();
-		//Utils.debug("Dispatcher.send() -> start");			
-		//Utils.debug("Dispatcher.send() -> sende daten für key="+key+" channel="+socketChannel);
-		
-//		packet.position(1);
-//		int reqID = packet.getInt();
-//		packet.rewind();
-//		System.out.println(System.nanoTime()+" Dispatcher.send() -> sende reqID="+reqID);
-		
 
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("sending data for key="+key+" channel="+socketChannel);
+		
 		// And queue the data we want written
 		synchronized (this.pendingData) {
 			List<ByteBuffer> queue = this.pendingData.get(socketChannel);
@@ -273,24 +281,34 @@ public class Dispatcher implements Runnable {
 				queue = new ArrayList<ByteBuffer>();
 				this.pendingData.put(socketChannel, queue);
 			}
-			//Utils.debug("Dispatcher.send() -> added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
+			if (Utils.logger.isLoggable(Level.FINER))
+				Utils.logger.finer("added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
 			queue.add(packet);
 		}
 
 		selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE);
 
-		//Utils.debug("Dispatcher.send() -> end");
+		Utils.logger.fine("end");
 	}
 
 
-
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param socketChannel
+	 * @param type
+	 * @param operation
+	 */
 	private void selectorChangeRequest(SocketChannel socketChannel, int type, int operation) {
+		Utils.logger.fine("begin");
+
 		synchronized (this.pendingChanges) {
 			// Indicate we want the interest ops set changed
 			this.pendingChanges.add(new ChangeRequest(socketChannel, type, operation));
+			// Finally, wake up our selecting thread so it can make the required changes
 			selector.wakeup();
 		}
-		// Finally, wake up our selecting thread so it can make the required changes
+		Utils.logger.fine("end");
 	}
 
 	/**
@@ -304,7 +322,9 @@ public class Dispatcher implements Runnable {
 	 */
 	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws SimonRemoteException, IOException {
 		final int requestID = generateRequestID(); 
-		//Utils.debug("Dispatcher.invokeLookup() -> start for requestID="+requestID+" key="+key);
+		if (Utils.logger.isLoggable(Level.FINE))
+			Utils.logger.fine("begin requestID="+requestID+" key="+key);
+
 		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
@@ -319,7 +339,9 @@ public class Dispatcher implements Runnable {
 		
 		// send the packet to the connected channel
 		send(key, packet.getByteBuffer());	
-		//Utils.debug("Dispatcher.invokeLookup() -> data send. waiting for answer for requestID="+requestID);
+		
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("data send. waiting for answer for requestID="+requestID);
 		
 		// check if need to wait for the result
 		synchronized (requestResults) {
@@ -336,16 +358,19 @@ public class Dispatcher implements Runnable {
 			}
 		}
 			
-		//Utils.debug("Dispatcher.invokeLookup() -> got answer for requestID="+requestID);
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("got answer for requestID="+requestID);
 			
 		// check if there was an error while sleeping
 		if (globalEndpointException!=null) throw globalEndpointException;
 		
 		// get result
 		synchronized (requestResults) {
-			//Utils.debug("Dispatcher.invokeLookup() -> end. requestID="+requestID);
+			if (Utils.logger.isLoggable(Level.FINE))
+				Utils.logger.fine("end requestID="+requestID);
 			return requestResults.remove(requestID);			
 		}
+
 	}
 	
 	/**
@@ -362,8 +387,10 @@ public class Dispatcher implements Runnable {
 	 */	 
  	protected Object invokeMethod(SelectionKey key, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
  		final int requestID = generateRequestID();
- 		//Utils.debug("Dispatcher.sendInvocationToRemote() -> begin. requestID="+requestID+" key="+key);
 
+ 		if (Utils.logger.isLoggable(Level.FINE))
+ 			Utils.logger.fine("begin. requestID="+requestID+" key="+key);
+ 		
  		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
@@ -411,8 +438,10 @@ public class Dispatcher implements Runnable {
 				e.printStackTrace();
 			}
 		}
-		//Utils.debug("Dispatcher.sendInvocationToRemote() -> end. requestID="+requestID);
+
 		synchronized (requestResults) {
+			if (Utils.logger.isLoggable(Level.FINE))
+				Utils.logger.fine("end. requestID="+requestID);
 			return requestResults.remove(requestID);
 		}
 	}
@@ -431,6 +460,9 @@ public class Dispatcher implements Runnable {
 
 		final int requestID = generateRequestID();
 
+		if (Utils.logger.isLoggable(Level.FINE))
+ 			Utils.logger.fine("begin. requestID="+requestID+" key="+key);
+		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
 
@@ -456,6 +488,8 @@ public class Dispatcher implements Runnable {
 		
 		// get result
 		synchronized (requestResults) {
+			if (Utils.logger.isLoggable(Level.FINE))
+	 			Utils.logger.fine("end. requestID="+requestID);
 			return (String)requestResults.remove(requestID);			
 		}		
 	}
@@ -473,6 +507,9 @@ public class Dispatcher implements Runnable {
 		if (globalEndpointException!=null) throw globalEndpointException;
 
 		final int requestID = generateRequestID();
+		
+		if (Utils.logger.isLoggable(Level.FINE))
+ 			Utils.logger.fine("begin. requestID="+requestID+" key="+key);
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
@@ -503,15 +540,29 @@ public class Dispatcher implements Runnable {
 		
 		// get result
 		synchronized (requestResults) {
+			if (Utils.logger.isLoggable(Level.FINE))
+	 			Utils.logger.fine("end. requestID="+requestID);
 			return (Integer)requestResults.remove(requestID);			
 		}		
 	}
 
 
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param key
+	 * @param remoteObjectName
+	 * @param object
+	 * @return
+	 * @throws IOException
+	 */
 	protected boolean invokeEquals(SelectionKey key, String remoteObjectName, Object object) throws IOException {
 		if (globalEndpointException!=null) throw globalEndpointException;
 
 		final int requestID = generateRequestID();
+		
+		if (Utils.logger.isLoggable(Level.FINE))
+ 			Utils.logger.fine("begin. requestID="+requestID+" key="+key);
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
@@ -540,6 +591,8 @@ public class Dispatcher implements Runnable {
 		// check if there was an error while sleeping
 		if (globalEndpointException!=null) throw globalEndpointException;
 		
+		if (Utils.logger.isLoggable(Level.FINE))
+ 			Utils.logger.fine("end. requestID="+requestID);
 		// get result
 		return (Boolean) requestResults.remove(requestID);
 	}
@@ -551,22 +604,25 @@ public class Dispatcher implements Runnable {
 	 * @param requestID the process to wake  
 	 */
 	protected void wakeWaitingProcess(int requestID) {
+		if (Utils.logger.isLoggable(Level.FINE))
+			Utils.logger.fine("begin. wakeing requestID="+requestID);
 		synchronized (idMonitorMap) {
-//			System.out.println("waking id="+requestID);
 			final Object monitor = idMonitorMap.remove(requestID);
-//			final MonitorResult monitor = idMonitorMap.remove(requestID);
 			if (monitor!=null) {
 				synchronized (monitor) {
 					monitor.notify(); // wake the waiting method
-//					monitor.wakeUp(); // wake the waiting method
 //					System.out.println("id="+requestID+" monitor="+monitor+" waked");
+					if (Utils.logger.isLoggable(Level.FINER))
+			 			Utils.logger.finer("id="+requestID+" monitor="+monitor+" waked");
 				}
 			} else {
-				//Utils.debug("Dispatcher.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
-//				System.out.println("Dispatcher.wakeWaitingProcess() -> !!!!!!!!!!!!!!!! -> no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
+				if (Utils.logger.isLoggable(Level.FINER))
+		 			Utils.logger.finer("no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
 			}
 			
 		}
+		if (Utils.logger.isLoggable(Level.FINE))
+ 			Utils.logger.fine("end. wakeing requestID="+requestID);
 	}
 
 	/** 
@@ -574,11 +630,13 @@ public class Dispatcher implements Runnable {
 	 * wake all waiting processes. This is only called due to global errors ...
 	 */
 	private void wakeAllMonitors() {
+		Utils.logger.fine("begin");
 		synchronized (idMonitorMap) {
 			for (Integer id : idMonitorMap.keySet()) {
 				wakeWaitingProcess(id.intValue());
 			}
 		}
+		Utils.logger.fine("end");
 	}
 
 
@@ -590,6 +648,7 @@ public class Dispatcher implements Runnable {
 	 * @param result the result itself
 	 */
 	protected void putResultToQueue(int requestID, Object result){
+		Utils.logger.fine("begin");
 		final Object monitor = idMonitorMap.get(requestID);
 		synchronized (monitor) {
 			synchronized (requestResults) {
@@ -597,6 +656,7 @@ public class Dispatcher implements Runnable {
 			}
 			monitor.notify();
 		}
+		Utils.logger.fine("end");
 	}
 	
 	
@@ -617,12 +677,12 @@ public class Dispatcher implements Runnable {
 	 */
 //	Object createMonitor(final int requestID) {
 	private Object createMonitor(final int requestID) {
+		Utils.logger.fine("begin");
 		final Object monitor = new Object();
 		synchronized (idMonitorMap) {
-			//Utils.debug("Dispatcher.createMonitor() -> monitor for requestID="+requestID+" -> monitor="+monitor+" mapsize="+idMonitorMap.size());
 			idMonitorMap.put(requestID, monitor);
-			//Utils.debug("Dispatcher.createMonitor() -> monitor for requestID="+requestID+" new mapsize="+idMonitorMap.size());
 		}
+		Utils.logger.fine("end");
 		return monitor;
 	}
 
@@ -643,19 +703,29 @@ public class Dispatcher implements Runnable {
 	 * @throws ClosedChannelException 
 	 */
 	protected void registerChannel(SocketChannel channel) throws ClosedChannelException {
-		//Utils.debug("Dispatcher.registerChannel() -> start");
+		Utils.logger.fine("begin");
 		selectorChangeRequest(channel, ChangeRequest.REGISTER, SelectionKey.OP_READ);
-		//Utils.debug("Dispatcher.registerChannel() -> end");
+		Utils.logger.fine("end");
 	}
 
 
-
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param channel
+	 */
 	public void changeOpForReadiness(SocketChannel channel) {
-		//Utils.debug("Dispatcher.registerChannel() -> start");
+		Utils.logger.fine("begin");
 		selectorChangeRequest(channel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
-		//Utils.debug("Dispatcher.registerChannel() -> end");
+		Utils.logger.fine("end");
 	}
 	
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param requestID
+	 * @return
+	 */
 	protected Object getResult(int requestID){
 		synchronized (requestResults) {
 			return requestResults.remove(requestID);			

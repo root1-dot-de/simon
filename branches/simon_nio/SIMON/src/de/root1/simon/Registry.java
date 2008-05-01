@@ -37,9 +37,6 @@ public class Registry extends Thread {
 	
 	// -----------------
 	// NIO Stuff
-	
-
-	
 	// The selector we'll be monitoring
 	private Dispatcher dispatcher;
 	private Acceptor acceptor;
@@ -51,10 +48,12 @@ public class Registry extends Thread {
 	 * @param port
 	 */
 	public Registry(LookupTable lookupTable, int port, ExecutorService threadPool) {
+		Utils.logger.fine("begin");
 		this.serverLookupTable = lookupTable;
 		this.port = port;
 		this.threadPool = threadPool;
 		this.setName("SimonRegistry");
+		Utils.logger.fine("end");
 	}
 
 	/* (non-Javadoc)
@@ -62,30 +61,25 @@ public class Registry extends Thread {
 	 */
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		super.run();
-		//Utils.debug("Registry.run() -> start");
+
+		Utils.logger.fine("begin");
 		
 		try {
 			
 			dispatcher = new Dispatcher(serverLookupTable, threadPool);
 			new Thread(dispatcher,"Simon.Registry.Dispatcher").start();
-
+			Utils.logger.finer("dispatcher thread created and started");
+			
 			acceptor = new Acceptor(dispatcher,port);
 			new Thread(acceptor,"Simon.Registry.Acceptor").start();
+			Utils.logger.finer("acceptor thread created and started");
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			Utils.logger.severe("IOException: "+e.getMessage());
 		}
 		
-		//Utils.debug("Registry.run() -> end");
+		Utils.logger.fine("end");
 	}
-	
-	
-
-	
-	
-
 	
 }

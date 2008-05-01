@@ -16,10 +16,10 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon;
+package de.root1.simon.exceptions;
 
 
-public class SimonRemoteException extends RuntimeException{
+public class SimonRemoteException extends SimonException {
 	
 	/**
 	 * TODO: Documentation to be done for field 'serialVersionUID', by 'ACHR'..
@@ -31,8 +31,8 @@ public class SimonRemoteException extends RuntimeException{
 		super(msg);
 	}
 
-	public SimonRemoteException(Exception e) {
-		super(e);
-	}
+//	public SimonRemoteException(Exception e) {
+//		super(e);
+//	}
 
 }

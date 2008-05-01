@@ -33,16 +33,22 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import de.root1.simon.Statics;
 import de.root1.simon.TxPacket;
 
 public class Utils {
 	
-	
+	public static Logger logger = Logger.getLogger("de.root1.simon");
 	private static DecimalFormat df2 = new DecimalFormat("00");
 	private static DecimalFormat df3 = new DecimalFormat("000");
 
+	static{
+		logger.log(Level.INFO, "Simon lib loaded");
+	}
+	
 	/**
 	 * Compute the "method hash" of a remote method. The method hash is a long
 	 * containing the first 64 bits of the SHA digest from the bytes representing

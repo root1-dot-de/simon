@@ -19,7 +19,7 @@
 package de.root1.simon.codesample.common;
 
 import de.root1.simon.SimonRemote;
-import de.root1.simon.SimonRemoteException;
+import de.root1.simon.exceptions.SimonRemoteException;
 
 public interface ClientCallbackInterface extends SimonRemote {
 	

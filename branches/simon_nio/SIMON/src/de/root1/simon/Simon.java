@@ -24,6 +24,8 @@ import java.net.ConnectException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import de.root1.simon.exceptions.EstablishConnectionFailed;
+import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
@@ -46,12 +48,14 @@ public class Simon {
 	 * @param port
 	 */
 	public static void createRegistry(int port){
+		Utils.logger.fine("begin");
 		registry = new Registry(lookupTable, port, getThreadPool());
 		registry.start();
+		Utils.logger.fine("end");
 	}
 	
-	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException {
-		//Utils.debug("Simon.lookup() -> START");
+	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed {
+		Utils.logger.fine("begin");
 		Object proxy = null;
 		
 		Dispatcher dispatcher = new Dispatcher(lookupTable,getThreadPool());
@@ -62,7 +66,7 @@ public class Simon {
 			Client client = new Client(dispatcher);
 			client.connect(host, port);
 			
-			//Utils.debug("Simon.lookup() -> connected with server ...");
+			Utils.logger.finer("connected with server");
 			
 			/*
 			 * Create array with interfaces the proxy should have
@@ -75,7 +79,7 @@ public class Simon {
 			 * This class gets the interfaces and directs the method-calls
 			 */
 			SimonProxy handler = new SimonProxy(dispatcher, client.getKey(), remoteObjectName);
-			//Utils.debug("Simon.lookup() -> Proxy created");
+			Utils.logger.finer("proxy created");
 			
 			 /* 
 		     * Create the proxy-object with the needed interfaces
@@ -86,7 +90,7 @@ public class Simon {
 			throw new ConnectException(e.getMessage());
 		}
 		
-		//Utils.debug("Simon.lookup() -> END");
+		Utils.logger.fine("end");
 		return proxy;
 	}
 

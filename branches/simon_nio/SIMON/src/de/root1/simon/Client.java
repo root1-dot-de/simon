@@ -12,6 +12,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
 
+import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -33,15 +34,14 @@ public class Client {
 	 * @throws IOException 
 	 */
 	public Client(Dispatcher dispatcher) throws IOException {
-		
+		Utils.logger.fine("begin");
 		this.dispatcher = dispatcher;
-		
+		Utils.logger.fine("end");
 	}
 	
-	public void connect(String host, int port) throws IOException{
-		
+	public void connect(String host, int port) throws IOException, EstablishConnectionFailed{
+		Utils.logger.fine("begin");
 		selector = SelectorProvider.provider().openSelector();
-		//Utils.debug("Client.connect() -> start");
 		clientSocketChannel = SocketChannel.open();
 		clientSocketChannel.configureBlocking(false);
 	
@@ -68,23 +68,22 @@ public class Client {
 				// Finish the connection. If the connection operation failed
 				// this will raise an IOException.
 				try {
-					//Utils.debug("Client.connect() -> finishing connection");
+					Utils.logger.finer("finishing connection");
 					socketChannel.finishConnect();
-					//Utils.debug("Client.connect() -> register on dispatcher");
+					Utils.logger.fine("register on dispatcher");
 					dispatcher.registerChannel(socketChannel);
 					
 				} catch (IOException e) {
 					// Cancel the channel's registration with our selector
-					System.err.println("Exception in finishConnection(): "+e);
 					key.cancel();
-					return;
+					throw new EstablishConnectionFailed("could not establish connectionto server. is server running? error-msg:"+e);
 				}
 				
 			} else throw new IllegalStateException("invalid op event: op="+key.interestOps());
 			
 		}
 		
-		//Utils.debug("Client.connect() -> end");
+		Utils.logger.fine("end");
 	}
 	
 	/**
@@ -104,10 +103,5 @@ public class Client {
 	public SelectableChannel getChannelToServer() {
 		return key.channel();
 	}
-	
-	
-	
-
-	
 
 }

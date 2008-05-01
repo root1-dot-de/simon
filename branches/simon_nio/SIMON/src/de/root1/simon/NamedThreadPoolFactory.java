@@ -2,6 +2,13 @@ package de.root1.simon;
 
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * A simple factory-class that let's you use named threads in a thread-pool
+ * TODO Documentation to be done
+ *
+ * @author achristian
+ *
+ */
 public class NamedThreadPoolFactory implements ThreadFactory {
 
 	/** the base name for each thread created with this factory */
@@ -16,6 +23,10 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 		this.baseName = baseName;
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see java.util.concurrent.ThreadFactory#newThread(java.lang.Runnable)
+	 */
 	public Thread newThread(Runnable r) {
 		return new Thread(r,"["+baseName+"->"+r+"]");
 	}

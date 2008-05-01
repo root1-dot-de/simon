@@ -7,7 +7,9 @@ import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
 
+import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
@@ -28,14 +30,15 @@ class ReadEventHandler implements Runnable {
 
 
 	public ReadEventHandler(SelectionKey key, Dispatcher dispatcher) {
-		//Utils.debug("ReadEventHandler.EventHandler() -> created");
+		Utils.logger.fine("begin");
 		this.key = key;
 		this.dispatcher = dispatcher;
+		Utils.logger.fine("end");
 	}
 
 	public void run() {
-		//Utils.debug("ReadEventHandler.run() -> reading packet");
-//		socketChannel = (SocketChannel) key.channel();
+		Utils.logger.fine("begin");
+
 		try {
 			
 			SocketChannel socketChannel =(SocketChannel) key.channel();
@@ -46,13 +49,12 @@ class ReadEventHandler implements Runnable {
 			dispatcher.changeOpForReadiness(socketChannel);
 			
 			
-			//Utils.debug("ReadEventHandler.run() -> interpreting packet ...");
+			Utils.logger.finer("interpreting packet ...");
 			msgType = rxPacket.getMsgType();
 			requestID = rxPacket.getRequestID();
-//			System.out.println(System.nanoTime()+" ReadEventHandler.run() -> interpreting packet ..."+requestID);
-			//			endpoint.removeFromReadFrom(socketChannel);			
-			//Utils.debug("ReadEventHandler.run() -> msgType="+msgType);
-			//Utils.debug("EventHandler.run() -> requestID="+requestID);
+
+			if (Utils.logger.isLoggable(Level.FINER))
+				Utils.logger.finer("got requestID="+requestID);
 
 			packetBody = rxPacket.getBody();
 			
@@ -60,8 +62,10 @@ class ReadEventHandler implements Runnable {
 				byte[] b = packetBody.array();
 				for (int i = 0; i < b.length; i++) {
 					byte c = b[i];
-					//Utils.debug("ReadEventHandler.run() -> body b["+i+"]="+c);
 					
+					if (Utils.logger.isLoggable(Level.FINER))
+						Utils.logger.finer("body b["+i+"]="+c);
+
 				}
 			}
 			
@@ -70,22 +74,7 @@ class ReadEventHandler implements Runnable {
 			switch (msgType) {
 				
 				case Statics.INVOCATION_PACKET:
-					//Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> start. requestID="+requestID);
-					remoteObjectName = Utils.getString(packetBody);
-					final long methodHash = packetBody.getLong();
-					
-					final Method method = dispatcher.getLookupTable().getMethod(remoteObjectName, methodHash);
-					final Class<?>[] parameterTypes = method.getParameterTypes();			
-					final Object[] args = new Object[parameterTypes.length];
-					
-					// unwrapping the arguments
-					for (int i = 0; i < args.length; i++) {
-						args[i]=Utils.unwrapValue(parameterTypes[i], packetBody);							
-					}
-					
-					//Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> remoteObject="+remoteObjectName+" methodHash="+methodHash+" method='"+method+"' args.length="+args.length);
-					processInvokeMethod(remoteObjectName, method, args);
-					//Utils.debug("ReadEventHandler.run() -> INVOCATION_PACKET -> end. requestID="+requestID);
+					processInvokeMethod(remoteObjectName);
 					break;
 					
 				case Statics.LOOKUP_PACKET :
@@ -107,34 +96,20 @@ class ReadEventHandler implements Runnable {
 					break;	
 					
 				case Statics.INVOCATION_RETURN_PACKET :
-					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> start. requestID="+requestID);
-					
-					//unwrap the return-value
 					Object result = Utils.unwrapValue(dispatcher.removeRequestReturnType(requestID), packetBody);
-					
-					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> requestID="+requestID+" result="+result);
-//					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result");
 					dispatcher.putResultToQueue(requestID, result);
-//					dispatcher.wakeWaitingProcess(requestID);
-//					System.out.println(System.nanoTime()+" REH reqID="+requestID+" put result finished");
-					//Utils.debug("ReadEventHandler.run() -> INVOCATION_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.LOOKUP_RETURN_PACKET :
-					//Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> start. requestID="+requestID);
 					dispatcher.putResultToQueue(requestID, Utils.getObject(packetBody));
-//					dispatcher.wakeWaitingProcess(requestID);
-					//Utils.debug("ReadEventHandler.run() -> LOOKUP_RETURN_PACKET -> end. requestID="+requestID);
 					break;
 					
 				case Statics.TOSTRING_RETURN_PACKET :
 					dispatcher.putResultToQueue(requestID, Utils.getString(packetBody));
-//					dispatcher.wakeWaitingProcess(requestID);
 					break;
 				
 				case Statics.HASHCODE_RETURN_PACKET :
 					dispatcher.putResultToQueue(requestID, packetBody.getInt());
-//					dispatcher.wakeWaitingProcess(requestID);
 					break;
 					
 				case Statics.EQUALS_RETURN_PACKET :
@@ -157,13 +132,11 @@ class ReadEventHandler implements Runnable {
 
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			key.cancel();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			key.cancel();
 		}
-		
+		Utils.logger.fine("end");
 	}
 
 	/**
@@ -175,7 +148,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private void processHashCode(String remoteObjectName) throws IOException {
-		
+		Utils.logger.fine("begin");
 		final int hashcode = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();		
 		
 		ByteBuffer packet = ByteBuffer.allocate(1+4+4);
@@ -184,7 +157,7 @@ class ReadEventHandler implements Runnable {
 		packet.putInt(hashcode);
 		
 		dispatcher.send(key,packet);
-		
+		Utils.logger.fine("end");
 	}
 	
 	/**
@@ -196,7 +169,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private void processToString(String remoteObjectName) throws IOException {
-
+		Utils.logger.fine("begin");
 		final String tostring = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();		
 		
 		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+tostring.length()));
@@ -205,7 +178,7 @@ class ReadEventHandler implements Runnable {
 		packet.put(Utils.stringToBytes(tostring));
 		
 		dispatcher.send(key,packet);
-		
+		Utils.logger.fine("end");
 	}
 	
 	/**
@@ -218,7 +191,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private void processEquals(String remoteObjectName, Object object) throws IOException{
-
+		Utils.logger.fine("begin");
 		final boolean equals = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).equals(object);		
 
 		ByteBuffer packet = ByteBuffer.allocate(1+4+1);
@@ -227,7 +200,7 @@ class ReadEventHandler implements Runnable {
 		packet.put(equals ? (byte) 1 : (byte) 0);
 		
 		dispatcher.send(key,packet);
-		
+		Utils.logger.fine("end");
 	}
 	
 	/**
@@ -236,35 +209,39 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException 
 	 */
 	private void processLookup(String remoteObjectName) throws IOException{
-		//Utils.debug("ReadEventHandler.processLookup() -> start. requestID="+requestID);
-
+		Utils.logger.fine("begin");
 		byte[] remoteObjectInterface = Utils.objectToBytes(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
 
 		TxPacket p = new TxPacket();
 		p.setHeader(Statics.LOOKUP_RETURN_PACKET, requestID);
 		p.put(remoteObjectInterface);
 		p.setComplete();
-		// create the data packet:
-		// 1 byte  							-> packet type
-		// 4 byte  							-> packet length
-		// == 5 bytes header
-		// 4 bytes 							-> request ID
-		// 4 bytes objects length + object 	-> object 
-//		int packetLength = 4+remoteObjectInterface.length;
-//		ByteBuffer packet = ByteBuffer.allocate(5+packetLength);
-//				
-//		packet.put(Statics.LOOKUP_RETURN_PACKET);	// packet type
-//		packet.putInt(packetLength);				// packet length
-//		packet.putInt(requestID);					// request id
-//		packet.put(remoteObjectInterface);			// object
-		
 		dispatcher.send(key,p.getByteBuffer());
 		
-		//Utils.debug("ReadEventHandler.processLookup() -> end. requestID="+requestID);
+		Utils.logger.fine("end");
 	}
 	
-	private void processInvokeMethod(String remoteObjectName, Method method, Object[] args){
-		//Utils.debug("ReadEventHandler.processInvokeMethod() -> begin. requestID="+requestID);
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param remoteObjectName
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	private void processInvokeMethod(String remoteObjectName) throws IOException, ClassNotFoundException{
+		Utils.logger.fine("begin");
+		remoteObjectName = Utils.getString(packetBody);
+		final long methodHash = packetBody.getLong();
+		
+		final Method method = dispatcher.getLookupTable().getMethod(remoteObjectName, methodHash);
+		final Class<?>[] parameterTypes = method.getParameterTypes();			
+		final Object[] args = new Object[parameterTypes.length];
+		
+		// unwrapping the arguments
+		for (int i = 0; i < args.length; i++) {
+			args[i]=Utils.unwrapValue(parameterTypes[i], packetBody);							
+		}
+		
 		Object result = null;
 		
 		try {			
@@ -275,7 +252,8 @@ class ReadEventHandler implements Runnable {
 					
 					// search the arguments for remote-objects for callbacks
 					if (args[i] instanceof SimonCallback) {
-					
+						
+						Utils.logger.finer("SimonCallback found");					
 						final SimonCallback simonCallback = (SimonCallback) args[i];
 											
 						Class<?>[] listenerInterfaces = new Class<?>[1];
@@ -283,15 +261,22 @@ class ReadEventHandler implements Runnable {
 
 						// reimplant the proxy object
 						args[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, key, simonCallback.getId()));
-						
+						Utils.logger.finer("proxy object injected");
 					} 
 				} 
 			} 
 			
 			try {
-				//Utils.debug("ReadEventHandler.processInvokeMethod() -> start invoking method='"+method+"'. requestID="+requestID);
+
+				if (Utils.logger.isLoggable(Level.FINER))
+					Utils.logger.finer("start invoking method='"+method+"'. requestID="+requestID);
+				
 				result = method.invoke(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName), args);
-				//Utils.debug("ReadEventHandler.processInvokeMethod() -> end invoking method='"+method+"'. requestID="+requestID+" result="+result);				
+
+				if (Utils.logger.isLoggable(Level.FINER))
+					Utils.logger.finer("end invoking method='"+method+"'. requestID="+requestID+" result="+result);
+
+				
 				// Search for SimonRemote in result
 				if (result instanceof SimonRemote){
 					dispatcher.getLookupTable().putRemoteBinding(result.toString(), (SimonRemote)result);
@@ -301,7 +286,7 @@ class ReadEventHandler implements Runnable {
 			} catch (InvocationTargetException e){
 				result = e.getTargetException();
 			} 
-			
+			Utils.logger.finer("sending answer");
 			TxPacket packet = new TxPacket();
 			packet.setHeader(Statics.INVOCATION_RETURN_PACKET, requestID);
 			
@@ -325,6 +310,7 @@ class ReadEventHandler implements Runnable {
 			e.printStackTrace();
 		}
 		//Utils.debug("ReadEventHandler.processInvokeMethod() -> end. requestID="+requestID);
+		Utils.logger.fine("end");
 	}
 	
 	

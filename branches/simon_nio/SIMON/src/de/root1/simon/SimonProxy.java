@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.channels.SelectionKey;
 
+import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
@@ -53,7 +54,8 @@ public class SimonProxy implements InvocationHandler {
 	}
 
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-				
+		Utils.logger.fine("begin");
+		
 		/*
 		 * Check if the method is NOT a SIMON remote method
 		 */
@@ -108,6 +110,7 @@ public class SimonProxy implements InvocationHandler {
 			
 		}
     	//Utils.debug("SimonProxy.invoke() -> end. result="+result);
+		Utils.logger.fine("end");
 		return  result;
 	}
 	

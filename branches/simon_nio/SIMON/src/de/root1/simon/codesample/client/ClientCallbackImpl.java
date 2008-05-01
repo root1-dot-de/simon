@@ -18,8 +18,8 @@
  */
 package de.root1.simon.codesample.client;
 
-import de.root1.simon.SimonRemoteException;
 import de.root1.simon.codesample.common.ClientCallbackInterface;
+import de.root1.simon.exceptions.SimonRemoteException;
 
 public class ClientCallbackImpl implements ClientCallbackInterface {
 

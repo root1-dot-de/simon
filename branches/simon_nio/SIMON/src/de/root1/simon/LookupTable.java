@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;
+import java.util.logging.Level;
 
 import de.root1.simon.utils.Utils;
 
@@ -38,55 +39,118 @@ public class LookupTable {
 	 */
 	private HashMap<SimonRemote, HashMap<Long, Method>> simonRemoteTo_hashToMethod_Map = new HashMap<SimonRemote, HashMap<Long, Method>>();
 	
-	public LookupTable() {
-		// TODO Auto-generated constructor stub
-	}
-	
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param name
+	 * @param remoteObject
+	 */
 	public synchronized void putRemoteBinding(String name, SimonRemote remoteObject) {
-		//Utils.debug("LookupTable.putRemoteBinding() -> name="+name+"  object="+remoteObject);
+		Utils.logger.fine("begin");
+		
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("name="+name+"  object="+remoteObject);
+		
 		bindings.put(name,remoteObject);	
 		
 		simonRemoteTo_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
-		
+		Utils.logger.fine("end");		
 	}
 	
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param name
+	 * @return
+	 */
 	public synchronized SimonRemote getRemoteBinding(String name){
+		Utils.logger.fine("begin");
 		if (!bindings.containsKey(name)) throw new IllegalArgumentException("Lookuptable.getBinding(): name="+name+" not found");
-		//Utils.debug("LookupTable.getRemoteBinding() -> name="+name+" resolves to object='"+bindings.get(name)+"'");
+
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("name="+name+" resolves to object='"+bindings.get(name)+"'");
+		
+		Utils.logger.fine("end");
 		return bindings.get(name);
 	}
-	
+
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param name
+	 */
 	public synchronized void releaseRemoteBinding(String name){
-//		//Utils.debug("\t\tLookupTable#releaseBinding: name="+name);
+		Utils.logger.fine("begin");
+
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("name="+name);
+
 		bindings.remove(name);
+		Utils.logger.fine("end");
 	}
 	
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param remoteObject
+	 * @param methodHash
+	 * @return
+	 */
 	public synchronized Method getMethod(SimonRemote remoteObject, long methodHash){
-		//Utils.debug("LookupTable.getMethod() -> hash="+methodHash+" resolves to method='"+simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash)+"'");
+		Utils.logger.fine("begin");
+		
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("hash="+methodHash+" resolves to method='"+simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash)+"'");
+
+		Utils.logger.fine("end");
 		return simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash);
 	}
-	
+
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param remoteObject
+	 * @param methodHash
+	 * @return
+	 */
 	public synchronized Method getMethod(String remoteObject, long methodHash){
-		//Utils.debug("LookupTable.getMethod() -> hash="+methodHash+" resoves to method='"+simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
+		Utils.logger.fine("begin");
+
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("hash="+methodHash+" resoves to method='"+simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
+		
+		Utils.logger.fine("end");
 		return simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
 	}
 	
-	
-	// ******************************
-	
-	
+	/**
+	 * 
+	 * TODO Documentation to be done
+	 * @param remoteClass
+	 * @return
+	 */
 	protected HashMap<Long,Method> computeMethodHashMap(Class<?> remoteClass) {
-		//Utils.debug("LookupTable.computeMethodHashMap() -> start. computing for remoteclass='"+remoteClass+"'");
+		Utils.logger.fine("begin");
+
+		if (Utils.logger.isLoggable(Level.FINER))
+			Utils.logger.finer("computing for remoteclass='"+remoteClass+"'");
+
         HashMap<Long,Method> map = new HashMap<Long,Method>();
         
         for (Class<?> cl = remoteClass; cl != null; cl = cl.getSuperclass()) {
-        	//Utils.debug("LookupTable.computeMethodHashMap() -> examin superclass='"+cl+"' for interfaces");
+
+        	if (Utils.logger.isLoggable(Level.FINEST))
+    			Utils.logger.finest("examin superclass='"+cl+"' for interfaces");
         	
             for (Class<?> intf : cl.getInterfaces()) {
-            	//Utils.debug("LookupTable.computeMethodHashMap() -> examin superclass' interface='"+intf+"'");
-                if (SimonRemote.class.isAssignableFrom(intf)) {
+            	
+            	if (Utils.logger.isLoggable(Level.FINEST))
+        			Utils.logger.finest("examin superclass' interface='"+intf+"'");
 
-                	//Utils.debug("LookupTable.computeMethodHashMap() -> SimonRemote is assignable from '"+intf+"'");
+            	if (SimonRemote.class.isAssignableFrom(intf)) {
+
+                	if (Utils.logger.isLoggable(Level.FINEST))
+            			Utils.logger.finest("SimonRemote is assignable from '"+intf+"'");
                 	
                     for (Method method : intf.getMethods()) {
                     	
@@ -104,12 +168,15 @@ public class LookupTable {
                             }
                         });
                         map.put(Utils.computeMethodHash(m), m);
-                        //Utils.debug("LookupTable.computeMethodHashMap() -> computing hash: method='"+m+"' hash="+Utils.computeMethodHash(m));
+                    	if (Utils.logger.isLoggable(Level.FINEST))
+                			Utils.logger.finest("computing hash: method='"+m+"' hash="+Utils.computeMethodHash(m));
+
                     }
                 }
             } 
         }
-        //Utils.debug("LookupTable.computeMethodHashMap() -> end");
+        
+		Utils.logger.fine("begin");
         return map;
     }
 
