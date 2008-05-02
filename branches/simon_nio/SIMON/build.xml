@@ -4,7 +4,7 @@
     	SIMON: a kind of router-friendly RMI replacement
     </description>
 	
-	<property name="version" value="0.1"/>
+	<property name="version" value="NIO_0.1"/>
 	
 	<!-- destination of compiled and jared lib -->
 	<property name="dist" location="dist"/>
@@ -131,7 +131,7 @@
 			</fileset>
 		</copy>
 		
-        <jar destfile="${dist}/SIMON.jar">
+        <jar destfile="${dist}/SIMON-NIO-BRANCH.jar">
             <fileset dir="${build.classes}"/>
             <manifest>				
             </manifest>
@@ -144,7 +144,7 @@
             depends="create_jar"
             description="Create a complete package">
 
-		 <zip destfile="${dist}/SIMON-${version}-build${build.timestamp}.zip"
+		 <zip destfile="${dist}/SIMON-NIO-BRANCH-${version}-build${build.timestamp}.zip"
 		       basedir="${dist}"
 		       includes="**/*"
 		  />
