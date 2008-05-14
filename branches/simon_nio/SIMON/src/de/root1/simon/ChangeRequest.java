@@ -1,5 +1,6 @@
 package de.root1.simon;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Logger;
 
 import de.root1.simon.utils.Utils;
 
@@ -11,12 +12,14 @@ public class ChangeRequest {
 	public int type;
 	public int ops;
 	
+	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	
 	public ChangeRequest(SocketChannel socket, int type, int ops) {
-		Utils.logger.finer("begin");
+		_log.finer("begin");
 		this.socket = socket;
 		this.type = type;
 		this.ops = ops;
-		Utils.logger.finer("end");
+		_log.finer("end");
 	}
 	
 	@Override

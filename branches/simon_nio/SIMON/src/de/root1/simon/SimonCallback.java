@@ -2,10 +2,14 @@ package de.root1.simon;
 
 import java.io.Serializable;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import de.root1.simon.utils.Utils;
 
 
 public class SimonCallback implements Serializable {
+	
+	protected Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	/**
 	 * TODO: Documentation to be done for field 'serialVersionUID', by 'ACHR'..
@@ -28,7 +32,7 @@ public class SimonCallback implements Serializable {
 	 * @param callback
 	 */
 	public SimonCallback(SimonRemote callback) {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		this.id = callback.toString();
 
 		// get the interfaces the arg has implemented
@@ -39,16 +43,16 @@ public class SimonCallback implements Serializable {
 			
 
 			String callbackInterfaceClassNameTemp = callbackInterfaceClass.getName();
-			if (Utils.logger.isLoggable(Level.FINER))
-				Utils.logger.finer("Checking interfacename='"+callbackInterfaceClassNameTemp+"' for '"+SimonRemote.class.getName()+"'");
+			if (_log.isLoggable(Level.FINER))
+				_log.finer("Checking interfacename='"+callbackInterfaceClassNameTemp+"' for '"+SimonRemote.class.getName()+"'");
 			
 			// Get the interfaces of the implementing interface
 			Class<?>[] callbackInterfaceSubInterfaces = callbackInterfaceClass.getInterfaces();
 			
 			boolean isSimonRemote = false;
 			for (Class<?> callbackInterfaceSubInterface : callbackInterfaceSubInterfaces) {
-				if (Utils.logger.isLoggable(Level.FINER))
-					Utils.logger.finer("Checking child interfaces for '"+callbackInterfaceClassNameTemp+"': child="+callbackInterfaceSubInterface);
+				if (_log.isLoggable(Level.FINER))
+					_log.finer("Checking child interfaces for '"+callbackInterfaceClassNameTemp+"': child="+callbackInterfaceSubInterface);
 				if (callbackInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
 					isSimonRemote = true;
 					break;
@@ -57,15 +61,15 @@ public class SimonCallback implements Serializable {
 			
 			if (isSimonRemote){
 				interfaceName = callbackInterfaceClassNameTemp;
-				if (Utils.logger.isLoggable(Level.FINER))
-					Utils.logger.finer("SimonRemote found in arg: interfaceName='"+interfaceName+"'");
+				if (_log.isLoggable(Level.FINER))
+					_log.finer("SimonRemote found in arg: interfaceName='"+interfaceName+"'");
 				break;
 
 			} else {
 				interfaceName = null;
 			}
 		}
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 
 	/**

@@ -11,6 +11,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.utils.Utils;
@@ -29,18 +30,20 @@ public class Client {
 	private SelectionKey key;
 	private int requestIdCounter;
 	
+	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	
 	/**
 	 * TODO Documentation to be done
 	 * @throws IOException 
 	 */
 	public Client(Dispatcher dispatcher) throws IOException {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		this.dispatcher = dispatcher;
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	public void connect(String host, int port) throws IOException, EstablishConnectionFailed{
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		selector = SelectorProvider.provider().openSelector();
 		clientSocketChannel = SocketChannel.open();
 		clientSocketChannel.configureBlocking(false);
@@ -53,14 +56,15 @@ public class Client {
 		// an interest in connection events. These are raised when a channel
 		// is ready to complete connection establishment.
 		
-//		SelectionKey clientKey = 
-			clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
+		clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
 		selector.select();
 		
 		Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
 		while (selectedKeys.hasNext()) {
+			
 			key = (SelectionKey) selectedKeys.next();
 			selectedKeys.remove();
+			
 			if (key.isConnectable()){
 				
 				SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -68,22 +72,25 @@ public class Client {
 				// Finish the connection. If the connection operation failed
 				// this will raise an IOException.
 				try {
-					Utils.logger.finer("finishing connection");
+					
+					_log.finer("finishing connection");
 					socketChannel.finishConnect();
-					Utils.logger.fine("register on dispatcher");
+					_log.fine("register on dispatcher");
 					dispatcher.registerChannel(socketChannel);
 					
 				} catch (IOException e) {
+					
 					// Cancel the channel's registration with our selector
 					key.cancel();
 					throw new EstablishConnectionFailed("could not establish connectionto server. is server running? error-msg:"+e);
+					
 				}
 				
 			} else throw new IllegalStateException("invalid op event: op="+key.interestOps());
 			
 		}
 		
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	/**

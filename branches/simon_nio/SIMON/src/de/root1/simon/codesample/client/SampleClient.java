@@ -19,16 +19,8 @@
 package de.root1.simon.codesample.client;
 
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Level;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import de.root1.simon.Simon;
-import de.root1.simon.Statics;
 import de.root1.simon.codesample.common.ServerInterface;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
@@ -37,25 +29,16 @@ public class SampleClient {
 	
 	public static void main(String[] args) throws SimonRemoteException, IOException {
 		
-		Statics.DEBUG_MODE = true;
 		
-		ConsoleHandler    consoleHandler = new ConsoleHandler( );
-		consoleHandler.setLevel(Level.FINEST);
+		Utils.DEBUG = true;
 		
-	    Utils.logger.addHandler( consoleHandler );
-	    Utils.logger.setLevel(Level.FINEST);
-	    		
 		// Callbackobjekt anlegen
 		ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
 		System.out.println("Callback Objekt angelegt");
 		
 		
-//		ServerInterface server = (ServerInterface) Simon.lookup(args[0], 2000, "server");
 		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
-		//Utils.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		server.login(clientCallbackImpl);
-//		System.out.println(Simon.getRemoteInetAddress(server));
-//		System.out.println(Simon.getRemotePort(server));
 		
 	}
 

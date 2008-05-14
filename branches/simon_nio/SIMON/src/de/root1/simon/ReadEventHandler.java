@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
@@ -20,6 +21,8 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 class ReadEventHandler implements Runnable {
+	
+	protected Logger _log = Logger.getLogger(this.getClass().getName());
 
 	private ByteBuffer packetBody; // the packet itself
 	private String remoteObjectName;
@@ -30,14 +33,14 @@ class ReadEventHandler implements Runnable {
 
 
 	public ReadEventHandler(SelectionKey key, Dispatcher dispatcher) {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		this.key = key;
 		this.dispatcher = dispatcher;
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 
 	public void run() {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 
 		try {
 			
@@ -49,12 +52,12 @@ class ReadEventHandler implements Runnable {
 			dispatcher.changeOpForReadiness(socketChannel);
 			
 			
-			Utils.logger.finer("interpreting packet ...");
+			_log.finer("interpreting packet ...");
 			msgType = rxPacket.getMsgType();
 			requestID = rxPacket.getRequestID();
 
-			if (Utils.logger.isLoggable(Level.FINER))
-				Utils.logger.finer("got requestID="+requestID);
+			if (_log.isLoggable(Level.FINER))
+				_log.finer("got requestID="+requestID);
 
 			packetBody = rxPacket.getBody();
 			
@@ -63,8 +66,8 @@ class ReadEventHandler implements Runnable {
 				for (int i = 0; i < b.length; i++) {
 					byte c = b[i];
 					
-					if (Utils.logger.isLoggable(Level.FINER))
-						Utils.logger.finer("body b["+i+"]="+c);
+					if (_log.isLoggable(Level.FINER))
+						_log.finer("body b["+i+"]="+c);
 
 				}
 			}
@@ -136,7 +139,7 @@ class ReadEventHandler implements Runnable {
 		} catch (ClassNotFoundException e) {
 			key.cancel();
 		}
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 
 	/**
@@ -148,7 +151,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private void processHashCode(String remoteObjectName) throws IOException {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		final int hashcode = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();		
 		
 		ByteBuffer packet = ByteBuffer.allocate(1+4+4);
@@ -157,7 +160,7 @@ class ReadEventHandler implements Runnable {
 		packet.putInt(hashcode);
 		
 		dispatcher.send(key,packet);
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	/**
@@ -169,7 +172,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private void processToString(String remoteObjectName) throws IOException {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		final String tostring = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();		
 		
 		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+tostring.length()));
@@ -178,7 +181,7 @@ class ReadEventHandler implements Runnable {
 		packet.put(Utils.stringToBytes(tostring));
 		
 		dispatcher.send(key,packet);
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	/**
@@ -191,7 +194,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException
 	 */
 	private void processEquals(String remoteObjectName, Object object) throws IOException{
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		final boolean equals = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).equals(object);		
 
 		ByteBuffer packet = ByteBuffer.allocate(1+4+1);
@@ -200,7 +203,7 @@ class ReadEventHandler implements Runnable {
 		packet.put(equals ? (byte) 1 : (byte) 0);
 		
 		dispatcher.send(key,packet);
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	/**
@@ -209,7 +212,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws IOException 
 	 */
 	private void processLookup(String remoteObjectName) throws IOException{
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		byte[] remoteObjectInterface = Utils.objectToBytes(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
 
 		TxPacket p = new TxPacket();
@@ -218,7 +221,7 @@ class ReadEventHandler implements Runnable {
 		p.setComplete();
 		dispatcher.send(key,p.getByteBuffer());
 		
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	/**
@@ -229,7 +232,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws ClassNotFoundException
 	 */
 	private void processInvokeMethod(String remoteObjectName) throws IOException, ClassNotFoundException{
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		remoteObjectName = Utils.getString(packetBody);
 		final long methodHash = packetBody.getLong();
 		
@@ -253,7 +256,7 @@ class ReadEventHandler implements Runnable {
 					// search the arguments for remote-objects for callbacks
 					if (args[i] instanceof SimonCallback) {
 						
-						Utils.logger.finer("SimonCallback found");					
+						_log.finer("SimonCallback found");					
 						final SimonCallback simonCallback = (SimonCallback) args[i];
 											
 						Class<?>[] listenerInterfaces = new Class<?>[1];
@@ -261,20 +264,20 @@ class ReadEventHandler implements Runnable {
 
 						// reimplant the proxy object
 						args[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, key, simonCallback.getId()));
-						Utils.logger.finer("proxy object injected");
+						_log.finer("proxy object injected");
 					} 
 				} 
 			} 
 			
 			try {
 
-				if (Utils.logger.isLoggable(Level.FINER))
-					Utils.logger.finer("start invoking method='"+method+"'. requestID="+requestID);
+				if (_log.isLoggable(Level.FINER))
+					_log.finer("start invoking method='"+method+"'. requestID="+requestID);
 				
 				result = method.invoke(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName), args);
 
-				if (Utils.logger.isLoggable(Level.FINER))
-					Utils.logger.finer("end invoking method='"+method+"'. requestID="+requestID+" result="+result);
+				if (_log.isLoggable(Level.FINER))
+					_log.finer("end invoking method='"+method+"'. requestID="+requestID+" result="+result);
 
 				
 				// Search for SimonRemote in result
@@ -286,7 +289,7 @@ class ReadEventHandler implements Runnable {
 			} catch (InvocationTargetException e){
 				result = e.getTargetException();
 			} 
-			Utils.logger.finer("sending answer");
+			_log.finer("sending answer");
 			TxPacket packet = new TxPacket();
 			packet.setHeader(Statics.INVOCATION_RETURN_PACKET, requestID);
 			
@@ -310,7 +313,7 @@ class ReadEventHandler implements Runnable {
 			e.printStackTrace();
 		}
 		//Utils.debug("ReadEventHandler.processInvokeMethod() -> end. requestID="+requestID);
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	

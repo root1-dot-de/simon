@@ -20,6 +20,7 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
 
 import de.root1.simon.utils.Utils;
 
@@ -31,6 +32,8 @@ import de.root1.simon.utils.Utils;
  *
  */
 public class Registry extends Thread {
+	
+	protected Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	private LookupTable serverLookupTable = null;
 	private int port;
@@ -48,12 +51,12 @@ public class Registry extends Thread {
 	 * @param port
 	 */
 	public Registry(LookupTable lookupTable, int port, ExecutorService threadPool) {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		this.serverLookupTable = lookupTable;
 		this.port = port;
 		this.threadPool = threadPool;
 		this.setName("SimonRegistry");
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 
 	/* (non-Javadoc)
@@ -63,23 +66,23 @@ public class Registry extends Thread {
 	public void run() {
 		super.run();
 
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		
 		try {
 			
 			dispatcher = new Dispatcher(serverLookupTable, threadPool);
 			new Thread(dispatcher,"Simon.Registry.Dispatcher").start();
-			Utils.logger.finer("dispatcher thread created and started");
+			_log.finer("dispatcher thread created and started");
 			
 			acceptor = new Acceptor(dispatcher,port);
 			new Thread(acceptor,"Simon.Registry.Acceptor").start();
-			Utils.logger.finer("acceptor thread created and started");
+			_log.finer("acceptor thread created and started");
 			
 		} catch (IOException e) {
-			Utils.logger.severe("IOException: "+e.getMessage());
+			_log.severe("IOException: "+e.getMessage());
 		}
 		
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 }

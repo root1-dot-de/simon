@@ -21,7 +21,10 @@ package de.root1.simon.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
@@ -34,6 +37,7 @@ import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import de.root1.simon.Statics;
@@ -41,12 +45,11 @@ import de.root1.simon.TxPacket;
 
 public class Utils {
 	
-	public static Logger logger = Logger.getLogger("de.root1.simon");
-	private static DecimalFormat df2 = new DecimalFormat("00");
-	private static DecimalFormat df3 = new DecimalFormat("000");
+	
+	public static boolean DEBUG = false;
 
 	static{
-		logger.log(Level.INFO, "Simon lib loaded");
+		
 	}
 	
 	/**
@@ -346,21 +349,21 @@ public class Utils {
     	return new String(stringInBytes);
     }
     
-	public synchronized static void debug(String msg) {
-		if (Statics.DEBUG_MODE) {
-			Calendar cal = GregorianCalendar.getInstance();
-			StringBuffer sb = new StringBuffer();
-			sb.append(df2.format(cal.get(Calendar.HOUR_OF_DAY)));
-			sb.append(":");
-			sb.append(df2.format(cal.get(Calendar.MINUTE)));
-			sb.append(".");
-			sb.append(df3.format(cal.get(Calendar.MILLISECOND)));
-			sb.append(" - ");
-			sb.append(msg);
-			System.out.println(sb.toString());
-			System.out.flush();
-		}
-	}
+//	public synchronized static void debug(String msg) {
+//		if (Statics.DEBUG_MODE) {
+//			Calendar cal = GregorianCalendar.getInstance();
+//			StringBuffer sb = new StringBuffer();
+//			sb.append(df2.format(cal.get(Calendar.HOUR_OF_DAY)));
+//			sb.append(":");
+//			sb.append(df2.format(cal.get(Calendar.MINUTE)));
+//			sb.append(".");
+//			sb.append(df3.format(cal.get(Calendar.MILLISECOND)));
+//			sb.append(" - ");
+//			sb.append(msg);
+//			System.out.println(sb.toString());
+//			System.out.flush();
+//		}
+//	}
 	
 	
    	public static String printSelectionKeyValue(int key) {

@@ -10,6 +10,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Iterator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import de.root1.simon.utils.Utils;
 
@@ -20,6 +21,8 @@ public class Acceptor implements Runnable {
 	private ServerSocketChannel serverChannel;
 	private Selector socketSelector;
 	private Dispatcher dispatcher;
+	
+	protected Logger _log = Logger.getLogger(this.getClass().getName());
 
 	/**
 	 * 
@@ -28,22 +31,22 @@ public class Acceptor implements Runnable {
 	 * @throws IOException
 	 */
 	Acceptor(Dispatcher dispatcher, int serverPort) throws IOException {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		//Utils.debug("Acceptor.Acceptor() -> init ...");
 		
 		this.serverPort = serverPort;
 		this.dispatcher = dispatcher;
 		
 		initSelector();
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 
 	public void run() {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		while (isRunning) {
 			try {
 
-				Utils.logger.finer("waiting for selection");
+				_log.finer("waiting for selection");
 				// Wait for an event one of the registered channels
 				this.socketSelector.select();
 
@@ -54,8 +57,8 @@ public class Acceptor implements Runnable {
 					SelectionKey key = (SelectionKey) selectedKeys.next();
 					selectedKeys.remove();
 					
-					if (Utils.logger.isLoggable(Level.FINER))
-						Utils.logger.finer("selected: "+key);
+					if (_log.isLoggable(Level.FINER))
+						_log.finer("selected: "+key);
 
 					if (!key.isValid()) {
 						continue;
@@ -70,11 +73,11 @@ public class Acceptor implements Runnable {
 				e.printStackTrace();
 			}
 		}
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	private void accept(SelectionKey key) throws IOException {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel(); // get the key's channeö
 		
@@ -88,7 +91,7 @@ public class Acceptor implements Runnable {
 		
 		dispatcher.registerChannel(clientChannel); // register channel on dispatcher
 		
-		Utils.logger.fine("end");	
+		_log.fine("end");	
 	}
 
 	
@@ -96,7 +99,7 @@ public class Acceptor implements Runnable {
 	 * Interrupts the acceptor-thread for a server shutdown
 	 */
 	public void shutdown(){
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		if (serverChannel!=null){
 			try {
 				serverChannel.close();
@@ -105,11 +108,11 @@ public class Acceptor implements Runnable {
 				// nothing to do
 			}
 		}
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	private void initSelector() throws IOException {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		socketSelector = SelectorProvider.provider().openSelector();
 		// Create a new non-blocking server socket channel
 		this.serverChannel = ServerSocketChannel.open();
@@ -122,6 +125,6 @@ public class Acceptor implements Runnable {
 		// Register the server socket channel, indicating an interest in 
 		// accepting new connections
 		serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
-		Utils.logger.fine("end");
+		_log.fine("end");
 	} 
 }

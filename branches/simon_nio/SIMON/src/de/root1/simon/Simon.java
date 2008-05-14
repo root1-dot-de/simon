@@ -18,11 +18,17 @@
  */
 package de.root1.simon;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Proxy;
 import java.net.ConnectException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -31,6 +37,8 @@ import de.root1.simon.utils.Utils;
 
 
 public class Simon {
+	
+	protected static Logger _log = Logger.getLogger(Simon.class.getName());
 	
 	private static Registry registry;
 	private static LookupTable lookupTable = new LookupTable();
@@ -41,6 +49,22 @@ public class Simon {
 	 */
 	private static ExecutorService threadPool = null;
 	
+	static {
+		if (Utils.DEBUG) {
+			InputStream is;
+			try {
+				is = new FileInputStream("config/simon_logging.properties");
+				LogManager.getLogManager().readConfiguration(is);
+			} catch (FileNotFoundException e) {
+				System.err.println("File not fount: config/logging.properties !!!");
+			} catch (SecurityException e) {
+				System.err.println("Security exception occured while trying to load config/logging.properties");
+			} catch (IOException e) {
+				System.err.println("Cannot load config/logging.properties !!!");
+			}
+		}
+		_log.log(Level.INFO, "Simon lib loaded");
+	}
 
 	/**
 	 * Creates a registry
@@ -48,14 +72,14 @@ public class Simon {
 	 * @param port
 	 */
 	public static void createRegistry(int port){
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		registry = new Registry(lookupTable, port, getThreadPool());
 		registry.start();
-		Utils.logger.fine("end");
+		_log.fine("end");
 	}
 	
 	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed {
-		Utils.logger.fine("begin");
+		_log.fine("begin");
 		Object proxy = null;
 		
 		Dispatcher dispatcher = new Dispatcher(lookupTable,getThreadPool());
@@ -66,7 +90,7 @@ public class Simon {
 			Client client = new Client(dispatcher);
 			client.connect(host, port);
 			
-			Utils.logger.finer("connected with server");
+			_log.finer("connected with server");
 			
 			/*
 			 * Create array with interfaces the proxy should have
@@ -79,7 +103,7 @@ public class Simon {
 			 * This class gets the interfaces and directs the method-calls
 			 */
 			SimonProxy handler = new SimonProxy(dispatcher, client.getKey(), remoteObjectName);
-			Utils.logger.finer("proxy created");
+			_log.finer("proxy created");
 			
 			 /* 
 		     * Create the proxy-object with the needed interfaces
@@ -90,7 +114,7 @@ public class Simon {
 			throw new ConnectException(e.getMessage());
 		}
 		
-		Utils.logger.fine("end");
+		_log.fine("end");
 		return proxy;
 	}
 
