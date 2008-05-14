@@ -71,8 +71,8 @@ public class Registry extends Thread {
 		try {
 			
 			dispatcher = new Dispatcher(serverLookupTable, threadPool);
-			new Thread(dispatcher,"Simon.Registry.Dispatcher").start();
-			_log.finer("dispatcher thread created and started");
+//			new Thread(dispatcher,"Simon.Registry.Dispatcher").start();
+//			_log.finer("dispatcher thread created and started");
 			
 			acceptor = new Acceptor(dispatcher,port);
 			new Thread(acceptor,"Simon.Registry.Acceptor").start();

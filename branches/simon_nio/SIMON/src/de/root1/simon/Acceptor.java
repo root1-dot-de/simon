@@ -23,6 +23,7 @@ public class Acceptor implements Runnable {
 	private Dispatcher dispatcher;
 	
 	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	private SelectionKey register;
 
 	/**
 	 * 
@@ -32,7 +33,6 @@ public class Acceptor implements Runnable {
 	 */
 	Acceptor(Dispatcher dispatcher, int serverPort) throws IOException {
 		_log.fine("begin");
-		//Utils.debug("Acceptor.Acceptor() -> init ...");
 		
 		this.serverPort = serverPort;
 		this.dispatcher = dispatcher;
@@ -69,6 +69,9 @@ public class Acceptor implements Runnable {
 						this.accept(key);
 					}
 				}
+				
+				
+				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -87,7 +90,7 @@ public class Acceptor implements Runnable {
 		//Utils.debug("Acceptor.accept(): Client: "+socket.getInetAddress());
 		clientChannel.configureBlocking(false);
 		
-		key.cancel(); // cancel registration on acceptor-selector
+//		key.cancel(); // cancel registration on acceptor-selector
 		
 		dispatcher.registerChannel(clientChannel); // register channel on dispatcher
 		
@@ -122,9 +125,7 @@ public class Acceptor implements Runnable {
 		InetSocketAddress isa = new InetSocketAddress("0.0.0.0", serverPort);
 		serverChannel.socket().bind(isa);
 
-		// Register the server socket channel, indicating an interest in 
-		// accepting new connections
-		serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
+		register = serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
 		_log.fine("end");
 	} 
 }
