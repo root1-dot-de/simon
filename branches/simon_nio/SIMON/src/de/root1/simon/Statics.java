@@ -20,7 +20,7 @@ package de.root1.simon;
 
 public class Statics {
 	
-	public static boolean 	 	DEBUG_MODE 					= false;
+//	public static boolean 	 	DEBUG_MODE 					= false;
 	public static final int 	REMOTE_INVOKE_TIMEOUT		= 5000;	
 	public static final byte 	LOOKUP_PACKET 				= 0x00;
 	public static final byte 	LOOKUP_RETURN_PACKET 		= 0x01;

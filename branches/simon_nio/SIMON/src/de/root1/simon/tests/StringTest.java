@@ -34,7 +34,6 @@ public class StringTest {
 		System.out.println("b[3]="+x[3]);
 		
 		System.out.println("-------");
-		Statics.DEBUG_MODE = true;
 		
 		byte[] stringToBytes = Utils.stringToBytes("Hallo Welt");
 		ByteBuffer bb = ByteBuffer.allocate(stringToBytes.length);

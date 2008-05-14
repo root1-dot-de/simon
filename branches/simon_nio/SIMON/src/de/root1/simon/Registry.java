@@ -33,7 +33,7 @@ import de.root1.simon.utils.Utils;
  */
 public class Registry extends Thread {
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	private LookupTable serverLookupTable = null;
 	private int port;

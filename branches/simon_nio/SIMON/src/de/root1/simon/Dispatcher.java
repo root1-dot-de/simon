@@ -45,7 +45,7 @@ import de.root1.simon.utils.Utils;
  */
 public class Dispatcher implements Runnable {
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 
 	/** The table that holds all the registered/bind remote objects */
 	private LookupTable lookupTable;
@@ -175,9 +175,11 @@ public class Dispatcher implements Runnable {
 					
 						SelectionKey key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
-						
-						if (_log.isLoggable(Level.FINER))
-							_log.finer("key has ready op: "+Utils.printSelectionKeyValue(key.interestOps()));	
+						String clientIP = ((SocketChannel) key.channel()).socket().getInetAddress().toString(); 
+						if (_log.isLoggable(Level.FINER)){
+							
+							_log.finer("client="+clientIP+" key="+key+" has ready op: "+Utils.printSelectionKeyValue(key.interestOps()));
+						}
 						
 						if (!key.isValid()) {
 							if (_log.isLoggable(Level.FINER))
@@ -188,17 +190,17 @@ public class Dispatcher implements Runnable {
 						// Check what event is available and deal with it
 						if (key.isAcceptable()){ // used by the server
 							if (_log.isLoggable(Level.FINER))
-								_log.finer(key+" is acceptable. Accepting is done by the 'Acceptor'!");
+								_log.finer("client="+clientIP+" key="+key+" is acceptable. Accepting is done by the 'Acceptor'!");
 							
 						} else if (key.isConnectable()) { // used by the client
 
 							if (_log.isLoggable(Level.FINER))
-								_log.finer(key+" is connectable.  FinishConnection is done by the 'Client'!");
+								_log.finer("client="+clientIP+" key="+key+" is connectable.  FinishConnection is done by the 'Client'!");
 							
 						} else if (key.isReadable()) {
 
 							if (_log.isLoggable(Level.FINER))
-								_log.finer(key+" is readable");
+								_log.finer("client="+clientIP+" key="+key+" is readable");
 							
 							key.interestOps(0); // deregister for read-events
 							handleRead(key);
@@ -206,7 +208,7 @@ public class Dispatcher implements Runnable {
 						} else if (key.isWritable()) {
 							
 							if (_log.isLoggable(Level.FINER))
-								_log.finer(key+" is writeable");
+								_log.finer("client="+clientIP+" key="+key+" is writeable");
 
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
 							handleWrite(key);

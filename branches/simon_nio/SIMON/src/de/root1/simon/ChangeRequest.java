@@ -12,7 +12,7 @@ public class ChangeRequest {
 	public int type;
 	public int ops;
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	public ChangeRequest(SocketChannel socket, int type, int ops) {
 		_log.finer("begin");

@@ -30,7 +30,7 @@ import de.root1.simon.utils.Utils;
 
 public class LookupTable {
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	/**
 	 * Maps the remote object name to the remoteobject

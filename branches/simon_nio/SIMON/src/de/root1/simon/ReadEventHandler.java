@@ -22,7 +22,7 @@ import de.root1.simon.utils.Utils;
  */
 class ReadEventHandler implements Runnable {
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 
 	private ByteBuffer packetBody; // the packet itself
 	private String remoteObjectName;
@@ -61,13 +61,12 @@ class ReadEventHandler implements Runnable {
 
 			packetBody = rxPacket.getBody();
 			
-			if (Statics.DEBUG_MODE){
+			if (_log.isLoggable(Level.FINER)){
 				byte[] b = packetBody.array();
 				for (int i = 0; i < b.length; i++) {
 					byte c = b[i];
 					
-					if (_log.isLoggable(Level.FINER))
-						_log.finer("body b["+i+"]="+c);
+					_log.finer("body b["+i+"]="+c);
 
 				}
 			}

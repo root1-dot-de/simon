@@ -38,7 +38,7 @@ import de.root1.simon.utils.Utils;
 
 public class Simon {
 	
-	protected static Logger _log = Logger.getLogger(Simon.class.getName());
+	protected transient static Logger _log = Logger.getLogger(Simon.class.getName());
 	
 	private static Registry registry;
 	private static LookupTable lookupTable = new LookupTable();

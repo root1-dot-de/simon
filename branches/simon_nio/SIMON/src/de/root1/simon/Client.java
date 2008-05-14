@@ -30,7 +30,7 @@ public class Client {
 	private SelectionKey key;
 	private int requestIdCounter;
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	/**
 	 * TODO Documentation to be done

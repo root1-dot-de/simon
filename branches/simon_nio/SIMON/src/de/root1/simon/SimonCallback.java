@@ -9,7 +9,7 @@ import de.root1.simon.utils.Utils;
 
 public class SimonCallback implements Serializable {
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	/**
 	 * TODO: Documentation to be done for field 'serialVersionUID', by 'ACHR'..

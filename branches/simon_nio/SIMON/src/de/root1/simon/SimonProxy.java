@@ -32,7 +32,7 @@ import de.root1.simon.utils.Utils;
 
 public class SimonProxy implements InvocationHandler {
 	
-	protected Logger _log = Logger.getLogger(this.getClass().getName());
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	/** name of the corresponding remoteobject in the remote-lookuptable */
 	private String remoteObjectName;
