@@ -22,8 +22,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.ConnectException;
+import java.net.InetAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -56,11 +58,15 @@ public class Simon {
 				is = new FileInputStream("config/simon_logging.properties");
 				LogManager.getLogManager().readConfiguration(is);
 			} catch (FileNotFoundException e) {
-				System.err.println("File not fount: config/logging.properties !!!");
+				System.err.println("File not fount: config/logging.properties.\n" +
+						"If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
+						"Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
 			} catch (SecurityException e) {
-				System.err.println("Security exception occured while trying to load config/logging.properties");
+				System.err.println("Security exception occured while trying to load config/logging.properties\n" +
+						"Logging with SIMON not possible!.");
 			} catch (IOException e) {
-				System.err.println("Cannot load config/logging.properties !!!");
+				System.err.println("Cannot load config/logging.properties ...\n" +
+						"Please make sure that java has access to that file.");
 			}
 		}
 		_log.log(Level.INFO, "Simon lib loaded");
@@ -108,8 +114,8 @@ public class Simon {
 			 /* 
 		     * Create the proxy-object with the needed interfaces
 		     */
-//		    proxy = Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), listenerInterfaces, handler);
 		    proxy = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
+		    
 		} catch (IOException e){
 			throw new ConnectException(e.getMessage());
 		}
@@ -117,54 +123,6 @@ public class Simon {
 		_log.fine("end");
 		return proxy;
 	}
-
-//	/**
-//	 * 
-//	 * Sets some post socket-specific parameters and tuning settings
-//	 * 
-//	 * @param socket
-//	 * @throws IOException
-//	 * @throws SocketException
-//	 */
-//	protected static void postSetupSocket(Socket socket)
-//			throws IOException, SocketException {
-//		/*
-//		 * Disable the Nagle-algorithm. See also
-//		 * http://de.wikipedia.org/wiki/Nagle-Algorithmus
-//		 */
-//		socket.setTcpNoDelay(true); 
-//		
-//		// Priority: low latency > bandwidth > connection time
-//		socket.setPerformancePreferences(0, 2, 1); 
-//	}
-
-//	/**
-//	 * 
-//	 * Sets some pre socket-specific parameters and tuning settings
-//	 * 
-//	 * @param socket
-//	 * @throws SocketException
-//	 */
-//	protected static void preSetupSocket(Socket socket) throws SocketException {
-//		/*
-//		 * Detect MacOS ...
-//		 * See: 
-//		 * Identifying Mac OS X in Java, http://developer.apple.com/technotes/tn2002/tn2110.html
-//		 */
-//		String lcOSName = System.getProperty("os.name").toLowerCase();
-//		boolean MAC_OS_X = lcOSName.startsWith("mac os x");
-//		
-//		/*
-//		 * MAC OS uses per default IPv6 setting which cannot handle setTrafficClass() method.
-//		 * It's possible to set a system property (java.net.preferIPv4Stack" -> true) to perfer IPv4,
-//		 * which is able to handle the method, but setting system properties are problematically with java applets.
-//		 * According to a few sites on the web which refers to a RFC blablabla, the traffic-class is since 1998 obselete
-//		 * So we just disable the method for mac os.
-//		 */
-//		if (!MAC_OS_X) {
-//			socket.setTrafficClass(0x10); // prefer low delay			
-//		}
-//	}
 	
 	/**
 	 * Binds a Object to the registry
@@ -177,44 +135,44 @@ public class Simon {
 	}
 
 	// FIXME reimplement asking for ip-address if client
-//	/**
-//	 * 
-//	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
-//	 * 
-//	 * @param proxyObject the proxy-object
-//	 * @return the InetAddress on the remote-side
-//	 */
-//	public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
-//		return getSimonProxy(proxyObject).getInetAddress();
-//	}
-//	
-//	/**
-//	 * 
-//	 * Gets the socket-port used on the remote-side of the given proxy object
-//	 * 
-//	 * @param proxyObject the proxy-object
-//	 * @return the port on the remote-side
-//	 */
-//	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
-//		return getSimonProxy(proxyObject).getPort();
-//	}
+	/**
+	 * 
+	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
+	 * 
+	 * @param proxyObject the proxy-object
+	 * @return the InetAddress on the remote-side
+	 */
+	public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
+		return getSimonProxy(proxyObject).getInetAddress();
+	}
 	
-//	/**
-//	 * 
-//	 * Checks the given objekt for a SimonProxy invocationhandler wrapped in a simple proxy
-//	 * 
-//	 * @param o the object to check
-//	 * @return the extrected SimonProxy
-//	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocationhandler
-//	 */
-//	private static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
-//		if (o instanceof Proxy) {
-//			InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
-//			if (invocationHandler instanceof SimonProxy){
-//				return (SimonProxy) invocationHandler;
-//			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy");
-//		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy");
-//	}
+	/**
+	 * 
+	 * Gets the socket-port used on the remote-side of the given proxy object
+	 * 
+	 * @param proxyObject the proxy-object
+	 * @return the port on the remote-side
+	 */
+	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
+		return getSimonProxy(proxyObject).getPort();
+	}
+	
+	/**
+	 * 
+	 * Checks the given objekt for a SimonProxy invocationhandler wrapped in a simple proxy
+	 * 
+	 * @param o the object to check
+	 * @return the extrected SimonProxy
+	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocationhandler
+	 */
+	private static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
+		if (o instanceof Proxy) {
+			InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
+			if (invocationHandler instanceof SimonProxy){
+				return (SimonProxy) invocationHandler;
+			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy");
+		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy");
+	}
 
 	/**
 	 * 

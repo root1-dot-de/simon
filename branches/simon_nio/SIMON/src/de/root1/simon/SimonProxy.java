@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.InetAddress;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.logging.Logger;
 
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -118,13 +120,13 @@ public class SimonProxy implements InvocationHandler {
 	
 	
 	// FIXME reimplement asking for ip-address of client
-//	protected InetAddress getInetAddress() {
-//		return endpoint.getInetAddress();
-//	}
-//	
-//	protected int getPort(){
-//		return endpoint.getPort();
-//	}
+	protected InetAddress getInetAddress() {
+		return ((SocketChannel)key.channel()).socket().getInetAddress();
+	}
+	
+	protected int getPort(){
+		return ((SocketChannel)key.channel()).socket().getPort();
+	}
 	
 	private String remoteToString() throws SimonRemoteException {
 		// TODO Auto-generated method stub
