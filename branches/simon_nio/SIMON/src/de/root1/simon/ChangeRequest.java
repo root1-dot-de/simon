@@ -5,7 +5,14 @@ import java.util.logging.Logger;
 import de.root1.simon.utils.Utils;
 
 public class ChangeRequest {
+	/**
+	 * ID for Register (value=1)
+	 */
 	public static final int REGISTER = 1;
+	
+	/**
+	 * ID for ChangeOps (value=2)
+	 */
 	public static final int CHANGEOPS = 2;
 	
 	public SocketChannel socket;
@@ -30,7 +37,7 @@ public class ChangeRequest {
 		sb.append("|type=");
 		sb.append(type);
 		sb.append("|ops=");
-		sb.append(ops);
+		sb.append(Utils.printSelectionKeyValue(ops));
 		sb.append("]");
 		return sb.toString();
 	}

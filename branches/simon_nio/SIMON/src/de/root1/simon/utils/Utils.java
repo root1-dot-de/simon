@@ -30,6 +30,7 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -395,5 +396,25 @@ public class Utils {
 
 		return txt + " (" + key + ")";
 	}
+	/**
+	 * Gets a String represenatation for a <code>SocketChannel</code>
+	 * 
+	 * @param channel
+	 * @return
+	 */
+	public static String getChannelString(SocketChannel channel) {
+		return "["+channel+"]";
+	}
 	
+	/**
+	 * Gets a String representation for a <Code>SelectionKey>/code>
+	 * TODO: Documentation to be done for method 'getKeyString', by 'ACHR'..
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static String getKeyString(SelectionKey key){
+		String ret = "[["+key.channel()+"]interestOps="+Utils.printSelectionKeyValue(key.interestOps())+",readyOps="+Utils.printSelectionKeyValue(key.readyOps())+"]"; 
+		return ret;
+	}
 }

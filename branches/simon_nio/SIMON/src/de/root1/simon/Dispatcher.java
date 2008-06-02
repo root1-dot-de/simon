@@ -148,10 +148,14 @@ public class Dispatcher implements Runnable {
 						switch (change.type) {
 
 							case ChangeRequest.CHANGEOPS:
+								if (_log.isLoggable(Level.FINER))
+									_log.finer("changing ops ... changerequest: "+change);
 								SelectionKey key = change.socket.keyFor(this.selector);
 								key.interestOps(change.ops);
 
 							case ChangeRequest.REGISTER:
+								if (_log.isLoggable(Level.FINER))
+									_log.finer("registering ... changerequest: "+change);
 								change.socket.register(this.selector, change.ops);
 								break;
 								
@@ -161,7 +165,7 @@ public class Dispatcher implements Runnable {
 				}
 				// -------------
 
-				_log.finer("Wait for an event on one of the registered channels");
+				_log.finer("W A I T I N G for an event");
 				int numOfselectableKeys = selector.select();
 
 				if (numOfselectableKeys>0) {
@@ -175,10 +179,10 @@ public class Dispatcher implements Runnable {
 					
 						SelectionKey key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
-						String clientIP = ((SocketChannel) key.channel()).socket().getInetAddress().toString(); 
+						 
 						if (_log.isLoggable(Level.FINER)){
 							
-							_log.finer("client="+clientIP+" key="+key+" has ready op: "+Utils.printSelectionKeyValue(key.interestOps()));
+							_log.finer("key="+Utils.getKeyString(key));
 						}
 						
 						if (!key.isValid()) {
@@ -190,25 +194,25 @@ public class Dispatcher implements Runnable {
 						// Check what event is available and deal with it
 						if (key.isAcceptable()){ // used by the server
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("client="+clientIP+" key="+key+" is acceptable. Accepting is done by the 'Acceptor'!");
+								_log.finer("key="+Utils.getKeyString(key)+" is acceptable. Accepting is done by the 'Acceptor'!");
 							
 						} else if (key.isConnectable()) { // used by the client
 
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("client="+clientIP+" key="+key+" is connectable.  FinishConnection is done by the 'Client'!");
+								_log.finer("key="+Utils.getKeyString(key)+" key="+key+" is connectable.  FinishConnection is done by the 'Client'!");
 							
 						} else if (key.isReadable()) {
 
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("client="+clientIP+" key="+key+" is readable");
+								_log.finer("key="+Utils.getKeyString(key)+" is readable");
 							
-							key.interestOps(0); // deregister for read-events
+							key.interestOps(key.interestOps() & ~SelectionKey.OP_READ); // deregister for read-events
 							handleRead(key);
 							
 						} else if (key.isWritable()) {
 							
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("client="+clientIP+" key="+key+" is writeable");
+								_log.finer("key="+Utils.getKeyString(key)+" is writeable");
 
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
 							handleWrite(key);
@@ -242,7 +246,9 @@ public class Dispatcher implements Runnable {
 	private void handleWrite(SelectionKey key) throws IOException {
 		_log.fine("begin");
 	    SocketChannel socketChannel = (SocketChannel) key.channel();
-
+	    if (_log.isLoggable(Level.FINER)){
+	    	_log.finer("sending data for key="+Utils.getKeyString(key)+" from queue");
+	    }
 	    synchronized (this.pendingData) {
 	      List<ByteBuffer> queue = (List<ByteBuffer>) this.pendingData.get(socketChannel);
 	      
@@ -276,8 +282,10 @@ public class Dispatcher implements Runnable {
 		
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("sending data for key="+key+" channel="+socketChannel);
+		if (_log.isLoggable(Level.FINER)){
+			_log.finer("sending data for key="+Utils.getKeyString(key));
+		}
+		
 		
 		// And queue the data we want written
 		synchronized (this.pendingData) {
@@ -286,8 +294,10 @@ public class Dispatcher implements Runnable {
 				queue = new ArrayList<ByteBuffer>();
 				this.pendingData.put(socketChannel, queue);
 			}
-			if (_log.isLoggable(Level.FINER))
-				_log.finer("added packet for socketChannel="+socketChannel+" with limit="+packet.limit()+" to queue");
+				
+			if (_log.isLoggable(Level.FINEST)){
+				_log.finer("added packet for key="+Utils.getKeyString(key)+" with limit="+packet.limit()+" position="+packet.position()+" to queue");
+			}
 			queue.add(packet);
 		}
 
@@ -308,6 +318,9 @@ public class Dispatcher implements Runnable {
 		_log.fine("begin");
 
 		synchronized (this.pendingChanges) {
+			if (_log.isLoggable(Level.FINER)){
+				_log.finer("got changerequest for client "+Utils.getChannelString(socketChannel)+" -> type="+type+" operation="+Utils.printSelectionKeyValue(operation));
+			}
 			// Indicate we want the interest ops set changed
 			this.pendingChanges.add(new ChangeRequest(socketChannel, type, operation));
 			// Finally, wake up our selecting thread so it can make the required changes
@@ -328,7 +341,7 @@ public class Dispatcher implements Runnable {
 	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws SimonRemoteException, IOException {
 		final int requestID = generateRequestID(); 
 		if (_log.isLoggable(Level.FINE))
-			_log.fine("begin requestID="+requestID+" key="+key);
+			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyString(key));
 
 		if (globalEndpointException!=null) throw globalEndpointException;
 
@@ -394,7 +407,7 @@ public class Dispatcher implements Runnable {
  		final int requestID = generateRequestID();
 
  		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+key);
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
  		
  		if (globalEndpointException!=null) throw globalEndpointException;
 
@@ -466,7 +479,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID();
 
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+key);
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
@@ -514,7 +527,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+key);
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
@@ -567,7 +580,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+key);
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
@@ -709,9 +722,17 @@ public class Dispatcher implements Runnable {
 	 */
 	protected void registerChannel(SocketChannel channel) throws ClosedChannelException {
 		_log.fine("begin");
+		if (_log.isLoggable(Level.FINE)){
+			_log.fine("registering client " + Utils.getChannelString(channel) + " for [OP_READ] on dispatcher.");
+		}
+		
 		selectorChangeRequest(channel, ChangeRequest.REGISTER, SelectionKey.OP_READ);
+		selector.wakeup();
 		_log.fine("end");
 	}
+
+
+
 
 
 	/**

@@ -58,7 +58,7 @@ public class Acceptor implements Runnable {
 					selectedKeys.remove();
 					
 					if (_log.isLoggable(Level.FINER))
-						_log.finer("selected: "+key);
+						_log.finer("selected key="+Utils.getKeyString(key));
 
 					if (!key.isValid()) {
 						continue;
@@ -89,8 +89,10 @@ public class Acceptor implements Runnable {
 //		Socket socket = clientChannel.socket();
 		//Utils.debug("Acceptor.accept(): Client: "+socket.getInetAddress());
 		clientChannel.configureBlocking(false);
+
 		
 //		key.cancel(); // cancel registration on acceptor-selector
+//		socketSelector.wakeup();
 		
 		dispatcher.registerChannel(clientChannel); // register channel on dispatcher
 		
@@ -105,6 +107,7 @@ public class Acceptor implements Runnable {
 		_log.fine("begin");
 		if (serverChannel!=null){
 			try {
+				register.cancel();
 				serverChannel.close();
 				isRunning = false;
 			} catch (IOException e) {	
