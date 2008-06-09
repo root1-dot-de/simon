@@ -319,7 +319,7 @@ public class Dispatcher implements Runnable {
 
 		synchronized (this.pendingChanges) {
 			if (_log.isLoggable(Level.FINER)){
-				_log.finer("got changerequest for client "+Utils.getChannelString(socketChannel)+" -> type="+type+" operation="+Utils.printSelectionKeyValue(operation));
+				_log.finer("got changerequest for client "+Utils.getChannelString(socketChannel)+" -> type="+type+" operation="+Utils.getSelectionKeyString(operation));
 			}
 			// Indicate we want the interest ops set changed
 			this.pendingChanges.add(new ChangeRequest(socketChannel, type, operation));

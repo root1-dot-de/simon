@@ -46,6 +46,7 @@ import de.root1.simon.TxPacket;
 
 public class Utils {
 	
+	protected static transient Logger _log = Logger.getLogger(Utils.class.getName());
 	
 	public static boolean DEBUG = false;
 
@@ -343,31 +344,25 @@ public class Utils {
      */  
     public static String getString(ByteBuffer bb){
     	int length = bb.getInt();
-    	//Utils.debug("Utils.getString() -> length="+length);
+    	if (_log.isLoggable(Level.FINEST)){
+    		_log.finest("length="+length);
+    	}
     	byte[] stringInBytes = new byte[length];
     	bb.get(stringInBytes);
-    	//Utils.debug("Utils.getString() -> string="+new String(stringInBytes));
+    	if (_log.isLoggable(Level.FINEST)){
+    		_log.finest("string="+new String(stringInBytes));
+    	}
     	return new String(stringInBytes);
     }
     
-//	public synchronized static void debug(String msg) {
-//		if (Statics.DEBUG_MODE) {
-//			Calendar cal = GregorianCalendar.getInstance();
-//			StringBuffer sb = new StringBuffer();
-//			sb.append(df2.format(cal.get(Calendar.HOUR_OF_DAY)));
-//			sb.append(":");
-//			sb.append(df2.format(cal.get(Calendar.MINUTE)));
-//			sb.append(".");
-//			sb.append(df3.format(cal.get(Calendar.MILLISECOND)));
-//			sb.append(" - ");
-//			sb.append(msg);
-//			System.out.println(sb.toString());
-//			System.out.flush();
-//		}
-//	}
-	
-	
-   	public static String printSelectionKeyValue(int key) {
+    /**
+     * 
+     * TODO: Documentation to be done for method 'getSelectionKeyString', by 'ACHR'..
+     * 
+     * @param key
+     * @return
+     */
+    public static String getSelectionKeyString(int key) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -396,6 +391,7 @@ public class Utils {
 
 		return txt + " (" + key + ")";
 	}
+    
 	/**
 	 * Gets a String represenatation for a <code>SocketChannel</code>
 	 * 
@@ -414,7 +410,7 @@ public class Utils {
 	 * @return
 	 */
 	public static String getKeyString(SelectionKey key){
-		String ret = "[["+key.channel()+"]interestOps="+Utils.printSelectionKeyValue(key.interestOps())+",readyOps="+Utils.printSelectionKeyValue(key.readyOps())+"]"; 
+		String ret = "[["+key.channel()+"]interestOps="+Utils.getSelectionKeyString(key.interestOps())+",readyOps="+Utils.getSelectionKeyString(key.readyOps())+"]"; 
 		return ret;
 	}
 }

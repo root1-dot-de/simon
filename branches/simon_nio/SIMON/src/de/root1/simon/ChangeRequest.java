@@ -37,7 +37,7 @@ public class ChangeRequest {
 		sb.append("|type=");
 		sb.append(type);
 		sb.append("|ops=");
-		sb.append(Utils.printSelectionKeyValue(ops));
+		sb.append(Utils.getSelectionKeyString(ops));
 		sb.append("]");
 		return sb.toString();
 	}
