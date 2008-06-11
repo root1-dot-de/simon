@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *

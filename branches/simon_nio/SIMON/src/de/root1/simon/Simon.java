@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -223,11 +223,11 @@ public class Simon {
 		if (threadPool!=null) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");
 		
 		if (size==-1){
-			threadPool = Executors.newCachedThreadPool();
+			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory("Dispatcher.WorkerPool"));
 		} else if (size==1) {
-			threadPool = Executors.newSingleThreadExecutor();			
+			threadPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory("Dispatcher.WorkerPool"));			
 		} else {
-			threadPool = Executors.newFixedThreadPool(size);
+			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory("Dispatcher.WorkerPool"));
 		}
 	}
 	

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -22,25 +22,21 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
-import de.root1.simon.utils.Utils;
-
-
 /**
- * TODO Documentation to be done
+ * The SIMON server acts as a registry for remote objects. 
+ * So, Registry is SIMON's internal server implementation
  *
  * @author achristian
  *
  */
-public class Registry extends Thread {
+public class Registry {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	private LookupTable serverLookupTable = null;
 	private int port;
 	
-	// -----------------
-	// NIO Stuff
-	// The selector we'll be monitoring
+
 	private Dispatcher dispatcher;
 	private Acceptor acceptor;
 	private ExecutorService threadPool;
@@ -55,16 +51,14 @@ public class Registry extends Thread {
 		this.serverLookupTable = lookupTable;
 		this.port = port;
 		this.threadPool = threadPool;
-		this.setName("SimonRegistry");
 		_log.fine("end");
 	}
 
-	/* (non-Javadoc)
-	 * @see java.lang.Thread#run()
+	/**
+	 * Starts the registry
+	 *
 	 */
-	@Override
-	public void run() {
-		super.run();
+	protected void start() {
 
 		_log.fine("begin");
 		
@@ -76,13 +70,23 @@ public class Registry extends Thread {
 			
 			acceptor = new Acceptor(dispatcher,port);
 			new Thread(acceptor,"Simon.Registry.Acceptor").start();
-			_log.finer("acceptor thread created and started");
+			_log.finer("acceptor thread created and started");			
 			
 		} catch (IOException e) {
 			_log.severe("IOException: "+e.getMessage());
 		}
 		
 		_log.fine("end");
+	}
+	
+	/**
+	 * Stops the registry
+	 *
+	 */
+	protected void stop() {
+		acceptor.shutdown();
+		dispatcher.shutdown();
+		
 	}
 	
 }

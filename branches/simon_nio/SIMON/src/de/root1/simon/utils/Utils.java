@@ -1,7 +1,5 @@
-package de.root1.simon.utils;
-
 /*
- * Copyright 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -18,13 +16,11 @@ package de.root1.simon.utils;
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
+package de.root1.simon.utils;
 
-import java.io.ByteArrayInputStream;
+
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
@@ -34,14 +30,9 @@ import java.nio.channels.SocketChannel;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.DecimalFormat;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import de.root1.simon.Statics;
 import de.root1.simon.TxPacket;
 
 public class Utils {

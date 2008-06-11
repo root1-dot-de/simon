@@ -38,7 +38,7 @@ public class SampleClient {
 		
 		
 		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
-		server.login(clientCallbackImpl);
+//		server.login(clientCallbackImpl);
 		
 	}
 

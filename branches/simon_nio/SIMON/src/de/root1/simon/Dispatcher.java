@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -79,31 +79,32 @@ public class Dispatcher implements Runnable {
 	private Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<SocketChannel, List<ByteBuffer>>();
 	
 	private ExecutorService eventHandlerPool = null;
+
+	// a shutdown-flag
+	private boolean shutdown;
+
+	private boolean isRunning;
+
+	private DGC dgc;
 	
 
 	/**
 	 * 
-	 * Creates a new so called <i>Endpoint</i>.  
-	 * @param objectCacheLifetime 
+	 * Creates a packet dispatcher which delegates 
+	 * the packet-reading to {@link ReadEventHandler} threads in the given <code>threadPool</code>
 	 * 
-	 * @param lookupTable the reference to an instance of <code>LookupTable</code>
-	 * @param threadPool 
-	 * @param threadName used for naming the <code>Endpoint</code>-thread.
-	 * @throws IOException 
-	 * @throws IOException 
+	 * @param lookupTable the global lookup table
+	 * @param threadPool the pool the worker threads live in
+	 * @throws IOException if the {@link Selector} cannot be initiated
 	 */
 	public Dispatcher(LookupTable lookupTable, ExecutorService threadPool) throws IOException {
 		_log.fine("begin");
 		
-		// FIXME set the name of the thread?!
-//		this.setName("Endpoint: "+threadName);
 		this.lookupTable = lookupTable;
-		
-		// FIXME should be configurable
-		eventHandlerPool = threadPool;
-		
-		selector = initSelectorClient();
-		
+		this.eventHandlerPool = threadPool;
+		this.selector = SelectorProvider.provider().openSelector();
+		this.dgc = new DGC(this);
+		dgc.start();
 		_log.fine("end");
 	}
 
@@ -118,20 +119,14 @@ public class Dispatcher implements Runnable {
 		return requestIdCounter++;
 	}
 	
-	
-	private Selector initSelectorClient() throws IOException {
-		// Create a new selector
-		return SelectorProvider.provider().openSelector();
-	}
-	
-	
 	/**
 	 * The main receive-loop
 	 * @see java.lang.Thread#run()
 	 */
 	public void run() {
 		_log.fine("begin");
-		while (true) {
+		isRunning = true;
+		while (!shutdown) {
 			try {
 				// Process any pending selector changes
 				// this means read/write interests and registrations
@@ -149,14 +144,16 @@ public class Dispatcher implements Runnable {
 
 							case ChangeRequest.CHANGEOPS:
 								if (_log.isLoggable(Level.FINER))
-									_log.finer("changing ops ... changerequest: "+change);
+									_log.finer("changing ops ... CHANGEOPS changerequest: "+change);
 								SelectionKey key = change.socket.keyFor(this.selector);
 								key.interestOps(change.ops);
-
+								break;
+								
 							case ChangeRequest.REGISTER:
 								if (_log.isLoggable(Level.FINER))
-									_log.finer("registering ... changerequest: "+change);
-								change.socket.register(this.selector, change.ops);
+									_log.finer("registering ... REGISTER changerequest: "+change);
+								SelectionKey connectedClientKey = change.socket.register(this.selector, change.ops);
+								dgc.addKey(connectedClientKey);
 								break;
 								
 						}
@@ -233,6 +230,7 @@ public class Dispatcher implements Runnable {
 				wakeAllMonitors();
 			}
 		}
+		isRunning = false;
 	}
 
 
@@ -756,6 +754,77 @@ public class Dispatcher implements Runnable {
 		synchronized (requestResults) {
 			return requestResults.remove(requestID);			
 		}
+	}
+
+
+	protected long sendPing(SelectionKey key) {
+		
+		if (globalEndpointException!=null) throw globalEndpointException;
+
+		final int requestID = generateRequestID();
+		
+		if (_log.isLoggable(Level.FINE))
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
+		
+		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(requestID);
+
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.PING_PACKET, requestID);
+		packet.put((byte)0x00);
+		packet.setComplete();
+		long startPing;
+		synchronized (monitor) {
+			startPing = System.currentTimeMillis();
+			send(key, packet.getByteBuffer());
+			
+			// check if need to wait for the result
+			synchronized (requestResults) {
+				if (requestResults.containsKey(requestID)){
+					if (_log.isLoggable(Level.FINE))
+			 			_log.fine("end. requestID="+requestID);
+					requestResults.remove(requestID);			
+					long receivePong = System.currentTimeMillis();
+					return receivePong-startPing;
+				}
+			}
+	
+			// got to sleep until result is present
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+			
+			
+		// check if there was an error while sleeping
+		if (globalEndpointException!=null) throw globalEndpointException;
+		
+		// get result
+		synchronized (requestResults) {
+			if (_log.isLoggable(Level.FINE))
+	 			_log.fine("end. requestID="+requestID);
+			requestResults.remove(requestID);			
+			long receivePong = System.currentTimeMillis();
+			return (int)(receivePong-startPing);
+		}
+	}
+
+
+	public void shutdown() {
+		_log.fine("begin");
+		shutdown = true;
+		selector.wakeup();
+		dgc.shutdown();
+		while (isRunning || dgc.isRunning()) {
+			try {
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				// nothing to do
+			}
+		}
+		_log.fine("end");
 	}
 	
 }

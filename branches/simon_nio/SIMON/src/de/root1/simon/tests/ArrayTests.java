@@ -1,6 +1,5 @@
 package de.root1.simon.tests;
 
-import java.lang.reflect.Array;
 
 public class ArrayTests {
 	

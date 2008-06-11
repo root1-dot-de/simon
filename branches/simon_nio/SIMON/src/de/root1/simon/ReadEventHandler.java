@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * 
+ * This file is part of SIMON.
+ *
+ *   SIMON is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   SIMON is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package de.root1.simon;
 
 import java.io.IOException;
@@ -97,6 +115,10 @@ class ReadEventHandler implements Runnable {
 					processEquals(remoteObjectName, object);
 					break;	
 					
+				case Statics.PING_PACKET :
+					processPing();
+					break;
+					
 				case Statics.INVOCATION_RETURN_PACKET :
 					Object result = Utils.unwrapValue(dispatcher.removeRequestReturnType(requestID), packetBody);
 					dispatcher.putResultToQueue(requestID, result);
@@ -119,6 +141,11 @@ class ReadEventHandler implements Runnable {
 //					dispatcher.wakeWaitingProcess(requestID);
 					break;
 					
+				case Statics.PONG_PACKET :
+					processPong();
+					break;
+					
+					
 				default :
 //					interrupt();
 //					globalEventHandlerException = new SimonRemoteException("invalid packet received from EventHandler ...");
@@ -138,6 +165,25 @@ class ReadEventHandler implements Runnable {
 		} catch (ClassNotFoundException e) {
 			key.cancel();
 		}
+		_log.fine("end");
+	}
+
+	private void processPong() {
+		_log.fine("begin");
+		_log.finer("PONG PACKET RECEIVED");
+		dispatcher.putResultToQueue(requestID, packetBody.get());
+		_log.fine("end");
+	}
+
+	private void processPing() {
+		_log.fine("begin");
+		_log.finer("PING PACKET RECEIVED ... SENDING PONG PACKET");
+		TxPacket p = new TxPacket();
+		p.setHeader(Statics.PONG_PACKET, requestID);
+		p.put((byte)0x00);
+		p.setComplete();
+		dispatcher.send(key,p.getByteBuffer());
+		
 		_log.fine("end");
 	}
 
