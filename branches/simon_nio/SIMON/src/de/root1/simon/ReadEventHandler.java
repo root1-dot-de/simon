@@ -28,6 +28,7 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
@@ -162,8 +163,12 @@ class ReadEventHandler implements Runnable {
 			
 		} catch (IOException e) {
 			key.cancel();
+			// TODO check where we can put the exception as a result back to the requester, or how we have to handle the exception
+//			dispatcher.putResultToQueue(requestID, new SimonRemoteException(e.getMessage()));
 		} catch (ClassNotFoundException e) {
-			key.cancel();
+//			dispatcher.putResultToQueue(requestID, new SimonRemoteException(e.getMessage()));
+		} catch (LookupFailedException e) {
+			dispatcher.putResultToQueue(requestID, e);
 		}
 		_log.fine("end");
 	}
@@ -194,8 +199,9 @@ class ReadEventHandler implements Runnable {
 	 * @param requestID
 	 * @param remoteObjectName
 	 * @throws IOException
+	 * @throws LookupFailedException 
 	 */
-	private void processHashCode(String remoteObjectName) throws IOException {
+	private void processHashCode(String remoteObjectName) throws IOException, LookupFailedException {
 		_log.fine("begin");
 		final int hashcode = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();		
 		
@@ -215,8 +221,9 @@ class ReadEventHandler implements Runnable {
 	 * @param requestID
 	 * @param remoteObjectName
 	 * @throws IOException
+	 * @throws LookupFailedException 
 	 */
-	private void processToString(String remoteObjectName) throws IOException {
+	private void processToString(String remoteObjectName) throws IOException, LookupFailedException {
 		_log.fine("begin");
 		final String tostring = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();		
 		
@@ -237,8 +244,9 @@ class ReadEventHandler implements Runnable {
 	 * @param remoteObjectName
 	 * @praram object
 	 * @throws IOException
+	 * @throws LookupFailedException 
 	 */
-	private void processEquals(String remoteObjectName, Object object) throws IOException{
+	private void processEquals(String remoteObjectName, Object object) throws IOException, LookupFailedException{
 		_log.fine("begin");
 		final boolean equals = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).equals(object);		
 
@@ -255,11 +263,17 @@ class ReadEventHandler implements Runnable {
 	 * 
 	 * processes a lookup
 	 * @throws IOException 
+	 * @throws LookupFailedException 
 	 */
-	private void processLookup(String remoteObjectName) throws IOException{
+	private void processLookup(String remoteObjectName) throws IOException {
 		_log.fine("begin");
-		byte[] remoteObjectInterface = Utils.objectToBytes(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
-
+		byte[] remoteObjectInterface;
+		try {
+			remoteObjectInterface = Utils.objectToBytes(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());		
+		} catch (LookupFailedException e) {
+			remoteObjectInterface = Utils.objectToBytes(e);
+		}
+		
 		TxPacket p = new TxPacket();
 		p.setHeader(Statics.LOOKUP_RETURN_PACKET, requestID);
 		p.put(remoteObjectInterface);
@@ -275,8 +289,9 @@ class ReadEventHandler implements Runnable {
 	 * @param remoteObjectName
 	 * @throws IOException
 	 * @throws ClassNotFoundException
+	 * @throws LookupFailedException 
 	 */
-	private void processInvokeMethod(String remoteObjectName) throws IOException, ClassNotFoundException{
+	private void processInvokeMethod(String remoteObjectName) throws IOException, ClassNotFoundException, LookupFailedException{
 		_log.fine("begin");
 		remoteObjectName = Utils.getString(packetBody);
 		final long methodHash = packetBody.getLong();

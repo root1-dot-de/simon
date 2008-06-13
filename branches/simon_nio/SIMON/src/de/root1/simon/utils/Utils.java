@@ -41,10 +41,7 @@ public class Utils {
 	
 	public static boolean DEBUG = false;
 
-	static{
-		
-	}
-	
+
 	/**
 	 * Compute the "method hash" of a remote method. The method hash is a long
 	 * containing the first 64 bits of the SHA digest from the bytes representing

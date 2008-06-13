@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.Utils;
 
 
@@ -65,10 +66,14 @@ public class LookupTable {
 	 * TODO Documentation to be done
 	 * @param name
 	 * @return
+	 * @throws LookupFailedException if remoteobject is not available in lookup table
 	 */
-	public synchronized SimonRemote getRemoteBinding(String name){
+	public synchronized SimonRemote getRemoteBinding(String name) throws LookupFailedException {
 		_log.fine("begin");
-		if (!bindings.containsKey(name)) throw new IllegalArgumentException("Lookuptable.getBinding(): name="+name+" not found");
+		if (!bindings.containsKey(name)) {
+			_log.warning("remote object name=["+name+"] not found in LookupTable!");	
+			throw new LookupFailedException("remoteobject with name ["+name+"] not found in lookup table.");
+		}
 
 		if (_log.isLoggable(Level.FINER))
 			_log.finer("name="+name+" resolves to object='"+bindings.get(name)+"'");
@@ -89,6 +94,7 @@ public class LookupTable {
 			_log.finer("name="+name);
 
 		bindings.remove(name);
+		
 		_log.fine("end");
 	}
 	

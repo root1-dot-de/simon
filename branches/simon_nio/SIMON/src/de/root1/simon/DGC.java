@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -51,7 +52,10 @@ public class DGC extends Thread {
 		public void run() {
 			long rtt = dispatcher.sendPing(key);
 			if (_log.isLoggable(Level.FINER))
-				_log.finer("rtt="+rtt+"ms, key="+Utils.getKeyString(key));
+				if (key.isValid())
+					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyString(key));
+				else
+					_log.finer("key removed from DGC. "+((SocketChannel)key.channel()).socket().getInetAddress());
 		}
 		
 		
@@ -94,7 +98,7 @@ public class DGC extends Thread {
 		isRunning = false;
 	}
 
-	public void addKey(SelectionKey connectedClientKey) {
+	public synchronized void addKey(SelectionKey connectedClientKey) {
 		_log.finest("Adding client key to dgc list");
 		clientKeyList.add(connectedClientKey);		
 	}
@@ -119,5 +123,9 @@ public class DGC extends Thread {
 
 	public boolean isRunning() {
 		return isRunning;
+	}
+
+	public synchronized void removeKey(SelectionKey key) {
+		clientKeyList.remove(key);
 	}
 }

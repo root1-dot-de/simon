@@ -33,6 +33,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import de.root1.simon.exceptions.EstablishConnectionFailed;
+import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
@@ -84,6 +85,18 @@ public class Simon {
 		_log.fine("end");
 	}
 	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'lookup', by 'achristian'..
+	 * 
+	 * @param host
+	 * @param port
+	 * @param remoteObjectName
+	 * @return
+	 * @throws SimonRemoteException
+	 * @throws IOException
+	 * @throws EstablishConnectionFailed
+	 */
 	public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed {
 		_log.fine("begin");
 		Object proxy = null;
@@ -104,7 +117,6 @@ public class Simon {
 			 * this request blocks!
 			 */
 			Class<?>[] listenerInterfaces = (Class<?>[]) dispatcher.invokeLookup(client.getKey(), remoteObjectName);
-			
 			/*
 			 * This class gets the interfaces and directs the method-calls
 			 */
@@ -116,6 +128,8 @@ public class Simon {
 		     */
 		    proxy = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
 		    
+		} catch (LookupFailedException e) {
+			throw new LookupFailedException(e.getMessage());
 		} catch (IOException e){
 			throw new ConnectException(e.getMessage());
 		}
@@ -127,11 +141,20 @@ public class Simon {
 	/**
 	 * Binds a Object to the registry
 	 * TODO Documentation to be done
-	 * @param name
-	 * @param remoteObject
+	 * @param name a name for object to bind
+	 * @param remoteObject the object to bind
 	 */
 	public static void bind(String name, SimonRemote remoteObject) {
 		lookupTable.putRemoteBinding(name, remoteObject);
+	}
+	
+	/**
+	 * Unbinds a already bind object from the registry.
+	 *  
+	 * @param name the object to unbind
+	 */
+	public static void unbind(String name){
+		lookupTable.releaseRemoteBinding(name);
 	}
 
 	// FIXME reimplement asking for ip-address if client

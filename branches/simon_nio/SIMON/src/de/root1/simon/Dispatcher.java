@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
 
@@ -62,9 +63,6 @@ public class Dispatcher implements Runnable {
 	
 	/** a memory map for the client the unwrap the incoming return value after executing a method on the server */
 	private HashMap<Integer, Class<?>> requestReturnType = new HashMap<Integer, Class<?>>();
-	
-	/** is used for exception between all the threads in here */
-	private SimonRemoteException globalEndpointException = null;
 	
 	// -----------------------
 	// NIO STUFF
@@ -329,19 +327,17 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
+	 * Sends a remoteobject lookup to the server
 	 * 
 	 * @param remoteObjectName
 	 * @return the object we made the lookup for
 	 * @throws SimonRemoteException 
 	 * @throws IOException 
 	 */
-	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws SimonRemoteException, IOException {
+	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException {
 		final int requestID = generateRequestID(); 
 		if (_log.isLoggable(Level.FINE))
 			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyString(key));
-
-		if (globalEndpointException!=null) throw globalEndpointException;
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
@@ -362,7 +358,7 @@ public class Dispatcher implements Runnable {
 		// check if need to wait for the result
 		synchronized (requestResults) {
 			if (requestResults.containsKey(requestID))
-				return requestResults.remove(requestID);
+				return getRequestResult(requestID);
 		}
 		
 		// got to sleep until result is present
@@ -377,16 +373,29 @@ public class Dispatcher implements Runnable {
 		if (_log.isLoggable(Level.FINER))
 			_log.finer("got answer for requestID="+requestID);
 			
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
 		// get result
 		synchronized (requestResults) {
 			if (_log.isLoggable(Level.FINE))
 				_log.fine("end requestID="+requestID);
-			return requestResults.remove(requestID);			
+			return getRequestResult(requestID);			
 		}
 
+	}
+
+	/**
+	 * 
+	 * Checks if the request result is an {@link SimonRemoteException}. 
+	 * If yes, the exception is thrown, if not, the result is returned
+	 * 
+	 * @param requestID the request-id related to the result
+	 * @return the result of the request
+	 */
+	private Object getRequestResult(final int requestID) {
+		Object o = requestResults.remove(requestID); 
+		if (o instanceof SimonRemoteException) {
+			throw ((SimonRemoteException) o);
+		}
+		return o;
 	}
 	
 	/**
@@ -407,8 +416,6 @@ public class Dispatcher implements Runnable {
  		if (_log.isLoggable(Level.FINE))
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
  		
- 		if (globalEndpointException!=null) throw globalEndpointException;
-
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(requestID);
 		
@@ -444,7 +451,7 @@ public class Dispatcher implements Runnable {
 		// check if need to wait for the result
 			synchronized (requestResults) {
 				if (requestResults.containsKey(requestID))
-					return requestResults.remove(requestID);
+					return getRequestResult(requestID);
 			}
 		
 			// got to sleep until result is present
@@ -458,7 +465,7 @@ public class Dispatcher implements Runnable {
 		synchronized (requestResults) {
 			if (_log.isLoggable(Level.FINE))
 				_log.fine("end. requestID="+requestID);
-			return requestResults.remove(requestID);
+			return getRequestResult(requestID);
 		}
 	}
 
@@ -472,8 +479,6 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */
 	protected String invokeToString(SelectionKey key, String remoteObjectName) throws IOException {
-		if (globalEndpointException!=null) throw globalEndpointException;
-
 		final int requestID = generateRequestID();
 
 		if (_log.isLoggable(Level.FINE))
@@ -498,15 +503,11 @@ public class Dispatcher implements Runnable {
 			e.printStackTrace();
 		}
 			
-			
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
 		// get result
 		synchronized (requestResults) {
 			if (_log.isLoggable(Level.FINE))
 	 			_log.fine("end. requestID="+requestID);
-			return (String)requestResults.remove(requestID);			
+			return (String)getRequestResult(requestID);			
 		}		
 	}
 
@@ -520,8 +521,6 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */
 	protected int invokeHashCode(SelectionKey key, String remoteObjectName) throws IOException {
-		if (globalEndpointException!=null) throw globalEndpointException;
-
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
@@ -540,7 +539,7 @@ public class Dispatcher implements Runnable {
 		// check if need to wait for the result
 		synchronized (requestResults) {
 			if (requestResults.containsKey(requestID))
-				return (Integer)requestResults.remove(requestID);
+				return (Integer)getRequestResult(requestID);
 		}
 
 		// got to sleep until result is present
@@ -550,15 +549,11 @@ public class Dispatcher implements Runnable {
 			e.printStackTrace();
 		}
 			
-			
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
 		// get result
 		synchronized (requestResults) {
 			if (_log.isLoggable(Level.FINE))
 	 			_log.fine("end. requestID="+requestID);
-			return (Integer)requestResults.remove(requestID);			
+			return (Integer)getRequestResult(requestID);			
 		}		
 	}
 
@@ -573,8 +568,6 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException
 	 */
 	protected boolean invokeEquals(SelectionKey key, String remoteObjectName, Object object) throws IOException {
-		if (globalEndpointException!=null) throw globalEndpointException;
-
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
@@ -593,7 +586,7 @@ public class Dispatcher implements Runnable {
 		// check if need to wait for the result
 		synchronized (requestResults) {
 			if (requestResults.containsKey(requestID))
-				return (Boolean)requestResults.remove(requestID);
+				return (Boolean)getRequestResult(requestID);
 		}
 		
 		// got to sleep until result is present
@@ -602,15 +595,11 @@ public class Dispatcher implements Runnable {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-			
-			
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
 		
 		if (_log.isLoggable(Level.FINE))
  			_log.fine("end. requestID="+requestID);
 		// get result
-		return (Boolean) requestResults.remove(requestID);
+		return (Boolean) getRequestResult(requestID);
 	}
 
 
@@ -658,13 +647,18 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * This method is called from worker-threads which processed an invocation and have data 
-	 * ready that has to be returned to the "caller"
+	 * ready that has to be returned to the "caller".
+	 * after adding the result to the queue, the waiting request-method is waked.
 	 * 
 	 * @param requestID the request id that is waiting for the result
 	 * @param result the result itself
 	 */
 	protected void putResultToQueue(int requestID, Object result){
 		_log.fine("begin");
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("requestID="+requestID+" result="+result);
+		
 		final Object monitor = idMonitorMap.get(requestID);
 		synchronized (monitor) {
 			synchronized (requestResults) {
@@ -697,6 +691,8 @@ public class Dispatcher implements Runnable {
 		final Object monitor = new Object();
 		synchronized (idMonitorMap) {
 			idMonitorMap.put(requestID, monitor);
+			if (_log.isLoggable(Level.FINER))
+					_log.finer("creating monitor for requestID="+requestID);
 		}
 		_log.fine("end");
 		return monitor;
@@ -752,15 +748,18 @@ public class Dispatcher implements Runnable {
 	 */
 	protected Object getResult(int requestID){
 		synchronized (requestResults) {
-			return requestResults.remove(requestID);			
+			return getRequestResult(requestID);			
 		}
 	}
 
 
 	protected long sendPing(SelectionKey key) {
 		
-		if (globalEndpointException!=null) throw globalEndpointException;
-
+		if (!key.isValid()) {
+			dgc.removeKey(key);
+			return -1;
+		}
+		
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
@@ -775,7 +774,7 @@ public class Dispatcher implements Runnable {
 		packet.setComplete();
 		long startPing;
 		synchronized (monitor) {
-			startPing = System.currentTimeMillis();
+			startPing = System.nanoTime();
 			send(key, packet.getByteBuffer());
 			
 			// check if need to wait for the result
@@ -783,8 +782,8 @@ public class Dispatcher implements Runnable {
 				if (requestResults.containsKey(requestID)){
 					if (_log.isLoggable(Level.FINE))
 			 			_log.fine("end. requestID="+requestID);
-					requestResults.remove(requestID);			
-					long receivePong = System.currentTimeMillis();
+					getRequestResult(requestID);			
+					long receivePong = System.nanoTime();
 					return receivePong-startPing;
 				}
 			}
@@ -797,20 +796,15 @@ public class Dispatcher implements Runnable {
 			}
 		}
 			
-			
-		// check if there was an error while sleeping
-		if (globalEndpointException!=null) throw globalEndpointException;
-		
 		// get result
 		synchronized (requestResults) {
 			if (_log.isLoggable(Level.FINE))
 	 			_log.fine("end. requestID="+requestID);
-			requestResults.remove(requestID);			
-			long receivePong = System.currentTimeMillis();
+			getRequestResult(requestID);			
+			long receivePong = System.nanoTime();
 			return (int)(receivePong-startPing);
 		}
 	}
-
 
 	public void shutdown() {
 		_log.fine("begin");

@@ -37,7 +37,7 @@ public class SampleClient {
 		System.out.println("Callback Objekt angelegt");
 		
 		
-		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
+		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "serverr");
 //		server.login(clientCallbackImpl);
 		
 	}
