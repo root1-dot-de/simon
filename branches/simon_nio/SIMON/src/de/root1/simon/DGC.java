@@ -63,12 +63,29 @@ public class DGC extends Thread {
 	// ---------------------
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	
+	/** a reference to the dispatcher */
 	private Dispatcher dispatcher = null;
+	
+	/** Shutdown-flag for this thread. Thread shuts down if flag is set to true. */
 	private boolean shutdown;
+	/** "is running" flag for this thread */
 	private boolean isRunning = false;
+	
+	/** a pool which is used by the ping worker */
 	private ExecutorService pingWorkerPool;
+	
+	/** a list of know <code>SelectionKey</code>s (means: clients) */
 	private List<SelectionKey> clientKeyList = new ArrayList<SelectionKey>();
 
+	/**
+	 * 
+	 * Constructor for the DGC.
+	 * This only needs a reference to the dispatcher, where the {@link PingWorker} cann execute the 
+	 * {@link Dispatcher#sendPing(SelectionKey)} method.
+	 * 
+	 * @param dispatcher dispatcher-reference
+	 */
 	public DGC(Dispatcher dispatcher) {
 		_log.fine("begin");
 		this.dispatcher = dispatcher;
@@ -81,14 +98,19 @@ public class DGC extends Thread {
 	public void run() {
 		isRunning = true;
 		while (!shutdown){
+			
+			// for each known client ...
 			for (SelectionKey clientKey : clientKeyList) {
 				
 				if (_log.isLoggable(Level.FINEST))
 					_log.finest("running ping-packet");
 				
+				// ... start a PingWorker.
 				pingWorkerPool.execute(new PingWorker(dispatcher, clientKey));
 				if (shutdown) break;
 			}
+			
+			// after all pings are sent, wait Statics.DGC_INTERVAL milliseconds
 			try {
 				Thread.sleep(Statics.DGC_INTERVAL);
 			} catch (InterruptedException e) {
@@ -98,6 +120,12 @@ public class DGC extends Thread {
 		isRunning = false;
 	}
 
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'addKey', by 'ACHR'..
+	 * 
+	 * @param connectedClientKey
+	 */
 	public synchronized void addKey(SelectionKey connectedClientKey) {
 		_log.finest("Adding client key to dgc list");
 		clientKeyList.add(connectedClientKey);		
@@ -121,10 +149,22 @@ public class DGC extends Thread {
 		_log.fine("end");
 	}
 
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'isRunning', by 'ACHR'..
+	 * 
+	 * @return
+	 */
 	public boolean isRunning() {
 		return isRunning;
 	}
 
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'removeKey', by 'ACHR'..
+	 * 
+	 * @param key
+	 */
 	public synchronized void removeKey(SelectionKey key) {
 		clientKeyList.remove(key);
 	}

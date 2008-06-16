@@ -25,6 +25,7 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -58,7 +59,10 @@ public class SimonProxy implements InvocationHandler {
 	}
 
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		_log.fine("begin");
+		if (_log.isLoggable(Level.FINE)) {
+			_log.fine("begin");
+			_log.fine("method="+method.getName()+" args="+args);
+		}
 		
 		/*
 		 * Check if the method is NOT a SIMON remote method

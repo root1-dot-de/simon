@@ -21,6 +21,7 @@ package de.root1.simon;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -35,6 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.root1.simon.exceptions.ConnectionException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
@@ -56,7 +58,9 @@ public class Dispatcher implements Runnable {
 	
 	/** The map that holds the relation between the request ID and the corresponding monitor */
 	private HashMap<Integer, Object> idMonitorMap = new HashMap<Integer, Object>();
-//	private HashMap<Integer, MonitorResult> idMonitorMap = new HashMap<Integer, MonitorResult>();
+
+	/** The map that holds the relation between a current active request and a connected SelectableChannel */
+	private HashMap<Integer, SelectableChannel> idSelectableChannelMap = new HashMap<Integer, SelectableChannel>();
 	
 	/** The map that holds the relation between the request ID and the received result */
 	private HashMap<Integer, Object> requestResults = new HashMap<Integer, Object>();
@@ -144,7 +148,13 @@ public class Dispatcher implements Runnable {
 								if (_log.isLoggable(Level.FINER))
 									_log.finer("changing ops ... CHANGEOPS changerequest: "+change);
 								SelectionKey key = change.socket.keyFor(this.selector);
-								key.interestOps(change.ops);
+								if (key==null) {
+									_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelString(change.socket)+" is 'gone'... CHANGEOPS changerequest: "+change);
+									dgc.removeKey(key);
+									cancelWaitingMonitors(change.socket);
+								} else {
+									key.interestOps(change.ops);
+								}
 								break;
 								
 							case ChangeRequest.REGISTER:
@@ -210,7 +220,12 @@ public class Dispatcher implements Runnable {
 								_log.finer("key="+Utils.getKeyString(key)+" is writeable");
 
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
-							handleWrite(key);
+							try {
+								handleWrite(key);
+							} catch (IOException e){
+								if (_log.isLoggable(Level.FINE))
+									_log.fine("key="+Utils.getKeyString(key)+": exception: "+e.getMessage());
+							}
 							
 						}
 					}
@@ -221,9 +236,8 @@ public class Dispatcher implements Runnable {
 				}
 				
 			} catch (Exception e) {
-				e.printStackTrace();
 				// FIXME Exception richtig fangen
-				_log.severe("Exception: "+e);
+				_log.severe("Exception: e="+e+" msg="+e.getMessage());e.printStackTrace();		
 
 				wakeAllMonitors();
 			}
@@ -340,7 +354,7 @@ public class Dispatcher implements Runnable {
 			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyString(key));
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(key.channel(), requestID);
 		
 		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
 		
@@ -417,7 +431,7 @@ public class Dispatcher implements Runnable {
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
  		
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(key.channel(), requestID);
 		
 		// memory the return-type for later unwrap
 		requestReturnType.put(requestID, returnType);
@@ -485,7 +499,7 @@ public class Dispatcher implements Runnable {
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
 		
 		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(key.channel(), requestID);
 
 		TxPacket packet = new TxPacket();
 		packet.setHeader(Statics.TOSTRING_PACKET, requestID);
@@ -527,7 +541,7 @@ public class Dispatcher implements Runnable {
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
 		
 		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(key.channel(), requestID);
 
 		TxPacket packet = new TxPacket();
 		packet.setHeader(Statics.HASHCODE_PACKET, requestID);
@@ -574,7 +588,7 @@ public class Dispatcher implements Runnable {
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
 		
 		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(key.channel(), requestID);
 
 		TxPacket packet = new TxPacket();
 		packet.setHeader(Statics.EQUALS_PACKET, requestID);
@@ -609,22 +623,31 @@ public class Dispatcher implements Runnable {
 	 * @param requestID the process to wake  
 	 */
 	protected void wakeWaitingProcess(int requestID) {
+		
 		if (_log.isLoggable(Level.FINE))
 			_log.fine("begin. wakeing requestID="+requestID);
+		
 		synchronized (idMonitorMap) {
-			final Object monitor = idMonitorMap.remove(requestID);
-			if (monitor!=null) {
-				synchronized (monitor) {
-					monitor.notify(); // wake the waiting method
-//					System.out.println("id="+requestID+" monitor="+monitor+" waked");
-					if (_log.isLoggable(Level.FINER))
-			 			_log.finer("id="+requestID+" monitor="+monitor+" waked");
+			synchronized (idSelectableChannelMap) {
+		
+				final Object monitor = idMonitorMap.remove(requestID);
+				idSelectableChannelMap.remove(requestID);
+				
+				if (monitor!=null) {
+					synchronized (monitor) {
+						monitor.notify(); // wake the waiting method
+
+						if (_log.isLoggable(Level.FINER))
+				 			_log.finer("id="+requestID+" monitor="+monitor+" waked");
+					}
+					
+				} else {
+					if (_log.isLoggable(Level.FINER)) {
+						_log.finer("no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
+					}
 				}
-			} else {
-				if (_log.isLoggable(Level.FINER))
-		 			_log.finer("no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
+				
 			}
-			
 		}
 		if (_log.isLoggable(Level.FINE))
  			_log.fine("end. wakeing requestID="+requestID);
@@ -636,11 +659,17 @@ public class Dispatcher implements Runnable {
 	 */
 	private void wakeAllMonitors() {
 		_log.fine("begin");
+		List<Integer> idList = new ArrayList<Integer>();
+		
 		synchronized (idMonitorMap) {
-			for (Integer id : idMonitorMap.keySet()) {
-				wakeWaitingProcess(id.intValue());
+			for (Integer id: idMonitorMap.keySet()){
+				idList.add(id);
 			}
 		}
+			
+			for (Integer id : idList) {
+				wakeWaitingProcess(id.intValue());
+			}
 		_log.fine("end");
 	}
 
@@ -659,13 +688,10 @@ public class Dispatcher implements Runnable {
 		if (_log.isLoggable(Level.FINER))
 			_log.finer("requestID="+requestID+" result="+result);
 		
-		final Object monitor = idMonitorMap.get(requestID);
-		synchronized (monitor) {
-			synchronized (requestResults) {
-				requestResults.put(requestID,result);
-			}
-			monitor.notify();
+		synchronized (requestResults) {
+			requestResults.put(requestID,result);
 		}
+		wakeWaitingProcess(requestID);
 		_log.fine("end");
 	}
 	
@@ -681,21 +707,64 @@ public class Dispatcher implements Runnable {
 	 * 
 	 * create a monitor that waits for the request-result that 
 	 * is associated with the given request-id
+	 * @param selectableChannel 
 	 * 
 	 * @param requestID
 	 * @return the monitor used for waiting for the result
 	 */
-//	Object createMonitor(final int requestID) {
-	private Object createMonitor(final int requestID) {
+	private Object createMonitor(SelectableChannel selectableChannel, final int requestID) {
 		_log.fine("begin");
+		
 		final Object monitor = new Object();
 		synchronized (idMonitorMap) {
-			idMonitorMap.put(requestID, monitor);
-			if (_log.isLoggable(Level.FINER))
-					_log.finer("creating monitor for requestID="+requestID);
+			synchronized (idSelectableChannelMap) {
+				
+				idMonitorMap.put(requestID, monitor);
+				idSelectableChannelMap.put(requestID, selectableChannel);
+				
+				if (_log.isLoggable(Level.FINER)){
+						_log.finer("creating monitor for requestID="+requestID);
+				}
+				
+			}
 		}
+		
 		_log.fine("end");
 		return monitor;
+	}
+	
+	/**
+	 * Returns a list of waiting request-ids related to the given SelectableChannel
+	 * 
+	 * @param selectableChannel
+	 * @return a list of waiting request-ids related to the given SelectableChannel
+	 */
+	private List<Integer> getRequestId(SelectableChannel selectableChannel){
+		
+		List<Integer> idList = new ArrayList<Integer>();
+		
+		synchronized (idSelectableChannelMap) {
+			
+			if (idSelectableChannelMap.containsValue(selectableChannel)){
+				Iterator<Integer> iterator = idSelectableChannelMap.keySet().iterator();
+				while (iterator.hasNext()){
+					Integer requestID = iterator.next();
+					SelectableChannel selectableChannel2 = idSelectableChannelMap.get(requestID);
+					if (selectableChannel==selectableChannel2) idList.add(requestID);
+				}
+			}
+			
+		}
+		
+		return idList;
+	}
+	
+	private void cancelWaitingMonitors(SelectableChannel selectableChannel){
+		List<Integer> requestIdList = getRequestId(selectableChannel);
+		for (Integer id : requestIdList) {
+			putResultToQueue(id, new ConnectionException("Connection is broken!"));
+			wakeWaitingProcess(id);
+		}
 	}
 
 	/**
@@ -742,9 +811,13 @@ public class Dispatcher implements Runnable {
 	
 	/**
 	 * 
-	 * TODO Documentation to be done
-	 * @param requestID
-	 * @return
+	 * All received results are saved in a queue. With this method you can get the received result 
+	 * by its requestID.
+	 * <br/>
+	 * <b>Attention:</b> Be sure that you only call this method if you were notified by the receiver! 
+	 * 
+	 * @param requestID the requestID which is related to the result
+	 * @return the received result
 	 */
 	protected Object getResult(int requestID){
 		synchronized (requestResults) {
@@ -752,7 +825,14 @@ public class Dispatcher implements Runnable {
 		}
 	}
 
-
+	/**
+	 * 
+	 * Sends a "ping" packet to the opposite. This has to be replied with a "pong" packet.
+	 * This method is (mainly) used by the DGC to check whether the client is available or not.
+	 * 
+	 * @param key
+	 * @return
+	 */
 	protected long sendPing(SelectionKey key) {
 		
 		if (!key.isValid()) {
@@ -766,7 +846,7 @@ public class Dispatcher implements Runnable {
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
 		
 		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(requestID);
+		final Object monitor = createMonitor(key.channel(), requestID);
 
 		TxPacket packet = new TxPacket();
 		packet.setHeader(Statics.PING_PACKET, requestID);
@@ -806,6 +886,11 @@ public class Dispatcher implements Runnable {
 		}
 	}
 
+	/**
+	 * 
+	 * Initiates a shutdown of the dispatcher
+	 *
+	 */
 	public void shutdown() {
 		_log.fine("begin");
 		shutdown = true;

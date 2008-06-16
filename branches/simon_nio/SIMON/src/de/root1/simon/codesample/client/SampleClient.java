@@ -22,12 +22,13 @@ import java.io.IOException;
 
 import de.root1.simon.Simon;
 import de.root1.simon.codesample.common.ServerInterface;
+import de.root1.simon.exceptions.ConnectionException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
 
 public class SampleClient {
 	
-	public static void main(String[] args) throws SimonRemoteException, IOException {
+	public static void main(String[] args) throws SimonRemoteException, IOException, InterruptedException {
 		
 		
 		Utils.DEBUG = true;
@@ -37,9 +38,17 @@ public class SampleClient {
 		System.out.println("Callback Objekt angelegt");
 		
 		
-		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "serverr");
+		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
 //		server.login(clientCallbackImpl);
 		
+		Thread.sleep(10000);
+		
+		try {
+			server.login(clientCallbackImpl);
+		} catch (ConnectionException e) {
+			System.out.println("connection is broken");
+			e.printStackTrace();
+		}
 	}
 
 }

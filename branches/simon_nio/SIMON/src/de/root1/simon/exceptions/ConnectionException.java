@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -16,22 +16,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon.codesample.server;
+package de.root1.simon.exceptions;
 
-import de.root1.simon.Simon;
-import de.root1.simon.utils.Utils;
-
-public class SampleServer {
+/**
+ * 
+ * This exception is thrown, if the connection to SIMONs opposite is broken 
+ * (IOException or things like that)
+ * 
+ * @author ACHR
+ */
+public class ConnectionException extends SimonRemoteException {
 	
-	public static void main(String[] args) throws InterruptedException {
-			
-		Utils.DEBUG = true;
-		
-		ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
-		Simon.createRegistry(2000);
-		Simon.bind("server", serverImpl);
-		System.out.println("Server gestartet");
-		
+	private static final long serialVersionUID = 2999458111410425350L;
+
+	public ConnectionException(String msg){
+		super(msg);
 	}
 
 }
