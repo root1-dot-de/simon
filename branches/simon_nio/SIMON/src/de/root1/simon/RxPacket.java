@@ -24,6 +24,8 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.root1.simon.utils.Utils;
+
 public class RxPacket {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
@@ -36,25 +38,40 @@ public class RxPacket {
 	
 	RxPacket(SocketChannel socketChannel) throws IOException {
 		
-		header = ByteBuffer.allocate(9);
+		header = ByteBuffer.allocate(11);
 		
 		int headerRead = 0;
 		
-		while (headerRead!=9) {
+		while (headerRead!=11) {
 			headerRead += socketChannel.read(header);
 			if (_log.isLoggable(Level.FINEST)){
-				_log.finest("header: read "+headerRead+" of 9 bytes");
+				_log.finest("header: read "+headerRead+" of 11 bytes");
+			}
+			
+			if (headerRead==0) {
+				_log.fine("No data read. socketChannel="+socketChannel);
 			}
 		}
 		
 		header.rewind();
+		
+		int simonPacketHeaderId0 = header.get();
+		int simonPacketHeaderId1 = header.get();
+		
+		if (simonPacketHeaderId0!=Statics.SIMON_PACKET_HEADER_ID0 
+				|| simonPacketHeaderId1!=Statics.SIMON_PACKET_HEADER_ID1) {
+			
+			// FIXME
+			_log.severe("packet header failure! Exiting system.  header_id0=0x"+Integer.toHexString(simonPacketHeaderId0)+"  header_id1=0x"+Integer.toHexString(simonPacketHeaderId1));
+			System.exit(1);
+		}
 		
 		msgType = header.get();
 		requestID = header.getInt();
 		bodySize = header.getInt();
 
 		if (_log.isLoggable(Level.FINEST)){
-			_log.finest("header: msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
+			_log.finest("header: headerId0=0x"+Integer.toHexString(simonPacketHeaderId0)+" headerId1=0x"+Integer.toHexString(simonPacketHeaderId1)+" msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
 		}	
 		
 		body = ByteBuffer.allocate(bodySize);
@@ -67,6 +84,8 @@ public class RxPacket {
 			}
 		}
 		body.rewind();
+		
+		_log.fine("finished reading body.");
 	}
 
 	public  byte getMsgType() {
@@ -79,6 +98,23 @@ public class RxPacket {
 
 	public  ByteBuffer getBody() {
 		return body;
+	}
+
+	public ByteBuffer getByteBuffer() {
+
+		header.rewind();
+		body.rewind();
+		
+		ByteBuffer b = ByteBuffer.allocate(11+bodySize);
+		b.put(header);
+		b.put(body);
+		
+		b.rewind();
+		
+		body.rewind();
+		header.rewind();
+		
+		return b;
 	}
 
 }

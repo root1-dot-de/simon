@@ -25,7 +25,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.security.DigestOutputStream;
 import java.security.MessageDigest;
@@ -33,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.root1.simon.Statics;
 import de.root1.simon.TxPacket;
 
 public class Utils {
@@ -386,8 +389,43 @@ public class Utils {
 	 * @param channel
 	 * @return
 	 */
-	public static String getChannelString(SocketChannel channel) {
-		return "["+channel+"]";
+	public static String getChannelString(SelectableChannel channel) {
+		StringBuffer sb = new StringBuffer();
+
+		String ip = "<unknown>";
+		int remotePort = -1;
+		int localPort = -1;
+
+		
+		if (channel instanceof ServerSocketChannel) {
+			ip = ((ServerSocketChannel) channel).socket().getInetAddress().getHostAddress();
+			localPort = ((ServerSocketChannel) channel).socket().getLocalPort();
+			remotePort=0;
+			
+			sb.append("[server|listenOn=");
+			sb.append(ip);
+			sb.append(",localport=");
+			sb.append(localPort);
+			sb.append(",remoteport=");
+			sb.append(remotePort);
+			sb.append("]");
+		}
+		else
+		if (channel instanceof SocketChannel) {
+			ip = ((SocketChannel) channel).socket().getInetAddress().getHostAddress();
+			localPort = ((SocketChannel) channel).socket().getLocalPort();
+			remotePort= ((SocketChannel) channel).socket().getPort();
+			
+			sb.append("[client|connectedTo=");
+			sb.append(ip);
+			sb.append(",localport=");
+			sb.append(localPort);
+			sb.append(",remoteport=");
+			sb.append(remotePort);
+			sb.append("]");
+		}
+		
+		return sb.toString();
 	}
 	
 	/**
@@ -398,7 +436,99 @@ public class Utils {
 	 * @return
 	 */
 	public static String getKeyString(SelectionKey key){
-		String ret = "[["+key.channel()+"]interestOps="+Utils.getSelectionKeyString(key.interestOps())+",readyOps="+Utils.getSelectionKeyString(key.readyOps())+"]"; 
-		return ret;
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append("[");
+		sb.append(getChannelString(key.channel()));
+		sb.append("interestOps=");
+		sb.append(Utils.getSelectionKeyString(key.interestOps()));
+		sb.append(",readyOps=");
+		sb.append(Utils.getSelectionKeyString(key.readyOps()));
+		sb.append("]");
+		
+		return sb.toString();
+	}
+
+	public static String inspectPacket(ByteBuffer buf) {
+		int position = buf.position();
+		byte headerId0=buf.get();
+		byte headerId1=buf.get();
+		byte type = buf.get();
+		int requestID = buf.getInt();
+		int packetLength = buf.getInt();
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append("[packet|type=");
+		sb.append(getPacketTypeAsString(type));
+		sb.append(", headerId0=0x");
+		sb.append(Integer.toHexString(headerId0));
+		sb.append(", headerId1=0x");
+		sb.append(Integer.toHexString(headerId1));
+		sb.append(", requestID=");
+		sb.append(requestID);
+		sb.append(", length=");
+		sb.append(packetLength);
+		sb.append("]");
+		
+		sb.append("\n");
+			
+		for (int i = 0; i < packetLength; i++) {
+			byte c = buf.get();;
+			
+			sb.append("\tbody b[");
+			sb.append(i);
+			sb.append("]=");
+			sb.append(c);
+			sb.append("\n");
+
+		}
+		
+		buf.position(position);
+		
+		return sb.toString();
+		
+	}
+
+	public static Object getPacketTypeAsString(byte type) {
+		switch (type) {
+			case Statics.LOOKUP_PACKET :
+				return "LOOKUP_PACKET";
+				
+			case Statics.LOOKUP_RETURN_PACKET :
+				return "LOOKUP_RETURN_PACKET";
+
+			case Statics.EQUALS_PACKET :
+				return "EQUALS_PACKET";
+			
+			case Statics.EQUALS_RETURN_PACKET :
+				return "EQUALS_RETURN_PACKET";
+				
+			case Statics.HASHCODE_PACKET :
+				return "HASHCODE_PACKET";
+
+			case Statics.HASHCODE_RETURN_PACKET :
+				return "HASHCODE_RETURN_PACKET";
+
+			case Statics.INVOCATION_PACKET :
+				return "INVOCATION_PACKET";
+				
+			case Statics.INVOCATION_RETURN_PACKET :
+				return "INVOCATION_RETURN_PACKET";				
+
+			case Statics.PING_PACKET :
+				return "PING_PACKET";
+
+			case Statics.PONG_PACKET :
+				return "PONG_PACKET";
+
+			case Statics.TOSTRING_PACKET :
+				return "TOSTRING_PACKET";
+
+			case Statics.TOSTRING_RETURN_PACKET :
+				return "TOSTRING_RETURN_PACKET";
+				
+			default :
+				return "UNKNOWN(0x"+Integer.toHexString(type)+")";
+		}
 	}
 }

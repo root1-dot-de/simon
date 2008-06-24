@@ -66,10 +66,12 @@ class ReadEventHandler implements Runnable {
 			SocketChannel socketChannel =(SocketChannel) key.channel();
 			
 			RxPacket rxPacket = new RxPacket(socketChannel);
-		
-			
+			key.attach(null);
 			dispatcher.changeOpForReadiness(socketChannel);
 			
+	        if (_log.isLoggable(Level.FINEST)) {
+	        	_log.finest(Utils.inspectPacket(rxPacket.getByteBuffer()));
+	        }
 			
 			_log.finer("interpreting packet ...");
 			msgType = rxPacket.getMsgType();
@@ -80,15 +82,15 @@ class ReadEventHandler implements Runnable {
 
 			packetBody = rxPacket.getBody();
 			
-			if (_log.isLoggable(Level.FINER)){
-				byte[] b = packetBody.array();
-				for (int i = 0; i < b.length; i++) {
-					byte c = b[i];
-					
-					_log.finer("body b["+i+"]="+c);
-
-				}
-			}
+//			if (_log.isLoggable(Level.FINER)){
+//				byte[] b = packetBody.array();
+//				for (int i = 0; i < b.length; i++) {
+//					byte c = b[i];
+//					
+//					_log.finer("body b["+i+"]="+c);
+//
+//				}
+//			}
 			
 			
 			// if the received data is a new request ...
@@ -163,25 +165,40 @@ class ReadEventHandler implements Runnable {
 			
 		} catch (IOException e) {
 			key.cancel();
+			_log.severe("io exception: "+e.getMessage());
+			// FIXME for testing only
+			System.exit(1);
 			// TODO check where we can put the exception as a result back to the requester, or how we have to handle the exception
 //			dispatcher.putResultToQueue(requestID, new SimonRemoteException(e.getMessage()));
 		} catch (ClassNotFoundException e) {
 //			dispatcher.putResultToQueue(requestID, new SimonRemoteException(e.getMessage()));
+			key.cancel();
+			_log.warning("class not found: "+e.getMessage());
+			// FIXME for testing only
+			System.exit(1);
+			
 		} catch (LookupFailedException e) {
+			_log.fine("lookup failed!");
 			dispatcher.putResultToQueue(requestID, e);
 		}
 		_log.fine("end");
 	}
 
 	private void processPong() {
-		_log.fine("begin");
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("begin. requestID="+requestID);
+		
 		_log.finer("PONG PACKET RECEIVED");
 		dispatcher.putResultToQueue(requestID, packetBody.get());
-		_log.fine("end");
+		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end. requestID="+requestID);
 	}
 
 	private void processPing() {
-		_log.fine("begin");
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("begin. requestID="+requestID);
+		
 		_log.finer("PING PACKET RECEIVED ... SENDING PONG PACKET");
 		TxPacket p = new TxPacket();
 		p.setHeader(Statics.PONG_PACKET, requestID);
@@ -189,7 +206,8 @@ class ReadEventHandler implements Runnable {
 		p.setComplete();
 		dispatcher.send(key,p.getByteBuffer());
 		
-		_log.fine("end");
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end. requestID="+requestID);
 	}
 
 	/**
@@ -292,13 +310,20 @@ class ReadEventHandler implements Runnable {
 	 * @throws LookupFailedException 
 	 */
 	private void processInvokeMethod(String remoteObjectName) throws IOException, ClassNotFoundException, LookupFailedException{
-		_log.fine("begin");
+		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("begin. requestID="+requestID);
+		
 		remoteObjectName = Utils.getString(packetBody);
 		final long methodHash = packetBody.getLong();
 		
 		final Method method = dispatcher.getLookupTable().getMethod(remoteObjectName, methodHash);
 		final Class<?>[] parameterTypes = method.getParameterTypes();			
 		final Object[] args = new Object[parameterTypes.length];
+		
+		if (_log.isLoggable(Level.FINER)){
+			_log.finer("calling method name="+method.getName());
+		}
 		
 		// unwrapping the arguments
 		for (int i = 0; i < args.length; i++) {
@@ -316,15 +341,15 @@ class ReadEventHandler implements Runnable {
 					// search the arguments for remote-objects for callbacks
 					if (args[i] instanceof SimonCallback) {
 						
-						_log.finer("SimonCallback found");					
 						final SimonCallback simonCallback = (SimonCallback) args[i];
+						_log.finer("SimonCallback in args found. id="+simonCallback.getId());					
 											
 						Class<?>[] listenerInterfaces = new Class<?>[1];
 						listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
 						// reimplant the proxy object
 						args[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, key, simonCallback.getId()));
-						_log.finer("proxy object injected");
+						_log.finer("proxy object for SimonCallback injected");
 					} 
 				} 
 			} 
@@ -342,8 +367,14 @@ class ReadEventHandler implements Runnable {
 				
 				// Search for SimonRemote in result
 				if (result instanceof SimonRemote){
-					dispatcher.getLookupTable().putRemoteBinding(result.toString(), (SimonRemote)result);
-					result = new SimonCallback((SimonRemote)result);
+					_log.finer("Result of method is instance of SimonRemote");
+					
+					SimonCallback simonCallback = new SimonCallback(key,(SimonRemote)result);
+					simonCallback.getId();
+
+					dispatcher.getLookupTable().putRemoteBinding(simonCallback.getId(), (SimonRemote)result);
+					result = simonCallback;;
+					
 				}
 				
 			} catch (InvocationTargetException e){
@@ -373,7 +404,8 @@ class ReadEventHandler implements Runnable {
 			e.printStackTrace();
 		}
 		//Utils.debug("ReadEventHandler.processInvokeMethod() -> end. requestID="+requestID);
-		_log.fine("end");
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end. requestID="+requestID);
 	}
 	
 	

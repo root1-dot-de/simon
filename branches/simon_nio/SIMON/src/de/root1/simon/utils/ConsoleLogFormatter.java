@@ -57,7 +57,7 @@ public class ConsoleLogFormatter extends Formatter
 		output.append("-");
 		output.append(df2.format(calendar.get(GregorianCalendar.DAY_OF_MONTH)));
 		output.append(" ");
-		output.append(df2.format(calendar.get(GregorianCalendar.DAY_OF_MONTH)));
+		output.append(df2.format(calendar.get(GregorianCalendar.HOUR_OF_DAY)));
 		output.append(":");
 		output.append(df2.format(calendar.get(GregorianCalendar.MINUTE)));
 		output.append(":");

@@ -106,6 +106,7 @@ public class Dispatcher implements Runnable {
 		this.eventHandlerPool = threadPool;
 		this.selector = SelectorProvider.provider().openSelector();
 		this.dgc = new DGC(this);
+		// FIXME for testing only
 		dgc.start();
 		_log.fine("end");
 	}
@@ -130,45 +131,8 @@ public class Dispatcher implements Runnable {
 		isRunning = true;
 		while (!shutdown) {
 			try {
-				// Process any pending selector changes
-				// this means read/write interests and registrations
-				synchronized (this.pendingChanges) {
-					
-					Iterator<ChangeRequest> changes = this.pendingChanges.iterator();
-					while (changes.hasNext()) {
-						
-						ChangeRequest change = (ChangeRequest) changes.next();
-						
-						if (_log.isLoggable(Level.FINER))
-							_log.finer("changerequest: "+change);
-						
-						switch (change.type) {
-
-							case ChangeRequest.CHANGEOPS:
-								if (_log.isLoggable(Level.FINER))
-									_log.finer("changing ops ... CHANGEOPS changerequest: "+change);
-								SelectionKey key = change.socket.keyFor(this.selector);
-								if (key==null) {
-									_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelString(change.socket)+" is 'gone'... CHANGEOPS changerequest: "+change);
-									dgc.removeKey(key);
-									cancelWaitingMonitors(change.socket);
-								} else {
-									key.interestOps(change.ops);
-								}
-								break;
-								
-							case ChangeRequest.REGISTER:
-								if (_log.isLoggable(Level.FINER))
-									_log.finer("registering ... REGISTER changerequest: "+change);
-								SelectionKey connectedClientKey = change.socket.register(this.selector, change.ops);
-								dgc.addKey(connectedClientKey);
-								break;
-								
-						}
-					}
-					this.pendingChanges.clear();
-				}
-				// -------------
+				
+				processPendingChanges();
 
 				_log.finer("W A I T I N G for an event");
 				int numOfselectableKeys = selector.select();
@@ -199,32 +163,38 @@ public class Dispatcher implements Runnable {
 						// Check what event is available and deal with it
 						if (key.isAcceptable()){ // used by the server
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("key="+Utils.getKeyString(key)+" is acceptable. Accepting is done by the 'Acceptor'!");
+								_log.finer("key is acceptable. Accepting is done by the 'Acceptor'!");
 							
 						} else if (key.isConnectable()) { // used by the client
 
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("key="+Utils.getKeyString(key)+" key="+key+" is connectable.  FinishConnection is done by the 'Client'!");
+								_log.finer("key is connectable.  FinishConnection is done by the 'Client'!");
 							
 						} else if (key.isReadable()) {
 
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("key="+Utils.getKeyString(key)+" is readable");
-							
+								_log.finer("key is readable");
+							_log.finest("ops1="+key.interestOps());
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_READ); // deregister for read-events
+							key.attach(true);
+							_log.finest("ops2="+key.interestOps());
+//							selectorChangeRequest((SocketChannel)key.channel(), ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE);
 							handleRead(key);
 							
 						} else if (key.isWritable()) {
 							
 							if (_log.isLoggable(Level.FINER))
-								_log.finer("key="+Utils.getKeyString(key)+" is writeable");
-
+								_log.finer("key  is writeable");
+							_log.finest("ops1="+key.interestOps());
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
+							_log.finest("ops2="+key.interestOps());
+//							selectorChangeRequest((SocketChannel)key.channel(), ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
+							
 							try {
 								handleWrite(key);
 							} catch (IOException e){
 								if (_log.isLoggable(Level.FINE))
-									_log.fine("key="+Utils.getKeyString(key)+": exception: "+e.getMessage());
+									_log.fine("key : exception: "+e.getMessage());
 							}
 							
 						}
@@ -246,6 +216,52 @@ public class Dispatcher implements Runnable {
 	}
 
 
+	/**
+	 * Process any pending selector changes
+ 	 * this means read/write interests and registrations
+	 */
+	private void processPendingChanges() throws ClosedChannelException {
+		
+		synchronized (this.pendingChanges) {
+			
+			Iterator<ChangeRequest> changes = this.pendingChanges.iterator();
+			while (changes.hasNext()) {
+				
+				ChangeRequest change = (ChangeRequest) changes.next();
+				
+				if (_log.isLoggable(Level.FINER))
+					_log.finer("changerequest: "+change);
+				
+				switch (change.type) {
+
+					case ChangeRequest.CHANGEOPS:
+						
+						SelectionKey key = change.socket.keyFor(this.selector);
+						
+						if (key==null) {
+							_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelString(change.socket)+" is 'gone'... changerequest was: "+change);
+							dgc.removeKey(key);
+							cancelWaitingMonitors(change.socket);
+							
+						} else {
+							key.interestOps(change.ops);
+						}
+						break;
+						
+					case ChangeRequest.REGISTER:
+
+						SelectionKey connectedClientKey = change.socket.register(this.selector, change.ops);
+						dgc.addKey(connectedClientKey);
+						break;
+						
+				}
+			}
+			this.pendingChanges.clear();
+		}
+		// -------------
+	}
+
+
 
 	private void handleRead(SelectionKey key) {
 		_log.fine("begin");
@@ -255,37 +271,57 @@ public class Dispatcher implements Runnable {
 	
 	private void handleWrite(SelectionKey key) throws IOException {
 		_log.fine("begin");
-	    SocketChannel socketChannel = (SocketChannel) key.channel();
-	    if (_log.isLoggable(Level.FINER)){
-	    	_log.finer("sending data for key="+Utils.getKeyString(key)+" from queue");
-	    }
-	    synchronized (this.pendingData) {
-	      List<ByteBuffer> queue = (List<ByteBuffer>) this.pendingData.get(socketChannel);
-	      
-	      // Write until there's not more data ...
-	      while (!queue.isEmpty()) {
-	        ByteBuffer buf = (ByteBuffer) queue.get(0);
-	        socketChannel.write(buf);
-	        if (buf.remaining() > 0) {
-	          // ... or the socket's buffer fills up
-	          break;
-	        }
-	        queue.remove(0);
-	      }
-	      
-	      if (queue.isEmpty()) {
-	        // We wrote away all data, so we're no longer interested
-	        // in writing on this socket. Switch back to waiting for
-	        // data.
-	        key.interestOps(SelectionKey.OP_READ);
-	      }
-	    }
-	    _log.fine("end");	
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		
+		if (_log.isLoggable(Level.FINER)) {
+			_log.finer("sending data for key=" + Utils.getKeyString(key) + " from queue");
+		}
+		
+		synchronized (this.pendingData) {
+		
+			List<ByteBuffer> queue = (List<ByteBuffer>) this.pendingData.get(socketChannel);
+
+			// Write until there's not more data ...
+			while (!queue.isEmpty()) {
+				
+				ByteBuffer buf = (ByteBuffer) queue.get(0);
+
+				if (_log.isLoggable(Level.FINEST)) {
+					_log.finest(Utils.inspectPacket(buf));
+				}
+
+				socketChannel.write(buf);
+				
+				if (buf.remaining() > 0) {
+					// ... or the socket's buffer fills up
+					break;
+				}
+				queue.remove(0);
+				
+			}
+
+			if (queue.isEmpty()) {
+				// We wrote away all data, so we're no longer interested
+				// in writing on this socket. Switch back to waiting for
+				// data.
+				_log.fine("sending is done. no more data in queue. return to OP_READ");
+				Boolean bool = (Boolean) key.attachment();
+				if (bool!=null && bool.booleanValue()){
+					_log.warning("key is currently being read!!! do nothing!!!");
+				} else {
+					_log.warning("key is not in use, set OP to OP_READ!");
+					key.interestOps(SelectionKey.OP_READ);
+				}
+//				selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
+//				key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
+			}
+		}
+		_log.fine("end");
 	}
 	
 	/**
-	 * Sends the data to the socketchannel
-	 * Be warned: only the data from start to position is sent
+	 * Sends the data to the socketchannel Be warned: only the data from start
+	 * to position is sent
 	 */
 	protected void send(SelectionKey key, ByteBuffer packet) {
 		_log.fine("begin");
@@ -297,7 +333,7 @@ public class Dispatcher implements Runnable {
 		}
 		
 		
-		// And queue the data we want written
+		// queue the data we want written
 		synchronized (this.pendingData) {
 			List<ByteBuffer> queue = this.pendingData.get(socketChannel);
 			if (queue == null) {
@@ -305,12 +341,16 @@ public class Dispatcher implements Runnable {
 				this.pendingData.put(socketChannel, queue);
 			}
 				
+			queue.add(packet);
+			
 			if (_log.isLoggable(Level.FINEST)){
 				_log.finer("added packet for key="+Utils.getKeyString(key)+" with limit="+packet.limit()+" position="+packet.position()+" to queue");
 			}
-			queue.add(packet);
+			
 		}
-
+		if (_log.isLoggable(Level.FINER)) {
+			_log.finer("changing key="+Utils.getKeyString(key)+" to OP_WRITE");
+		}
 		selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE);
 
 		_log.fine("end");
@@ -440,7 +480,10 @@ public class Dispatcher implements Runnable {
 		if (args != null) {
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof SimonRemote) {
-					SimonCallback sc = new SimonCallback((SimonRemote)args[i]);
+					SimonCallback sc = new SimonCallback(key,(SimonRemote)args[i]);
+					if (_log.isLoggable(Level.FINER)){
+						_log.fine("SimonCallback found! id="+sc.getId());
+					}
 					lookupTable.putRemoteBinding(sc.getId(), (SimonRemote)args[i]);
 					args[i] = sc; // overwrite arg with wrapped callback-interface
 				}
@@ -882,7 +925,7 @@ public class Dispatcher implements Runnable {
 	 			_log.fine("end. requestID="+requestID);
 			getRequestResult(requestID);			
 			long receivePong = System.nanoTime();
-			return (int)(receivePong-startPing);
+			return receivePong-startPing;
 		}
 	}
 

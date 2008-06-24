@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -44,6 +45,8 @@ public class SimonProxy implements InvocationHandler {
 	/** local socket-endpoint for communication with remote */
 	private Dispatcher dispatcher;
 	private SelectionKey key;
+//private WeakReference<Dispatcher> dispatcherReference;
+//private WeakReference<SelectionKey> keyReference;
 	
 	/**
 	 * 
@@ -54,8 +57,11 @@ public class SimonProxy implements InvocationHandler {
 	 */
 	public SimonProxy(Dispatcher dispatcher, SelectionKey key, String remoteObjectName) {
 		this.dispatcher = dispatcher;
-		this.remoteObjectName = remoteObjectName;
 		this.key = key;
+//		dispatcherReference = new WeakReference<Dispatcher>(dispatcher);
+//		keyReference = new WeakReference<SelectionKey>(key);
+
+		this.remoteObjectName = remoteObjectName;
 	}
 
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -96,6 +102,7 @@ public class SimonProxy implements InvocationHandler {
 		 */
 		//Utils.debug("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
 		Object result = dispatcher.invokeMethod(key, remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
+//		Object result = dispatcherReference.get().invokeMethod(keyReference.get(), remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
 		// Check for exceptions ...
@@ -111,6 +118,7 @@ public class SimonProxy implements InvocationHandler {
 			listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
 			SimonProxy handler = new SimonProxy(dispatcher, key, simonCallback.getId());
+//			SimonProxy handler = new SimonProxy(dispatcherReference.get(), keyReference.get(), simonCallback.getId());
 
 			// reimplant the proxy object
 			result = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, handler);
@@ -126,10 +134,12 @@ public class SimonProxy implements InvocationHandler {
 	// FIXME reimplement asking for ip-address of client
 	protected InetAddress getInetAddress() {
 		return ((SocketChannel)key.channel()).socket().getInetAddress();
+//		return ((SocketChannel)keyReference.get().channel()).socket().getInetAddress();
 	}
 	
 	protected int getPort(){
 		return ((SocketChannel)key.channel()).socket().getPort();
+//		return ((SocketChannel)keyReference.get().channel()).socket().getPort();
 	}
 	
 	private String remoteToString() throws SimonRemoteException {
@@ -140,6 +150,7 @@ public class SimonProxy implements InvocationHandler {
 						"|endpoint"+
 						"|invocationHandler="+super.toString()+
 						"|remote="+dispatcher.invokeToString(key, remoteObjectName)+
+//						"|remote="+dispatcherReference.get().invokeToString(keyReference.get(), remoteObjectName)+
 					"]";
 		} catch (IOException e) {
 			throw new SimonRemoteException(e.getMessage());
@@ -148,10 +159,19 @@ public class SimonProxy implements InvocationHandler {
 	
 	private int remoteHashCode() throws IOException {
 		return dispatcher.invokeHashCode(key, remoteObjectName);
+//		return dispatcherReference.get().invokeHashCode(keyReference.get(), remoteObjectName);
 	}
 	
 	private boolean remoteEquals(Object object) throws IOException {
 		return dispatcher.invokeEquals(key, remoteObjectName, object);
+//		return dispatcherReference.get().invokeEquals(keyReference.get(), remoteObjectName, object);
 	}
-
+	
+	@Override
+	protected void finalize() throws Throwable {
+		// TODO Auto-generated method stub
+		super.finalize();
+		System.out.println("Proxy wird aufgeräumt");
+	}
+	
 }

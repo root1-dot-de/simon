@@ -80,13 +80,20 @@ public class ChangeRequest {
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
-		sb.append("[socket=");
-		sb.append(socket);
-		sb.append("|type=");
-		sb.append(type);
-		sb.append("|ops=");
+		sb.append("[changerequest|");
+		sb.append(Utils.getChannelString(socket));
+		sb.append("type=");
+		sb.append(getTypeAsString());
+		sb.append(",ops=");
 		sb.append(Utils.getSelectionKeyString(ops));
 		sb.append("]");
 		return sb.toString();
+	}
+
+	private String getTypeAsString() {
+		if (type==CHANGEOPS) return "CHANGEOPS";
+		else
+		if (type==REGISTER) return "REGISTER";
+		else return "UNKNOWN_TYPE";
 	}
 }

@@ -19,6 +19,8 @@
 package de.root1.simon;
 
 import java.io.Serializable;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,9 +49,19 @@ public class SimonCallback implements Serializable {
 	 * 
 	 * @param callback
 	 */
-	public SimonCallback(SimonRemote callback) {
+	public SimonCallback(SelectionKey key, SimonRemote callback) {
 		_log.fine("begin");
-		this.id = callback.toString();
+		
+		SocketChannel socketChannel = (SocketChannel) key.channel();
+		String IP = socketChannel.socket().getInetAddress().getHostAddress();
+		int remotePort = socketChannel.socket().getPort();
+		int localPort = socketChannel.socket().getLocalPort();
+		
+		this.id = "["+callback.getClass().getName()+"|ip="+IP+";l_port="+localPort+";r_port="+remotePort+"]";
+		
+		if (_log.isLoggable(Level.FINER)){
+			_log.finer("callbackId="+this.id);
+		}
 
 		// get the interfaces the arg has implemented
 		Class<?>[] callbackInterfaceClasses = callback.getClass().getInterfaces();
@@ -108,6 +120,10 @@ public class SimonCallback implements Serializable {
 		return id;
 	}
 	
-
+	@Override
+	protected void finalize() throws Throwable {
+		// TODO Auto-generated method stub
+		super.finalize();
+	}
 
 }

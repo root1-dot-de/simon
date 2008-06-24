@@ -39,6 +39,10 @@ public class TxPacket {
 	public void setHeader(byte type, int requestID) {
 		this.msgType = type;
 		this.requestID = requestID;
+		
+		bb.put(Statics.SIMON_PACKET_HEADER_ID0);
+		bb.put(Statics.SIMON_PACKET_HEADER_ID1);
+		
 		bb.put(type);
 		bb.putInt(requestID);
 		bb.position(bb.position()+4); // skip next 4 bytes. they are reserved for the body size
@@ -134,8 +138,8 @@ public class TxPacket {
 	public void setComplete(){
 		int pos = bb.position();
 		//Utils.debug("TxPacket.setComplete() -> position1="+bb.position());
-		bb.position(5); // positioniere den Zeiger für das einfügen der Länge des Packet-Bodys
-		bodySize = pos-9;
+		bb.position(7); // positioniere den Zeiger für das einfügen der Länge des Packet-Bodys
+		bodySize = pos-11;
 		bb.putInt(bodySize); // Die position - den Header von 9 Bytes ergibt den Body
 		bb.position(pos);
 		//Utils.debug("TxPacket.setComplete() -> position2="+bb.position());
