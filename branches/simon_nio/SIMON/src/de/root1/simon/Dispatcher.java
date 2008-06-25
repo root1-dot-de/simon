@@ -20,6 +20,7 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -106,7 +107,6 @@ public class Dispatcher implements Runnable {
 		this.eventHandlerPool = threadPool;
 		this.selector = SelectorProvider.provider().openSelector();
 		this.dgc = new DGC(this);
-		// FIXME for testing only
 		dgc.start();
 		_log.fine("end");
 	}
@@ -119,7 +119,7 @@ public class Dispatcher implements Runnable {
 	 * @return a request ID
 	 */
 	private Integer generateRequestID() {
-		return requestIdCounter++;
+		return (++requestIdCounter == Integer.MAX_VALUE ? 0 : requestIdCounter);
 	}
 	
 	/**
@@ -129,7 +129,9 @@ public class Dispatcher implements Runnable {
 	public void run() {
 		_log.fine("begin");
 		isRunning = true;
+		SelectionKey key = null;
 		while (!shutdown) {
+			
 			try {
 				
 				processPendingChanges();
@@ -139,63 +141,57 @@ public class Dispatcher implements Runnable {
 
 				if (numOfselectableKeys>0) {
 
-					if (_log.isLoggable(Level.FINER))
-						_log.finer(numOfselectableKeys+ " keys ready");	
+					if (_log.isLoggable(Level.FINER)) {
+						_log.finer(numOfselectableKeys+ " keys ready");
+					}
 					
 					// Iterate over the set of keys for which events are available
 					Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
 					while (selectedKeys.hasNext()) {
 					
-						SelectionKey key = (SelectionKey) selectedKeys.next();
+						key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
 						 
 						if (_log.isLoggable(Level.FINER)){
+
+							_log.finer("processing key="+Utils.getKeyString(key));
 							
-							_log.finer("key="+Utils.getKeyString(key));
 						}
 						
 						if (!key.isValid()) {
-							if (_log.isLoggable(Level.FINER))
-								_log.finer("key is invalid: "+key);
+							_log.finer("key is invalid: "+key);
 							continue; // .. with next in "while"
 						}
 	
 						// Check what event is available and deal with it
 						if (key.isAcceptable()){ // used by the server
-							if (_log.isLoggable(Level.FINER))
-								_log.finer("key is acceptable. Accepting is done by the 'Acceptor'!");
+
+							_log.finer("key is acceptable. Accepting is done by the 'Acceptor'!");
 							
 						} else if (key.isConnectable()) { // used by the client
 
-							if (_log.isLoggable(Level.FINER))
-								_log.finer("key is connectable.  FinishConnection is done by the 'Client'!");
+							_log.finer("key is connectable.  FinishConnection is done by the 'Client'!");
 							
 						} else if (key.isReadable()) {
 
-							if (_log.isLoggable(Level.FINER))
-								_log.finer("key is readable");
-							_log.finest("ops1="+key.interestOps());
+							_log.finer("key is readable");
+
+//							_log.finest("ops1="+key.interestOps());
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_READ); // deregister for read-events
-							key.attach(true);
-							_log.finest("ops2="+key.interestOps());
-//							selectorChangeRequest((SocketChannel)key.channel(), ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE);
+							key.attach(true); // remember that his key is currently being read ...
+//							_log.finest("ops2="+key.interestOps());
+							
 							handleRead(key);
 							
 						} else if (key.isWritable()) {
 							
 							if (_log.isLoggable(Level.FINER))
 								_log.finer("key  is writeable");
-							_log.finest("ops1="+key.interestOps());
+//							_log.finest("ops1="+key.interestOps());
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
-							_log.finest("ops2="+key.interestOps());
-//							selectorChangeRequest((SocketChannel)key.channel(), ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
-							
-							try {
-								handleWrite(key);
-							} catch (IOException e){
-								if (_log.isLoggable(Level.FINE))
-									_log.fine("key : exception: "+e.getMessage());
-							}
+//							_log.finest("ops2="+key.interestOps());
+
+							handleWrite(key);
 							
 						}
 					}
@@ -205,9 +201,17 @@ public class Dispatcher implements Runnable {
 						_log.finer("no keys available");
 				}
 				
+			} catch (IOException e) {
+				
+				_log.warning("I/O Exception: "+e.getMessage());
+				
+				if (key!=null) {
+					cancelKey(key);
+				}
+				
 			} catch (Exception e) {
-				// FIXME Exception richtig fangen
-				_log.severe("Exception: e="+e+" msg="+e.getMessage());e.printStackTrace();		
+				// TODO correct exception handling here?
+				_log.severe("Generel Exception: e="+e+" msg="+e.getMessage());e.printStackTrace();		
 
 				wakeAllMonitors();
 			}
@@ -217,8 +221,8 @@ public class Dispatcher implements Runnable {
 
 
 	/**
-	 * Process any pending selector changes
- 	 * this means read/write interests and registrations
+	 * Process any pending selector changes. 
+ 	 * (changing read/write interests and registrations)
 	 */
 	private void processPendingChanges() throws ClosedChannelException {
 		
@@ -304,13 +308,20 @@ public class Dispatcher implements Runnable {
 				// We wrote away all data, so we're no longer interested
 				// in writing on this socket. Switch back to waiting for
 				// data.
-				_log.fine("sending is done. no more data in queue. return to OP_READ");
-				Boolean bool = (Boolean) key.attachment();
-				if (bool!=null && bool.booleanValue()){
-					_log.warning("key is currently being read!!! do nothing!!!");
+				
+				_log.fine("sending is done. no more data in queue. return key="+Utils.getKeyString(key)+" to OP_READ");
+				Boolean keyInReadProcess = (Boolean) key.attachment();
+				
+				if (keyInReadProcess!=null && keyInReadProcess.booleanValue()){
+					
+					_log.finer("key is currently being read!!! do nothing!!!");
+					
 				} else {
-					_log.warning("key is not in use, set OP to OP_READ!");
-					key.interestOps(SelectionKey.OP_READ);
+				
+					_log.finer("key is not in use, set OP to OP_READ!");
+//					key.interestOps(SelectionKey.OP_READ);
+					selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
+					
 				}
 //				selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
 //				key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
@@ -323,7 +334,7 @@ public class Dispatcher implements Runnable {
 	 * Sends the data to the socketchannel Be warned: only the data from start
 	 * to position is sent
 	 */
-	protected void send(SelectionKey key, ByteBuffer packet) {
+	protected void send(SelectionKey key, ByteBuffer packet) throws CancelledKeyException {
 		_log.fine("begin");
 		
 		SocketChannel socketChannel = (SocketChannel) key.channel();
@@ -697,7 +708,6 @@ public class Dispatcher implements Runnable {
 	}
 
 	/** 
-	 * TODO should be placed outside the dispatcher?
 	 * wake all waiting processes. This is only called due to global errors ...
 	 */
 	private void wakeAllMonitors() {
@@ -946,6 +956,15 @@ public class Dispatcher implements Runnable {
 				// nothing to do
 			}
 		}
+		_log.fine("end");
+	}
+
+
+	public void cancelKey(SelectionKey key) {
+		_log.fine("begin");
+		cancelWaitingMonitors(key.channel());
+		key.cancel();
+		selector.wakeup();
 		_log.fine("end");
 	}
 	

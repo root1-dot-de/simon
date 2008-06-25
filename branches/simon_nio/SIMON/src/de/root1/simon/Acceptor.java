@@ -39,7 +39,7 @@ import de.root1.simon.utils.Utils;
  */
 public class Acceptor implements Runnable {
 
-	private int serverPort = 2000;
+	private int listenPort = 2000;
 	private boolean isRunning = true;
 	private ServerSocketChannel serverChannel;
 	private Selector socketSelector;
@@ -50,14 +50,18 @@ public class Acceptor implements Runnable {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for constructor 'Acceptor', by 'ACHR'..
+	 * Creates a new Acceptor.
+	 * For moving accepted channels to the dispatcher, we need a reference to an dispatcher.
+	 * Also we need a Port where the Acceptor listens for new connections.
 	 * 
-	 * @throws IOException
+	 * @param dispatcher the dispatcher which gets the accepted channels
+	 * @param listenPort the port the server listens for incoming connections
+	 * @throws IOException if there is an I/O error
 	 */
-	Acceptor(Dispatcher dispatcher, int serverPort) throws IOException {
+	Acceptor(Dispatcher dispatcher, int listenPort) throws IOException {
 		_log.fine("begin");
 		
-		this.serverPort = serverPort;
+		this.listenPort = listenPort;
 		this.dispatcher = dispatcher;
 		
 		initSelector();
@@ -148,7 +152,7 @@ public class Acceptor implements Runnable {
 		serverChannel.configureBlocking(false);
 
 		// Bind the server socket to the specified address and port
-		InetSocketAddress isa = new InetSocketAddress("0.0.0.0", serverPort);
+		InetSocketAddress isa = new InetSocketAddress("0.0.0.0", listenPort);
 		serverChannel.socket().bind(isa);
 
 		register = serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);

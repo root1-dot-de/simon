@@ -99,8 +99,14 @@ public class DGC extends Thread {
 		isRunning = true;
 		while (!shutdown){
 			
-			// for each known client ...
-			for (SelectionKey clientKey : clientKeyList) {
+			// make a local copy
+			List<SelectionKey> tempClientKeyList;
+			synchronized (clientKeyList) {
+				tempClientKeyList = new ArrayList<SelectionKey>(clientKeyList);				
+			}
+			
+			// for each known client in the local copy
+			for (SelectionKey clientKey : tempClientKeyList) {
 				
 				if (_log.isLoggable(Level.FINEST))
 					_log.finest("running ping-packet");
@@ -126,9 +132,11 @@ public class DGC extends Thread {
 	 * 
 	 * @param connectedClientKey
 	 */
-	public synchronized void addKey(SelectionKey connectedClientKey) {
+	public void addKey(SelectionKey connectedClientKey) {
 		_log.finest("Adding client key to dgc list");
-		clientKeyList.add(connectedClientKey);		
+		synchronized (clientKeyList) {
+			clientKeyList.add(connectedClientKey);				
+		}
 	}
 
 	/**
@@ -165,7 +173,9 @@ public class DGC extends Thread {
 	 * 
 	 * @param key
 	 */
-	public synchronized void removeKey(SelectionKey key) {
-		clientKeyList.remove(key);
+	public void removeKey(SelectionKey key) {
+		synchronized (clientKeyList) {
+			clientKeyList.remove(key);
+		}
 	}
 }

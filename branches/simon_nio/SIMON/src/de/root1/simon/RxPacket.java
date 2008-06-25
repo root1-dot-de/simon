@@ -24,8 +24,6 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import de.root1.simon.utils.Utils;
-
 public class RxPacket {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
@@ -61,7 +59,7 @@ public class RxPacket {
 		if (simonPacketHeaderId0!=Statics.SIMON_PACKET_HEADER_ID0 
 				|| simonPacketHeaderId1!=Statics.SIMON_PACKET_HEADER_ID1) {
 			
-			// FIXME
+			// FIXME what to do if header is wrong?
 			_log.severe("packet header failure! Exiting system.  header_id0=0x"+Integer.toHexString(simonPacketHeaderId0)+"  header_id1=0x"+Integer.toHexString(simonPacketHeaderId1));
 			System.exit(1);
 		}

@@ -22,7 +22,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.ConnectException;
@@ -46,8 +45,6 @@ public class Simon {
 	
 	private static Registry registry;
 	private static LookupTable lookupTable = new LookupTable();
-	
-	private ReferenceQueue<Proxy> simonProxyReferenceQueue = new ReferenceQueue<Proxy>();
 	
 	/*
 	 * Different ThreadPool implementations

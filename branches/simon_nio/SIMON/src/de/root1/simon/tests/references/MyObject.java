@@ -1,5 +1,4 @@
 package de.root1.simon.tests.references;
-import java.lang.ref.*;
 class MyObject
 {
   protected void finalize() throws Throwable
