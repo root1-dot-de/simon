@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
@@ -156,6 +157,9 @@ class ReadEventHandler implements Runnable {
 					dispatcher.putResultToQueue(requestID, new InvalidPacketTypeException(msg));
 			}
 			
+		} catch (CancelledKeyException e) {
+			_log.severe("key cancelled exception: "+e.getMessage());
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException("I/O exception, connection broken: "+e.getMessage()));			
 		} catch (IOException e) {
 			dispatcher.cancelKey(key);
 			_log.severe("I/O exception: "+e.getMessage());
