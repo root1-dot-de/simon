@@ -38,11 +38,17 @@ import de.root1.simon.exceptions.EstablishConnectionFailed;
  */
 public class Client {
 	
+	/** TODO describe member */
 	private Dispatcher dispatcher;
+	
+	/** TODO describe member */
 	private SocketChannel clientSocketChannel;
+	
+	/** TODO describe member */
 	private Selector selector;
+	
+	/** TODO describe member */
 	private SelectionKey key;
-	private int requestIdCounter;
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
@@ -56,8 +62,19 @@ public class Client {
 		_log.fine("end");
 	}
 	
-	public void connect(String host, int port) throws IOException, EstablishConnectionFailed{
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'connect', by 'ACHR'..
+	 * 
+	 * @param host
+	 * @param port
+	 * @throws IOException
+	 * @throws EstablishConnectionFailed
+	 */
+	public void connect(String host, int port) throws IOException, EstablishConnectionFailed {
+		
 		_log.fine("begin");
+		
 		selector = SelectorProvider.provider().openSelector();
 		clientSocketChannel = SocketChannel.open();
 		clientSocketChannel.configureBlocking(false);
@@ -96,7 +113,7 @@ public class Client {
 					
 					// Cancel the channel's registration with our selector
 					key.cancel();
-					throw new EstablishConnectionFailed("could not establish connectionto server. is server running? error-msg:"+e);
+					throw new EstablishConnectionFailed("could not establish connection to server. is server running? error-msg:"+e);
 					
 				}
 				
@@ -109,18 +126,20 @@ public class Client {
 	
 	/**
 	 * 
-	 * Generates a request ID
+	 * TODO: Documentation to be done for method 'getKey', by 'ACHR'..
 	 * 
-	 * @return a request ID
+	 * @return
 	 */
-	Integer generateRequestID() {
-		return requestIdCounter++;
-	}
-
 	public SelectionKey getKey() {
 		return key;
 	}
 	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'getChannelToServer', by 'ACHR'..
+	 * 
+	 * @return
+	 */
 	public SelectableChannel getChannelToServer() {
 		return key.channel();
 	}

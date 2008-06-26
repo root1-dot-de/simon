@@ -440,10 +440,12 @@ public class Utils {
 		
 		sb.append("[");
 		sb.append(getChannelString(key.channel()));
-		sb.append("interestOps=");
-		sb.append(Utils.getSelectionKeyString(key.interestOps()));
-		sb.append(",readyOps=");
-		sb.append(Utils.getSelectionKeyString(key.readyOps()));
+		if (key.isValid()) {
+			sb.append("interestOps=");
+			sb.append(Utils.getSelectionKeyString(key.interestOps()));
+			sb.append(",readyOps=");
+			sb.append(Utils.getSelectionKeyString(key.readyOps()));
+		}
 		sb.append("]");
 		
 		return sb.toString();

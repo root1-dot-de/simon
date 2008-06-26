@@ -151,26 +151,40 @@ class ReadEventHandler implements Runnable {
 					break;
 					
 				default :
-					// TODO exception catched correctly?
-					String msg ="packet with msgType=0x"+Integer.toHexString(msgType)+" is unknown. "+Utils.inspectPacket(rxPacket.getByteBuffer());
+					String msg ="packet with msgType=0x"+Integer.toHexString(msgType)+" is unknown "+Utils.getKeyString(key)+". "+Utils.inspectPacket(rxPacket.getByteBuffer());
 					_log.warning(msg);
 					dispatcher.putResultToQueue(requestID, new InvalidPacketTypeException(msg));
 			}
 			
 		} catch (CancelledKeyException e) {
-			_log.severe("key cancelled exception: "+e.getMessage());
-			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException("I/O exception, connection broken: "+e.getMessage()));			
+			
+			String msg = "I/O exception, connection broken on "+Utils.getKeyString(key)+": "+e.getMessage();
+			
+			_log.severe(msg);
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
+			
 		} catch (IOException e) {
+			
 			dispatcher.cancelKey(key);
-			_log.severe("I/O exception: "+e.getMessage());
-			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException("I/O exception, connection broken: "+e.getMessage()));
+
+			String msg = "I/O exception on "+Utils.getKeyString(key)+". Maybe client released the remote object. errorMsg: "+e.getMessage();
+			
+			_log.fine(msg);
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
+			
 		} catch (ClassNotFoundException e) {
-			_log.warning("class not found: "+e.getMessage());
-			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException("class not found: "+e.getMessage()));
+			
+			String msg = "class not found on "+Utils.getKeyString(key)+": "+e.getMessage();
+			_log.warning(msg);
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
 		} catch (LookupFailedException e) {
-			_log.fine("lookup failed!");
-			if (requestID!=-1) dispatcher.putResultToQueue(requestID, e);
+			
+			String msg = "lookup failed on "+Utils.getKeyString(key)+"!";
+			
+			_log.fine(msg);
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new LookupFailedException(msg));
+			
 		}
 		_log.fine("end");
 	}

@@ -177,7 +177,18 @@ public class Simon {
 	 * @return the port on the remote-side
 	 */
 	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
-		return getSimonProxy(proxyObject).getPort();
+		return getSimonProxy(proxyObject).getRemotePort();
+	}
+	
+	/**
+	 * 
+	 * Gets the socket-port used on the local-side of the given proxy object
+	 * 
+	 * @param proxyObject the proxy-object
+	 * @return the port on the local-side
+	 */
+	public static int getLocalPort(Object proxyObject) throws IllegalArgumentException {
+		return getSimonProxy(proxyObject).getLocalPort();
 	}
 	
 	/**
@@ -252,6 +263,13 @@ public class Simon {
 		} else {
 			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory("Dispatcher.WorkerPool"));
 		}
+	}
+	
+	public static void release(Object proxyObject) {
+		_log.fine("begin");
+		SimonProxy proxy = getSimonProxy(proxyObject);
+		proxy.release();
+		_log.fine("end");
 	}
 	
 	

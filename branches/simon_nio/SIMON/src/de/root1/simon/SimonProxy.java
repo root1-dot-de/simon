@@ -39,30 +39,32 @@ public class SimonProxy implements InvocationHandler {
 	
 	/** name of the corresponding remoteobject in the remote-lookuptable */
 	private String remoteObjectName;
-;
 	
-	/** local socket-endpoint for communication with remote */
+	/** TODO member has to be described */
 	private Dispatcher dispatcher;
+	
+	/** TODO member has to be described */
 	private SelectionKey key;
-//private WeakReference<Dispatcher> dispatcherReference;
-//private WeakReference<SelectionKey> keyReference;
 	
 	/**
 	 * 
-	 * Constructor which sets the reference to the endpoint and the remoteobject name
+	 * Constructor which sets the reference to the dispatcher and the remoteobject name
 	 * 
-	 * @param endpoint reference to the endpoint
+	 * @param dispatcher TODO
+	 * @param key TODO
 	 * @param remoteObjectName name of the remoteobject
 	 */
 	public SimonProxy(Dispatcher dispatcher, SelectionKey key, String remoteObjectName) {
 		this.dispatcher = dispatcher;
 		this.key = key;
-//		dispatcherReference = new WeakReference<Dispatcher>(dispatcher);
-//		keyReference = new WeakReference<SelectionKey>(key);
 
 		this.remoteObjectName = remoteObjectName;
 	}
 
+	/**
+	 * 
+	 * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
+	 */
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (_log.isLoggable(Level.FINE)) {
 			_log.fine("begin");
@@ -117,60 +119,100 @@ public class SimonProxy implements InvocationHandler {
 			listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
 			SimonProxy handler = new SimonProxy(dispatcher, key, simonCallback.getId());
-//			SimonProxy handler = new SimonProxy(dispatcherReference.get(), keyReference.get(), simonCallback.getId());
 
 			// reimplant the proxy object
 			result = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, handler);
 			
 			
 		}
-    	//Utils.debug("SimonProxy.invoke() -> end. result="+result);
 		_log.fine("end");
 		return  result;
 	}
 	
 	
-	// FIXME reimplement asking for ip-address of client
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'getInetAddress', by 'ACHR'..
+	 * 
+	 * @return
+	 */
 	protected InetAddress getInetAddress() {
 		return ((SocketChannel)key.channel()).socket().getInetAddress();
-//		return ((SocketChannel)keyReference.get().channel()).socket().getInetAddress();
 	}
 	
-	protected int getPort(){
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'getPort', by 'ACHR'..
+	 * 
+	 * @return
+	 */
+	protected int getRemotePort(){
 		return ((SocketChannel)key.channel()).socket().getPort();
-//		return ((SocketChannel)keyReference.get().channel()).socket().getPort();
 	}
 	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'getLocalPort', by 'ACHR'..
+	 * 
+	 * @return
+	 */
+	protected int getLocalPort(){
+		return ((SocketChannel)key.channel()).socket().getLocalPort();
+	}
+	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'remoteToString', by 'ACHR'..
+	 * 
+	 * @return
+	 * @throws SimonRemoteException
+	 */
 	private String remoteToString() throws SimonRemoteException {
-		// TODO Auto-generated method stub
 		try {
 			return "[Proxy="+remoteObjectName+
-//						"|endpoint="+getInetAddress()+":"+getPort()+
-						"|endpoint"+
 						"|invocationHandler="+super.toString()+
 						"|remote="+dispatcher.invokeToString(key, remoteObjectName)+
-//						"|remote="+dispatcherReference.get().invokeToString(keyReference.get(), remoteObjectName)+
 					"]";
 		} catch (IOException e) {
 			throw new SimonRemoteException(e.getMessage());
 		}
 	}
 	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'remoteHashCode', by 'ACHR'..
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	private int remoteHashCode() throws IOException {
 		return dispatcher.invokeHashCode(key, remoteObjectName);
-//		return dispatcherReference.get().invokeHashCode(keyReference.get(), remoteObjectName);
 	}
 	
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'remoteEquals', by 'ACHR'..
+	 * 
+	 * @param object
+	 * @return
+	 * @throws IOException
+	 */
 	private boolean remoteEquals(Object object) throws IOException {
 		return dispatcher.invokeEquals(key, remoteObjectName, object);
-//		return dispatcherReference.get().invokeEquals(keyReference.get(), remoteObjectName, object);
 	}
-	
-	@Override
-	protected void finalize() throws Throwable {
-		// TODO Auto-generated method stub
-		super.finalize();
-		System.out.println("Proxy wird aufgeräumt");
+
+	/**
+	 * 
+	 * TODO: Documentation to be done for method 'release', by 'ACHR'..
+	 *
+	 */
+	public void release() {
+		_log.fine("begin");
+		dispatcher.cancelKey(key);
+		dispatcher.shutdown();
+		dispatcher=null;
+		remoteObjectName=null;
+		_log.fine("end");
 	}
 	
 }

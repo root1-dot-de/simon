@@ -43,7 +43,8 @@ import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
 
 /**
- * An endpoint represents one end of the socket-connection between client and server.
+ * This is the "main" class of Simon. Each packet has to be handled by this class.<br>
+ * There's only one dispatcher per client/server.
  * 
  * @author ACHR
  */
@@ -72,22 +73,25 @@ public class Dispatcher implements Runnable {
 	// -----------------------
 	// NIO STUFF
 	
-	// The selector we'll be monitoring. This contains alle the connected channels/clients
+	/** The selector we'll be monitoring. This contains alle the connected channels/clients */
 	private Selector selector;
 	
-	// A list of PendingChange instances
+	/** A list of PendingChange instances.  */
 	private List<ChangeRequest> pendingChanges = new LinkedList<ChangeRequest>();
 	
-	// Maps a SocketChannel to a list of ByteBuffer instances
+	/** Maps a SocketChannel to a list of ByteBuffer instances */
 	private Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<SocketChannel, List<ByteBuffer>>();
 	
+	/** the thread-pool where the worker-threads live in */
 	private ExecutorService eventHandlerPool = null;
 
-	// a shutdown-flag
+	/** Shutdownflag. If set to true, the dispatcher is going to shutdown itself and all related stuff */
 	private boolean shutdown;
 
+	/** indicates if the dispatcher is running or not */
 	private boolean isRunning;
 
+	/** a instance of the distributed garbage collector */
 	private DGC dgc;
 	
 
@@ -114,7 +118,10 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * 
-	 * Generates a request ID
+	 * Generates a request ID<br>
+	 * IDs have a unique value from 0..Integer.MAX_VALUE<br>
+	 * The range should be big enough so that there should 
+	 * not be two oder more identical IDs
 	 * 
 	 * @return a request ID
 	 */
@@ -127,9 +134,12 @@ public class Dispatcher implements Runnable {
 	 * @see java.lang.Thread#run()
 	 */
 	public void run() {
+		
 		_log.fine("begin");
+		
 		isRunning = true;
 		SelectionKey key = null;
+		
 		while (!shutdown) {
 			
 			try {
@@ -949,7 +959,8 @@ public class Dispatcher implements Runnable {
 		shutdown = true;
 		selector.wakeup();
 		dgc.shutdown();
-		while (isRunning || dgc.isRunning()) {
+		eventHandlerPool.shutdown();
+		while (isRunning || dgc.isRunning() || !eventHandlerPool.isShutdown()) {
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
