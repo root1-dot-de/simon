@@ -61,6 +61,8 @@ public class Simon {
 	 */
 	private static ExecutorService threadPool = null;
 
+	private static boolean registryCreated;
+
 	private static final String threadPoolName = "Simon.Dispatcher.WorkerPool";
 
 	/**
@@ -117,11 +119,36 @@ public class Simon {
 	 * 
 	 * @param port the port on which SIMON listens for connections
 	 * @throws UnknownHostException if no IP address for the host could be found
+	 * @throws IllegalStateException if a global registry is already created
 	 */
-	public static void createRegistry(int port) throws UnknownHostException{
+	public static void createRegistry(int port) throws UnknownHostException, IllegalStateException{
 		_log.fine("begin");
-		registry = new Registry(lookupTableClient, port, getThreadPool());
-		registry.start();
+		if (!registryCreated) {
+			registry = new Registry(lookupTableClient, port, getThreadPool());
+			registryCreated = true;
+			registry.start();
+		} else {
+			throw new IllegalStateException("global registry already created. Cannot create a " +
+					"second global registry. Please consider to use " +
+					"Simon.createRegistry(InetAddress, int).");
+		}
+		_log.fine("end");
+	}
+	
+	/**
+	 * Stops the global registry. This cleares the {@link LookupTable}, 
+	 * stopps the {@link Acceptor} and the {@link Dispatcher}.
+	 * After running this method, no further connection/communication is possible. YOu have to create
+	 * again a registry to run server mode again.
+	 *
+	 * @throws IllegalStateException if there is no global registry created which can be stopped
+	 */
+	public static void stopRegistry() throws IllegalStateException {
+		_log.fine("begin");
+		if (registryCreated)
+			registry.stop();
+		else
+			throw new IllegalStateException("cannot stop a not started registry");
 		_log.fine("end");
 	}
 	
