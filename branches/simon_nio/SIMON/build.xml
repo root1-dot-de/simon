@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="jPMdbc" default="create_package" basedir=".">
+<project name="SIMON" default="create_package" basedir=".">
     <description>
     	SIMON: a kind of router-friendly RMI replacement
     </description>
 	
-	<property name="version" value="NIO_0.1"/>
+	<property name="version" value="NIO_0.1b"/>
 	
 	<!-- destination of compiled and jared lib -->
 	<property name="dist" location="dist"/>
