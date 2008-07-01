@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -47,20 +48,23 @@ public class Acceptor implements Runnable {
 	
 	protected Logger _log = Logger.getLogger(this.getClass().getName());
 	private SelectionKey register;
+	private InetAddress address;
 
 	/**
 	 * 
 	 * Creates a new Acceptor.
 	 * For moving accepted channels to the dispatcher, we need a reference to an dispatcher.
 	 * Also we need a Port where the Acceptor listens for new connections.
+	 * @param address 
 	 * 
 	 * @param dispatcher the dispatcher which gets the accepted channels
 	 * @param listenPort the port the server listens for incoming connections
 	 * @throws IOException if there is an I/O error
 	 */
-	Acceptor(Dispatcher dispatcher, int listenPort) throws IOException {
+	Acceptor(InetAddress address, Dispatcher dispatcher, int listenPort) throws IOException {
 		_log.fine("begin");
 		
+		this.address = address;
 		this.listenPort = listenPort;
 		this.dispatcher = dispatcher;
 		
@@ -152,7 +156,7 @@ public class Acceptor implements Runnable {
 		serverChannel.configureBlocking(false);
 
 		// Bind the server socket to the specified address and port
-		InetSocketAddress isa = new InetSocketAddress("0.0.0.0", listenPort);
+		InetSocketAddress isa = new InetSocketAddress(address, listenPort);
 		serverChannel.socket().bind(isa);
 
 		register = serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);

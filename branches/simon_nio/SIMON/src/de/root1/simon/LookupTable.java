@@ -189,4 +189,13 @@ public class LookupTable {
         return map;
     }
 
+	/**
+	 * Cleares the whole {@link LookupTable}
+	 *
+	 */
+	public void clear() {
+		bindings.clear();
+		simonRemoteTo_hashToMethod_Map.clear();
+	}
+
 }

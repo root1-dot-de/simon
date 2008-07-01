@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
@@ -44,8 +45,11 @@ public class Simon {
 	
 	protected transient static Logger _log = Logger.getLogger(Simon.class.getName());
 	
+	/** the registry which is created by the server and holds it's own lookup table. */
 	private static Registry registry = null;
-	private static LookupTable lookupTable = new LookupTable();
+	
+	/** the lookup-table that is used by the client */
+	private static LookupTable lookupTableClient = new LookupTable();
 	
 	private static final String dispatcherThreadName = "Simon.Dispatcher";
 	
@@ -60,39 +64,80 @@ public class Simon {
 	private static final String threadPoolName = "Simon.Dispatcher.WorkerPool";
 
 	/**
-	 * Tries to load 'config/simon_logging.properties'
+	 * Try to load 'config/simon_logging.properties'
 	 */
 	static {
+		
+		// only debug, if DEBUG flag is enabled in Utils class
 		if (Utils.DEBUG) {
+			
 			InputStream is;
+			
 			try {
+				
 				is = new FileInputStream("config/simon_logging.properties");
 				LogManager.getLogManager().readConfiguration(is);
+				
 			} catch (FileNotFoundException e) {
+				
 				System.err.println("File not fount: config/logging.properties.\n" +
 						"If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
 						"Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
+				
 			} catch (SecurityException e) {
+				
 				System.err.println("Security exception occured while trying to load config/logging.properties\n" +
 						"Logging with SIMON not possible!.");
+				
 			} catch (IOException e) {
+				
 				System.err.println("Cannot load config/logging.properties ...\n" +
-						"Please make sure that java has access to that file.");
+						"Please make sure that Java has access to that file.");
+				
 			}
 		}
 		_log.log(Level.INFO, "Simon lib loaded");
 	}
 
 	/**
-	 * Creates a registry
-	 * TODO Documentation to be done
-	 * @param port
+	 * Creates a registry (listening on all interfaces) with the scope of a global lookuptable. 
+	 * <br><br>
+	 * <b>Example:</b><br>
+	 * You want to run two servers in one application:<br>
+	 * <ul>
+	 * <li>Server #1 has server object 'A'.</li>
+	 * <li>Server #2 has server object 'B'.</li>
+	 * </ul>
+	 * If you use <i>this</i> method to create the registry, you have to use 
+	 * {@link Simon#bind(String, SimonRemote)} to register remoteobject 'A' and 'B'.
+	 * 
+	 * Remoteobject 'A' is also lookup'able from server #2. And remoteobject 'B' is lookup'able from
+	 * server #1.<br>
+	 * This is what is meant by "scope of global lookuptable".
+	 * 
+	 * @param port the port on which SIMON listens for connections
+	 * @throws UnknownHostException if no IP address for the host could be found
 	 */
-	public static void createRegistry(int port){
+	public static void createRegistry(int port) throws UnknownHostException{
 		_log.fine("begin");
-		registry = new Registry(lookupTable, port, getThreadPool());
+		registry = new Registry(lookupTableClient, port, getThreadPool());
 		registry.start();
 		_log.fine("end");
+	}
+	
+	/**
+	 * Creates a registry with the scope of an own lookup table. 
+	 *  
+	 * @param address
+	 * @param port
+	 * @return
+	 */
+	public static Registry createRegistry(InetAddress address, int port){
+		_log.fine("begin");
+		Registry registry = new Registry(address, port, getThreadPool());
+		registry.start();
+		_log.fine("end");
+		return registry;
 	}
 	
 	/**
@@ -136,7 +181,7 @@ public class Simon {
 				_log.fine("No ClientToServerConnection in list. Creating new one.");
 				
 				try {
-					dispatcher = new Dispatcher(serverString, lookupTable,getThreadPool());
+					dispatcher = new Dispatcher(serverString, lookupTableClient, getThreadPool());
 				} catch (IOException e) {
 					throw new EstablishConnectionFailed(e.getMessage());
 				}
@@ -202,23 +247,23 @@ public class Simon {
 	}
 	
 	/**
-	 * Binds a Object to the registry
-	 * TODO Documentation to be done
+	 * Binds an remote object to the global registry
+	 * 
 	 * @param name a name for object to bind
 	 * @param remoteObject the object to bind
 	 */
 	public static void bind(String name, SimonRemote remoteObject) {
-		lookupTable.putRemoteBinding(name, remoteObject);
+		lookupTableClient.putRemoteBinding(name, remoteObject);
 	}
 	
 	/**
-	 * Unbinds a already bind object from the registry.
+	 * Unbinds a already bind object from the global registry.
 	 *  
 	 * @param name the object to unbind
 	 */
 	public static void unbind(String name){
 		//TODO what to do with already connected users?
-		lookupTable.releaseRemoteBinding(name);
+		lookupTableClient.releaseRemoteBinding(name);
 	}
 
 	/**
