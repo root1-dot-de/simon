@@ -18,21 +18,24 @@
  */
 package de.root1.simon.exceptions;
 
-
+/**
+ * 
+ * General exception used by SIMON. All other "not from SUN" exceptions should extend this class.
+ * 
+ * @author ACHR
+ */
 public class SimonRemoteException extends SimonException {
 	
-	/**
-	 * TODO: Documentation to be done for field 'serialVersionUID', by 'ACHR'..
-	 *
-	 */
 	private static final long serialVersionUID = -4586636119330576150L;
 
+	/**
+	 * 
+	 * Creates a new exception with e exception message
+	 * 
+	 * @param msg a exception message
+	 */
 	public SimonRemoteException(String msg) {
 		super(msg);
 	}
-
-//	public SimonRemoteException(Exception e) {
-//		super(e);
-//	}
 
 }

@@ -93,6 +93,9 @@ public class Dispatcher implements Runnable {
 
 	/** a instance of the distributed garbage collector */
 	private DGC dgc;
+
+	/** an identifier string to determin to which server this dispatcher is connected to  */
+	private String serverString;
 	
 
 	/**
@@ -100,13 +103,16 @@ public class Dispatcher implements Runnable {
 	 * Creates a packet dispatcher which delegates 
 	 * the packet-reading to {@link ReadEventHandler} threads in the given <code>threadPool</code>
 	 * 
+	 * @param serverString an identifier string to determin to which server this dispatcher is 
+	 * connected to. this must be set to <code>null</code> if this dispatcher is a server dispatcher.
 	 * @param lookupTable the global lookup table
 	 * @param threadPool the pool the worker threads live in
 	 * @throws IOException if the {@link Selector} cannot be initiated
 	 */
-	public Dispatcher(LookupTable lookupTable, ExecutorService threadPool) throws IOException {
+	public Dispatcher(String serverString, LookupTable lookupTable, ExecutorService threadPool) throws IOException {
 		_log.fine("begin");
 		
+		this.serverString = serverString;
 		this.lookupTable = lookupTable;
 		this.eventHandlerPool = threadPool;
 		this.selector = SelectorProvider.provider().openSelector();
@@ -114,8 +120,7 @@ public class Dispatcher implements Runnable {
 		dgc.start();
 		_log.fine("end");
 	}
-
-
+	
 	/**
 	 * 
 	 * Generates a request ID<br>
@@ -410,9 +415,12 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */
 	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException {
+		
 		final int requestID = generateRequestID(); 
-		if (_log.isLoggable(Level.FINE))
+		
+		if (_log.isLoggable(Level.FINE)) {
 			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyString(key));
+		}
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(key.channel(), requestID);
@@ -971,12 +979,28 @@ public class Dispatcher implements Runnable {
 	}
 
 
+	/**
+	 * 
+	 * Cancels a key and all waiting monitors.
+	 * 
+	 * @param key the key to cancel
+	 */
 	public void cancelKey(SelectionKey key) {
 		_log.fine("begin");
 		cancelWaitingMonitors(key.channel());
 		key.cancel();
 		selector.wakeup();
 		_log.fine("end");
+	}
+	
+	/**
+	 * 
+	 * Returns the identifier string which determins to which server this dispatcher is connected to
+	 * 
+	 * @return the identifier string. this is <code>null</code> if this dispatcher is a server dispatcher
+	 */
+	public String getServerString() {
+		return serverString;
 	}
 	
 }

@@ -20,7 +20,6 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -31,32 +30,37 @@ import java.util.logging.Logger;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 
 /**
- * This class is used by SIMON to act as a SIMON-Client
+ * This class is used by SIMON to make a socket connection to the server.
+ * After connecting, one can use {@link Client#getKey()} and {@link Client#getChannelToServer()} to
+ * retrieve the connection-stuff.
  *
  * @author achristian
  *
  */
 public class Client {
 	
-	/** TODO describe member */
+	/** the dispatcher which acts on the selector */
 	private Dispatcher dispatcher;
 	
-	/** TODO describe member */
+	/** the socketchannel the client uses to read and write his data */
 	private SocketChannel clientSocketChannel;
 	
-	/** TODO describe member */
+	/** the selector which is used by the client */
 	private Selector selector;
 	
-	/** TODO describe member */
+	/** the relation between the socketchannel and the selector to which the client is connected */
 	private SelectionKey key;
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	/**
-	 * TODO Documentation to be done
-	 * @throws IOException 
+	 * Creates a new instance of {@link Client}.
+	 * 
+	 * @param dispatcher a reference to the dispatcher where the connection is automatically 
+	 * registered after the connection is established.
+	 *  
 	 */
-	public Client(Dispatcher dispatcher) throws IOException {
+	public Client(Dispatcher dispatcher) {
 		_log.fine("begin");
 		this.dispatcher = dispatcher;
 		_log.fine("end");
@@ -64,61 +68,63 @@ public class Client {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'connect', by 'ACHR'..
+	 * Opens a connection the the given server
 	 * 
-	 * @param host
-	 * @param port
-	 * @throws IOException
-	 * @throws EstablishConnectionFailed
+	 * @param host the servers host
+	 * @param port the servers port
+	 * @throws EstablishConnectionFailed if there's a problem establishing a connection to the server
 	 */
-	public void connect(String host, int port) throws IOException, EstablishConnectionFailed {
+	public void connect(String host, int port) throws EstablishConnectionFailed {
 		
 		_log.fine("begin");
+		try {
+			selector = SelectorProvider.provider().openSelector();
+			clientSocketChannel = SocketChannel.open();
+			clientSocketChannel.configureBlocking(false);
 		
-		selector = SelectorProvider.provider().openSelector();
-		clientSocketChannel = SocketChannel.open();
-		clientSocketChannel.configureBlocking(false);
-	
-		// Kick off connection establishment
-		clientSocketChannel.connect(new InetSocketAddress(host, port));
-	
-		// Queue a channel registration since the caller is not the 
-		// selecting thread. As part of the registration we'll register
-		// an interest in connection events. These are raised when a channel
-		// is ready to complete connection establishment.
+			// Kick off connection establishment
+			clientSocketChannel.connect(new InetSocketAddress(host, port));
 		
-		clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
-		selector.select();
-		
-		Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
-		while (selectedKeys.hasNext()) {
+			// Queue a channel registration since the caller is not the 
+			// selecting thread. As part of the registration we'll register
+			// an interest in connection events. These are raised when a channel
+			// is ready to complete connection establishment.
 			
-			key = (SelectionKey) selectedKeys.next();
-			selectedKeys.remove();
+			clientSocketChannel.register(selector, SelectionKey.OP_CONNECT);
+			selector.select();
 			
-			if (key.isConnectable()){
+			Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
+			while (selectedKeys.hasNext()) {
 				
-				SocketChannel socketChannel = (SocketChannel) key.channel();
+				key = (SelectionKey) selectedKeys.next();
+				selectedKeys.remove();
 				
-				// Finish the connection. If the connection operation failed
-				// this will raise an IOException.
-				try {
+				if (key.isConnectable()){
 					
-					_log.finer("finishing connection");
-					socketChannel.finishConnect();
-					_log.fine("register on dispatcher");
-					dispatcher.registerChannel(socketChannel);
+					SocketChannel socketChannel = (SocketChannel) key.channel();
 					
-				} catch (IOException e) {
+					// Finish the connection. If the connection operation failed
+					// this will raise an IOException.
+					try {
+						
+						_log.finer("finishing connection");
+						socketChannel.finishConnect();
+						_log.fine("register on dispatcher");
+						dispatcher.registerChannel(socketChannel);
+						
+					} catch (IOException e) {
+						
+						// Cancel the channel's registration with our selector
+						key.cancel();
+						throw new EstablishConnectionFailed("could not establish connection to server. is server running? error-msg:"+e);
+						
+					}
 					
-					// Cancel the channel's registration with our selector
-					key.cancel();
-					throw new EstablishConnectionFailed("could not establish connection to server. is server running? error-msg:"+e);
-					
-				}
+				} else throw new IllegalStateException("invalid op event: op="+key.interestOps());
 				
-			} else throw new IllegalStateException("invalid op event: op="+key.interestOps());
-			
+			}
+		} catch (IOException e) {
+			throw new EstablishConnectionFailed(e.getMessage());
 		}
 		
 		_log.fine("end");
@@ -126,22 +132,23 @@ public class Client {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'getKey', by 'ACHR'..
+	 * Returns the key that holds the relation between the client's socketchannel and selector
 	 * 
-	 * @return
+	 * @return SelectionKey
 	 */
 	public SelectionKey getKey() {
 		return key;
 	}
 	
-	/**
-	 * 
-	 * TODO: Documentation to be done for method 'getChannelToServer', by 'ACHR'..
-	 * 
-	 * @return
-	 */
-	public SelectableChannel getChannelToServer() {
-		return key.channel();
-	}
+// UNUSED:	
+//	/**
+//	 * 
+//	 * TODO: Documentation to be done for method 'getChannelToServer', by 'ACHR'..
+//	 * 
+//	 * @return
+//	 */
+//	public SelectableChannel getChannelToServer() {
+//		return key.channel();
+//	}
 
 }

@@ -33,6 +33,7 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 	private String baseName;
 	
 	private long i = 0;
+	private StringBuilder sb = new StringBuilder();
 
 	/**
 	 * Creates a new thread-factory that gives each thread a basename
@@ -49,7 +50,11 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 	 */
 	public Thread newThread(Runnable r) {
 		if ((i++)==Long.MAX_VALUE) i=0;
-		return new Thread(r,"["+baseName+"|#"+i+"]");
+		sb.delete(0, sb.length());
+		sb.append(baseName);
+		sb.append(".Nr#");
+		sb.append(i);
+		return new Thread(r,sb.toString());
 	}
 
 }

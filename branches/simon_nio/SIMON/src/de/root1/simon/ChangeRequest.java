@@ -61,11 +61,11 @@ public class ChangeRequest {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for constructor 'ChangeRequest', by 'ACHR'..
+	 * Creates a new "transportobject" for a change request on a selector
 	 * 
-	 * @param socket
-	 * @param type
-	 * @param ops
+	 * @param socket the SocketChannel to which the change is related to
+	 * @param type the type of the change (either {@link ChangeRequest#REGISTER} or {@link ChangeRequest#CHANGEOPS}
+	 * @param ops the selection operation
 	 */
 	public ChangeRequest(SocketChannel socket, int type, int ops) {
 		_log.finer("begin");
@@ -90,6 +90,12 @@ public class ChangeRequest {
 		return sb.toString();
 	}
 
+	/**
+	 * 
+	 * Returns a textual representation of the current set type
+	 * 
+	 * @return a string explaining the current set type
+	 */
 	private String getTypeAsString() {
 		if (type==CHANGEOPS) return "CHANGEOPS";
 		else

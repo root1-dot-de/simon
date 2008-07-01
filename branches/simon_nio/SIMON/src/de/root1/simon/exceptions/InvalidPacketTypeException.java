@@ -18,15 +18,23 @@
  */
 package de.root1.simon.exceptions;
 
-
+/**
+ * 
+ * Exception which normally occurs if the type of the received packet is unknown.<br>
+ * This also means that there can/could be a communication problem.
+ * 
+ * @author ACHR
+ */
 public class InvalidPacketTypeException extends SimonRemoteException {
 	
-	/**
-	 * TODO: Documentation to be done for field 'serialVersionUID', by 'ACHR'..
-	 *
-	 */
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * 
+	 * Creates a new exception with a exception message 
+	 * 
+	 * @param msg
+	 */
 	public InvalidPacketTypeException(String msg)  {
 		super(msg);
 	}

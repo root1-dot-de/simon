@@ -50,8 +50,8 @@ public class SimonProxy implements InvocationHandler {
 	 * 
 	 * Constructor which sets the reference to the dispatcher and the remoteobject name
 	 * 
-	 * @param dispatcher TODO
-	 * @param key TODO
+	 * @param dispatcher a reference to the underlying dispatcher
+	 * @param key a reference to the key of the correspoding network conneciton
 	 * @param remoteObjectName name of the remoteobject
 	 */
 	public SimonProxy(Dispatcher dispatcher, SelectionKey key, String remoteObjectName) {
@@ -206,13 +206,21 @@ public class SimonProxy implements InvocationHandler {
 	 * TODO: Documentation to be done for method 'release', by 'ACHR'..
 	 *
 	 */
-	public void release() {
+	public Dispatcher release() {
 		_log.fine("begin");
 		dispatcher.cancelKey(key);
-		dispatcher.shutdown();
-		dispatcher=null;
 		remoteObjectName=null;
 		_log.fine("end");
+		return dispatcher;
+	}
+	
+	@Override
+	public String toString() {
+	
+		return "[Proxy="+remoteObjectName+
+		"|invocationHandler="+super.toString()+
+		"|dispatcher="+dispatcher.toString()+
+		"]";
 	}
 	
 }

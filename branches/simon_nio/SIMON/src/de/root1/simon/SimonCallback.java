@@ -24,30 +24,33 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
+/**
+ * This class is used by an endpoint if a callbackobject has to be "transferred" to the 
+ * opposite endpoint. In such case, only the interfacename is relevant. So we transfer an 
+ * instance of this class instead of the "real" implementation of the callback object.
+ * 
+ * @author ACHR
+ */
 public class SimonCallback implements Serializable {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-	/**
-	 * TODO: Documentation to be done for field 'serialVersionUID', by 'ACHR'..
-	 *
-	 */
 	private static final long serialVersionUID = -1613858098177523543L;
 	
-	/**
-	 * Name of the interface that is used to implement the callback-object
-	 */
+	/** Name of the interface that is used to implement the callback-object */
 	private String interfaceName = null;
+	
+	/** a unique identifier for the corresponding callbackobject */
 	private String id = null;
 	
 	
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for constructor 'SimonCallback', by 'ACHR'..
+	 * Creates a new SimonCallback transoprtobject
 	 * 
-	 * @param callback
+	 * @param key the key to which the callback is related to
+	 * @param callback the callback we generate this transportobject for
 	 */
 	public SimonCallback(SelectionKey key, SimonRemote callback) {
 		_log.fine("begin");
@@ -102,7 +105,7 @@ public class SimonCallback implements Serializable {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'getInterfaceName', by 'ACHR'..
+	 * Returns the name of the interface of the callbackobjects implementation
 	 * 
 	 * @return the callbacks interface
 	 */
@@ -112,7 +115,8 @@ public class SimonCallback implements Serializable {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'getInterfaceName', by 'ACHR'..
+	 * Returns an unique identifier for this callabck-object. This is neccessary to differ from two 
+	 * callback object with the same implementation
 	 * 
 	 * @return the callbacks ID
 	 */
@@ -120,10 +124,4 @@ public class SimonCallback implements Serializable {
 		return id;
 	}
 	
-	@Override
-	protected void finalize() throws Throwable {
-		// TODO Auto-generated method stub
-		super.finalize();
-	}
-
 }

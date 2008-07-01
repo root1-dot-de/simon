@@ -64,7 +64,7 @@ public class Registry {
 		
 		try {
 			
-			dispatcher = new Dispatcher(serverLookupTable, threadPool);
+			dispatcher = new Dispatcher(null, serverLookupTable, threadPool);
 			new Thread(dispatcher,"Simon.Registry.Dispatcher").start();
 			_log.finer("dispatcher thread created and started");
 			

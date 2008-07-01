@@ -24,8 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
-import java.net.ConnectException;
 import java.net.InetAddress;
+import java.nio.channels.SelectionKey;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -43,15 +44,24 @@ public class Simon {
 	
 	protected transient static Logger _log = Logger.getLogger(Simon.class.getName());
 	
-	private static Registry registry;
+	private static Registry registry = null;
 	private static LookupTable lookupTable = new LookupTable();
+	
+	private static final String dispatcherThreadName = "Simon.Dispatcher";
+	
+	private static final HashMap<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
 	
 	/*
 	 * Different ThreadPool implementations
 	 * Is used by "ProcessMethodInvocationRunnable"
 	 */
 	private static ExecutorService threadPool = null;
-	
+
+	private static final String threadPoolName = "Simon.Dispatcher.WorkerPool";
+
+	/**
+	 * Tries to load 'config/simon_logging.properties'
+	 */
 	static {
 		if (Utils.DEBUG) {
 			InputStream is;
@@ -97,30 +107,71 @@ public class Simon {
 	 * @throws IOException
 	 * @throws EstablishConnectionFailed
 	 */
-	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed {
+	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, EstablishConnectionFailed {
 		_log.fine("begin");
+		
+		// check if there is already an dispatcher and key for THIS server
 		SimonRemote proxy = null;
+		Dispatcher dispatcher = null;
+		SelectionKey key = null;
 		
-		Dispatcher dispatcher = new Dispatcher(lookupTable,getThreadPool());
+		String serverString = createServerString(host, port);
 		
-		Thread clientDispatcherThread = new Thread(dispatcher,"Simon.Dispatcher");
-		clientDispatcherThread.start();
-		try {
-			Client client = new Client(dispatcher);
-			client.connect(host, port);
+		synchronized (serverDispatcherRelation) {
 			
-			_log.finer("connected with server");
+			if (serverDispatcherRelation.containsKey(serverString)){
+				
+				// retrieve the already stored connection
+				ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
+				ctsc.addRef();
+				serverDispatcherRelation.put(serverString, ctsc);
+				dispatcher = ctsc.getDispatcher();
+				key = ctsc.getKey();
+				
+				_log.fine("Got ClientToServerConnection from list");
+				
+				
+			} else {
+				
+				_log.fine("No ClientToServerConnection in list. Creating new one.");
+				
+				try {
+					dispatcher = new Dispatcher(serverString, lookupTable,getThreadPool());
+				} catch (IOException e) {
+					throw new EstablishConnectionFailed(e.getMessage());
+				}
+				
+				Thread clientDispatcherThread = new Thread(dispatcher,dispatcherThreadName);
+				clientDispatcherThread.start();
+				
+				Client client = new Client(dispatcher);
+				client.connect(host, port);
+				_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
+				key = client.getKey();
+				
+				// store this connection
+				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,key);
+				ctsc.addRef();
+				serverDispatcherRelation.put(serverString, ctsc);
+				
+			}
+			
+		}
+		
+		try {
+			
 			
 			/*
 			 * Create array with interfaces the proxy should have
 			 * first contact server for lookup of interfaces
 			 * this request blocks!
 			 */
-			Class<?>[] listenerInterfaces = (Class<?>[]) dispatcher.invokeLookup(client.getKey(), remoteObjectName);
+			Class<?>[] listenerInterfaces = (Class<?>[]) dispatcher.invokeLookup(key, remoteObjectName);
+
 			/*
-			 * This class gets the interfaces and directs the method-calls
+			 * Creates proxy for method-call-forwarding to server 
 			 */
-			SimonProxy handler = new SimonProxy(dispatcher, client.getKey(), remoteObjectName);
+			SimonProxy handler = new SimonProxy(dispatcher, key, remoteObjectName);
 			_log.finer("proxy created");
 			
 			 /* 
@@ -131,11 +182,23 @@ public class Simon {
 		} catch (LookupFailedException e) {
 			throw new LookupFailedException(e.getMessage());
 		} catch (IOException e){
-			throw new ConnectException(e.getMessage());
+			throw new EstablishConnectionFailed(e.getMessage());
 		}
 		
 		_log.fine("end");
 		return proxy;
+	}
+
+	/**
+	 * 
+	 * Creates a unique string for a server by using the host and port 
+	 * 
+	 * @param host ther servers host
+	 * @param port the port the server listens on
+	 * @return a server string
+	 */
+	private static String createServerString(String host, int port) {
+		return host+":"+port;
 	}
 	
 	/**
@@ -154,10 +217,10 @@ public class Simon {
 	 * @param name the object to unbind
 	 */
 	public static void unbind(String name){
+		//TODO what to do with already connected users?
 		lookupTable.releaseRemoteBinding(name);
 	}
 
-	// FIXME reimplement asking for ip-address if client
 	/**
 	 * 
 	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
@@ -193,10 +256,10 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Checks the given objekt for a SimonProxy invocationhandler wrapped in a simple proxy
+	 * Retrieves {@link SimonProxy} invocationhandler wrapped in a simple proxy
 	 * 
-	 * @param o the object to check
-	 * @return the extrected SimonProxy
+	 * @param o the object that holds the proxy
+	 * @return the extracted SimonProxy
 	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocationhandler
 	 */
 	private static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
@@ -256,20 +319,65 @@ public class Simon {
 	public static void setWorkerThreadPoolSize(int size) {
 		if (threadPool!=null) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");
 		
+		
+		
 		if (size==-1){
-			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory("Dispatcher.WorkerPool"));
+			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(threadPoolName));
 		} else if (size==1) {
-			threadPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory("Dispatcher.WorkerPool"));			
+			threadPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory(threadPoolName));			
 		} else {
-			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory("Dispatcher.WorkerPool"));
+			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory(threadPoolName));
 		}
 	}
 	
-	public static void release(Object proxyObject) {
+	/**
+	 * 
+	 * Releases a instance of a remote object.
+	 * If there are no more remote objects alove which are related to a specific serverconnection,
+	 * the connection will be closed, until a new {@link Simon#lookup(String, int, String)} is 
+	 * called on the same server.
+	 * 
+	 * @param proxyObject the object to release
+	 * @return true if the serverconnection is closed, false if there's still a reference pending 
+	 */
+	public static boolean release(Object proxyObject) {
 		_log.fine("begin");
+		
+		boolean result = false;
+		// retrieve the proxyobject 
 		SimonProxy proxy = getSimonProxy(proxyObject);
-		proxy.release();
+		
+		_log.fine("releasing "+proxy);
+		
+		// release the proxy and get the related dispatcher
+		Dispatcher dispatcher = proxy.release();
+		
+		// get the serverstring the dispatcher is connected to
+		String serverString = dispatcher.getServerString();
+		synchronized (serverDispatcherRelation) {
+			
+			// if there's an instance of this connection known ...
+			if (serverDispatcherRelation.containsKey(serverString)) {
+				
+				// ... remove the connection from the list ...
+				ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
+				int refCount = ctsc.delRef();
+				
+				if (refCount==0) {
+					// .. and shutdown the dispatcher if there's no further reference
+					ctsc.getDispatcher().shutdown();
+					result = true;
+					_log.fine("refCount reached 0. shutting down dispatcher.");
+				} else {
+					_log.fine("refCount="+refCount+". put back the ClientToServerConnection.");
+					serverDispatcherRelation.put(serverString, ctsc);
+				}
+				
+			}
+		
+		}
 		_log.fine("end");
+		return result;
 	}
 	
 	
