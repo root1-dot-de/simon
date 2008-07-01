@@ -1,1 +1,424 @@
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><meta content="text/html; charset=UTF-8" http-equiv="Content-Type" /><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />                                <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />  <p><font size="4" color="#009900"><strong>SIMON</strong> </font><font size="4">- <font color="#009900"><strong>S</strong></font>imple <font color="#009900"><strong>I</strong></font>nvocation of <font color="#009900"><strong>M</strong></font>ethods <font color="#009900"><strong>O</strong></font>ver <font color="#009900"><strong>N</strong></font>etwork</font></p>   <p><font color="#009900">SIMON </font>is a kind of router-friendly RMI replacement. It uses only one TCP connection from the client to the server to do all the communication, even with callbacks from the server to the client. </p>   <p>As RMI isn't able to do that, <font color="#009900">SIMON </font>is THE solution for people who want to run their applications WITH callbacks over the internet.</p><p>&nbsp;</p><p><strong><font size="4">Roadmap/ToDo</font></strong></p><p>ordered by prio. descending:</p><ol><li>Improve scalability and performance (switch from classic socket-techniques to Java's NIO) to get a final architecture</li><ol><li>First steps done: Understand how NIO works<br /></li></ol><li>Fix reported bugs</li><ol><li>Need more usage reports ...!!!</li></ol></ol> <p>&nbsp;</p> <p><strong><font size="4">Pros and Cons</font></strong> </p> <p>There are several pros and cons for using <font color="#009900">SIMON </font>instead of RMI: </p> <p>Pros:</p> <ul> <li><span class="postbody">No problems with callbacks if clients are sitting behind a router/nat</span></li> <li><span class="postbody">Easy and small implementation (about 65kbyte only), easy to extend</span></li> <li><span class="postbody">It's a little bit easier to use than RMI  </span><br /> </li> </ul> <p>Cons:</p> <ul> <li><span class="postbody"> It's not yet that stable/bugfree than RMI (for now ... *smile*)<br /></span></li> <li><span class="postbody">It's a bit slower than RMI, but still very fast (see chart below)</span></li> <li><span class="postbody">It's a bit less functional than RMI</span><br /> </li> </ul> <p>&nbsp;</p><p><strong><font size="4">What about the speed?</font></strong></p><p>It's  not easy to compare <font color="#009900">SIMON </font>with RMI. As SIMON uses a built in caching mechanism, the speed depends on what kind of data you want to transmit, and how often you want to transmit the same data. </p><p>I wrote a simple test that calls a server method with only one argument, a simple &quot;transport object&quot;. This object helds two objects: a byte[] and a string. The string value is every time the same. The byte[] value is randomly generated for each iteration step. The size increased with each step. Each iteration consists of one thousand method calls.</p><p>As <font color="#009900">SIMON </font>uses a caching mechanism, the test was repeated with different cache settings: First with no cache, then with cache clearing every 5, 10 and 100 calls. Have a look at the chart below to build you own opinion about <font color="#009900">SIMON</font>.<br /></p> <p><a href="http://img148.imageshack.us/img148/7546/rmivssimoncacheddv0.jpg"><img border="0" src="http://img148.imageshack.us/img148/7546/rmivssimoncacheddv0.th.jpg" /></a> </p> <p>The test was made via localhost on the following machine:</p><ul><li>Intel Core2 Duo 6420@2x2,13Ghz</li><li>2048MB RAM</li><li>Windows XP SP2</li><li>Java 6 Update 4 </li></ul><p>&nbsp;</p><p><font size="4"><strong>Codesample</strong></font> </p> <p>Here's a small example that shows how to use <font color="#009900">SIMON</font> ...</p> <p>First of all, we need some interfaces which should be available on the respective remote-installation: </p> <p><em>ServerInterface.java </em></p> <table border="0" style="background-color: #ccccff"><tbody> <tr> <td><strong style="color: #0000ff; font-style: normal; font-weight: normal">package</strong> de.root1.simon.codesample.common; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.SimonRemote; <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.SimonRemoteException; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">interface</strong> ServerInterface <strong style="color: #0000ff; font-style: normal; font-weight: normal">extends</strong> SimonRemote { <br />      <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">void</strong> login(ClientCallbackInterface clientCallback) <strong style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong> SimonRemoteException; <br />   <br />  } <br /> </td> </tr> </tbody></table> <p>&nbsp;</p> <p><em>ClientCallbackInterface.java </em></p>   <table border="0" style="background-color: #ccccff"> <tbody> <tr> <td valign="top" align="left" class="code"><strong style="color: #0000ff; font-style: normal; font-weight: normal">package</strong> de.root1.simon.codesample.common; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.SimonRemote; <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.SimonRemoteException; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">interface</strong> ClientCallbackInterface <strong style="color: #0000ff; font-style: normal; font-weight: normal">extends</strong> SimonRemote { <br />      <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">void</strong> callback(String text) <strong style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong> SimonRemoteException; <br />   <br />  }</td> <td>&nbsp;</td> </tr> </tbody> </table>   <p>&nbsp;</p> <p> Then we need the implementation for the server remote methods ...</p> <p><em>ServerInterfaceImpl.java </em></p>   <table border="0" style="background-color: #ccccff"> <tbody> <tr> <td valign="top" align="left" class="code"><strong style="color: #0000ff; font-style: normal; font-weight: normal">package</strong> de.root1.simon.codesample.server; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.SimonRemoteException; <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.codesample.common.ClientCallbackInterface; <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.codesample.common.ServerInterface; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">class</strong> ServerInterfaceImpl <strong style="color: #0000ff; font-style: normal; font-weight: normal">implements</strong> ServerInterface { <br />   <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">private</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">static</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">final</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">long</strong> serialVersionUID = 1L; <br />   <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">void</strong> login(ClientCallbackInterface clientCallback) <strong style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong> SimonRemoteException { <br />        clientCallback.callback(&quot;Tghis it the callback. &quot; + <br />              &quot;Your address is &quot;+Simon.getRemoteInetAddress(clientCallback)+&quot; &quot;+ <br />              &quot;and your are connected from port &quot;+Simon.getRemotePort(clientCallback)); <br />     } <br />   <br />  }</td>   <td>&nbsp;</td> </tr> </tbody> </table>   <p>&nbsp;</p> <p>And of course the callback methods that are available on the client side have the be implemented ... </p> <p><em>ClientCallbackImpl.java </em></p> <table border="0" style="background-color: #ccccff"><tbody> <tr> <td valign="top" align="left" class="code"><strong style="color: #0000ff; font-style: normal; font-weight: normal">package</strong> de.root1.simon.codesample.client; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.SimonRemoteException; <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.codesample.common.ClientCallbackInterface; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">class</strong> ClientCallbackImpl <strong style="color: #0000ff; font-style: normal; font-weight: normal">implements</strong> ClientCallbackInterface { <br />   <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">private</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">static</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">final</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">long</strong> serialVersionUID = 1L; <br />   <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">void</strong> callback(String text) <strong style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong> SimonRemoteException { <br />        System.out.println(&quot;This message was received from the server: &quot;+text); <br />     } <br />   <br />  }</td>   <td>&nbsp;</td> </tr> </tbody> </table>     <p> Now it's time to write the &quot;server&quot;:</p> <p><em>Server.java </em></p>   <table border="0" style="background-color: #ccccff"> <tbody> <tr> <td valign="top" align="left" class="code"><strong style="color: #0000ff; font-style: normal; font-weight: normal">package</strong> de.root1.simon.codesample.server; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.Simon; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">class</strong> Server { <br />      <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">static</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">void</strong> main(String[] args) { <br />        ServerInterfaceImpl serverImpl = <strong style="color: #0000ff; font-style: normal; font-weight: normal">new</strong> ServerInterfaceImpl(); <br />        Simon.createRegistry(2000); <br />        Simon.bind(&quot;server&quot;, serverImpl); <br />        System.out.println(&quot;Server started&quot;); <br />     } <br />   <br />  }</td>   <td>&nbsp;</td> </tr> </tbody> </table>     <p> ... and the &quot;client&quot;:</p> <p><em>Client.java </em></p>    <table border="0" style="background-color: #ccccff">  <tbody> <tr> <td valign="top" align="left" class="code"><strong style="color: #0000ff; font-style: normal; font-weight: normal">package</strong> de.root1.simon.codesample.client; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.Simon; <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.SimonRemoteException; <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">import</strong> de.root1.simon.codesample.common.ServerInterface; <br />   <br />  <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">class</strong> Client { <br />      <br />     <strong style="color: #0000ff; font-style: normal; font-weight: normal">public</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">static</strong> <strong style="color: #0000ff; font-style: normal; font-weight: normal">void</strong> main(String[] args) <strong style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong> SimonRemoteException, ConnectException { <br />         <br />        ClientCallbackImpl clientCallbackImpl = <strong style="color: #0000ff; font-style: normal; font-weight: normal">new</strong> ClientCallbackImpl(); <br />        System.out.println(&quot;callback object created&quot;); <br />         <br />        ServerInterface server = (ServerInterface) Simon.lookup(&quot;127.0.0.1&quot;, 2000, &quot;server&quot;); <br />         <br />        server.login(clientCallbackImpl); <br />         <br />     } <br />   <br />  }</td>   <td>&nbsp;</td> </tr> </tbody> </table>         <p> That's all folks ... Quite easy, isn't it?</p>   <p>&nbsp;</p> <p><strong><font size="4">License</font></strong></p> <p><font color="#009900">SIMON </font>is licensed under the GPL (see above). If you're not able to use GPL, please don't hesitate to contact me. I do not ask for millions ... ;-) But <font color="#009900">SIMON </font>isn't free for non-gpl-compatible projects.<br /> </p>   <p>&nbsp;</p>   <p><font size="4"><strong>Changelog</strong></font></p>   <p>end of 2007: first implementation idea<br /> 18.01.2008: first public release<br />  07.02.2008: set project to utf8 encoding and removed german &quot;umlaute&quot;<br />  08.02.2008: set compiler to java 5<br />  11.02.2008: server only needs the remote interface. he doesn't need the interface implementation anymore.<br />  12.02.2008: more clean implementaion of the workaround of 11.02.2008<br />  14.02.2008: SIMON can now be asked for the IP and port of a remote object<br />  14.02.2008: changed project structure, created windows batch files for code sample<br />  15.02.2008: fix: serversided callbacks to the client do not throw exceptions anymore<br />  03.03.2008: fix: printstacktraces due to connection errors are now trhowing &quot;ConnectException&quot;s. new: thread-pools for more performance<br />  03.03.2008: performance-fix: improved speed compared to RMI with &lt;16kbyte size of method arguments<br />  04.03.2008: performance-fix: making use of &quot;Object*Streams&quot; chacing technology. Have alook at the static method Simon#setObjectCacheLifetime(int value). SIMON is hereby, dependend on the use-case, faster than RMI.<br />  05.03.2008: fix: Client doens't wait forever for void-return-value.<br />  06.03.2008: fix: MacOS X don't like Socket#setTrafficClass() method and throws an exception. MacOS X is now ignoring this call. According to the related RFC from 1998, this tcp-option is obsolete.<br />  07.03.2008: fix: You're now able to use toString() on remote objects. also hashCode() and equals() are now possible.<br />   08.03.2008: more debug-output<br />23.03.2008: fix. thread-pool is now created for the server, and not for each client. Default pool size is &quot;cached&quot;. That means the size can differ. You can change this by calling Simon#setWorkerThreadPoolSize(int size)<br />25.06.2008: for the last weeks I worked on the NIO version of SIMON. Work is still in progress, but it seems we have reached a nearly &quot;stable&quot; status. Next things will be adding a clean shutdown/disconnect process. After this and some tests, the NIO branch will be moved to trunk. Old &quot;std. socket&quot; version will be tagged and developing discontinued.<br /></p><p>&nbsp;</p><p><font size="4"><strong><font color="#009900">SIMON</font> is supported by ...</strong> </font></p><pre>YourKit is kindly supporting open source projects with its full-featured Java Profiler.<br />YourKit, LLC is creator of innovative and intelligent tools for profiling<br />Java and .NET applications. Take a look at YourKit's leading software products:<br /><a title="YourKit Java Profiler" href="http://www.yourkit.com/java/profiler/index.jsp">YourKit Java Profiler</a> and <a title="YourKit .NET Profiler" href="http://www.yourkit.com/.net/profiler/index.jsp">YourKit .NET Profiler</a>.<br /></pre><p>&nbsp;</p>                                                                                                                                                                                                                
+
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<META http-equiv="refresh" content="5;URL=http://www.root1.de"> 
+<p><font size="4" color="#009900"><strong>SIMON</strong> </font><font
+	size="4">- <font color="#009900"><strong>S</strong></font>imple
+<font color="#009900"><strong>I</strong></font>nvocation of <font
+	color="#009900"><strong>M</strong></font>ethods <font color="#009900"><strong>O</strong></font>ver
+<font color="#009900"><strong>N</strong></font>etwork</font></p>
+<p><font color="#009900">SIMON </font>is a kind of router-friendly
+RMI replacement. It uses only one TCP connection from the client to the
+server to do all the communication, even with callbacks from the server
+to the client.</p>
+<p>As RMI isn't able to do that, <font color="#009900">SIMON
+</font>is THE solution for people who want to run their applications WITH
+callbacks over the internet.</p>
+<p>&nbsp;</p>
+<p><strong><font size="4">Roadmap/ToDo</font></strong></p>
+<p>ordered by prio. descending:</p>
+<ol>
+	<li>Improve scalability and performance (switch from classic
+	socket-techniques to Java's NIO) to get a final architecture</li>
+	<ol>
+		<li>First steps done: Understand how NIO works<br />
+		</li>
+	</ol>
+	<li>Fix reported bugs</li>
+	<ol>
+		<li>Need more usage reports ...!!!</li>
+	</ol>
+</ol>
+<p>&nbsp;</p>
+<p><strong><font size="4">Pros and Cons</font></strong></p>
+<p>There are several pros and cons for using <font color="#009900">SIMON
+</font>instead of RMI:</p>
+<p>Pros:</p>
+<ul>
+	<li><span class="postbody">No problems with callbacks if
+	clients are sitting behind a router/nat</span></li>
+	<li><span class="postbody">Easy and small implementation
+	(about 65kbyte only), easy to extend</span></li>
+	<li><span class="postbody">It's a little bit easier to use
+	than RMI </span><br />
+	</li>
+</ul>
+<p>Cons:</p>
+<ul>
+	<li><span class="postbody"> It's not yet that
+	stable/bugfree than RMI (for now ... *smile*)<br />
+	</span></li>
+	<li><span class="postbody">It's a bit slower than RMI, but
+	still very fast (see chart below)</span></li>
+	<li><span class="postbody">It's a bit less functional than
+	RMI</span><br />
+	</li>
+</ul>
+<p>&nbsp;</p>
+<p><strong><font size="4">What about the speed?</font></strong></p>
+<p>It's not easy to compare <font color="#009900">SIMON </font>with
+RMI. As SIMON uses a built in caching mechanism, the speed depends on
+what kind of data you want to transmit, and how often you want to
+transmit the same data.</p>
+<p>I wrote a simple test that calls a server method with only one
+argument, a simple &quot;transport object&quot;. This object helds two
+objects: a byte[] and a string. The string value is every time the same.
+The byte[] value is randomly generated for each iteration step. The size
+increased with each step. Each iteration consists of one thousand method
+calls.</p>
+<p>As <font color="#009900">SIMON </font>uses a caching mechanism,
+the test was repeated with different cache settings: First with no
+cache, then with cache clearing every 5, 10 and 100 calls. Have a look
+at the chart below to build you own opinion about <font color="#009900">SIMON</font>.<br />
+</p>
+<p><a
+	href="http://img148.imageshack.us/img148/7546/rmivssimoncacheddv0.jpg"><img
+	border="0"
+	src="http://img148.imageshack.us/img148/7546/rmivssimoncacheddv0.th.jpg" /></a>
+</p>
+<p>The test was made via localhost on the following machine:</p>
+<ul>
+	<li>Intel Core2 Duo 6420@2x2,13Ghz</li>
+	<li>2048MB RAM</li>
+	<li>Windows XP SP2</li>
+	<li>Java 6 Update 4</li>
+</ul>
+<p>&nbsp;</p>
+<p><font size="4"><strong>Codesample</strong></font></p>
+<p>Here's a small example that shows how to use <font
+	color="#009900">SIMON</font> ...</p>
+<p>First of all, we need some interfaces which should be available
+on the respective remote-installation:</p>
+<p><em>ServerInterface.java </em></p>
+<table border="0" style="background-color: #ccccff">
+	<tbody>
+		<tr>
+			<td><strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">package</strong>
+			de.root1.simon.codesample.common; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.SimonRemote; <br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.SimonRemoteException; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">interface</strong>
+			ServerInterface <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">extends</strong>
+			SimonRemote { <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">void</strong>
+			login(ClientCallbackInterface clientCallback) <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong>
+			SimonRemoteException; <br />
+			<br />
+			} <br />
+			</td>
+		</tr>
+	</tbody>
+</table>
+<p>&nbsp;</p>
+<p><em>ClientCallbackInterface.java </em></p>
+<table border="0" style="background-color: #ccccff">
+	<tbody>
+		<tr>
+			<td valign="top" align="left" class="code"><strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">package</strong>
+			de.root1.simon.codesample.common; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.SimonRemote; <br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.SimonRemoteException; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">interface</strong>
+			ClientCallbackInterface <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">extends</strong>
+			SimonRemote { <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">void</strong>
+			callback(String text) <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong>
+			SimonRemoteException; <br />
+			<br />
+			}</td>
+			<td>&nbsp;</td>
+		</tr>
+	</tbody>
+</table>
+<p>&nbsp;</p>
+<p>Then we need the implementation for the server remote methods ...</p>
+<p><em>ServerInterfaceImpl.java </em></p>
+<table border="0" style="background-color: #ccccff">
+	<tbody>
+		<tr>
+			<td valign="top" align="left" class="code"><strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">package</strong>
+			de.root1.simon.codesample.server; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.SimonRemoteException; <br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.codesample.common.ClientCallbackInterface; <br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.codesample.common.ServerInterface; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">class</strong>
+			ServerInterfaceImpl <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">implements</strong>
+			ServerInterface { <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">private</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">static</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">final</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">long</strong>
+			serialVersionUID = 1L; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">void</strong>
+			login(ClientCallbackInterface clientCallback) <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong>
+			SimonRemoteException { <br />
+			clientCallback.callback(&quot;Tghis it the callback. &quot; + <br />
+			&quot;Your address is
+			&quot;+Simon.getRemoteInetAddress(clientCallback)+&quot; &quot;+ <br />
+			&quot;and your are connected from port
+			&quot;+Simon.getRemotePort(clientCallback)); <br />
+			} <br />
+			<br />
+			}</td>
+			<td>&nbsp;</td>
+		</tr>
+	</tbody>
+</table>
+<p>&nbsp;</p>
+<p>And of course the callback methods that are available on the
+client side have the be implemented ...</p>
+<p><em>ClientCallbackImpl.java </em></p>
+<table border="0" style="background-color: #ccccff">
+	<tbody>
+		<tr>
+			<td valign="top" align="left" class="code"><strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">package</strong>
+			de.root1.simon.codesample.client; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.SimonRemoteException; <br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.codesample.common.ClientCallbackInterface; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">class</strong>
+			ClientCallbackImpl <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">implements</strong>
+			ClientCallbackInterface { <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">private</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">static</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">final</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">long</strong>
+			serialVersionUID = 1L; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">void</strong>
+			callback(String text) <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong>
+			SimonRemoteException { <br />
+			System.out.println(&quot;This message was received from the server:
+			&quot;+text); <br />
+			} <br />
+			<br />
+			}</td>
+			<td>&nbsp;</td>
+		</tr>
+	</tbody>
+</table>
+<p>Now it's time to write the &quot;server&quot;:</p>
+<p><em>Server.java </em></p>
+<table border="0" style="background-color: #ccccff">
+	<tbody>
+		<tr>
+			<td valign="top" align="left" class="code"><strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">package</strong>
+			de.root1.simon.codesample.server; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.Simon; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">class</strong>
+			Server { <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">static</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">void</strong>
+			main(String[] args) { <br />
+			ServerInterfaceImpl serverImpl = <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">new</strong>
+			ServerInterfaceImpl(); <br />
+			Simon.createRegistry(2000); <br />
+			Simon.bind(&quot;server&quot;, serverImpl); <br />
+			System.out.println(&quot;Server started&quot;); <br />
+			} <br />
+			<br />
+			}</td>
+			<td>&nbsp;</td>
+		</tr>
+	</tbody>
+</table>
+<p>... and the &quot;client&quot;:</p>
+<p><em>Client.java </em></p>
+<table border="0" style="background-color: #ccccff">
+	<tbody>
+		<tr>
+			<td valign="top" align="left" class="code"><strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">package</strong>
+			de.root1.simon.codesample.client; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.Simon; <br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.SimonRemoteException; <br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">import</strong>
+			de.root1.simon.codesample.common.ServerInterface; <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">class</strong>
+			Client { <br />
+			<br />
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">public</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">static</strong>
+			<strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">void</strong>
+			main(String[] args) <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">throws</strong>
+			SimonRemoteException, ConnectException { <br />
+			<br />
+			ClientCallbackImpl clientCallbackImpl = <strong
+				style="color: #0000ff; font-style: normal; font-weight: normal">new</strong>
+			ClientCallbackImpl(); <br />
+			System.out.println(&quot;callback object created&quot;); <br />
+			<br />
+			ServerInterface server = (ServerInterface)
+			Simon.lookup(&quot;127.0.0.1&quot;, 2000, &quot;server&quot;); <br />
+			<br />
+			server.login(clientCallbackImpl); <br />
+			<br />
+			} <br />
+			<br />
+			}</td>
+			<td>&nbsp;</td>
+		</tr>
+	</tbody>
+</table>
+<p>That's all folks ... Quite easy, isn't it?</p>
+<p>&nbsp;</p>
+<p><strong><font size="4">License</font></strong></p>
+<p><font color="#009900">SIMON </font>is licensed under the GPL (see
+above). If you're not able to use GPL, please don't hesitate to contact
+me. I do not ask for millions ... ;-) But <font color="#009900">SIMON
+</font>isn't free for non-gpl-compatible projects.<br />
+</p>
+<p>&nbsp;</p>
+<p><font size="4"><strong>Changelog</strong></font></p>
+<p>end of 2007: first implementation idea<br />
+18.01.2008: first public release<br />
+07.02.2008: set project to utf8 encoding and removed german
+&quot;umlaute&quot;<br />
+08.02.2008: set compiler to java 5<br />
+11.02.2008: server only needs the remote interface. he doesn't need the
+interface implementation anymore.<br />
+12.02.2008: more clean implementaion of the workaround of 11.02.2008<br />
+14.02.2008: SIMON can now be asked for the IP and port of a remote
+object<br />
+14.02.2008: changed project structure, created windows batch files for
+code sample<br />
+15.02.2008: fix: serversided callbacks to the client do not throw
+exceptions anymore<br />
+03.03.2008: fix: printstacktraces due to connection errors are now
+trhowing &quot;ConnectException&quot;s. new: thread-pools for more
+performance<br />
+03.03.2008: performance-fix: improved speed compared to RMI with
+&lt;16kbyte size of method arguments<br />
+04.03.2008: performance-fix: making use of &quot;Object*Streams&quot;
+chacing technology. Have alook at the static method
+Simon#setObjectCacheLifetime(int value). SIMON is hereby, dependend on
+the use-case, faster than RMI.<br />
+05.03.2008: fix: Client doens't wait forever for void-return-value.<br />
+06.03.2008: fix: MacOS X don't like Socket#setTrafficClass() method and
+throws an exception. MacOS X is now ignoring this call. According to the
+related RFC from 1998, this tcp-option is obsolete.<br />
+07.03.2008: fix: You're now able to use toString() on remote objects.
+also hashCode() and equals() are now possible.<br />
+08.03.2008: more debug-output<br />
+23.03.2008: fix. thread-pool is now created for the server, and not for
+each client. Default pool size is &quot;cached&quot;. That means the
+size can differ. You can change this by calling
+Simon#setWorkerThreadPoolSize(int size)<br />
+25.06.2008: for the last weeks I worked on the NIO version of SIMON.
+Work is still in progress, but it seems we have reached a nearly
+&quot;stable&quot; status. Next things will be adding a clean
+shutdown/disconnect process. After this and some tests, the NIO branch
+will be moved to trunk. Old &quot;std. socket&quot; version will be
+tagged and developing discontinued.<br />
+</p>
+<p>&nbsp;</p>
+<p><font size="4"><strong><font color="#009900">SIMON</font>
+is supported by ...</strong> </font></p>
+<pre>YourKit is kindly supporting open source projects with its full-featured Java Profiler.<br />YourKit, LLC is creator of innovative and intelligent tools for profiling<br />Java and .NET applications. Take a look at YourKit's leading software products:<br /><a
+	title="YourKit Java Profiler"
+	href="http://www.yourkit.com/java/profiler/index.jsp">YourKit Java Profiler</a> and <a
+	title="YourKit .NET Profiler"
+	href="http://www.yourkit.com/.net/profiler/index.jsp">YourKit .NET Profiler</a>.<br /></pre>
+<p>&nbsp;</p>
