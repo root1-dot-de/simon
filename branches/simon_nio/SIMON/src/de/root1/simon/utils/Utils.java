@@ -268,26 +268,35 @@ public class Utils {
      * @throws IOException if there's a problem with the serialisation of the object
      */
     public static byte[] objectToBytes(Object object) throws IOException{
-    	byte[] bb;
-    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//    	byte[] bb;
+    	ByteArrayOutputStream2 baos = new ByteArrayOutputStream2();
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
+		
+		
 		
 //    	ByteBufferOutputStream baos = new ByteBufferOutputStream();
 //		ObjectOutputStream oos = new ObjectOutputStream(baos);
 	
 		oos.writeObject(object);
 		oos.flush();
-		bb = new byte[baos.size()+4];
+//		bb = new byte[baos.size()+4];
+//		bb = new byte[baos.size()];
 		
-		int v = baos.size();
-		bb[0] = (byte)((v >>> 24) & 0xFF);
-		bb[1] = (byte)((v >>> 16) & 0xFF);
-	    bb[2] = (byte)((v >>>  8) & 0xFF);
-	    bb[3] = (byte)((v >>>  0) & 0xFF);
+//		int v = baos.size();
+//		bb[0] = (byte)((v >>> 24) & 0xFF);
+//		bb[1] = (byte)((v >>> 16) & 0xFF);
+//	    bb[2] = (byte)((v >>>  8) & 0xFF);
+//	    bb[3] = (byte)((v >>>  0) & 0xFF);
+//	    
+//	    System.arraycopy(baos.toByteArray(), 0, bb, 4, v);
 	    
-	    System.arraycopy(baos.toByteArray(), 0, bb, 4, v);
+	    
+//	    System.arraycopy(baos.getBuf(), 0, bb, 0, v);
+	    
 	    //Utils.debug("Utils.objectToBytes() object="+object+" byte[].length="+bb.length);
-		return bb;
+//		return bb;
+		
+		return baos.getBuf();
     }
     
     /**
@@ -308,7 +317,7 @@ public class Utils {
     	
     	// TODO for optimization, see: http://www.theserverside.com/discussions/thread.tss?thread_id=21568
     	
-    	bb.getInt();
+//    	bb.getInt();
 //    	byte[] objectInBytes = new byte[bb.getInt()]; // read object size and create a byte[] for it
 //    	bb.get(objectInBytes); // put the object to the byte[]
     	
