@@ -56,17 +56,21 @@ public class RxPacket {
 		int simonPacketHeaderId0 = header.get();
 		int simonPacketHeaderId1 = header.get();
 		
+		msgType = header.get();
+		requestID = header.getInt();
+		bodySize = header.getInt();
+
 		if (simonPacketHeaderId0!=Statics.SIMON_PACKET_HEADER_ID0 
 				|| simonPacketHeaderId1!=Statics.SIMON_PACKET_HEADER_ID1) {
 			
 			// FIXME what to do if header is wrong?
-			_log.severe("packet header failure! Exiting system.  header_id0=0x"+Integer.toHexString(simonPacketHeaderId0)+"  header_id1=0x"+Integer.toHexString(simonPacketHeaderId1));
+			_log.severe("packet header failure! "+this+": Exiting system.  header_id0=0x"+Integer.toHexString(simonPacketHeaderId0)+"  " +
+					"header_id1=0x"+Integer.toHexString(simonPacketHeaderId1)+" "+
+					"msgType="+Integer.toHexString(msgType)+" "+
+					"requestID="+Integer.toHexString(requestID)+" "+
+					"bodySize="+Integer.toHexString(bodySize));
 			System.exit(1);
 		}
-		
-		msgType = header.get();
-		requestID = header.getInt();
-		bodySize = header.getInt();
 
 		if (_log.isLoggable(Level.FINEST)){
 			_log.finest("header: headerId0=0x"+Integer.toHexString(simonPacketHeaderId0)+" headerId1=0x"+Integer.toHexString(simonPacketHeaderId1)+" msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);

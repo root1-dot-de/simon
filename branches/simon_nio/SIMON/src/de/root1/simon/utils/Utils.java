@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import de.root1.simon.Statics;
 import de.root1.simon.TxPacket;
+import de.root1.simon.tests.DirectByteBufferPool;
 
 public class Utils {
 	
@@ -80,74 +81,73 @@ public class Utils {
      * wrap the value into the given bytebuffer
      */
     public static TxPacket wrapValue(Class<?> type, Object value, TxPacket bb) throws IOException {
-    	//Utils.debug("Utils.wrapValue() -> start");
-//    	//Utils.debug("Endpoint.wrapValue() -> size at start: "+bb.capacity()+" position at start: "+bb.position());
-    	//Utils.debug("Utils.wrapValue() -> value="+value);
     	
+    	_log.finest("start");
     	
     	if (type == void.class || value instanceof Throwable) {
            	
-    		//Utils.debug("Utils.wrapValue() -> void, writing as object, may be 'null' or a 'Throwable'");
+    		_log.finest("void, writing as object, may be 'null' or 'Throwable'");
            	bb.put(objectToBytes(value));
            	
     	} else if (type == String.class) {
     		
-    		//Utils.debug("Utils.wrapValue() -> String");
+    		_log.finest("String");
            	bb.put(stringToBytes(((String) value).toString()));
            	
     	} else 	if (type.isPrimitive()) {
     		
         	if (type == boolean.class) {
         		
-        		//Utils.debug("Utils.wrapValue() -> boolean");
+        		_log.finest("boolean");
             	bb.put((byte) (((Boolean) value).booleanValue() ? 1 : 0));
             	
             } else if (type == byte.class) {
             	
-            	//Utils.debug("Utils.wrapValue() -> byte");
+            	_log.finest("byte");
             	bb.put(((Byte) value).byteValue());
             	
             } else if (type == char.class) {
             	
-            	//Utils.debug("Utils.wrapValue() -> char");
+            	_log.finest("char");
             	bb.putChar(((Character) value).charValue());
             	
             } else if (type == short.class) {
 
-            	//Utils.debug("Utils.wrapValue() -> short");
+            	_log.finest("short");
             	bb.putShort(((Short) value).shortValue());
             	
             } else if (type == int.class) {
             	
-            	//Utils.debug("Utils.wrapValue() -> int");
+            	_log.finest("int");
             	bb.putInt(((Integer) value).intValue());
                 
             } else if (type == long.class) {
             	
-            	//Utils.debug("Utils.wrapValue() -> long");
+            	_log.finest("long");
             	bb.putLong(((Long) value).longValue());
             	
             } else if (type == float.class) {
             	
-            	//Utils.debug("Utils.wrapValue() -> float");
+            	_log.finest("float");
             	bb.putFloat(((Float) value).floatValue());
             	
             } else if (type == double.class) {
             	
-            	//Utils.debug("Utils.wrapValue() -> double");
+            	_log.finest("double");
             	bb.putDouble(((Double) value).doubleValue());
             	
             } else {
-            	//Utils.debug("Utils.wrapValue() -> unknown");
+            	_log.finest("unknown");
                 throw new IOException("Unknown primitive: " + type);
             }
         	
         } else {
         	
-        	//Utils.debug("Utils.wrapValue() -> non primitive object");
+        	_log.finest("non primitive object");
     		bb.put(objectToBytes(value));
         	
         }
+    	_log.finest("end");
     	return bb;
     }
 
@@ -158,7 +158,8 @@ public class Utils {
 	 * @return the doubled ByteBuffer
 	 */
 	public static ByteBuffer doubleByteBuffer(ByteBuffer bb) {
-		ByteBuffer bb_new = ByteBuffer.allocate(bb.capacity()*2);
+//		ByteBuffer bb_new = ByteBuffer.allocate(bb.capacity()*2);
+		ByteBuffer bb_new = DirectByteBufferPool.getInstance().getByteBuffer(bb.capacity()*2);
 		bb.flip();
 		bb_new.put(bb);
 		return bb_new;
@@ -189,7 +190,7 @@ public class Utils {
      * unwrap the value from the given bytebuffer
      */
     public static Object unwrapValue(Class<?> type, ByteBuffer bb) throws IOException, ClassNotFoundException {
-    	//Utils.debug("Utils.unwrapValue() -> start");
+    	_log.finest("start");
     	
     	
     	if (type == void.class ) {
@@ -199,59 +200,59 @@ public class Utils {
     		
     	} else if (type == String.class) {
     		
-    		//Utils.debug("Utils.unwrapValue() -> String -> end");
+    		_log.finest("String -> end");
            	return getString(bb);
            	
     	} else 	if (type.isPrimitive()) {
     		
         	if (type == boolean.class) {
         
-        		//Utils.debug("Utils.unwrapValue() -> boolean -> end");
+        		_log.finest("boolean -> end");
         		return Boolean.valueOf(bb.get()==1 ? true : false);
                 
             } else if (type == byte.class) {
             	
-            	//Utils.debug("Utils.unwrapValue() -> byte -> end");
+            	_log.finest("byte -> end");
             	return Byte.valueOf(bb.get());
                 
             } else if (type == char.class) {
             	
-            	//Utils.debug("Utils.unwrapValue() -> char -> end");
+            	_log.finest("char -> end");
             	return Character.valueOf(bb.getChar());
                 
             } else if (type == short.class) {
 
-            	//Utils.debug("Utils.unwrapValue() -> short -> end");
+            	_log.finest("short -> end");
             	return Short.valueOf(bb.getShort());
                 
             } else if (type == int.class) {
             	
-            	//Utils.debug("Utils.unwrapValue() -> int -> end");
+            	_log.finest("int -> end");
             	return Integer.valueOf(bb.getInt());
                 
             } else if (type == long.class) {
             	
-            	//Utils.debug("Utils.unwrapValue() -> long -> end");
+            	_log.finest("long -> end");
             	return Long.valueOf(bb.getLong());
                 
             } else if (type == float.class) {
 
-            	//Utils.debug("Utils.unwrapValue() -> float -> end");
+            	_log.finest("float -> end");
             	return Float.valueOf(bb.getFloat());
                 
             } else if (type == double.class) {
             	
-            	//Utils.debug("Utils.unwrapValue() -> double -> end");
+            	_log.finest("double -> end");
             	return Double.valueOf(bb.getDouble());
                 
             } else {
-            	//Utils.debug("Utils.unwrapValue() -> unknown -> end");
+            	_log.finest("unknown -> end");
                 throw new IOException("Unknown primitive: " + type);
             }
         	
         } else {
         	
-        	//Utils.debug("Utils.unwrapValue() -> non primitive object -> end");
+        	_log.finest("non primitive object -> end");
         	return getObject(bb);
         	
         }
@@ -270,7 +271,7 @@ public class Utils {
     	byte[] bb;
     	ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(baos);
-    	
+		
 //    	ByteBufferOutputStream baos = new ByteBufferOutputStream();
 //		ObjectOutputStream oos = new ObjectOutputStream(baos);
 	

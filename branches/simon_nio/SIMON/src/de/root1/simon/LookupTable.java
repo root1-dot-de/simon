@@ -126,7 +126,7 @@ public class LookupTable {
 		_log.fine("begin");
 
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("hash="+methodHash+" resoves to method='"+simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
+			_log.finer("hash="+methodHash+" resolves to method='"+simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
 		
 		_log.fine("end");
 		return simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);

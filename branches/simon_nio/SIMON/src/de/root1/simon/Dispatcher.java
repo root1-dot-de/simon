@@ -316,6 +316,7 @@ public class Dispatcher implements Runnable {
 					break;
 				}
 				queue.remove(0);
+//				DirectByteBufferPool.getInstance().releaseByteBuffer(queue.remove(0));
 				
 			}
 
@@ -532,8 +533,7 @@ public class Dispatcher implements Runnable {
 		packet.setComplete();
 		synchronized (monitor) {
 		send(key, packet.getByteBuffer());
-		
-//		System.out.println(System.nanoTime()+" data for reqid="+requestID+" sent");	
+
 		// check if need to wait for the result
 			synchronized (requestResults) {
 				if (requestResults.containsKey(requestID))

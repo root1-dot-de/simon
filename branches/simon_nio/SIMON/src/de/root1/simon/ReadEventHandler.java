@@ -424,7 +424,6 @@ class ReadEventHandler implements Runnable {
 		packet = Utils.wrapValue(method.getReturnType(), result, packet); // wrap the result
 		packet.setComplete();
 		dispatcher.send(key, packet.getByteBuffer());
-				
 		
 		//Utils.debug("ReadEventHandler.processInvokeMethod() -> end. requestID="+requestID);
 		if (_log.isLoggable(Level.FINE))

@@ -20,12 +20,16 @@ package de.root1.simon;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
+import java.util.logging.Logger;
 
 import de.root1.simon.utils.Utils;
 
 public class TxPacket {
 	
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	
 	private ByteBuffer bb = ByteBuffer.allocate(4096);
+//	private ByteBuffer bb = DirectByteBufferPool.getInstance().getByteBuffer(4096);
 
 	private boolean headerOkay = false;
 	private boolean setComplete = false;
@@ -39,7 +43,7 @@ public class TxPacket {
 	public void setHeader(byte type, int requestID) {
 		this.msgType = type;
 		this.requestID = requestID;
-		
+
 		bb.put(Statics.SIMON_PACKET_HEADER_ID0);
 		bb.put(Statics.SIMON_PACKET_HEADER_ID1);
 		
