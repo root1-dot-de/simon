@@ -59,13 +59,12 @@ public class Endpoint extends Thread {
 
 	/** the associated socket */
 	private Socket socket;
-
-	/** internal counter for clearing object*stream cache */
-	private int sendCounter = 0;
 	
-	/** the number of method calls after which the object*stream cache is cleared */
+
+	private int sendCounter = 0;
 	private int objectCacheLifetime;
 	
+
 
 	/**
 	 * 
@@ -94,6 +93,24 @@ public class Endpoint extends Thread {
 		this.socket = socket;
 		this.objectCacheLifetime = objectCacheLifetime;
 		
+//		new Thread(){
+//			@Override
+//			public void run() {
+//				while(true) {
+//					
+//					System.out.println("\n\n\trequestResults="+requestResults.size());
+//					System.out.println("\trequestReturnType="+requestReturnType.size()+"");
+//					System.out.println("\tidMonitorMap="+idMonitorMap.size()+"\n\n");
+//					
+//					try {
+//						Thread.sleep(750);
+//					} catch (InterruptedException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//				}
+//			}
+//		}.start();
 		if (Statics.DEBUG_MODE) System.out.println("Endpoint.Endpoint() -> end");
 	}
 
@@ -121,7 +138,11 @@ public class Endpoint extends Thread {
 		try {
 
 			while (!interrupted()) {
-
+//					synchronized (objectOutputStream) {
+//						synchronized (objectInputStream) {
+//							objectInputStream.reset();	
+//						}
+//					}
 					// Header: Get type and requestid
 					msgType = objectInputStream.read();	
 					requestID = objectInputStream.readInt();
@@ -236,16 +257,6 @@ public class Endpoint extends Thread {
 		}
 	}
 
-	
-	/**
-	 * 
-	 * processes a request for a "equls()" call on a remote-object
-	 * 
-	 * @param requestID
-	 * @param remoteObjectName
-	 * @praram object
-	 * @throws IOException
-	 */
 	private void processEquals(int requestID, String remoteObjectName, Object object) throws IOException{
 			synchronized (objectOutputStream) {
 				objectOutputStream.write(Statics.EQUALS_RETURN_PACKET);
