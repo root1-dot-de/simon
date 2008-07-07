@@ -2,7 +2,7 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/simon_nio"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/simon_nio_testshared"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/simon"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/simon_testshared"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

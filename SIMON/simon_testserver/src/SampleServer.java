@@ -1,11 +1,13 @@
 
 
+import java.net.UnknownHostException;
+
 import de.root1.simon.Simon;
 import de.root1.simon.utils.Utils;
 
 public class SampleServer {
 	
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, UnknownHostException, IllegalStateException {
 			
 		Utils.DEBUG = true;
 		
