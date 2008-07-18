@@ -130,7 +130,7 @@ public class Dispatcher implements Runnable {
 	 * 
 	 * @return a request ID
 	 */
-	private Integer generateRequestID() {
+	private synchronized Integer generateRequestID() {
 		return (++requestIdCounter == Integer.MAX_VALUE ? 0 : requestIdCounter);
 	}
 	
@@ -504,7 +504,10 @@ public class Dispatcher implements Runnable {
 		final Object monitor = createMonitor(key.channel(), requestID);
 		
 		// memory the return-type for later unwrap
-		requestReturnType.put(requestID, returnType);
+		synchronized (requestReturnType) {
+			requestReturnType.put(requestID, returnType);
+		}
+//		System.out.println("requestID="+requestID+" returnType="+returnType+" this="+this);
 		
 		// register callback objects in the lookup-table
 		if (args != null) {
@@ -531,10 +534,11 @@ public class Dispatcher implements Runnable {
         }
 		
 		packet.setComplete();
+		
 		synchronized (monitor) {
-		send(key, packet.getByteBuffer());
+			send(key, packet.getByteBuffer());
 
-		// check if need to wait for the result
+			// check if need to wait for the result
 			synchronized (requestResults) {
 				if (requestResults.containsKey(requestID))
 					return getRequestResult(requestID);
@@ -846,7 +850,11 @@ public class Dispatcher implements Runnable {
 	 * @return
 	 */
 	protected synchronized Class<?> removeRequestReturnType(int requestID) {
-		return requestReturnType.remove(requestID);
+		
+		synchronized (requestReturnType) {
+			return requestReturnType.remove(requestID);
+		}
+		
 	}
 	
 	/**
