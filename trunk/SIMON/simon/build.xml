@@ -51,7 +51,6 @@
 		<echo>revision=${build.revision}</echo>
 		<echo>timestamp=${build.timestamp}</echo>
 		<echo>version=${version}</echo>
-
 	</target>
 	
 	<!-- create all important directories and copy files -->
