@@ -378,20 +378,19 @@ public class Simon {
 
 	/**
 	 * Sets the size of the worker thread pool.<br>
-	 * if given size has value -1, the pool will create new threads as needed, 
+	 * If given size has value -1, the pool will create new threads as needed, 
 	 * but will reuse previously constructed threads when they are available. 
 	 * Old, for 60 seconds unused threads will be removed. These pools will 
 	 * typically improve the performance of programs that execute many short-lived 
 	 * asynchronous tasks. See documentation of {@link Executors#newCachedThreadPool()}<br>
 	 * 
-	 * if size has value >=1, the pool has a fixed size by the given value
+	 * If size has value >=1, the pool has a fixed size by the given value
 	 * 
 	 * @param size the size of the used worker thread pool
 	 */
 	public static void setWorkerThreadPoolSize(int size) {
+
 		if (threadPool!=null) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");
-		
-		
 		
 		if (size==-1){
 			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(threadPoolName));
