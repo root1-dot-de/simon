@@ -131,7 +131,7 @@
 			</fileset>
 		</copy>
 		
-        <jar destfile="${dist}/SIMON-NIO-BRANCH.jar">
+        <jar destfile="${dist}/SIMON.jar">
             <fileset dir="${build.classes}"/>
             <manifest>				
             </manifest>
@@ -144,10 +144,12 @@
             depends="create_jar"
             description="Create a complete package">
 
-		 <zip destfile="${dist}/SIMON-${version}-build${build.timestamp}.zip"
+		<zip destfile="${dist}/SIMON-${version}-build${build.timestamp}.zip"
 		       basedir="${dist}"
 		       includes="**/*"
-		  />
+		/>
+		<copy file="${dist}/SIMON-${version}-build${build.timestamp}.zip" tofile="${dist}/SIMON-latest.zip"/>
+
 	</target>  
 
 </project>
