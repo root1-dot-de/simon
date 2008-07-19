@@ -77,7 +77,7 @@ public class Dispatcher implements Runnable {
 	private Selector selector;
 	
 	/** A list of PendingChange instances.  */
-	private List<ChangeRequest> pendingChanges = new LinkedList<ChangeRequest>();
+	private List<ChangeRequest> pendingSelectorChanges = new LinkedList<ChangeRequest>();
 	
 	/** Maps a SocketChannel to a list of ByteBuffer instances */
 	private Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<SocketChannel, List<ByteBuffer>>();
@@ -117,7 +117,7 @@ public class Dispatcher implements Runnable {
 		this.eventHandlerPool = threadPool;
 		this.selector = SelectorProvider.provider().openSelector();
 		this.dgc = new DGC(this);
-		dgc.start();
+//		dgc.start();
 		_log.fine("end");
 	}
 	
@@ -149,7 +149,7 @@ public class Dispatcher implements Runnable {
 			
 			try {
 				
-				processPendingChanges();
+				processPendingSelectorChanges();
 
 				_log.finer("W A I T I N G for an event");
 				int numOfselectableKeys = selector.select();
@@ -191,10 +191,8 @@ public class Dispatcher implements Runnable {
 
 							_log.finer("key is readable");
 
-//							_log.finest("ops1="+key.interestOps());
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_READ); // deregister for read-events
-							key.attach(true); // remember that his key is currently being read ...
-//							_log.finest("ops2="+key.interestOps());
+							key.attach(true); // remember that this key is currently being read ...
 							
 							handleRead(key);
 							
@@ -202,9 +200,7 @@ public class Dispatcher implements Runnable {
 							
 							if (_log.isLoggable(Level.FINER))
 								_log.finer("key  is writeable");
-//							_log.finest("ops1="+key.interestOps());
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
-//							_log.finest("ops2="+key.interestOps());
 
 							handleWrite(key);
 							
@@ -239,11 +235,11 @@ public class Dispatcher implements Runnable {
 	 * Process any pending selector changes. 
  	 * (changing read/write interests and registrations)
 	 */
-	private void processPendingChanges() throws ClosedChannelException {
+	private void processPendingSelectorChanges() throws ClosedChannelException {
 		
-		synchronized (this.pendingChanges) {
+		synchronized (this.pendingSelectorChanges) {
 			
-			Iterator<ChangeRequest> changes = this.pendingChanges.iterator();
+			Iterator<ChangeRequest> changes = this.pendingSelectorChanges.iterator();
 			while (changes.hasNext()) {
 				
 				ChangeRequest change = (ChangeRequest) changes.next();
@@ -275,7 +271,7 @@ public class Dispatcher implements Runnable {
 						
 				}
 			}
-			this.pendingChanges.clear();
+			this.pendingSelectorChanges.clear();
 		}
 		// -------------
 	}
@@ -370,10 +366,9 @@ public class Dispatcher implements Runnable {
 				
 			queue.add(packet);
 			
-			if (_log.isLoggable(Level.FINEST)){
-				_log.finer("added packet for key="+Utils.getKeyString(key)+" with limit="+packet.limit()+" position="+packet.position()+" to queue");
-			}
-			
+		}
+		if (_log.isLoggable(Level.FINEST)){
+			_log.finer("added packet for key="+Utils.getKeyString(key)+" with limit="+packet.limit()+" position="+packet.position()+" to queue");
 		}
 		if (_log.isLoggable(Level.FINER)) {
 			_log.finer("changing key="+Utils.getKeyString(key)+" to OP_WRITE");
@@ -394,12 +389,12 @@ public class Dispatcher implements Runnable {
 	private void selectorChangeRequest(SocketChannel socketChannel, int type, int operation) {
 		_log.fine("begin");
 
-		synchronized (this.pendingChanges) {
+		synchronized (this.pendingSelectorChanges) {
 			if (_log.isLoggable(Level.FINER)){
 				_log.finer("got changerequest for client "+Utils.getChannelString(socketChannel)+" -> type="+type+" operation="+Utils.getSelectionKeyString(operation));
 			}
 			// Indicate we want the interest ops set changed
-			this.pendingChanges.add(new ChangeRequest(socketChannel, type, operation));
+			this.pendingSelectorChanges.add(new ChangeRequest(socketChannel, type, operation));
 			// Finally, wake up our selecting thread so it can make the required changes
 			selector.wakeup();
 		}
@@ -849,7 +844,7 @@ public class Dispatcher implements Runnable {
 	 * @param requestID
 	 * @return
 	 */
-	protected synchronized Class<?> removeRequestReturnType(int requestID) {
+	protected Class<?> removeRequestReturnType(int requestID) {
 		
 		synchronized (requestReturnType) {
 			return requestReturnType.remove(requestID);
