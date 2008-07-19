@@ -60,8 +60,8 @@ public class RxPacket {
 		requestID = header.getInt();
 		bodySize = header.getInt();
 
-		if (simonPacketHeaderId0!=Statics.SIMON_PACKET_HEADER_ID0 
-				|| simonPacketHeaderId1!=Statics.SIMON_PACKET_HEADER_ID1) {
+		if (simonPacketHeaderId0!=Statics.SIMON_PACKET_HEADER_ID0 ||
+			 simonPacketHeaderId1!=Statics.SIMON_PACKET_HEADER_ID1) {
 			
 			// FIXME what to do if header is wrong?
 			_log.severe("packet header failure! "+this+": Exiting system.  header_id0=0x"+Integer.toHexString(simonPacketHeaderId0)+"  " +
@@ -69,6 +69,16 @@ public class RxPacket {
 					"msgType="+Integer.toHexString(msgType)+" "+
 					"requestID="+Integer.toHexString(requestID)+" "+
 					"bodySize="+Integer.toHexString(bodySize));
+			
+			header.rewind();
+			String headerError = "";
+			for (int i=0;i<11;i++){
+				 headerError += "\theader b["+i+"]="+header.get()+"\n";
+				
+			}
+			_log.severe("error header bytes: \n"+headerError);
+			
+			
 			System.exit(1);
 		}
 
