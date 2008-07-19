@@ -37,7 +37,7 @@ import de.root1.simon.utils.Utils;
 
 /**
  * 
- * A class that reads and processes the packets
+ * A Runnable that reads and processes the packets
  * 
  * @author ACHR
  */
@@ -347,6 +347,8 @@ class ReadEventHandler implements Runnable {
 		
 		if (_log.isLoggable(Level.FINE))
 			_log.fine("begin. requestID="+requestID);
+		
+		dispatcher.incIncomingInvocationCounter();
 		
 		remoteObjectName = Utils.getString(packetBody);
 		final long methodHash = packetBody.getLong();

@@ -97,6 +97,8 @@ public class Dispatcher implements Runnable {
 	/** an identifier string to determin to which server this dispatcher is connected to  */
 	private String serverString;
 	
+	private Object incomingInvocationCounterMonitor = new Object();
+	private long incomingInvocationCounter = 0;
 
 	/**
 	 * 
@@ -161,7 +163,7 @@ public class Dispatcher implements Runnable {
 					}
 					
 					// Iterate over the set of keys for which events are available
-					Iterator<SelectionKey> selectedKeys = this.selector.selectedKeys().iterator();
+					Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
 					while (selectedKeys.hasNext()) {
 					
 						key = (SelectionKey) selectedKeys.next();
@@ -200,6 +202,7 @@ public class Dispatcher implements Runnable {
 							
 							if (_log.isLoggable(Level.FINER))
 								_log.finer("key  is writeable");
+							
 							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
 
 							handleWrite(key);
@@ -254,11 +257,20 @@ public class Dispatcher implements Runnable {
 						SelectionKey key = change.socket.keyFor(this.selector);
 						
 						if (key==null) {
-							_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelString(change.socket)+" is 'gone'... changerequest was: "+change);
+							if (_log.isLoggable(Level.FINER)) {
+								_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelString(change.socket)+" is 'gone'... changerequest was: "+change);
+							}
 							dgc.removeKey(key);
 							cancelWaitingMonitors(change.socket);
 							
-						} else {
+						} else if (key.attachment()!=null && change.ops==SelectionKey.OP_READ){
+							if (_log.isLoggable(Level.FINER)) {
+								_log.finer("cannot change to read mode, key="+Utils.getKeyString(key)+" is currently busy with reading. cannot interrupt him!");
+							}
+//							System.err.flush();
+//							System.exit(1);
+						}
+						else {
 							key.interestOps(change.ops);
 						}
 						break;
@@ -292,9 +304,9 @@ public class Dispatcher implements Runnable {
 			_log.finer("sending data for key=" + Utils.getKeyString(key) + " from queue");
 		}
 		
-		synchronized (this.pendingData) {
+		synchronized (pendingData) {
 		
-			List<ByteBuffer> queue = (List<ByteBuffer>) this.pendingData.get(socketChannel);
+			List<ByteBuffer> queue = (List<ByteBuffer>) pendingData.get(socketChannel);
 
 			// Write until there's not more data ...
 			while (!queue.isEmpty()) {
@@ -307,21 +319,27 @@ public class Dispatcher implements Runnable {
 
 				socketChannel.write(buf);
 				
+				
 				if (buf.remaining() > 0) {
-					// ... or the socket's buffer fills up
-					break;
+					System.err.println("Dispatcher#handleWrite() -> not enough bytes written!");
+					System.err.flush();
+					System.exit(0);
 				}
 				queue.remove(0);
-//				DirectByteBufferPool.getInstance().releaseByteBuffer(queue.remove(0));
 				
 			}
 
+			// We wrote away all data, so we're no longer interested
+			// in writing on this socket. Switch back to waiting for
+			// data.
 			if (queue.isEmpty()) {
-				// We wrote away all data, so we're no longer interested
-				// in writing on this socket. Switch back to waiting for
-				// data.
 				
-				_log.fine("sending is done. no more data in queue. return key="+Utils.getKeyString(key)+" to OP_READ");
+				
+				if (_log.isLoggable(Level.FINE)) {
+					_log.fine("sending is done. no more data in queue. return key="+Utils.getKeyString(key)+" to OP_READ");
+				}
+				
+				// ... but first check if key is "busy with reading" ...
 				Boolean keyInReadProcess = (Boolean) key.attachment();
 				
 				if (keyInReadProcess!=null && keyInReadProcess.booleanValue()){
@@ -331,19 +349,16 @@ public class Dispatcher implements Runnable {
 				} else {
 				
 					_log.finer("key is not in use, set OP to OP_READ!");
-//					key.interestOps(SelectionKey.OP_READ);
 					selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
 					
 				}
-//				selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
-//				key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE);
 			}
 		}
 		_log.fine("end");
 	}
 	
 	/**
-	 * Sends the data to the socketchannel Be warned: only the data from start
+	 * Sends the data to the socket channel Be warned: only the data from start
 	 * to position is sent
 	 */
 	protected void send(SelectionKey key, ByteBuffer packet) throws CancelledKeyException {
@@ -381,23 +396,27 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * 
-	 * TODO Documentation to be done
-	 * @param socketChannel
-	 * @param type
-	 * @param operation
+	 * Changes the interested operation of a specific {@link SocketChannel}
+	 *  
+	 * @param socketChannel the channel which wants to change its interested operation
+	 * @param type the the of the operation: {@link ChangeRequest#CHANGEOPS} or {@link ChangeRequest#REGISTER} 
+	 * @param operation the new operation. One of SelectionKey#OP_* ...
 	 */
 	private void selectorChangeRequest(SocketChannel socketChannel, int type, int operation) {
 		_log.fine("begin");
 
-		synchronized (this.pendingSelectorChanges) {
-			if (_log.isLoggable(Level.FINER)){
-				_log.finer("got changerequest for client "+Utils.getChannelString(socketChannel)+" -> type="+type+" operation="+Utils.getSelectionKeyString(operation));
-			}
-			// Indicate we want the interest ops set changed
-			this.pendingSelectorChanges.add(new ChangeRequest(socketChannel, type, operation));
-			// Finally, wake up our selecting thread so it can make the required changes
-			selector.wakeup();
+		if (_log.isLoggable(Level.FINER)){
+			_log.finer("got changerequest for client "+Utils.getChannelString(socketChannel)+" -> type="+type+" operation="+Utils.getSelectionKeyString(operation));
 		}
+		
+		synchronized (pendingSelectorChanges) {
+			// Indicate we want the interest ops set changed
+			pendingSelectorChanges.add(new ChangeRequest(socketChannel, type, operation));
+		}
+				
+		// Finally, wake up our selecting thread so it can make the required changes
+		selector.wakeup();
+		
 		_log.fine("end");
 	}
 
@@ -491,7 +510,7 @@ public class Dispatcher implements Runnable {
 	 */	 
  	protected Object invokeMethod(SelectionKey key, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
  		final int requestID = generateRequestID();
-
+ 		
  		if (_log.isLoggable(Level.FINE))
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
  		
@@ -502,7 +521,6 @@ public class Dispatcher implements Runnable {
 		synchronized (requestReturnType) {
 			requestReturnType.put(requestID, returnType);
 		}
-//		System.out.println("requestID="+requestID+" returnType="+returnType+" this="+this);
 		
 		// register callback objects in the lookup-table
 		if (args != null) {
@@ -547,9 +565,10 @@ public class Dispatcher implements Runnable {
 			}
 		}
 
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end. requestID="+requestID);
+
 		synchronized (requestResults) {
-			if (_log.isLoggable(Level.FINE))
-				_log.fine("end. requestID="+requestID);
 			return getRequestResult(requestID);
 		}
 	}
@@ -793,7 +812,7 @@ public class Dispatcher implements Runnable {
 				idSelectableChannelMap.put(requestID, selectableChannel);
 				
 				if (_log.isLoggable(Level.FINER)){
-						_log.finer("creating monitor for requestID="+requestID);
+						_log.finer("created monitor for requestID="+requestID);
 				}
 				
 			}
@@ -998,12 +1017,26 @@ public class Dispatcher implements Runnable {
 	
 	/**
 	 * 
-	 * Returns the identifier string which determins to which server this dispatcher is connected to
+	 * Returns the identifier string which determines to which server this dispatcher is connected to
 	 * 
 	 * @return the identifier string. this is <code>null</code> if this dispatcher is a server dispatcher
 	 */
 	public String getServerString() {
 		return serverString;
+	}
+	
+	protected void incIncomingInvocationCounter() {
+		synchronized (incomingInvocationCounterMonitor) {
+			incomingInvocationCounter++;
+		}
+	}
+	
+	protected long getIncomingInvocationCounter() {
+		synchronized (incomingInvocationCounterMonitor) {
+			long x = incomingInvocationCounter;
+			incomingInvocationCounter = 0;
+			return x;
+		}
 	}
 	
 }

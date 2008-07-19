@@ -39,8 +39,9 @@ public class Statics {
 	protected static final String TOSTRING_METHOD_SIGNATURE = "public java.lang.String java.lang.Object.toString()";
 	protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
 	protected static final String EQUALS_METHOD_SIGNATURE 	= "public boolean java.lang.Object.equals(java.lang.Object)";
+	protected static final long DEFAULT_WAIT_TIME = 100;
 
-	protected static long DGC_INTERVAL = 30000;
+	public static long DGC_INTERVAL = 30000;
 	protected static int ROUND_TRIP_TIME = -1;
 	
 }
