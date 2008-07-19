@@ -67,6 +67,9 @@ public class ConsoleLogFormatter extends Formatter
 		output.append(" [");
 		output.append(record.getLevel().getName());
 		output.append("\t] ");
+		output.append("t_id=");
+		output.append(record.getThreadID());
+		output.append(" ");
 		output.append(record.getLoggerName());
 		output.append(".");
 		output.append(record.getSourceMethodName());
