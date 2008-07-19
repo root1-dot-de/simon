@@ -494,9 +494,20 @@ public class Utils {
 		sb.append("]");
 		
 		sb.append("\n");
+		
+		buf.position(position);
+		
+		for (int i=0;i<11;i++){
+			byte c = buf.get();
+			sb.append("\theader b[");
+			sb.append(i);
+			sb.append("]=");
+			sb.append(c);
+			sb.append("\n");
+		}
 			
 		for (int i = 0; i < packetLength; i++) {
-			byte c = buf.get();;
+			byte c = buf.get();
 			
 			sb.append("\tbody b[");
 			sb.append(i);

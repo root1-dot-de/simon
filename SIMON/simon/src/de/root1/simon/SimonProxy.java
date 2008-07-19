@@ -32,27 +32,32 @@ import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
-
+/**
+ * The InvocationHandler which redirects each method call over the network to the server
+ * 
+ * @author achristian
+ *
+ */
 public class SimonProxy implements InvocationHandler {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-	/** name of the corresponding remoteobject in the remote-lookuptable */
+	/** name of the corresponding remote object in the remote lookup table */
 	private String remoteObjectName;
 	
-	/** TODO member has to be described */
+	/** a reference to the associated dispatcher */
 	private Dispatcher dispatcher;
 	
-	/** TODO member has to be described */
+	/** a reference to the SelectionKey which is the reference to the related network connection */
 	private SelectionKey key;
 	
 	/**
 	 * 
-	 * Constructor which sets the reference to the dispatcher and the remoteobject name
+	 * Constructor which sets the reference to the dispatcher and the remote object name
 	 * 
 	 * @param dispatcher a reference to the underlying dispatcher
-	 * @param key a reference to the key of the correspoding network conneciton
-	 * @param remoteObjectName name of the remoteobject
+	 * @param key a reference to the key of the corresponding network connection
+	 * @param remoteObjectName name of the remote object
 	 */
 	public SimonProxy(Dispatcher dispatcher, SelectionKey key, String remoteObjectName) {
 		this.dispatcher = dispatcher;
@@ -98,12 +103,10 @@ public class SimonProxy implements InvocationHandler {
 		
 		/*
 		 * server then does the following:
-		 * server gets according to the methodname and parametertypes the method
+		 * server gets according to the method name and parameter types the method
 		 * and invokes the method. the result is communicated back to the client 
 		 */
-		//Utils.debug("SimonProxy.invoke() -> start. computing method hash: method="+method+" hash="+Utils.computeMethodHash(method));
 		Object result = dispatcher.invokeMethod(key, remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
-//		Object result = dispatcherReference.get().invokeMethod(keyReference.get(), remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
 		// Check for exceptions ...
