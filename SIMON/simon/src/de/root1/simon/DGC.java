@@ -117,11 +117,11 @@ public class DGC extends Thread {
 			}
 			
 			// after all pings are sent, wait Statics.DGC_INTERVAL milliseconds
-//			try {
-//				Thread.sleep(Statics.DGC_INTERVAL);
-//			} catch (InterruptedException e) {
-//				// nothing to do
-//			}
+			try {
+				Thread.sleep(Statics.DGC_INTERVAL);
+			} catch (InterruptedException e) {
+				// nothing to do
+			}
 			
 //			long incomingInvocationCounter = dispatcher.getIncomingInvocationCounter();
 //			System.err.println("Invocations per second: "+(incomingInvocationCounter/(Statics.DGC_INTERVAL/1000)));

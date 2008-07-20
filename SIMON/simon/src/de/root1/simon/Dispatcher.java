@@ -119,7 +119,7 @@ public class Dispatcher implements Runnable {
 		this.eventHandlerPool = threadPool;
 		this.selector = SelectorProvider.provider().openSelector();
 		this.dgc = new DGC(this);
-//		dgc.start();
+		dgc.start();
 		_log.fine("end");
 	}
 	
