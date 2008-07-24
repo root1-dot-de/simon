@@ -46,12 +46,15 @@ public class RxPacket {
 				_log.finest("header: read "+headerRead+" of 11 bytes");
 			}
 			
-			if (headerRead==0) {
+			if (headerRead<0) {
 				_log.fine("No data read. socketChannel="+socketChannel);
+				throw new IOException("could not read header with 11 bytes. maybe connection is broken. header.limit()="+header.limit());
 			}
 		}
 		
 		header.rewind();
+		
+		
 		
 		int simonPacketHeaderId0 = header.get();
 		int simonPacketHeaderId1 = header.get();

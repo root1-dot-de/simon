@@ -56,6 +56,12 @@ public class DGC extends Thread {
 					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyString(key));
 				else
 					_log.finer("key removed from DGC. "+((SocketChannel)key.channel()).socket().getInetAddress());
+			
+			int port = ((SocketChannel)key.channel()).socket().getPort();
+			String address = ((SocketChannel)key.channel()).socket().getInetAddress().toString();
+			
+			Simon.getStatistics().setRtt(address+":"+port, rtt);
+			dispatcher.getLookupTable().unreference(key);
 		}
 		
 		
@@ -123,8 +129,9 @@ public class DGC extends Thread {
 				// nothing to do
 			}
 			
-//			long incomingInvocationCounter = dispatcher.getIncomingInvocationCounter();
-//			System.err.println("Invocations per second: "+(incomingInvocationCounter/(Statics.DGC_INTERVAL/1000)));
+			// Update statistics
+			Simon.getStatistics().setIncomingInvocationsPerMilli((int) (dispatcher.getIncomingInvocationCounter()/Statics.DGC_INTERVAL));
+			Simon.getStatistics().setOutgoingInvocationsPerMilli((int) (dispatcher.getOutgoingInvocationCounter()/Statics.DGC_INTERVAL));
 			
 		}
 		isRunning = false;
