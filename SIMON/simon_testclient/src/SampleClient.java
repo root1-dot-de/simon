@@ -22,9 +22,9 @@ public class SampleClient {
 		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
 		ServerSessionInterface serverSession = server.login(clientCallbackImpl);
 		
-		while(true) {
+//		while(true) {
 			serverSession.printMessageOnServer("Hello World ...");
-		}
+//		}
 		
 		
 		
@@ -44,6 +44,8 @@ public class SampleClient {
 //			System.out.println("connection is broken");
 //			e.printStackTrace();
 //		}
+			Simon.release(serverSession);
+			Simon.release(server);
 	}
 
 }
