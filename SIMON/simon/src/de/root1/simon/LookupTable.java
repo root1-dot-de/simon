@@ -19,9 +19,15 @@
 package de.root1.simon;
 
 import java.lang.reflect.Method;
+import java.net.Socket;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,20 +40,29 @@ public class LookupTable {
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	/**
-	 * Maps the remote object name to the remoteobject
+	 * Maps the remote object name to the remote object
 	 */
 	private HashMap<String, SimonRemote> bindings = new HashMap<String, SimonRemote>();
 	
-	/**
-	 * Maps the remoteobject to the map with the hash-mapped methods.
-	 */
-	private HashMap<SimonRemote, HashMap<Long, Method>> simonRemoteTo_hashToMethod_Map = new HashMap<SimonRemote, HashMap<Long, Method>>();
 	
 	/**
+	 * A Map that holds a list of remote objects for each socket connection, which contains names of 
+	 * remote objects used as callbacks and which have to be removed if {@link DGC} finds a related broken connection
 	 * 
-	 * TODO Documentation to be done
-	 * @param name
-	 * @param remoteObject
+	 * <"IP:LPORT:RPORT", List<remoteObjectName>>
+	 */
+	private Map<SelectionKey, List<String>> gcRemoteCallbacks = new HashMap<SelectionKey, List<String>>();
+	
+	/**
+	 * Maps the remote object to the map with the hash-mapped methods.
+	 */
+	private Map<SimonRemote, Map<Long, Method>> simonRemote_to_hashToMethod_Map = new HashMap<SimonRemote, Map<Long, Method>>();
+	
+	/**
+	 * Saves a remote object in the lookup table for later reference
+	 * 
+	 * @param name the name of the remote object
+	 * @param remoteObject a remote objects which implements SimonRemote
 	 */
 	public synchronized void putRemoteBinding(String name, SimonRemote remoteObject) {
 		_log.fine("begin");
@@ -57,16 +72,47 @@ public class LookupTable {
 		
 		bindings.put(name,remoteObject);	
 		
-		simonRemoteTo_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+		_log.fine("end");		
+	}
+	
+	/**
+	 * TODO name me
+	 * @param key 
+	 * @param name
+	 * @param remoteObject
+	 */
+	public synchronized void putRemoteCallbackBinding(SelectionKey key, String name, SimonRemote remoteObject){
+		_log.fine("begin");
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("name="+name+"  object="+remoteObject);
+		
+		List<String> remotes;
+		
+		// if there no list present, create one
+		if (!gcRemoteCallbacks.containsKey(key)) {
+			remotes = new ArrayList<String>();
+			gcRemoteCallbacks.put(key, remotes);
+		} else {
+			remotes = gcRemoteCallbacks.get(key);
+		}
+		
+		remotes.add(name);
+		
+		putRemoteBinding(name, remoteObject);
+				
+		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
 		_log.fine("end");		
 	}
 	
 	/**
 	 * 
-	 * TODO Documentation to be done
-	 * @param name
-	 * @return
-	 * @throws LookupFailedException if remoteobject is not available in lookup table
+	 * Gets a already bind remote object according to the given remote object name
+	 * 
+	 * @param name the name of the object we are interested in
+	 * @return the remote object
+	 * @throws LookupFailedException if remote object is not available in lookup table
 	 */
 	public synchronized SimonRemote getRemoteBinding(String name) throws LookupFailedException {
 		_log.fine("begin");
@@ -84,8 +130,9 @@ public class LookupTable {
 
 	/**
 	 * 
-	 * TODO Documentation to be done
-	 * @param name
+	 * Frees a saved remote object. After a remote object is freed, it cannot be looked up again until it's bind again.
+	 * 
+	 * @param the remote object to free
 	 */
 	public synchronized void releaseRemoteBinding(String name){
 		_log.fine("begin");
@@ -94,6 +141,7 @@ public class LookupTable {
 			_log.finer("name="+name);
 
 		bindings.remove(name);
+		simonRemote_to_hashToMethod_Map.remove(name);
 		
 		_log.fine("end");
 	}
@@ -109,10 +157,10 @@ public class LookupTable {
 		_log.fine("begin");
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("hash="+methodHash+" resolves to method='"+simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash)+"'");
+			_log.finer("hash="+methodHash+" resolves to method='"+simonRemote_to_hashToMethod_Map.get(remoteObject).get(methodHash)+"'");
 
 		_log.fine("end");
-		return simonRemoteTo_hashToMethod_Map.get(remoteObject).get(methodHash);
+		return simonRemote_to_hashToMethod_Map.get(remoteObject).get(methodHash);
 	}
 
 	/**
@@ -126,17 +174,17 @@ public class LookupTable {
 		_log.fine("begin");
 
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("hash="+methodHash+" resolves to method='"+simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
+			_log.finer("hash="+methodHash+" resolves to method='"+simonRemote_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
 		
 		_log.fine("end");
-		return simonRemoteTo_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
+		return simonRemote_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
 	}
 	
 	/**
 	 * 
-	 * TODO Documentation to be done
-	 * @param remoteClass
-	 * @return
+	 * Computes for each method of the given remote object a method has and save this in an internal map for later lookup
+	 * @param remoteClass the class that contains the methods
+	 * @return a map that holds the methods hash as the key and the method itself as the value
 	 */
 	protected HashMap<Long,Method> computeMethodHashMap(Class<?> remoteClass) {
 		_log.fine("begin");
@@ -190,12 +238,27 @@ public class LookupTable {
     }
 
 	/**
-	 * Cleares the whole {@link LookupTable}
+	 * Clears the whole {@link LookupTable}
 	 *
 	 */
 	public void clear() {
 		bindings.clear();
-		simonRemoteTo_hashToMethod_Map.clear();
+		simonRemote_to_hashToMethod_Map.clear();
+	}
+
+	public void unreference(SelectionKey key) {
+		List<String> list;
+		synchronized (gcRemoteCallbacks) {
+			 list = gcRemoteCallbacks.remove(key);
+		}
+		for (String remoteObjectName : list) {
+			SimonUnreferenced remoteBinding;
+			synchronized (bindings) {
+				simonRemote_to_hashToMethod_Map.remove(remoteObjectName);
+				remoteBinding = (SimonUnreferenced) bindings.remove(remoteObjectName);
+			}
+			remoteBinding.unreferenced();
+		}
 	}
 
 }
