@@ -25,7 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * This class is used by an endpoint if a callbackobject has to be "transferred" to the 
+ * This class is used by an endpoint if a callback object has to be "transferred" to the 
  * opposite endpoint. In such case, only the interfacename is relevant. So we transfer an 
  * instance of this class instead of the "real" implementation of the callback object.
  * 
@@ -35,22 +35,21 @@ public class SimonCallback implements Serializable {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-	private static final long serialVersionUID = -1613858098177523543L;
+	private static final long serialVersionUID = 1;
 	
 	/** Name of the interface that is used to implement the callback-object */
 	private String interfaceName = null;
 	
-	/** a unique identifier for the corresponding callbackobject */
+	/** a unique identifier for the corresponding callback object */
 	private String id = null;
-	
 	
 
 	/**
 	 * 
-	 * Creates a new SimonCallback transoprtobject
+	 * Creates a new SimonCallback transport object
 	 * 
 	 * @param key the key to which the callback is related to
-	 * @param callback the callback we generate this transportobject for
+	 * @param callback the callback we generate this transport object for
 	 */
 	public SimonCallback(SelectionKey key, SimonRemote callback) {
 		_log.fine("begin");

@@ -94,18 +94,21 @@ public class Dispatcher implements Runnable {
 	/** a instance of the distributed garbage collector */
 	private DGC dgc;
 
-	/** an identifier string to determin to which server this dispatcher is connected to  */
+	/** an identifier string to determine to which server this dispatcher is connected to  */
 	private String serverString;
 	
 	private Object incomingInvocationCounterMonitor = new Object();
-	private long incomingInvocationCounter = 0;
+	private int incomingInvocationCounter = 0;
+
+	private Object outgoingInvocationCounterMonitor = new Object();
+	private int outgoingInvocationCounter;
 
 	/**
 	 * 
 	 * Creates a packet dispatcher which delegates 
 	 * the packet-reading to {@link ReadEventHandler} threads in the given <code>threadPool</code>
 	 * 
-	 * @param serverString an identifier string to determin to which server this dispatcher is 
+	 * @param serverString an identifier string to determine to which server this dispatcher is 
 	 * connected to. this must be set to <code>null</code> if this dispatcher is a server dispatcher.
 	 * @param lookupTable the global lookup table
 	 * @param threadPool the pool the worker threads live in
@@ -513,6 +516,8 @@ public class Dispatcher implements Runnable {
  		
  		if (_log.isLoggable(Level.FINE))
  			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
+ 		
+ 		incOutgoingInvocationCounter();
  		
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(key.channel(), requestID);
@@ -1025,18 +1030,35 @@ public class Dispatcher implements Runnable {
 		return serverString;
 	}
 	
+	
 	protected void incIncomingInvocationCounter() {
 		synchronized (incomingInvocationCounterMonitor) {
 			incomingInvocationCounter++;
 		}
 	}
 	
-	protected long getIncomingInvocationCounter() {
+	protected int getIncomingInvocationCounter() {
 		synchronized (incomingInvocationCounterMonitor) {
-			long x = incomingInvocationCounter;
+			int x = incomingInvocationCounter;
 			incomingInvocationCounter = 0;
 			return x;
 		}
 	}
+
+	protected void incOutgoingInvocationCounter() {
+		synchronized (outgoingInvocationCounterMonitor) {
+			outgoingInvocationCounter++;
+		}
+	}
+	
+	protected int getOutgoingInvocationCounter() {
+		synchronized (outgoingInvocationCounterMonitor) {
+			int x = outgoingInvocationCounter;
+			outgoingInvocationCounter = 0;
+			return x;
+		}
+	}
+	
+	
 	
 }

@@ -63,8 +63,10 @@ public class Simon {
 
 	private static boolean registryCreated;
 
-	private static final String threadPoolName = "Simon.Dispatcher.WorkerPool";
+	private static Statistics statistics;
 
+	private static final String threadPoolName = "Simon.Dispatcher.WorkerPool";
+	
 	/**
 	 * Try to load 'config/simon_logging.properties'
 	 */
@@ -99,6 +101,13 @@ public class Simon {
 			}
 		}
 		_log.log(Level.INFO, "Simon lib loaded");
+	}
+	
+	public static Statistics getStatistics() {
+		if (statistics==null) {
+			statistics = new Statistics();
+		}
+		return statistics;
 	}
 
 	/**

@@ -400,14 +400,15 @@ class ReadEventHandler implements Runnable {
 				_log.finer("end invoking method='"+method+"'. requestID="+requestID+" result="+result);
 
 			
-			// Search for SimonRemote in result
+			// register "SimonCallback"-results in lookup-table
 			if (result instanceof SimonRemote){
 				_log.finer("Result of method is instance of SimonRemote");
 				
 				SimonCallback simonCallback = new SimonCallback(key,(SimonRemote)result);
 				simonCallback.getId();
 
-				dispatcher.getLookupTable().putRemoteBinding(simonCallback.getId(), (SimonRemote)result);
+//				dispatcher.getLookupTable().putRemoteBinding(simonCallback.getId(), (SimonRemote)result);
+				dispatcher.getLookupTable().putRemoteCallbackBinding(key, simonCallback.getId(), (SimonRemote) result);
 				result = simonCallback;;
 				
 			}
