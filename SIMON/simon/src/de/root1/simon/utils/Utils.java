@@ -471,7 +471,24 @@ public class Utils {
 		
 		return sb.toString();
 	}
-
+	
+	/**
+	 * Gets a String representation for a <Code>SelectionKey>/code>
+	 * TODO: Documentation to be done for method 'getKeyString', by 'ACHR'..
+	 * 
+	 * @param key
+	 * @return
+	 */
+	public static String getKeyIdentifier(SelectionKey key){
+		StringBuffer sb = new StringBuffer();
+		
+		sb.append("[");
+		sb.append(getChannelString(key.channel()));
+		sb.append("]");
+		
+		return sb.toString();
+	}
+	
 	public static String inspectPacket(ByteBuffer buf) {
 		int position = buf.position();
 		byte headerId0=buf.get();

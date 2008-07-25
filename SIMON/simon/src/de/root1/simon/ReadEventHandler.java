@@ -151,14 +151,14 @@ class ReadEventHandler implements Runnable {
 					break;
 					
 				default :
-					String msg ="packet with msgType=0x"+Integer.toHexString(msgType)+" is unknown "+Utils.getKeyString(key)+". "+Utils.inspectPacket(rxPacket.getByteBuffer());
+					String msg ="packet with msgType=0x"+Integer.toHexString(msgType)+" is unknown "+Utils.getKeyIdentifier(key)+". "+Utils.inspectPacket(rxPacket.getByteBuffer());
 					_log.warning(msg);
 					dispatcher.putResultToQueue(requestID, new InvalidPacketTypeException(msg));
 			}
 			
 		} catch (CancelledKeyException e) {
 			
-			String msg = "I/O exception, connection broken on "+Utils.getKeyString(key)+": "+e.getMessage();
+			String msg = "I/O exception, connection broken on "+Utils.getKeyIdentifier(key)+": "+e.getMessage();
 			
 			_log.severe(msg);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
@@ -167,7 +167,7 @@ class ReadEventHandler implements Runnable {
 			
 			dispatcher.cancelKey(key);
 
-			String msg = "I/O exception on "+Utils.getKeyString(key)+". Maybe client released the remote object. errorMsg: "+e.getMessage();
+			String msg = "I/O exception on "+Utils.getKeyIdentifier(key)+". Maybe client released the remote object. errorMsg: "+e.getMessage();
 			
 			_log.fine(msg);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
