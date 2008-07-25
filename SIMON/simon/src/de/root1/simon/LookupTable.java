@@ -19,9 +19,7 @@
 package de.root1.simon;
 
 import java.lang.reflect.Method;
-import java.net.Socket;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
