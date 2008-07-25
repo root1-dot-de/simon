@@ -1,7 +1,7 @@
 /**
  * TODO Documentation to be done
  */
-package de.root1.simon.tests;
+package de.root1.simon.experiments;
 
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
