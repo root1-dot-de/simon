@@ -19,10 +19,15 @@ public class DirectByteBufferPoolTest {
 		ByteBuffer b04 = DirectByteBufferPool.getInstance().getByteBuffer(04);
 		ByteBuffer b05 = DirectByteBufferPool.getInstance().getByteBuffer(05);
 		
+		@SuppressWarnings("unused")
 		ByteBuffer a11 = DirectByteBufferPool.getInstance().getByteBuffer(11);
+		@SuppressWarnings("unused")
 		ByteBuffer a12 = DirectByteBufferPool.getInstance().getByteBuffer(12);
+		@SuppressWarnings("unused")
 		ByteBuffer a13 = DirectByteBufferPool.getInstance().getByteBuffer(13);
+		@SuppressWarnings("unused")
 		ByteBuffer a14 = DirectByteBufferPool.getInstance().getByteBuffer(14);
+		@SuppressWarnings("unused")
 		ByteBuffer a15 = DirectByteBufferPool.getInstance().getByteBuffer(15);
 		
 		ByteBuffer b11 = DirectByteBufferPool.getInstance().getByteBuffer(11);
