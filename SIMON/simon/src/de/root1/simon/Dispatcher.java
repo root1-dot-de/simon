@@ -535,12 +535,14 @@ public class Dispatcher implements Runnable {
 					if (_log.isLoggable(Level.FINER)){
 						_log.fine("SimonCallback found! id="+sc.getId());
 					}
-					lookupTable.putRemoteBinding(sc.getId(), (SimonRemote)args[i]);
+					
+//					lookupTable.putRemoteBinding(sc.getId(), (SimonRemote)args[i]);
+					lookupTable.putRemoteCallbackBinding(key, sc.getId(), (SimonRemote) args[i]);
+					
 					args[i] = sc; // overwrite arg with wrapped callback-interface
 				}
 			}
 		}
-
 		
 		TxPacket packet = new TxPacket();
 		packet.setHeader(Statics.INVOCATION_PACKET, requestID);
