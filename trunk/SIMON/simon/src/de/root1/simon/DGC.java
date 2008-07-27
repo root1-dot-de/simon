@@ -54,14 +54,15 @@ public class DGC extends Thread {
 			if (_log.isLoggable(Level.FINER))
 				if (key.isValid())
 					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyString(key));
-				else
+				else {
 					_log.finer("key removed from DGC. "+((SocketChannel)key.channel()).socket().getInetAddress());
+					dispatcher.getLookupTable().unreference(key);
+				}
 			
 			int port = ((SocketChannel)key.channel()).socket().getPort();
 			String address = ((SocketChannel)key.channel()).socket().getInetAddress().toString();
-			
 			Simon.getStatistics().setRtt(address+":"+port, rtt);
-			dispatcher.getLookupTable().unreference(key);
+			
 		}
 		
 		
