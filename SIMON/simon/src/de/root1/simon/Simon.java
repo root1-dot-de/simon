@@ -460,6 +460,14 @@ public class Simon {
 		return result;
 	}
 	
+	/**
+	 * Sets the DGC's interval time in milliseconds
+	 * @param milliseconds time in milliseconds
+	 */
+	public static void setDgcInterval(int milliseconds){
+		Statics.DGC_INTERVAL = milliseconds;
+	}
+	
 	
 
 }
