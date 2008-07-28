@@ -224,6 +224,7 @@ public class Dispatcher implements Runnable {
 				
 				if (key!=null) {
 					cancelKey(key);
+					lookupTable.unreference(key);
 				}
 				
 			} catch (Exception e) {
@@ -231,6 +232,8 @@ public class Dispatcher implements Runnable {
 				_log.severe("Generel Exception: e="+e+" msg="+e.getMessage());e.printStackTrace();		
 
 				wakeAllMonitors();
+				cancelKey(key);
+				lookupTable.unreference(key);
 			}
 		}
 		isRunning = false;
