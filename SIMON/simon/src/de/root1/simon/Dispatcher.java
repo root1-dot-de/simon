@@ -323,14 +323,16 @@ public class Dispatcher implements Runnable {
 					_log.finest(Utils.inspectPacket(buf));
 				}
 
-				socketChannel.write(buf);
-				
-				
-				if (buf.remaining() > 0) {
-					System.err.println("Dispatcher#handleWrite() -> not enough bytes written!");
-					System.err.flush();
-					System.exit(0);
+				// FIXME corrent workaround?!
+				while (buf.remaining()>0) {
+					socketChannel.write(buf);
 				}
+				
+//				if (buf.remaining() > 0) {
+//					System.err.println("Dispatcher#handleWrite() -> not enough bytes written!");
+//					System.err.flush();
+//					System.exit(0);
+//				}
 				queue.remove(0);
 				
 			}
