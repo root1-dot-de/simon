@@ -864,7 +864,6 @@ public class Dispatcher implements Runnable {
 	private void cancelWaitingMonitors(SelectableChannel selectableChannel){
 		List<Integer> requestIdList = getRequestId(selectableChannel);
 		for (Integer id : requestIdList) {
-			// FIXME how to create a exception without throwing it immediately?!
 			putResultToQueue(id, new ConnectionException("Connection is broken!"));
 			wakeWaitingProcess(id);
 		}

@@ -72,7 +72,7 @@ public class Simon {
 	 */
 	static {
 		
-		// only debug, if DEBUG flag is enabled in Utils class
+		// only debug, if public DEBUG flag is enabled in Utils class
 		if (Utils.DEBUG) {
 			
 			InputStream is;
