@@ -55,7 +55,7 @@ public class DGC extends Thread {
 				if (key.isValid())
 					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyString(key));
 				else {
-					_log.finer("key removed from DGC. "+((SocketChannel)key.channel()).socket().getInetAddress());
+					_log.finer("key removed from DGC. "+Utils.getKeyIdentifier(key));
 					dispatcher.getLookupTable().unreference(key);
 				}
 			
