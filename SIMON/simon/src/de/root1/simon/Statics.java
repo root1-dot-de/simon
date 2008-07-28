@@ -41,6 +41,6 @@ public class Statics {
 	protected static final String EQUALS_METHOD_SIGNATURE 	= "public boolean java.lang.Object.equals(java.lang.Object)";
 	protected static final long DEFAULT_WAIT_TIME = 100;
 
-	protected static long DGC_INTERVAL = 30000;
+	protected static int DGC_INTERVAL = 30000;
 	
 }

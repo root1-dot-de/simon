@@ -159,8 +159,9 @@ class ReadEventHandler implements Runnable {
 		} catch (CancelledKeyException e) {
 			
 			String msg = "I/O exception, connection broken on "+Utils.getKeyIdentifier(key)+": "+e.getMessage();
-			
 			_log.severe(msg);
+			
+			dispatcher.getLookupTable().unreference(key);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
 		} catch (IOException e) {
@@ -168,8 +169,9 @@ class ReadEventHandler implements Runnable {
 			dispatcher.cancelKey(key);
 
 			String msg = "I/O exception on "+Utils.getKeyIdentifier(key)+". Maybe client released the remote object. errorMsg: "+e.getMessage();
-			
 			_log.fine(msg);
+			
+			dispatcher.getLookupTable().unreference(key);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
 		} catch (ClassNotFoundException e) {
