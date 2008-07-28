@@ -468,6 +468,13 @@ public class Simon {
 		Statics.DGC_INTERVAL = milliseconds;
 	}
 	
+	/**
+	 * Gets the DGC's interval time in milliseconds
+	 * return DGC interval time in milliseconds
+	 */
+	public static int getDgcInterval(){
+		return Statics.DGC_INTERVAL;
+	}
 	
 
 }
