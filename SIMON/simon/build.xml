@@ -2,7 +2,7 @@
 <project name="SIMON" default="create_package" basedir=".">
     <description>SIMON: a kind of router-friendly RMI replacement</description>
 	
-	<property name="version" value="NIO_0.1b"/>
+	<property name="version" value="0.1_beta"/>
 	
 	<!-- destination of compiled and jared lib -->
 	<property name="dist" location="dist"/>
@@ -96,6 +96,11 @@
 			<fileset dir="${build}">
                 <include name="doc/**/*"/>
 			</fileset>
+			<filterset>
+				<filter token="SIMON_VERSION" value="${version}"/>
+				<filter token="SIMON_BUILD_TIMESTAMP" value="${build.timestamp}"/>
+				<filter token="SIMON_BUILD_REVISION" value="${build.revision}"/>
+			</filterset>
 		</copy>
 		
 		
