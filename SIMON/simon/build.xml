@@ -150,7 +150,7 @@
 		       basedir="${dist}"
 		       includes="**/*"
 		/>
-		<copy file="${dist}/SIMON-${version}-build${build.timestamp}.zip" tofile="${dist}/SIMON-latest.zip"/>
+		<copy file="${dist}/SIMON-${version}-rev${build.revision}-build${build.timestamp}.zip" tofile="${dist}/SIMON-latest.zip"/>
 
 	</target>  
 
