@@ -43,4 +43,8 @@ public class Statics {
 
 	protected static int DGC_INTERVAL = 30000;
 	
+	public static final String SIMON_VERSION = "@SIMON_VERSION@";
+	public static final String SIMON_BUILD_TIMESTAMP = "@SIMON_BUILD_TIMESTAMP@";
+	public static final String SIMON_BUILD_REVISION = "@SIMON_BUILD_REVISION@";
+	
 }
