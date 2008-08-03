@@ -146,7 +146,7 @@
             depends="create_jar"
             description="Create a complete package">
 
-		<zip destfile="${dist}/SIMON-${version}-build${build.timestamp}.zip"
+		<zip destfile="${dist}/SIMON-${version}-rev${build.revision}-build${build.timestamp}.zip"
 		       basedir="${dist}"
 		       includes="**/*"
 		/>
