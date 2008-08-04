@@ -146,11 +146,11 @@
             depends="create_jar"
             description="Create a complete package">
 
-		<zip destfile="${dist}/SIMON-${version}-rev${build.revision}-build${build.timestamp}.zip"
+		<zip destfile="${dist}/SIMON-${version}-rev${build.revision}.zip"
 		       basedir="${dist}"
 		       includes="**/*"
 		/>
-		<copy file="${dist}/SIMON-${version}-rev${build.revision}-build${build.timestamp}.zip" tofile="${dist}/SIMON-latest.zip"/>
+		<copy file="${dist}/SIMON-${version}-rev${build.revision}.zip" tofile="${dist}/SIMON-latest.zip"/>
 
 	</target>  
 
