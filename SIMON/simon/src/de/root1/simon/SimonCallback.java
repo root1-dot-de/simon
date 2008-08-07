@@ -59,7 +59,7 @@ public class SimonCallback implements Serializable {
 		int remotePort = socketChannel.socket().getPort();
 		int localPort = socketChannel.socket().getLocalPort();
 		
-		this.id = "["+callback.getClass().getName()+"|ip="+IP+";l_port="+localPort+";r_port="+remotePort+"]";
+		this.id = "["+callback.getClass().getName()+"|ip="+IP+";l_port="+localPort+";r_port="+remotePort+";remoteObjectHash="+callback.hashCode()+"]";
 		
 		if (_log.isLoggable(Level.FINER)){
 			_log.finer("callbackId="+this.id);
