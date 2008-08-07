@@ -21,6 +21,8 @@ package de.root1.simon.utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
@@ -301,19 +303,20 @@ public class Utils {
      * 
      * @param object the object to convert
      * @param bb the target byte[] where the length and the object is stored
-     * @throws IOException if there's a problem with the serialisation of the object
+     * @throws InvalidClassException Something is wrong with a class used by serialization.
+     * @throws NotSerializableException Some object to be serialized does not implement the java.io.Serializable interface.
+     * @throws IOException Any exception thrown by the underlying OutputStream. 
+
      */
-    public static byte[] objectToBytes(Object object) throws IOException{
+    public static byte[] objectToBytes(Object object) throws InvalidClassException, NotSerializableException, IOException {
     	
     	// tests showed that the simplest object has at least 28 bytes
     	// so we prepare for at least this size
     	ByteArrayOutputStream2 baos = new ByteArrayOutputStream2(28);
-    	
-		ObjectOutputStream oos = new ObjectOutputStream(baos);
-	
-		oos.writeObject(object);
-		oos.flush();
+			ObjectOutputStream oos = new ObjectOutputStream(baos);
 		
+			oos.writeObject(object);
+			oos.flush();
 		return baos.getBuf();
     }
     
