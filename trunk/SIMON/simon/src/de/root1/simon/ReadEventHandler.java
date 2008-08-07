@@ -91,7 +91,7 @@ class ReadEventHandler implements Runnable {
 			requestID = rxPacket.getRequestID();
 
 			if (_log.isLoggable(Level.FINER)) {
-				_log.finer("got msgType="+msgType+" requestID="+requestID);
+				_log.finer("got msgType="+Utils.getPacketTypeAsString(msgType)+" requestID="+requestID);
 			}
 
 			packetBody = rxPacket.getBody();
@@ -245,12 +245,12 @@ class ReadEventHandler implements Runnable {
 		
 		final int hashcode = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();		
 		
-		ByteBuffer packet = ByteBuffer.allocate(1+4+4);
-		packet.put(Statics.HASHCODE_RETURN_PACKET);
-		packet.putInt(requestID);
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.HASHCODE_RETURN_PACKET, requestID);
 		packet.putInt(hashcode);
+		packet.setComplete();
 		
-		dispatcher.send(key,packet);
+		dispatcher.send(key,packet.getByteBuffer());
 		
 		_log.fine("end");
 	}
@@ -270,23 +270,22 @@ class ReadEventHandler implements Runnable {
 		
 		final String tostring = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();		
 		
-		ByteBuffer packet = ByteBuffer.allocate(1+4+(4+tostring.length()));
-		packet.put(Statics.TOSTRING_RETURN_PACKET);
-		packet.putInt(requestID);
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.TOSTRING_RETURN_PACKET, requestID);
 		packet.put(Utils.stringToBytes(tostring));
+		packet.setComplete();
 		
-		dispatcher.send(key,packet);
+		dispatcher.send(key,packet.getByteBuffer());
 		
 		_log.fine("end");
 	}
 	
 	/**
 	 * 
-	 * processes a request for a "equls()" call on a remote-object
+	 * processes a request for a "equals()" call on a remote-object
 	 * 
-	 * @param requestID
 	 * @param remoteObjectName
-	 * @praram object
+	 * @param object
 	 * @throws IOException
 	 * @throws LookupFailedException 
 	 */
@@ -296,12 +295,12 @@ class ReadEventHandler implements Runnable {
 		
 		final boolean equals = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).equals(object);		
 
-		ByteBuffer packet = ByteBuffer.allocate(1+4+1);
-		packet.put(Statics.EQUALS_RETURN_PACKET);
-		packet.putInt(requestID);
+		TxPacket packet = new TxPacket();
+		packet.setHeader(Statics.EQUALS_RETURN_PACKET, requestID);
 		packet.put(equals ? (byte) 1 : (byte) 0);
+		packet.setComplete();
 		
-		dispatcher.send(key,packet);
+		dispatcher.send(key,packet.getByteBuffer());
 		
 		_log.fine("end");
 	}
