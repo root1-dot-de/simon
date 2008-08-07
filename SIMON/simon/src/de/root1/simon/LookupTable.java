@@ -86,28 +86,32 @@ public class LookupTable {
 	 * release all remote objects (callbacks) which are related to a specific SelectionKey.
 	 * 
 	 * @param key 
-	 * @param name
+	 * @param remoteObjectName
 	 * @param remoteObject
 	 */
-	public synchronized void putRemoteCallbackBinding(SelectionKey key, String name, SimonRemote remoteObject){
+	public synchronized void putRemoteCallbackBinding(SelectionKey key, String remoteObjectName, SimonRemote remoteObject){
 		_log.fine("begin");
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("name="+name+"  object="+remoteObject);
+			_log.finer("key="+key+" remoteObjectName="+remoteObjectName+"  remoteObject="+remoteObject);
 		
 		List<String> remotes;
 		
 		// if there no list present, create one
-		if (!gcRemoteCallbacks.containsKey(key)) {
+		if (!gcRemoteCallbacks.containsKey(Utils.getKeyIdentifier(key))) {
+			_log.finer("key unknown, creating new callback list!");
 			remotes = new ArrayList<String>();
 			gcRemoteCallbacks.put(Utils.getKeyIdentifier(key), remotes);
 		} else {
-			remotes = gcRemoteCallbacks.get(key);
+			remotes = gcRemoteCallbacks.get(Utils.getKeyIdentifier(key));
 		}
 		
-		remotes.add(name);
+		remotes.add(remoteObjectName);
 		
-		putRemoteBinding(name, remoteObject);
+		putRemoteBinding(remoteObjectName, remoteObject);
+		
+		if (_log.isLoggable(Level.FINEST))
+			_log.finest("key="+Utils.getKeyIdentifier(key)+" now has "+remotes.size()+" entries.");
 				
 		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
 		_log.fine("end");		
