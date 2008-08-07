@@ -18,7 +18,10 @@
  */
 package de.root1.simon;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InvalidClassException;
+import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
@@ -533,19 +536,19 @@ public class Dispatcher implements Runnable {
 			requestReturnType.put(requestID, returnType);
 		}
 		
-		// register callback objects in the lookup-table
+		// register remote instance objects in the lookup-table
 		if (args != null) {
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof SimonRemote) {
-					SimonCallback sc = new SimonCallback(key,(SimonRemote)args[i]);
+					SimonRemoteInstance sc = new SimonRemoteInstance(key,(SimonRemote)args[i]);
 					if (_log.isLoggable(Level.FINER)){
-						_log.fine("SimonCallback found! id="+sc.getId());
+						_log.fine("SimonRemoteInstance found! id="+sc.getId());
 					}
 					
 //					lookupTable.putRemoteBinding(sc.getId(), (SimonRemote)args[i]);
-					lookupTable.putRemoteCallbackBinding(key, sc.getId(), (SimonRemote) args[i]);
+					lookupTable.putRemoteInstanceBinding(key, sc.getId(), (SimonRemote) args[i]);
 					
-					args[i] = sc; // overwrite arg with wrapped callback-interface
+					args[i] = sc; // overwrite arg with wrapped remote instance-interface
 				}
 			}
 		}
@@ -608,8 +611,6 @@ public class Dispatcher implements Runnable {
 		packet.setHeader(Statics.TOSTRING_PACKET, requestID);
 		packet.put(Utils.stringToBytes(remoteObjectName));
 		packet.setComplete();
-		
-//		System.out.println("noch in der tostring -> "+packet.getByteBuffer());
 		
 		synchronized (monitor) {
 			send(key, packet.getByteBuffer());
@@ -687,14 +688,17 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * 
-	 * TODO Documentation to be done
-	 * @param key
-	 * @param remoteObjectName
-	 * @param object
-	 * @return
-	 * @throws IOException
+	 * Forwards an "equals()" call to the remote side to be handled there
+	 * 
+	 * @param key the key to which the invocation is sent
+	 * @param remoteObjectName the name of the remote object that has to be compared
+	 * @param object the object to which the remote object is compared with
+	 * @return the result of the comparison
+	 * @throws InvalidClassException Something is wrong with a class used by serialization.
+	 * @throws NotSerializableException if the object in the argument that has to be compared with the remote object is not serializable
+	 * @throws IOException If there was a problem with the underlying output stream (should normally not occur, because we only use {@link ByteArrayOutputStream})
 	 */
-	protected boolean invokeEquals(SelectionKey key, String remoteObjectName, Object object) throws IOException {
+	protected boolean invokeEquals(SelectionKey key, String remoteObjectName, Object object) throws InvalidClassException, NotSerializableException, IOException {
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))

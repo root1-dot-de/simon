@@ -19,6 +19,8 @@
 package de.root1.simon;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -33,7 +35,7 @@ import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
 /**
- * The InvocationHandler which redirects each method call over the network to the server
+ * The InvocationHandler which redirects each method call over the network to the related dispatcher
  * 
  * @author achristian
  *
@@ -44,7 +46,9 @@ public class SimonProxy implements InvocationHandler {
 	
 	/** name of the corresponding remote object in the remote lookup table */
 	private String remoteObjectName;
+
 	
+
 	/** a reference to the associated dispatcher */
 	private Dispatcher dispatcher;
 	
@@ -84,7 +88,25 @@ public class SimonProxy implements InvocationHandler {
 			try{
 				// redirect invocation
 				if (method.toString().equalsIgnoreCase(Statics.EQUALS_METHOD_SIGNATURE)){
-					return remoteEquals(args[0]);
+					
+					// check if object is an remote object which has to be looked up at the opposite ReadEventHandler
+					Object o;
+					if (args[0] instanceof SimonRemote) {
+						
+						o = new SimonRemoteInstance(key,(SimonRemote)args[0]);
+//						o = "simonRemoteObjectName="+Simon.getSimonProxy(args[0]).getRemoteObjectName();
+						
+					} else { // else, it's a standard object
+						
+						o = args[0];
+						// .. and if the standard object is not serializable, throw an exception
+						if (!(o instanceof Serializable)) {
+							throw new IllegalArgumentException("SIMON remote objects can only compared with objects that are serializable!");
+						}
+						
+					}
+					
+					return remoteEquals(o);
 				}
 				else
 				if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)){
@@ -114,10 +136,10 @@ public class SimonProxy implements InvocationHandler {
 			throw (Throwable)result;
 		}
 		
-		if (result instanceof SimonCallback){
+		if (result instanceof SimonRemoteInstance){
 			
 			// creating a proxy for the callback
-			SimonCallback simonCallback = (SimonCallback) result;
+			SimonRemoteInstance simonCallback = (SimonRemoteInstance) result;
 			Class<?>[] listenerInterfaces = new Class<?>[1];
 			listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
@@ -226,4 +248,12 @@ public class SimonProxy implements InvocationHandler {
 		"]";
 	}
 	
+	/**
+	 * Returns the proxy's remote object name in the related lookup table
+	 * @return the remote object name
+	 */
+	protected String getRemoteObjectName() {
+		return remoteObjectName;
+	}
+
 }
