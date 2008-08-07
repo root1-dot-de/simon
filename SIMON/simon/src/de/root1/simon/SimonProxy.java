@@ -97,7 +97,7 @@ public class SimonProxy implements InvocationHandler {
 					throw new SimonRemoteException("'"+method.getName()+"' is whether a remote method, nor is it callable over remote.");
 				
 			} catch (IOException e){
-				throw new SimonRemoteException("Could not process invocation of method '"+method.getName()+"'. Underlying exception: "+e.getMessage());
+				throw new SimonRemoteException("Could not process invocation of method '"+method.getName()+"'. Underlying exception: "+e);
 			}
 		}
 		

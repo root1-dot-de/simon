@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -490,6 +491,10 @@ public class Utils {
 	}
 	
 	public static String inspectPacket(ByteBuffer buf) {
+
+		StringBuffer sb = new StringBuffer();
+		buf.rewind();
+		
 		int position = buf.position();
 		byte headerId0=buf.get();
 		byte headerId1=buf.get();
@@ -497,7 +502,6 @@ public class Utils {
 		int requestID = buf.getInt();
 		int packetLength = buf.getInt();
 		
-		StringBuffer sb = new StringBuffer();
 		sb.append("[packet|type=");
 		sb.append(getPacketTypeAsString(type));
 		sb.append(", headerId0=0x");
@@ -535,7 +539,7 @@ public class Utils {
 		}
 		
 		buf.position(position);
-		
+
 		return sb.toString();
 		
 	}
