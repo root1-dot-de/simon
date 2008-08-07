@@ -337,13 +337,13 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Retrieves {@link SimonProxy} invocationhandler wrapped in a simple proxy
+	 * Retrieves {@link SimonProxy} invocation handler wrapped in a simple proxy
 	 * 
 	 * @param o the object that holds the proxy
 	 * @return the extracted SimonProxy
-	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocationhandler
+	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocation handler
 	 */
-	private static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
+	protected static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
 		if (o instanceof Proxy) {
 			InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
 			if (invocationHandler instanceof SimonProxy){

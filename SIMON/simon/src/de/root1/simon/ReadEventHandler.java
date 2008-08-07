@@ -293,8 +293,29 @@ class ReadEventHandler implements Runnable {
 		
 		_log.fine("begin");
 		
-		final boolean equals = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).equals(object);		
+		if (object instanceof SimonRemoteInstance) {
+			_log.finer("given argument is SimonRemoteInstance");
+			
+			final String argumentRemoteObjectName = ((SimonRemoteInstance)object).getRemoteObjectName();
 
+			object = dispatcher.getLookupTable().getRemoteBinding(argumentRemoteObjectName);
+		}
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("argument="+object);
+		
+		SimonRemote remoteBinding = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("remoteBinding="+remoteBinding);
+		
+//		final boolean equals = remoteBinding.equals(object);	
+		final boolean equals = remoteBinding.toString().equals(object.toString());
+
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("result="+equals);
+		
+		
 		TxPacket packet = new TxPacket();
 		packet.setHeader(Statics.EQUALS_RETURN_PACKET, requestID);
 		packet.put(equals ? (byte) 1 : (byte) 0);
@@ -374,10 +395,10 @@ class ReadEventHandler implements Runnable {
 
 			for (int i = 0; i < args.length; i++) {
 				
-				// search the arguments for remote-objects for callbacks
-				if (args[i] instanceof SimonCallback) {
+				// search the arguments for remote instances 
+				if (args[i] instanceof SimonRemoteInstance) {
 					
-					final SimonCallback simonCallback = (SimonCallback) args[i];
+					final SimonRemoteInstance simonCallback = (SimonRemoteInstance) args[i];
 					_log.finer("SimonCallback in args found. id="+simonCallback.getId());					
 										
 					Class<?>[] listenerInterfaces = new Class<?>[1];
@@ -405,12 +426,12 @@ class ReadEventHandler implements Runnable {
 			if (result instanceof SimonRemote){
 				_log.finer("Result of method is instance of SimonRemote");
 				
-				SimonCallback simonCallback = new SimonCallback(key,(SimonRemote)result);
+				SimonRemoteInstance simonCallback = new SimonRemoteInstance(key,(SimonRemote)result);
 				simonCallback.getId();
 
 //				dispatcher.getLookupTable().putRemoteBinding(simonCallback.getId(), (SimonRemote)result);
-				dispatcher.getLookupTable().putRemoteCallbackBinding(key, simonCallback.getId(), (SimonRemote) result);
-				result = simonCallback;;
+				dispatcher.getLookupTable().putRemoteInstanceBinding(key, simonCallback.getId(), (SimonRemote) result);
+				result = simonCallback;
 				
 			}
 			
