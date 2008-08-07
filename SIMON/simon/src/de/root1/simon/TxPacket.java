@@ -141,15 +141,12 @@ public class TxPacket {
 
 	public void setComplete(){
 		int pos = bb.position();
-		//Utils.debug("TxPacket.setComplete() -> position1="+bb.position());
-		bb.position(7); // positioniere den Zeiger für das einfügen der Länge des Packet-Bodys
+		bb.position(7); // positioniere den Zeiger für das einfügen der Länge des Packet-Bodys in den header
 		bodySize = pos-11;
-		bb.putInt(bodySize); // Die position - den Header von 9 Bytes ergibt den Body
+		bb.putInt(bodySize); // Die position minus den Header mit der größe von 11 Bytes ergibt die größe des bodys
 		bb.position(pos);
-		//Utils.debug("TxPacket.setComplete() -> position2="+bb.position());
 //		bb.rewind();
 		bb.flip();
-		//Utils.debug("TxPacket.setComplete() -> bb="+bb);
 		setComplete = true;
 	}
 	

@@ -2,8 +2,8 @@
 # TODO:
 #
 
-- We have pakets which are fixed in size, and we have packets, which are not. 
-- Sending the paket size should depend on the paket type
+- We have packets which are fixed in size, and we have packets, which are not. 
+- Sending the packet size should depend on the packet type
 --> only hashcode-return and equals-return have a fixed size. So it's not an real performance-issue
     to send ALWAYS the size of the packet after the packet-type.
 - That means, there should be a packet-handler, checking the type and deciding what to do with it.
@@ -15,8 +15,8 @@
 Notes:
 - String serialization with ObjectOutputStream -> Overhead: 11 Bytes (this seems to be constant)
 - invokeXYZ is done by the client. Each invoke method waits for the result before finishing.
-  The result is received by the PacketProcessor. And the PP must store the result in a Map and 
-  notify the waiting invoke-method.
+  The result is received by the ReadEventHandler. And the REH must store the result in a Map in the 
+  Dispatcher and notify the waiting invoke-method.
 - SelectionKey Ops:
   bit 0 ( 1) -> read
   bit 1 ( 2) -> -
@@ -49,7 +49,7 @@ Notes:
 |	1		|	1		|	Byte	|	simon packet header id1 (0x32)
 |	2		|	1		|	Byte	|	packet type 
 |	3		|	4		|	Integer	|	request id 
-|	7		|	4		|	Integer	|	length of following paket 
+|	7		|	4		|	Integer	|	length of following packet 
 +-----------+-----------+-----------+------------------------------------------------------------
 
 +-----------+-----------+-----------+------------------------------------------------------------

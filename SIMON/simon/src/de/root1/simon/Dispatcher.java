@@ -229,7 +229,7 @@ public class Dispatcher implements Runnable {
 				
 			} catch (Exception e) {
 				// TODO correct exception handling here?
-				_log.severe("Generel Exception: e="+e+" msg="+e.getMessage());e.printStackTrace();		
+				_log.severe("General Exception: e="+e+" msg="+e.getMessage());e.printStackTrace();		
 
 				wakeAllMonitors();
 				cancelKey(key);
@@ -589,7 +589,7 @@ public class Dispatcher implements Runnable {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
+	 * TODO: Documentation to be done for method 'invokeToString', by 'ACHR'..
 	 * 
 	 * @param remoteObjectName
 	 * @return
@@ -609,29 +609,37 @@ public class Dispatcher implements Runnable {
 		packet.put(Utils.stringToBytes(remoteObjectName));
 		packet.setComplete();
 		
+//		System.out.println("noch in der tostring -> "+packet.getByteBuffer());
 		
-		// send the packet to the connected client-socket-channel
-		send(key, packet.getByteBuffer());
+		synchronized (monitor) {
+			send(key, packet.getByteBuffer());
+
+			// check if need to wait for the result
+			synchronized (requestResults) {
+				if (requestResults.containsKey(requestID))
+					return (String)getRequestResult(requestID);
+			}
 		
-		// got to sleep until result is present
-		try {
-			monitor.wait();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			// got to sleep until result is present
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-			
-		// get result
+
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end. requestID="+requestID);
+
 		synchronized (requestResults) {
-			if (_log.isLoggable(Level.FINE))
-	 			_log.fine("end. requestID="+requestID);
-			return (String)getRequestResult(requestID);			
-		}		
+			return (String)getRequestResult(requestID);
+		}
 	}
 
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'sendLookup', by 'ACHR'..
+	 * TODO: Documentation to be done for method 'invokeHashCode', by 'ACHR'..
 	 * 
 	 * @param remoteObjectName
 	 * @return
@@ -651,27 +659,29 @@ public class Dispatcher implements Runnable {
 		packet.put(Utils.stringToBytes(remoteObjectName));
 		packet.setComplete();
 		
-		send(key, packet.getByteBuffer());
+		synchronized (monitor) {
+			send(key, packet.getByteBuffer());
+
+			// check if need to wait for the result
+			synchronized (requestResults) {
+				if (requestResults.containsKey(requestID))
+					return (Integer)getRequestResult(requestID);
+			}
 		
-		// check if need to wait for the result
-		synchronized (requestResults) {
-			if (requestResults.containsKey(requestID))
-				return (Integer)getRequestResult(requestID);
+			// got to sleep until result is present
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
-		// got to sleep until result is present
-		try {
-			monitor.wait();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-			
-		// get result
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end. requestID="+requestID);
+
 		synchronized (requestResults) {
-			if (_log.isLoggable(Level.FINE))
-	 			_log.fine("end. requestID="+requestID);
-			return (Integer)getRequestResult(requestID);			
-		}		
+			return (Integer)getRequestResult(requestID);
+		}	
 	}
 
 
@@ -699,24 +709,29 @@ public class Dispatcher implements Runnable {
 		packet.put(Utils.objectToBytes(object));
 		packet.setComplete();
 		
-		send(key, packet.getByteBuffer());
-		// check if need to wait for the result
-		synchronized (requestResults) {
-			if (requestResults.containsKey(requestID))
-				return (Boolean)getRequestResult(requestID);
-		}
+		synchronized (monitor) {
+			send(key, packet.getByteBuffer());
+
+			// check if need to wait for the result
+			synchronized (requestResults) {
+				if (requestResults.containsKey(requestID))
+					return (Boolean)getRequestResult(requestID);
+			}
 		
-		// got to sleep until result is present
-		try {
-			monitor.wait();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			// got to sleep until result is present
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
-		
+
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("end. requestID="+requestID);
-		// get result
-		return (Boolean) getRequestResult(requestID);
+			_log.fine("end. requestID="+requestID);
+
+		synchronized (requestResults) {
+			return (Boolean)getRequestResult(requestID);
+		}
 	}
 
 
