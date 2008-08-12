@@ -166,7 +166,7 @@ public class Simon {
 	 *  
 	 * @param address
 	 * @param port
-	 * @return
+	 * @return the created registry
 	 */
 	public static Registry createRegistry(InetAddress address, int port){
 		_log.fine("begin");
@@ -180,13 +180,13 @@ public class Simon {
 	 * 
 	 * TODO: Documentation to be done for method 'lookup', by 'achristian'..
 	 * 
-	 * @param host
-	 * @param port
-	 * @param remoteObjectName
-	 * @return
-	 * @throws SimonRemoteException
-	 * @throws IOException
-	 * @throws EstablishConnectionFailed
+	 * @param host hostname where the lookup takes place
+	 * @param port port number of the simon remote registry
+	 * @param remoteObjectName name of the remote object which is bind to the remote registry 
+	 * @return and instance of the remote object
+	 * @throws SimonRemoteException if there's a problem with the simon communication
+	 * @throws IOException if there is a problem with the communication itself
+	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
 	 */
 	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, EstablishConnectionFailed {
 		_log.fine("begin");

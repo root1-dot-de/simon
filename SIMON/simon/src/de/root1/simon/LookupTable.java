@@ -143,7 +143,7 @@ public class LookupTable {
 	 * 
 	 * Frees a saved remote object. After a remote object is freed, it cannot be looked up again until it's bind again.
 	 * 
-	 * @param the remote object to free
+	 * @param name the remote object to free
 	 */
 	public synchronized void releaseRemoteBinding(String name){
 		_log.fine("begin");

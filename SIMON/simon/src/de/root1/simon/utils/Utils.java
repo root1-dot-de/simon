@@ -26,7 +26,6 @@ import java.io.NotSerializableException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -302,7 +301,6 @@ public class Utils {
      * indicating the length of following object
      * 
      * @param object the object to convert
-     * @param bb the target byte[] where the length and the object is stored
      * @throws InvalidClassException Something is wrong with a class used by serialization.
      * @throws NotSerializableException Some object to be serialized does not implement the java.io.Serializable interface.
      * @throws IOException Any exception thrown by the underlying OutputStream. 
@@ -373,12 +371,12 @@ public class Utils {
     
     /**
      * 
-     * TODO: Documentation to be done for method 'getSelectionKeyString', by 'ACHR'..
+     * Returns a string representation of the operation key which is used by {@link SelectionKey}
      * 
-     * @param key
-     * @return
+     * @param key an integer representing the operation
+     * @return a string representation for the key value
      */
-    public static String getSelectionKeyString(int key) {
+    public static String getOperationKeyAsString(int key) {
 
 		StringBuilder sb = new StringBuilder();
 
@@ -409,12 +407,12 @@ public class Utils {
 	}
     
 	/**
-	 * Gets a String represenatation for a <code>SocketChannel</code>
+	 * Gets a String representation for a <code>SocketChannel</code>
 	 * 
 	 * @param channel
-	 * @return
+	 * @return a string representing the given channel
 	 */
-	public static String getChannelString(SelectableChannel channel) {
+	public static String getChannelIdentifier(SelectableChannel channel) {
 		StringBuffer sb = new StringBuffer();
 
 		String ip = "<unknown>";
@@ -454,22 +452,21 @@ public class Utils {
 	}
 	
 	/**
-	 * Gets a String representation for a <Code>SelectionKey>/code>
-	 * TODO: Documentation to be done for method 'getKeyString', by 'ACHR'..
+	 * Gets a extended textual representation for a <Code>SelectionKey>/code>
 	 * 
 	 * @param key
-	 * @return
+	 * @return a string representing the given SelectionKey plus its interest ops and registered ops
 	 */
-	public static String getKeyString(SelectionKey key){
+	public static String getKeyIdentifierExtended(SelectionKey key){
 		StringBuffer sb = new StringBuffer();
 		
 		sb.append("[");
-		sb.append(getChannelString(key.channel()));
+		sb.append(getChannelIdentifier(key.channel()));
 		if (key.isValid()) {
 			sb.append("interestOps=");
-			sb.append(Utils.getSelectionKeyString(key.interestOps()));
+			sb.append(Utils.getOperationKeyAsString(key.interestOps()));
 			sb.append(",readyOps=");
-			sb.append(Utils.getSelectionKeyString(key.readyOps()));
+			sb.append(Utils.getOperationKeyAsString(key.readyOps()));
 		}
 		sb.append("]");
 		
@@ -477,17 +474,16 @@ public class Utils {
 	}
 	
 	/**
-	 * Gets a String representation for a <Code>SelectionKey>/code>
-	 * TODO: Documentation to be done for method 'getKeyString', by 'ACHR'..
+	 * Gets a textual representation for a <Code>SelectionKey>/code>
 	 * 
 	 * @param key
-	 * @return
+	 * @return a string representing the given SelectionKey
 	 */
 	public static String getKeyIdentifier(SelectionKey key){
 		StringBuffer sb = new StringBuffer();
 		
 		sb.append("[");
-		sb.append(getChannelString(key.channel()));
+		sb.append(getChannelIdentifier(key.channel()));
 		sb.append("]");
 		
 		return sb.toString();

@@ -31,7 +31,7 @@ import de.root1.simon.exceptions.EstablishConnectionFailed;
 
 /**
  * This class is used by SIMON to make a socket connection to the server.
- * After connecting, one can use {@link Client#getKey()} and {@link Client#getChannelToServer()} to
+ * After connecting, one can use {@link Client#getKey()} to
  * retrieve the connection-stuff.
  *
  * @author achristian

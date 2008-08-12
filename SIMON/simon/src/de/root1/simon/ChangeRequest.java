@@ -81,11 +81,11 @@ public class ChangeRequest {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("[changerequest|");
-		sb.append(Utils.getChannelString(socket));
+		sb.append(Utils.getChannelIdentifier(socket));
 		sb.append("type=");
 		sb.append(getTypeAsString());
 		sb.append(",ops=");
-		sb.append(Utils.getSelectionKeyString(ops));
+		sb.append(Utils.getOperationKeyAsString(ops));
 		sb.append("]");
 		return sb.toString();
 	}
