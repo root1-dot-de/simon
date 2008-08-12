@@ -9,7 +9,6 @@ public class ServerSessionImpl implements ServerSessionInterface, SimonUnreferen
 		System.out.println("Message from Client: "+msg);
 	}
 
-	@Override
 	public void unreferenced() {
 		System.out.println("I got unreferenced!");
 	}
