@@ -53,7 +53,7 @@ public class DGC extends Thread {
 			long rtt = dispatcher.sendPing(key);
 			if (_log.isLoggable(Level.FINER))
 				if (key.isValid())
-					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyString(key));
+					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyIdentifierExtended(key));
 				else {
 					_log.finer("key removed from DGC. "+Utils.getKeyIdentifier(key));
 					dispatcher.getLookupTable().unreference(key);
@@ -88,7 +88,7 @@ public class DGC extends Thread {
 	/**
 	 * 
 	 * Constructor for the DGC.
-	 * This only needs a reference to the dispatcher, where the {@link PingWorker} cann execute the 
+	 * This only needs a reference to the dispatcher, where the {@link DGC.PingWorker} can execute the 
 	 * {@link Dispatcher#sendPing(SelectionKey)} method.
 	 * 
 	 * @param dispatcher dispatcher-reference
@@ -171,9 +171,9 @@ public class DGC extends Thread {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'isRunning', by 'ACHR'..
+	 * Returns whether the DGC is running or not
 	 * 
-	 * @return
+	 * @return true, if DGC is running, false if not
 	 */
 	public boolean isRunning() {
 		return isRunning;

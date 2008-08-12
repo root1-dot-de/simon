@@ -176,13 +176,13 @@ class ReadEventHandler implements Runnable {
 			
 		} catch (ClassNotFoundException e) {
 			
-			String msg = "class not found on "+Utils.getKeyString(key)+": "+e.getMessage();
+			String msg = "class not found on "+Utils.getKeyIdentifierExtended(key)+": "+e.getMessage();
 			_log.warning(msg);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
 		} catch (LookupFailedException e) {
 			
-			String msg = "lookup failed on "+Utils.getKeyString(key)+"!";
+			String msg = "lookup failed on "+Utils.getKeyIdentifierExtended(key)+"!";
 			
 			_log.fine(msg);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new LookupFailedException(msg));

@@ -89,7 +89,7 @@ public class Acceptor implements Runnable {
 					selectedKeys.remove();
 					
 					if (_log.isLoggable(Level.FINER))
-						_log.finer("selected key="+Utils.getKeyString(key));
+						_log.finer("selected key="+Utils.getKeyIdentifierExtended(key));
 
 					if (!key.isValid()) {
 						continue;
