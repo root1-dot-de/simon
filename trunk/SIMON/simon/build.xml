@@ -10,8 +10,8 @@
 	<!-- destination of compiled project -->
 	<property name="build" location="build"/>		
 	<!-- destination for compiles sources -->
-	<property name="build.sources" location="${build}/src/"/>
-	<property name="build.classes" location="${build}/bin/"/> 
+	<property name="build.sources" location="${build}/src"/>
+	<property name="build.classes" location="${build}/bin"/> 
 	<property name="build.doc" location="${build}/doc"/>
 	
 	<!-- location of source code -->
@@ -75,9 +75,10 @@
         			notree="false" 
         			packagenames="de.root1.simon.*" 
         			source="1.5" 
-        			sourcepath="src" 
+        			sourcepath="${src}" 
         			splitindex="true" 
         			use="true" 
+        			overview="${src}/overview-core.html"
         			version="true"/>
 		
 		<copy todir="${build.sources}">
@@ -118,7 +119,7 @@
                target="1.5"
                nowarn="off">
             <src path="${build.sources}"/>
-            <classpath refid="classpath"/>   
+            <classpath refid="${build.sources}/classpath"/>   
         </javac>
     </target>
     

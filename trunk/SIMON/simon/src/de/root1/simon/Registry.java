@@ -41,15 +41,17 @@ public class Registry {
 
 	private Dispatcher dispatcher;
 	private Acceptor acceptor;
+	
+	/** The pool in which the dispatcher, acceptor and registry lives */
 	private ExecutorService threadPool;
 
 	/**
 	 * Creates a registry with a reference to a given {@link LookupTable}.
-	 * This is used by the main class {@link Simon} if one don't uses
+	 * This is used by the main class {@link Simon} if one uses a global registry.
 	 *  
 	 * @param lookupTable a reference to an existing {@link LookupTable}
-	 * @param port the port the registry listens on for new conenctions
-	 * @param threadPool a reference to an existing threadpool
+	 * @param port the port the registry listens on for new connections
+	 * @param threadPool a reference to an existing thread pool
 	 * @throws UnknownHostException 
 	 */
 	public Registry(LookupTable lookupTable, int port, ExecutorService threadPool) throws UnknownHostException {
@@ -62,10 +64,10 @@ public class Registry {
 	}
 	
 	/**
-	 * Creates a registry which has it's own {@link LookupTable}
+	 * Creates a registry which has it's own {@link LookupTable} instead of a global.
 	 *  
-	 * @param port the port the registry listens on for new conenctions
-	 * @param threadPool a reference to an existing threadpool
+	 * @param port the port the registry listens on for new connections
+	 * @param threadPool a reference to an existing thread pool
 	 */
 	public Registry(InetAddress address, int port, ExecutorService threadPool) {
 		_log.fine("begin");
@@ -77,7 +79,7 @@ public class Registry {
 	}
 
 	/**
-	 * Starts the registry
+	 * Starts the registry thread
 	 *
 	 */
 	protected void start() {
