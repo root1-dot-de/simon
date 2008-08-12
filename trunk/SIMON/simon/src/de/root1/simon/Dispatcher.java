@@ -177,7 +177,7 @@ public class Dispatcher implements Runnable {
 						 
 						if (_log.isLoggable(Level.FINER)){
 
-							_log.finer("processing key="+Utils.getKeyString(key));
+							_log.finer("processing key="+Utils.getKeyIdentifierExtended(key));
 							
 						}
 						
@@ -267,14 +267,14 @@ public class Dispatcher implements Runnable {
 						
 						if (key==null) {
 							if (_log.isLoggable(Level.FINER)) {
-								_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelString(change.socket)+" is 'gone'... changerequest was: "+change);
+								_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelIdentifier(change.socket)+" is 'gone'... changerequest was: "+change);
 							}
 							dgc.removeKey(key);
 							cancelWaitingMonitors(change.socket);
 							
 						} else if (key.attachment()!=null && change.ops==SelectionKey.OP_READ){
 							if (_log.isLoggable(Level.FINER)) {
-								_log.finer("cannot change to read mode, key="+Utils.getKeyString(key)+" is currently busy with reading. cannot interrupt him!");
+								_log.finer("cannot change to read mode, key="+Utils.getKeyIdentifierExtended(key)+" is currently busy with reading. cannot interrupt him!");
 							}
 //							System.err.flush();
 //							System.exit(1);
@@ -311,7 +311,7 @@ public class Dispatcher implements Runnable {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		
 		if (_log.isLoggable(Level.FINER)) {
-			_log.finer("sending data for key=" + Utils.getKeyString(key) + " from queue");
+			_log.finer("sending data for key=" + Utils.getKeyIdentifierExtended(key) + " from queue");
 		}
 		
 		synchronized (pendingData) {
@@ -348,7 +348,7 @@ public class Dispatcher implements Runnable {
 				
 				
 				if (_log.isLoggable(Level.FINE)) {
-					_log.fine("sending is done. no more data in queue. return key="+Utils.getKeyString(key)+" to OP_READ");
+					_log.fine("sending is done. no more data in queue. return key="+Utils.getKeyIdentifierExtended(key)+" to OP_READ");
 				}
 				
 				// ... but first check if key is "busy with reading" ...
@@ -379,7 +379,7 @@ public class Dispatcher implements Runnable {
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 
 		if (_log.isLoggable(Level.FINER)){
-			_log.finer("sending data for key="+Utils.getKeyString(key));
+			_log.finer("sending data for key="+Utils.getKeyIdentifierExtended(key));
 		}
 		
 		
@@ -395,10 +395,10 @@ public class Dispatcher implements Runnable {
 			
 		}
 		if (_log.isLoggable(Level.FINEST)){
-			_log.finer("added packet for key="+Utils.getKeyString(key)+" with limit="+packet.limit()+" position="+packet.position()+" to queue");
+			_log.finer("added packet for key="+Utils.getKeyIdentifierExtended(key)+" with limit="+packet.limit()+" position="+packet.position()+" to queue");
 		}
 		if (_log.isLoggable(Level.FINER)) {
-			_log.finer("changing key="+Utils.getKeyString(key)+" to OP_WRITE");
+			_log.finer("changing key="+Utils.getKeyIdentifierExtended(key)+" to OP_WRITE");
 		}
 		selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE);
 
@@ -418,7 +418,7 @@ public class Dispatcher implements Runnable {
 		_log.fine("begin");
 
 		if (_log.isLoggable(Level.FINER)){
-			_log.finer("got changerequest for client "+Utils.getChannelString(socketChannel)+" -> type="+type+" operation="+Utils.getSelectionKeyString(operation));
+			_log.finer("got changerequest for client "+Utils.getChannelIdentifier(socketChannel)+" -> type="+type+" operation="+Utils.getOperationKeyAsString(operation));
 		}
 		
 		synchronized (pendingSelectorChanges) {
@@ -446,7 +446,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID(); 
 		
 		if (_log.isLoggable(Level.FINE)) {
-			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyString(key));
+			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
 		}
 
  		// create a monitor that waits for the request-result
@@ -524,7 +524,7 @@ public class Dispatcher implements Runnable {
  		final int requestID = generateRequestID();
  		
  		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
  		
  		incOutgoingInvocationCounter();
  		
@@ -602,7 +602,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID();
 
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(key.channel(), requestID);
@@ -650,7 +650,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(key.channel(), requestID);
@@ -702,7 +702,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(key.channel(), requestID);
@@ -911,7 +911,7 @@ public class Dispatcher implements Runnable {
 	protected void registerChannel(SocketChannel channel) throws ClosedChannelException {
 		_log.fine("begin");
 		if (_log.isLoggable(Level.FINE)){
-			_log.fine("registering client " + Utils.getChannelString(channel) + " for [OP_READ] on dispatcher.");
+			_log.fine("registering client " + Utils.getChannelIdentifier(channel) + " for [OP_READ] on dispatcher.");
 		}
 		
 		selectorChangeRequest(channel, ChangeRequest.REGISTER, SelectionKey.OP_READ);
@@ -968,7 +968,7 @@ public class Dispatcher implements Runnable {
 		final int requestID = generateRequestID();
 		
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyString(key));
+ 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
 		
 		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(key.channel(), requestID);

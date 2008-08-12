@@ -19,7 +19,6 @@
 package de.root1.simon;
 
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
