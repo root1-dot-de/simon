@@ -119,7 +119,7 @@
                target="1.5"
                nowarn="off">
             <src path="${build.sources}"/>
-            <classpath refid="${build.sources}/classpath"/>   
+            <classpath refid="classpath"/>   
         </javac>
     </target>
     

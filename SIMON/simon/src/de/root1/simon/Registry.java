@@ -89,11 +89,11 @@ public class Registry {
 		try {
 			
 			dispatcher = new Dispatcher(null, lookupTableServer, threadPool);
-			new Thread(dispatcher,"Simon.Registry.Dispatcher").start();
+			new Thread(dispatcher,Statics.SERVER_DISPATCHER_THREAD_NAME).start();
 			_log.finer("dispatcher thread created and started");
 			
 			acceptor = new Acceptor(address, dispatcher,port);
-			new Thread(acceptor,"Simon.Registry.Acceptor").start();
+			new Thread(acceptor,Statics.SERVER_ACCEPTOR_THREAD_NAME).start();
 			_log.finer("acceptor thread created and started");			
 			
 		} catch (IOException e) {
@@ -104,16 +104,17 @@ public class Registry {
 	}
 	
 	/**
-	 * Stops the registry. This cleares the {@link LookupTable}, 
-	 * stopps the {@link Acceptor} and the {@link Dispatcher}.
+	 * Stops the registry. This clears the {@link LookupTable}, 
+	 * stops the {@link Acceptor} and the {@link Dispatcher}.
 	 * After running this method, no further connection/communication is possible with this 
-	 * class' instance
+	 * registry.
 	 *
 	 */
 	public void stop() {
 		lookupTableServer.clear();
 		acceptor.shutdown();
 		dispatcher.shutdown();
+		Simon.removeRegistryFromList(this);
 	}
 	
 	/**
