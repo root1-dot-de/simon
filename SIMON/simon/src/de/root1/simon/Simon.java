@@ -48,8 +48,8 @@ public class Simon {
 	/** the registry which is created by the server and holds it's own lookup table. */
 	private static Registry registry = null;
 	
-	/** the lookup-table that is used by the client */
-	private static LookupTable lookupTableClient = new LookupTable();
+	/** the lookup-table that is used by SIMON as a global lookuptable (only if you use the anonymous registry. See {@link #createRegistry(int)}) */
+	private static LookupTable lookupTableGlobal = new LookupTable();
 	
 	private static final String dispatcherThreadName = "Simon.Dispatcher";
 	
@@ -111,7 +111,7 @@ public class Simon {
 	}
 
 	/**
-	 * Creates a registry (listening on all interfaces) with the scope of a global lookuptable. 
+	 * Creates a registry (listening on all interfaces) with the scope of a global {@link LookupTable} 
 	 * <br><br>
 	 * <b>Example:</b><br>
 	 * You want to run two servers in one application:<br>
@@ -120,11 +120,11 @@ public class Simon {
 	 * <li>Server #2 has server object 'B'.</li>
 	 * </ul>
 	 * If you use <i>this</i> method to create the registry, you have to use 
-	 * {@link Simon#bind(String, SimonRemote)} to register remoteobject 'A' and 'B'.
+	 * {@link Simon#bind(String, SimonRemote)} to register remote object 'A' and 'B'.
 	 * 
-	 * Remoteobject 'A' is also lookup'able from server #2. And remoteobject 'B' is lookup'able from
+	 * Remote object 'A' is also lookup'able from server #2. And remote object 'B' is lookup'able from
 	 * server #1.<br>
-	 * This is what is meant by "scope of global lookuptable".
+	 * This is what is meant by "scope of global LookupTable".
 	 * 
 	 * @param port the port on which SIMON listens for connections
 	 * @throws UnknownHostException if no IP address for the host could be found
@@ -133,7 +133,7 @@ public class Simon {
 	public static void createRegistry(int port) throws UnknownHostException, IllegalStateException{
 		_log.fine("begin");
 		if (!registryCreated) {
-			registry = new Registry(lookupTableClient, port, getThreadPool());
+			registry = new Registry(lookupTableGlobal, port, getThreadPool());
 			registryCreated = true;
 			registry.start();
 		} else {
@@ -217,7 +217,7 @@ public class Simon {
 				_log.fine("No ClientToServerConnection in list. Creating new one.");
 				
 				try {
-					dispatcher = new Dispatcher(serverString, lookupTableClient, getThreadPool());
+					dispatcher = new Dispatcher(serverString, lookupTableGlobal, getThreadPool());
 				} catch (IOException e) {
 					throw new EstablishConnectionFailed(e.getMessage());
 				}
@@ -289,7 +289,7 @@ public class Simon {
 	 * @param remoteObject the object to bind
 	 */
 	public static void bind(String name, SimonRemote remoteObject) {
-		lookupTableClient.putRemoteBinding(name, remoteObject);
+		lookupTableGlobal.putRemoteBinding(name, remoteObject);
 	}
 	
 	/**
@@ -299,7 +299,7 @@ public class Simon {
 	 */
 	public static void unbind(String name){
 		//TODO what to do with already connected users?
-		lookupTableClient.releaseRemoteBinding(name);
+		lookupTableGlobal.releaseRemoteBinding(name);
 	}
 
 	/**
