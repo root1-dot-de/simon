@@ -24,6 +24,11 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * TODO document me
+ * @author alexanderchristian
+ *
+ */
 public class RxPacket {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
@@ -34,6 +39,11 @@ public class RxPacket {
 	private  ByteBuffer body;
 	private int bodySize;
 	
+	/**
+	 * TODO document me
+	 * @param socketChannel
+	 * @throws IOException
+	 */
 	RxPacket(SocketChannel socketChannel) throws IOException {
 		
 		header = ByteBuffer.allocate(11);
@@ -103,18 +113,34 @@ public class RxPacket {
 		_log.fine("finished reading body.");
 	}
 
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public  byte getMsgType() {
 		return msgType;
 	}
 
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public  int getRequestID() {
 		return requestID;
 	}
 
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public  ByteBuffer getBody() {
 		return body;
 	}
 
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public ByteBuffer getByteBuffer() {
 
 		header.rewind();

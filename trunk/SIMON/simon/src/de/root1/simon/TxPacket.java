@@ -24,6 +24,11 @@ import java.util.logging.Logger;
 
 import de.root1.simon.utils.Utils;
 
+/**
+ * TODO document me
+ * @author alexanderchristian
+ *
+ */
 public class TxPacket {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
@@ -40,6 +45,11 @@ public class TxPacket {
 
 	private int requestID;
 	
+	/**
+	 * TODO document me
+	 * @param type
+	 * @param requestID
+	 */
 	public void setHeader(byte type, int requestID) {
 		this.msgType = type;
 		this.requestID = requestID;
@@ -53,6 +63,10 @@ public class TxPacket {
 		headerOkay  = true;
 	}
 	
+	/**
+	 * TODO document me
+	 * @param i
+	 */
 	public void putInt(int i){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
@@ -63,6 +77,10 @@ public class TxPacket {
 		}
 	}
 	
+	/**
+	 * TODO document me
+	 * @param l
+	 */
 	public void putLong(Long l){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
@@ -73,6 +91,10 @@ public class TxPacket {
 		}
 	}
 	
+	/**
+	 * TODO document me
+	 * @param c
+	 */
 	public void putChar(char c){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
@@ -83,6 +105,10 @@ public class TxPacket {
 		}
 	}
 	
+	/**
+	 * TODO document me
+	 * @param s
+	 */
 	public void putShort(short s){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
@@ -93,6 +119,10 @@ public class TxPacket {
 		}
 	}
 	
+	/**
+	 * TODO document me
+	 * @param f
+	 */
 	public void putFloat(float f){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
@@ -103,6 +133,10 @@ public class TxPacket {
 		}
 	}
 	
+	/**
+	 * TODO document me
+	 * @param d
+	 */
 	public void putDouble(double d){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
@@ -113,6 +147,10 @@ public class TxPacket {
 		}
 	}
 	
+	/**
+	 * TODO document me
+	 * @param b
+	 */
 	public void put(byte[] b){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 //		try {
@@ -129,6 +167,10 @@ public class TxPacket {
 //		}
 	}
 	
+	/**
+	 * TODO document me
+	 * @param b
+	 */
 	public void put(byte b){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 		try {
@@ -139,6 +181,9 @@ public class TxPacket {
 		}
 	}
 
+	/**
+	 * TODO document me
+	 */
 	public void setComplete(){
 		int pos = bb.position();
 		bb.position(7); // positioniere den Zeiger für das einfügen der Länge des Packet-Bodys in den header
@@ -150,20 +195,36 @@ public class TxPacket {
 		setComplete = true;
 	}
 	
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public ByteBuffer getByteBuffer(){
 		if (!setComplete) throw new IllegalStateException("packet not completed!");
 		//Utils.debug("TxPacket.getByteBuffer() -> msgType="+msgType+" requestID="+requestID+" bodySize="+bodySize);
 		return bb;
 	}
 	
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public int getBodySize(){
 		return bodySize;
 	}
 	
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public int getRequestID(){
 		return requestID;
 	}
 	
+	/**
+	 * TODO document me
+	 * @return
+	 */
 	public byte getMsgType(){
 		return msgType;
 	}
