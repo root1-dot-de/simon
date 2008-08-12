@@ -47,4 +47,12 @@ public class Statics {
 	public static final String SIMON_BUILD_TIMESTAMP = "@SIMON_BUILD_TIMESTAMP@";
 	public static final String SIMON_BUILD_REVISION = "@SIMON_BUILD_REVISION@";
 	
+	// some names for the used threads/pools
+	protected static final String CLIENT_DISPATCHER_THREAD_NAME = "Simon.Dispatcher";
+	protected static final String SERVER_DISPATCHER_THREAD_NAME = "Simon.Registry.Dispatcher";
+	protected static final String SERVER_ACCEPTOR_THREAD_NAME = "Simon.Registry.Acceptor";
+	protected static final String SIMON_DGC_THREAD_NAME = "Simon._Dispatcher.DGC";
+	protected static final String PINGWORKER_POOL_NAME = SIMON_DGC_THREAD_NAME+".PingWorkerPool";
+	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon._Dispatcher.WorkerPool";
+	
 }

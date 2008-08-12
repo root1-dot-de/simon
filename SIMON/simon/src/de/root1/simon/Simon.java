@@ -27,7 +27,9 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -40,21 +42,31 @@ import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
-
+/**
+ * This is SIMONs core class which contains all the core functionality like setting up a SIMON server or lookup a remote object from the client side
+ * 
+ */
 public class Simon {
 	
 	protected transient static Logger _log = Logger.getLogger(Simon.class.getName());
 	
-	/** the registry which is created by the server and holds it's own lookup table. */
+	/** the global registry which is created by the server and holds it's own lookup table. */
 	private static Registry registry = null;
 	
 	/** the lookup-table that is used by SIMON as a global lookuptable (only if you use the anonymous registry. See {@link #createRegistry(int)}) */
 	private static LookupTable lookupTableGlobal = new LookupTable();
 	
-	private static final String dispatcherThreadName = "Simon.Dispatcher";
-	
+	/**
+	 * A relation map between remote object names and the SelectionKey + Dispatcher
+	 */
 	private static final HashMap<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
 	
+	/**
+	 * A list with registries. This is used by the "automatically find servers" feature.
+	 * Each registry listed here, will be published to anyone who asks.
+	 */
+	private static final List<Registry> registryList = new ArrayList<Registry>();
+		
 	/*
 	 * Different ThreadPool implementations
 	 * Is used by "ProcessMethodInvocationRunnable"
@@ -65,8 +77,6 @@ public class Simon {
 
 	private static Statistics statistics;
 
-	private static final String threadPoolName = "Simon.Dispatcher.WorkerPool";
-	
 	/**
 	 * Try to load 'config/simon_logging.properties'
 	 */
@@ -134,6 +144,7 @@ public class Simon {
 		_log.fine("begin");
 		if (!registryCreated) {
 			registry = new Registry(lookupTableGlobal, port, getThreadPool());
+			registryList.add(registry);
 			registryCreated = true;
 			registry.start();
 		} else {
@@ -222,7 +233,7 @@ public class Simon {
 					throw new EstablishConnectionFailed(e.getMessage());
 				}
 				
-				Thread clientDispatcherThread = new Thread(dispatcher,dispatcherThreadName);
+				Thread clientDispatcherThread = new Thread(dispatcher,Statics.CLIENT_DISPATCHER_THREAD_NAME);
 				clientDispatcherThread.start();
 				
 				Client client = new Client(dispatcher);
@@ -402,18 +413,18 @@ public class Simon {
 		if (threadPool!=null) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");
 		
 		if (size==-1){
-			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(threadPoolName));
+			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
 		} else if (size==1) {
-			threadPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory(threadPoolName));			
+			threadPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));			
 		} else {
-			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory(threadPoolName));
+			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
 		}
 	}
 	
 	/**
 	 * 
 	 * Releases a instance of a remote object.
-	 * If there are no more remote objects alove which are related to a specific serverconnection,
+	 * If there are no more remote objects alive which are related to a specific server connection,
 	 * the connection will be closed, until a new {@link Simon#lookup(String, int, String)} is 
 	 * called on the same server.
 	 * 
@@ -474,6 +485,28 @@ public class Simon {
 	 */
 	public static int getDgcInterval(){
 		return Statics.DGC_INTERVAL;
+	}
+
+	/**
+	 * Removes a registry from SIMONs internal list of registries.
+	 * @param aRegistry the registry to remove
+	 */
+	protected static void removeRegistryFromList(Registry aRegistry) {
+		synchronized (registryList) {
+			registryList.remove(aRegistry);
+		}
+			
+	}
+	
+	/**
+	 * Adds a registry to SIMONs internal list of registries.
+	 * 
+	 * @param aRegistry the registry to add
+	 */
+	protected static void addRegistryToList(Registry aRegistry) {
+		synchronized (registryList) {
+			registryList.add(aRegistry);
+		}
 	}
 	
 
