@@ -31,9 +31,11 @@ package de.root1.simon.experiments.multicast;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.util.Date;
 
 public class MulticastServerThread extends Thread {
 
