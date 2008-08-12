@@ -423,14 +423,20 @@ public class Utils {
 		if (channel instanceof ServerSocketChannel) {
 			ip = ((ServerSocketChannel) channel).socket().getInetAddress().getHostAddress();
 			localPort = ((ServerSocketChannel) channel).socket().getLocalPort();
-			remotePort=0;
+//			remotePort=0;
+//			
+//			sb.append("[server|listenOn=");
+//			sb.append(ip);
+//			sb.append(",localport=");
+//			sb.append(localPort);
+//			sb.append(",remoteport=");
+//			sb.append(remotePort);
+//			sb.append("]");
 			
 			sb.append("[server|listenOn=");
 			sb.append(ip);
-			sb.append(",localport=");
+			sb.append(",port=");
 			sb.append(localPort);
-			sb.append(",remoteport=");
-			sb.append(remotePort);
 			sb.append("]");
 		}
 		else
