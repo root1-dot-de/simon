@@ -96,8 +96,8 @@ public class DGC extends Thread {
 	public DGC(Dispatcher dispatcher) {
 		_log.fine("begin");
 		this.dispatcher = dispatcher;
-		this.pingWorkerPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory("DGC.PingWorkerPool"));
-		this.setName("Simon.Dispatcher.DGC");
+		this.pingWorkerPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory(Statics.PINGWORKER_POOL_NAME));
+		this.setName(Statics.SIMON_DGC_THREAD_NAME);
 		_log.fine("end");
 	}
 
