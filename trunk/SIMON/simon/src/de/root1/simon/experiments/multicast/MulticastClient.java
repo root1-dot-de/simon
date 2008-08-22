@@ -37,6 +37,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 
+import de.root1.simon.Statics;
+
 public class MulticastClient {
 	
 	private int groupPort = 4446;
@@ -45,10 +47,9 @@ public class MulticastClient {
 	
 
 	public MulticastClient() throws IOException {
-//		MulticastSocket socket = new MulticastSocket(groupPort);
 		DatagramSocket socket = new DatagramSocket(groupPort-1);
 		
-		byte[] requestData = "MySearchPacket".getBytes();
+		byte[] requestData = Statics.REQUEST_STRING.getBytes();
 		DatagramPacket searchPacket = new DatagramPacket(requestData,requestData.length, groupAddress, groupPort);
 		socket.send(searchPacket);
 		socket.setSoTimeout(100);
