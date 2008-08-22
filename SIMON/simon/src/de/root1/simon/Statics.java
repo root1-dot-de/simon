@@ -39,12 +39,19 @@ public class Statics {
 	protected static final String TOSTRING_METHOD_SIGNATURE = "public java.lang.String java.lang.Object.toString()";
 	protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
 	protected static final String EQUALS_METHOD_SIGNATURE 	= "public boolean java.lang.Object.equals(java.lang.Object)";
-	protected static final long DEFAULT_WAIT_TIME = 100;
+	public static final int DEFAULT_TIMEOUT_TIME = 1000;
 
 	protected static int DGC_INTERVAL = 30000;
-	
+
+	/**String that is needed for answering a "find server" packet */
+	public static final String REQUEST_STRING = "[SIMON|FindServer]";
+
+	// some variables configured during ant build
+	/** holds the version of SIMON */
 	public static final String SIMON_VERSION = "@SIMON_VERSION@";
+	/** holds the build timestamp of SIMON */
 	public static final String SIMON_BUILD_TIMESTAMP = "@SIMON_BUILD_TIMESTAMP@";
+	/** holds the versioning revision number */
 	public static final String SIMON_BUILD_REVISION = "@SIMON_BUILD_REVISION@";
 	
 	// some names for the used threads/pools
