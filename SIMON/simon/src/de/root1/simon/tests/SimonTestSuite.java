@@ -14,6 +14,7 @@ public class SimonTestSuite {
 	private static void addTestsTo(TestSuite testSuite) {
 
 		  testSuite.addTestSuite(EmptyTest.class);
+		  testSuite.addTestSuite(RegistryTest.class);
 
 	}
 	
