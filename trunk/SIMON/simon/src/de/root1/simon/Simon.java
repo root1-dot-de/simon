@@ -175,8 +175,8 @@ public class Simon {
 	/**
 	 * Creates a registry with the scope of an own lookup table. 
 	 *  
-	 * @param address
-	 * @param port
+	 * @param address the {@link InetAddress} the registry is bind to
+	 * @param port the port the registry is bind to
 	 * @return the created registry
 	 */
 	public static Registry createRegistry(InetAddress address, int port){
@@ -189,7 +189,8 @@ public class Simon {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'lookup', by 'achristian'..
+	 * Retrieves a remote object from the server. At least, it tries to retrieve it.
+	 * This may fail if the named object is not available or if the connection could not be established.
 	 * 
 	 * @param host hostname where the lookup takes place
 	 * @param port port number of the simon remote registry
