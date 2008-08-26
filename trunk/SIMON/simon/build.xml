@@ -14,11 +14,16 @@
 	<property name="build.classes" location="${build}/bin"/> 
 	<property name="build.doc" location="${build}/doc"/>
 	
+	<property name="lib" location="lib"/>		
+	
 	<!-- location of source code -->
 	<property name="src" location="src"/>
 	
 	<!-- the classpath -->
 	<path id="classpath">
+		<fileset dir="${lib}">
+			<include name="**/*"/>
+		</fileset>
 		<fileset dir="${build.sources}">
 			<include name="**/*"/>
 		</fileset>
