@@ -10,26 +10,33 @@ import junit.framework.TestSuite;
 
 public class SimonTestSuite {
 	
-	public static Test suite() {
+	// Add all tests to the suite here
+	private static void addTestsTo(TestSuite testSuite) {
 
-		  return new TestSuite(EmptyTest.class);
+		  testSuite.addTestSuite(EmptyTest.class);
 
-		}
+	}
+	
+	// create the suite
+	public static Test suite(){
+		TestSuite testSuite = new TestSuite();
+		addTestsTo(testSuite);
+		return testSuite;
+	}
 	
 	public static void main(String[] args) {
 		
-		Test test = suite();
-		int testnum = test.countTestCases();
-		System.out.println("Running "+testnum+" tests ...");
+		System.out.println("Running SIMON JUnit tests ...");
+
 		TestResult result = new TestResult();
-		test.run(result);
+		suite().run(result);
 		
 		System.out.println(); // empty line
 		System.out.println("Finished with testing. Results:");
 				
 		int errorCount = result.errorCount();
 		int failureCount = result.failureCount();
-		int testCasesCount = test.countTestCases();
+		int testCasesCount = suite().countTestCases();
 			
 		System.out.println(" # Testcases..: "+testCasesCount);
 		System.out.println(" # Errors.....: "+errorCount);
