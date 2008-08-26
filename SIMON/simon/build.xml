@@ -70,7 +70,7 @@
     	<mkdir dir="${build.doc}"/>
         <javadoc 	access="public" 
         		 	author="true" 
-        			classpath="" 
+        			classpath="${classpath}" 
         			destdir="${build.doc}" 
         			doctitle="SIMON API Documentation" 
         			nodeprecated="false" 
@@ -84,7 +84,9 @@
         			splitindex="true" 
         			use="true" 
         			overview="${src}/overview-core.html"
-        			version="true"/>
+        			version="true">
+			<classpath refid="classpath"/>
+		</javadoc>
 		
 		<copy todir="${build.sources}">
             <fileset dir="${src}">
