@@ -80,25 +80,22 @@ public class Registry {
 
 	/**
 	 * Starts the registry thread
+	 * @throws IOException if there's a problem getting a selector for the non-blocking network communication, or if the 
 	 *
 	 */
-	protected void start() {
+	protected void start() throws IOException {
 
 		_log.fine("begin");
 		
-		try {
 			
-			dispatcher = new Dispatcher(null, lookupTableServer, threadPool);
-			new Thread(dispatcher,Statics.SERVER_DISPATCHER_THREAD_NAME).start();
-			_log.finer("dispatcher thread created and started");
+		dispatcher = new Dispatcher(null, lookupTableServer, threadPool);
+		new Thread(dispatcher,Statics.SERVER_DISPATCHER_THREAD_NAME).start();
+		_log.finer("dispatcher thread created and started");
+		
+		acceptor = new Acceptor(address, dispatcher,port);
+		new Thread(acceptor,Statics.SERVER_ACCEPTOR_THREAD_NAME).start();
+		_log.finer("acceptor thread created and started");			
 			
-			acceptor = new Acceptor(address, dispatcher,port);
-			new Thread(acceptor,Statics.SERVER_ACCEPTOR_THREAD_NAME).start();
-			_log.finer("acceptor thread created and started");			
-			
-		} catch (IOException e) {
-			_log.severe("IOException: "+e.getMessage());
-		}
 		
 		_log.fine("end");
 	}
