@@ -239,7 +239,8 @@ public class Simon {
 				
 				Client client = new Client(dispatcher);
 				client.connect(host, port);
-				_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
+				if (_log.isLoggable(Level.FINER))
+					_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
 				key = client.getKey();
 				
 				// store this connection
@@ -286,7 +287,7 @@ public class Simon {
 	 * 
 	 * Creates a unique string for a server by using the host and port 
 	 * 
-	 * @param host ther servers host
+	 * @param host the servers host
 	 * @param port the port the server listens on
 	 * @return a server string
 	 */
