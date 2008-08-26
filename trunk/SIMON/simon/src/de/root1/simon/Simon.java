@@ -121,7 +121,7 @@ public class Simon {
 	}
 
 	/**
-	 * Creates a registry (listening on all interfaces) with the scope of a global {@link LookupTable} 
+	 * Creates a registry (listening on all interfaces) with the scope of a global {@link LookupTable}. This registry is called "global registry". 
 	 * <br><br>
 	 * <b>Example:</b><br>
 	 * You want to run two servers in one application:<br>
@@ -139,8 +139,9 @@ public class Simon {
 	 * @param port the port on which SIMON listens for connections
 	 * @throws UnknownHostException if no IP address for the host could be found
 	 * @throws IllegalStateException if a global registry is already created
+	 * @throws IOException if there is a problem with the networking layer
 	 */
-	public static void createRegistry(int port) throws UnknownHostException, IllegalStateException{
+	public static void createRegistry(int port) throws UnknownHostException, IllegalStateException, IOException{
 		_log.fine("begin");
 		if (!registryCreated) {
 			registry = new Registry(lookupTableGlobal, port, getThreadPool());
@@ -153,6 +154,24 @@ public class Simon {
 					"Simon.createRegistry(InetAddress, int).");
 		}
 		_log.fine("end");
+	}
+	
+	/**
+	 * TODO document me
+	 * @return
+	 */
+	public static boolean isRegistryRunning(){
+		return registryCreated;
+	}
+	
+	/**
+	 * TODO document me
+	 * @throws IllegalStateException
+	 */
+	public static void shutdownRegistry() throws IllegalStateException {
+		if (registryCreated) {
+			registry.stop();
+		} else throw new IllegalStateException("there is no global registry running...");
 	}
 	
 	/**
@@ -178,8 +197,9 @@ public class Simon {
 	 * @param address the {@link InetAddress} the registry is bind to
 	 * @param port the port the registry is bind to
 	 * @return the created registry
+	 * @throws IOException if there is a problem with the networking layer
 	 */
-	public static Registry createRegistry(InetAddress address, int port){
+	public static Registry createRegistry(InetAddress address, int port) throws IOException {
 		_log.fine("begin");
 		Registry registry = new Registry(address, port, getThreadPool());
 		registry.start();
@@ -300,9 +320,12 @@ public class Simon {
 	 * 
 	 * @param name a name for object to bind
 	 * @param remoteObject the object to bind
+	 * @throws IllegalStateException if there is no instance of an global registry
 	 */
-	public static void bind(String name, SimonRemote remoteObject) {
-		lookupTableGlobal.putRemoteBinding(name, remoteObject);
+	public static void bind(String name, SimonRemote remoteObject) throws IllegalStateException {
+		if (registryCreated) {
+			lookupTableGlobal.putRemoteBinding(name, remoteObject);
+		} else throw new IllegalStateException("object cannot be bind to the the global registry, because there is no such instance. Call createRegistry(int) first.");
 	}
 	
 	/**
