@@ -18,6 +18,7 @@
  */
 package de.root1.simon.tests;
 
+import java.io.IOException;
 import java.net.UnknownHostException;
 
 import org.junit.Test;
@@ -32,11 +33,11 @@ import junit.framework.TestCase;
  * @author ACHR
  * 
  */
-public class RegistryTest extends TestCase {
+public class GlobalRegistryTest extends TestCase {
 
 	ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
 	
-	public RegistryTest(String name) {
+	public GlobalRegistryTest(String name) {
 		super(name);
 	}
 
@@ -48,6 +49,9 @@ public class RegistryTest extends TestCase {
 			new AssertionError("localhost must be present!");
 		} catch (IllegalStateException e) {
 			new AssertionError("the first time the registry is created, there should not be any IllegalStateException while creating the registry!");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -60,17 +64,22 @@ public class RegistryTest extends TestCase {
 	// TESTS
 	// -----------------------
 
-	@Test(expected=java.lang.IllegalStateException.class)
-	public void testCreateGlobalRegistry2Times() throws UnknownHostException, IllegalStateException {
+	public void testCreateGlobalRegistry2Times() {
 
-		Simon.createRegistry(2000);
+		try {
+			Simon.createRegistry(2000);
+			new AssertionError("creating a second global registry must fail with an IllegalStateException");
+		} catch (UnknownHostException e) {
+			// this is expected
+		} catch (IllegalStateException e) {
+			new AssertionError("Testing is only possible on system where at least localhost is useable!");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 
 	}
 
-	public void testBooleanFalse() {
-
-		assertFalse("should not be true", false);
-
-	}
 
 };
