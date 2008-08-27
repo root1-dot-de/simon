@@ -49,6 +49,7 @@ public class Acceptor implements Runnable {
 	protected Logger _log = Logger.getLogger(this.getClass().getName());
 	private SelectionKey register;
 	private InetAddress address;
+	private boolean shutdown;
 
 	/**
 	 * 
@@ -74,7 +75,8 @@ public class Acceptor implements Runnable {
 
 	public void run() {
 		_log.fine("begin");
-		while (isRunning) {
+		isRunning = true;
+		while (!shutdown) {
 			try {
 
 				_log.finer("waiting for selection");
@@ -107,6 +109,7 @@ public class Acceptor implements Runnable {
 				e.printStackTrace();
 			}
 		}
+		isRunning = false;
 		_log.fine("end");
 	}
 	
@@ -117,13 +120,7 @@ public class Acceptor implements Runnable {
 		
 		SocketChannel clientChannel = serverSocketChannel.accept(); // get the connected client channel
 		
-//		Socket socket = clientChannel.socket();
-		//Utils.debug("Acceptor.accept(): Client: "+socket.getInetAddress());
 		clientChannel.configureBlocking(false);
-
-		
-//		key.cancel(); // cancel registration on acceptor-selector
-//		socketSelector.wakeup();
 		
 		dispatcher.registerChannel(clientChannel); // register channel on dispatcher
 		
@@ -136,15 +133,25 @@ public class Acceptor implements Runnable {
 	 */
 	public void shutdown(){
 		_log.fine("begin");
+		shutdown = true;
 		if (serverChannel!=null){
 			try {
 				socketSelector.wakeup();
 				register.cancel();
 				serverChannel.close();
-				isRunning = false;
 			} catch (IOException e) {	
 				// nothing to do
 			}
+			
+			while (isRunning) {
+				_log.finest("waiting for Acceptor to shutdown...");
+				try {
+					Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
+				} catch (InterruptedException e) {
+					// do nothing
+				}
+			}
+			
 		}
 		_log.fine("end");
 	}

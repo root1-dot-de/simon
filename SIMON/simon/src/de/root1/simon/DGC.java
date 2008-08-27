@@ -121,7 +121,10 @@ public class DGC extends Thread {
 				// ... start a PingWorker.
 				pingWorkerPool.execute(new PingWorker(dispatcher, clientKey));
 				if (shutdown) break;
+				
 			}
+
+			if (shutdown) break;
 			
 			// after all pings are sent, wait Statics.DGC_INTERVAL milliseconds
 			try {
@@ -135,6 +138,20 @@ public class DGC extends Thread {
 			Simon.getStatistics().setOutgoingInvocationsPerMilli((int) (dispatcher.getOutgoingInvocationCounter()/Statics.DGC_INTERVAL));
 			
 		}
+		
+		_log.fine("Shutdown pingWorkerPool.");
+		pingWorkerPool.shutdownNow();
+		while (!pingWorkerPool.isTerminated()){
+			_log.finest("waiting for pingWorkerPool to shutdown...");
+			try {
+				Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
+			} catch (InterruptedException e){
+				// do nothing
+			}
+		}
+		_log.fine("pingWorkerPool is shutdown.");
+		
+		_log.fine("DGC is shutdown.");
 		isRunning = false;
 	}
 
@@ -160,8 +177,9 @@ public class DGC extends Thread {
 		shutdown = true;
 		interrupt();
 		while (isRunning) {
+			_log.finest("waiting for DGC to shutdown...");
 			try {
-				Thread.sleep(10);
+				Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
 			} catch (InterruptedException e) {
 				// nothing to do
 			}
