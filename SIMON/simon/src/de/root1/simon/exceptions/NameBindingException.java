@@ -18,11 +18,18 @@
  */
 package de.root1.simon.exceptions;
 
-public class LookupFailedException extends Exception {
+/**
+ * 
+ * This exception is thrown, if one uses to bind a remote object a second time.
+ * This means a remote object with the same name is already bind.
+ * 
+ * @author ACHR
+ */
+public class NameBindingException extends Exception {
 	
-	private static final long serialVersionUID = 7398497830126023495L;
+	private static final long serialVersionUID = 2999458111410425350L;
 
-	public LookupFailedException(String msg) {
+	public NameBindingException(String msg){
 		super(msg);
 	}
 

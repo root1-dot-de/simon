@@ -44,7 +44,7 @@ public class GlobalRegistryTest extends TestCase {
 	// initial for each test setup
 	protected void setUp() {
 		try {
-			Simon.createRegistry(2000);
+			Simon.createRegistry(22221);
 		} catch (UnknownHostException e) {
 			new AssertionError("localhost must be present!");
 		} catch (IllegalStateException e) {
@@ -67,7 +67,7 @@ public class GlobalRegistryTest extends TestCase {
 	public void testCreateGlobalRegistry2Times() {
 
 		try {
-			Simon.createRegistry(2000);
+			Simon.createRegistry(22221);
 			new AssertionError("creating a second global registry must fail with an IllegalStateException");
 		} catch (UnknownHostException e) {
 			// this is expected
