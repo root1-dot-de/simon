@@ -170,7 +170,7 @@ public class Dispatcher implements Runnable {
 					
 					// Iterate over the set of keys for which events are available
 					Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
-					while (selectedKeys.hasNext()) {
+					while (selectedKeys.hasNext() && !shutdown) {
 					
 						key = (SelectionKey) selectedKeys.next();
 						selectedKeys.remove();
@@ -302,7 +302,10 @@ public class Dispatcher implements Runnable {
 
 	private void handleRead(SelectionKey key) {
 		_log.fine("begin");
-		eventHandlerPool.execute(new ReadEventHandler(key,this));
+		if (!eventHandlerPool.isShutdown()) 
+			eventHandlerPool.execute(new ReadEventHandler(key,this));
+		else
+			_log.finer("cannot add new ReadEventHandler thread to pool due to shutdown command received.");
 		_log.fine("end");
 	}
 	
@@ -1023,8 +1026,9 @@ public class Dispatcher implements Runnable {
 		dgc.shutdown();
 		eventHandlerPool.shutdown();
 		while (isRunning || dgc.isRunning() || !eventHandlerPool.isShutdown()) {
+			_log.finest("waiting for dispatcher to shutdown...");
 			try {
-				Thread.sleep(10);
+				Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
 			} catch (InterruptedException e) {
 				// nothing to do
 			}
