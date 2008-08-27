@@ -221,7 +221,7 @@ public class Simon {
 	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
 	 * @throws LookupFailedException if there's no such object on the server
 	 */
-	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, EstablishConnectionFailed, LookupFailedException {
+	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
 		_log.fine("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
