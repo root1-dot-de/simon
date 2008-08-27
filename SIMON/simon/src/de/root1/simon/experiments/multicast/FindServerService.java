@@ -44,7 +44,7 @@ public class FindServerService extends Thread {
 		super("Simon.FindServerService");
 		socket = new MulticastSocket(groupPort);
 		socket.joinGroup(groupAddress);
-		socket.setSoTimeout(Statics.DEFAULT_TIMEOUT_TIME);
+		socket.setSoTimeout(Statics.DEFAULT_SOCKET_TIMEOUT);
 	}
 
 	public void run() {

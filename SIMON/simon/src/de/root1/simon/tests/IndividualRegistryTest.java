@@ -23,9 +23,9 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import org.junit.Test;
-
+import de.root1.simon.Registry;
 import de.root1.simon.Simon;
+import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.tests.server.ServerInterfaceImpl;
 import junit.framework.TestCase;
 
@@ -37,7 +37,8 @@ import junit.framework.TestCase;
  */
 public class IndividualRegistryTest extends TestCase {
 
-	ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
+	private ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
+	private Registry registry;
 	
 	public IndividualRegistryTest(String name) {
 		super(name);
@@ -46,7 +47,7 @@ public class IndividualRegistryTest extends TestCase {
 	// initial for each test setup
 	protected void setUp() {
 		try {
-			Simon.createRegistry(InetAddress.getLocalHost(),2000);
+			registry = Simon.createRegistry(InetAddress.getLocalHost(),22222);
 		} catch (UnknownHostException e) {
 			new AssertionError("localhost must be present!");
 		} catch (IllegalStateException e) {
@@ -59,7 +60,13 @@ public class IndividualRegistryTest extends TestCase {
 
 	// tear down after each test
 	protected void tearDown() {
-		Simon.shutdownRegistry();
+		registry.stop();
+		while (registry.isRunning()) {
+			try {
+				Thread.sleep(2000);
+			} catch (InterruptedException e) {
+			}
+		}
 	}
 
 	// -----------------------
@@ -69,7 +76,7 @@ public class IndividualRegistryTest extends TestCase {
 	public void testCreateIndividualRegistry2Times() {
 
 		try {
-			Simon.createRegistry(InetAddress.getLocalHost(),2000);
+			Simon.createRegistry(InetAddress.getLocalHost(),22222);
 			new AssertionError("creating a second individual registry with the same port must fail with an BindException/IOException");
 		} catch (UnknownHostException e) {
 			new AssertionError("Testing is only possible on system where at least localhost is useable!");
@@ -78,8 +85,21 @@ public class IndividualRegistryTest extends TestCase {
 		} catch (IOException e){
 			new AssertionError("this shouldn't happen");
 		}
-		
 
+	}
+	
+	public void testNameBindingException (){
+		try {
+			registry.bind("myServer", serverImpl);
+		} catch (NameBindingException e) {
+			new AssertionError("bindung a remoteobject the first time, there should not be an exception");
+		}
+//		
+//		try {
+//			registry.bind("myServer", serverImpl);
+//		} catch (NameBindingException e) {
+//			// this is expected
+//		}
 	}
 
 

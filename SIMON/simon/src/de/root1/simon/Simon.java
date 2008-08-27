@@ -219,8 +219,9 @@ public class Simon {
 	 * @throws SimonRemoteException if there's a problem with the simon communication
 	 * @throws IOException if there is a problem with the communication itself
 	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
+	 * @throws LookupFailedException if there's no such object on the server
 	 */
-	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, EstablishConnectionFailed {
+	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, EstablishConnectionFailed, LookupFailedException {
 		_log.fine("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
@@ -293,8 +294,6 @@ public class Simon {
 		     */
 		    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
 		    
-		} catch (LookupFailedException e) {
-			throw new LookupFailedException(e.getMessage());
 		} catch (IOException e){
 			throw new EstablishConnectionFailed(e.getMessage());
 		}

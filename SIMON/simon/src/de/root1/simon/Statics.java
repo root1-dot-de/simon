@@ -39,7 +39,7 @@ public class Statics {
 	protected static final String TOSTRING_METHOD_SIGNATURE = "public java.lang.String java.lang.Object.toString()";
 	protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
 	protected static final String EQUALS_METHOD_SIGNATURE 	= "public boolean java.lang.Object.equals(java.lang.Object)";
-	public static final int DEFAULT_TIMEOUT_TIME = 1000;
+	public static final int DEFAULT_SOCKET_TIMEOUT = 100;
 
 	protected static int DGC_INTERVAL = 30000;
 
