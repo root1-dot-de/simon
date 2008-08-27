@@ -24,6 +24,9 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
+import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.NameBindingException;
+
 /**
  * The SIMON server acts as a registry for remote objects. 
  * So, Registry is SIMON's internal server implementation
@@ -119,8 +122,15 @@ public class Registry {
 	 * 
 	 * @param name a name for object to bind
 	 * @param remoteObject the object to bind
+	 * @throws NameBindingException if there are problems binding the remoteobject to the registry
 	 */
-	public void bind(String name, SimonRemote remoteObject) {
+	public void bind(String name, SimonRemote remoteObject) throws NameBindingException {
+		try {
+			if (lookupTableServer.getRemoteBinding(name)!=null) 
+				throw new NameBindingException("a remote object with the name '"+name+"' is already bound to this registry. unbind() first, or alternatively rebind().");
+		} catch (LookupFailedException e) {
+			// nothing to do
+		}
 		lookupTableServer.putRemoteBinding(name, remoteObject);
 	}
 	
@@ -134,6 +144,33 @@ public class Registry {
 		lookupTableServer.releaseRemoteBinding(name);
 	}
 	
+	/**
+	 * As the name says, it re-binds a remote object.
+	 * This method shows the same behavior as the following two commands in sequence:<br>
+	 * <br>
+	 * <code>
+	 * unbind(name);<br>
+	 * bind(name, remoteObject);
+	 * </code>
+	 * @param name the name of the object to rebind
+	 * @param remoteObject the object to rebind
+	 */
+	public void rebind(String name, SimonRemote remoteObject){
+		unbind(name);
+		try {
+			bind(name, remoteObject);
+		} catch (NameBindingException e) {
+			// this should never happen, nevertheless, we log it
+			_log.warning("rebind() should never throw an NameBindingException. Contact SIMON author and send him this log.");
+		}
+	}
 	
+	/**
+	 * Returns whether the registry is running and active or not
+	 * @return boolean
+	 */
+	public boolean isRunning(){
+		return (dispatcher.isRunning() || acceptor.isRunning());
+	}
 	
 }

@@ -138,6 +138,7 @@ public class Acceptor implements Runnable {
 		_log.fine("begin");
 		if (serverChannel!=null){
 			try {
+				socketSelector.wakeup();
 				register.cancel();
 				serverChannel.close();
 				isRunning = false;
@@ -162,4 +163,12 @@ public class Acceptor implements Runnable {
 		register = serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
 		_log.fine("end");
 	} 
+	
+	/**
+	 * Returns whether the acceptor is still in run() or not
+	 * @return boolean
+	 */
+	protected boolean isRunning(){
+		return isRunning;
+	}
 }

@@ -1086,6 +1086,12 @@ public class Dispatcher implements Runnable {
 		}
 	}
 	
-	
+	/**
+	 * Returns whether the dispatcher is still in run() or not
+	 * @return boolean
+	 */
+	protected boolean isRunning(){
+		return isRunning;
+	}
 	
 }
