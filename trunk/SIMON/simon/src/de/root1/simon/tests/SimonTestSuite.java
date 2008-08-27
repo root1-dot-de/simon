@@ -1,7 +1,6 @@
 package de.root1.simon.tests;
 
 import java.util.Enumeration;
-import java.util.Iterator;
 
 import junit.framework.Test;
 import junit.framework.TestFailure;
