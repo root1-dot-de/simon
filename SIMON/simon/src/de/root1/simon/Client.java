@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -74,7 +75,7 @@ public class Client {
 	 * @param port the servers port
 	 * @throws EstablishConnectionFailed if there's a problem establishing a connection to the server
 	 */
-	public void connect(String host, int port) throws EstablishConnectionFailed {
+	public void connect(InetAddress host, int port) throws EstablishConnectionFailed {
 		
 		_log.fine("begin");
 		try {
