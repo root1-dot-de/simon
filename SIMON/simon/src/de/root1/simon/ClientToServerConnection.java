@@ -31,7 +31,8 @@ import java.nio.channels.SelectionKey;
  * </ul>
  * 
  * This information is used by {@link Simon} to establish only one connection to a server for
- * several {@link Simon#lookup(String, int, String)} calls. 
+ * several {@link Simon#lookup} calls. Each lookup on the same connection increases a reference count. 
+ * The connection will be dropped by SIMON if the reference count reaches 0.
  * 
  * @author ACHR
  */
