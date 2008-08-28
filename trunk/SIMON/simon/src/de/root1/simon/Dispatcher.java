@@ -456,7 +456,7 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */
 	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException {
-		
+		if (shutdown) return new ConnectionException("Cannot handle method call due to shutdown request of broken connection.");
 		final int requestID = generateRequestID(); 
 		
 		if (_log.isLoggable(Level.FINE)) {
@@ -538,7 +538,8 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */	 
  	protected Object invokeMethod(SelectionKey key, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
- 		if (shutdown) return new ConnectionException("Shutdown received. Could not process request ...");
+ 		
+ 		if (shutdown) return new ConnectionException("Cannot handle method call due to shutdown request of broken connection.");
  		
  		final int requestID = generateRequestID();
  		
@@ -610,7 +611,6 @@ public class Dispatcher implements Runnable {
 		}
 	}
 
-	
 	/**
 	 * 
 	 * TODO: Documentation to be done for method 'invokeToString', by 'ACHR'..
@@ -1050,16 +1050,20 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * 
-	 * Initiates a shutdown of the dispatcher
+	 * Initiates a shutdown at the dispatcher and all related things
 	 *
 	 */
 	public void shutdown() {
 		_log.fine("begin");
+		
 		shutdown = true;
+		
 		cancelAllChannels();
-		selector.wakeup();
+		
 		dgc.shutdown();
 		eventHandlerPool.shutdown();
+		selector.wakeup();
+		
 		while (isRunning || dgc.isRunning() || !eventHandlerPool.isShutdown()) {
 			_log.finest("waiting for dispatcher to shutdown...");
 			try {
