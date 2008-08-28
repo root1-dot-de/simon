@@ -224,6 +224,24 @@ public class Simon {
 	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
 	 * @throws LookupFailedException if there's no such object on the server
 	 */
+	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
+		return lookup(InetAddress.getByName(host), port, remoteObjectName);
+	}
+	
+	/**
+	 * 
+	 * Retrieves a remote object from the server. At least, it tries to retrieve it.
+	 * This may fail if the named object is not available or if the connection could not be established.
+	 * 
+	 * @param host hostaddress where the lookup takes place
+	 * @param port port number of the simon remote registry
+	 * @param remoteObjectName name of the remote object which is bind to the remote registry 
+	 * @return and instance of the remote object
+	 * @throws SimonRemoteException if there's a problem with the simon communication
+	 * @throws IOException if there is a problem with the communication itself
+	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
+	 * @throws LookupFailedException if there's no such object on the server
+	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
 		_log.fine("begin");
 		
@@ -255,13 +273,18 @@ public class Simon {
 				_log.fine("No ClientToServerConnection in list. Creating new one.");
 				
 				try {
+					
 					dispatcher = new Dispatcher(serverString, lookupTableGlobal, getThreadPool());
+					
 				} catch (IOException e) {
+					
 					if (dispatcher!=null) {
 						_log.finest("Dispatcher creating failed, call shutdown() ...");
 						dispatcher.shutdown();
 					}
+					// forward the exception
 					throw new EstablishConnectionFailed(e.getMessage());
+					
 				}
 				
 				Thread clientDispatcherThread = new Thread(dispatcher,Statics.CLIENT_DISPATCHER_THREAD_NAME);
@@ -269,16 +292,24 @@ public class Simon {
 				
 				Client client = new Client(dispatcher);
 				try {
+					
 					client.connect(host, port);
+					
 				} catch (Exception e){
+					_log.finest("Connection to server failed, call shutdown() on Dispatcher");
 					dispatcher.shutdown();
+					// forward exception
 					throw new EstablishConnectionFailed(e.getMessage());
+					
 				}
-				if (_log.isLoggable(Level.FINER))
+				
+				if (_log.isLoggable(Level.FINER)) {
 					_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
+				}
+				
 				key = client.getKey();
 				
-				// store this connection
+				// store this connection for later re-use
 				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,key);
 				ctsc.addRef();
 				serverDispatcherRelation.put(serverString, ctsc);
@@ -490,16 +521,21 @@ public class Simon {
 		// get the serverstring the dispatcher is connected to
 		String serverString = dispatcher.getServerString();
 		boolean result = releaseServerDispatcherRelation(serverString);
+		
 		_log.fine("end");
 		return result;
 	}
 
 	/**
-	 * TODO Document Me
-	 * @param serverString
-	 * @return
+	 * 
+	 * Releases a reference for a {@link Dispatcher} identified by a specific server string (see: {@link Simon#createServerString}.
+	 * If there is no more server string referencing the Dispatcher, the Dispatcher will be released/shutdown.
+	 * 
+	 * @param serverString the identifier of the Dispatcher to release
+	 * @return true if the Dispatcher is shut down, false if there's still a reference pending 
 	 */
 	protected static boolean releaseServerDispatcherRelation(String serverString) {
+		
 		boolean result = false;
 
 		synchronized (serverDispatcherRelation) {
@@ -547,7 +583,7 @@ public class Simon {
 	}
 
 	/**
-	 * Removes a registry from SIMONs internal list of registries.
+	 * Removes a registry from SIMONs internal list of registrys.
 	 * @param aRegistry the registry to remove
 	 */
 	protected static void removeRegistryFromList(Registry aRegistry) {
@@ -558,7 +594,7 @@ public class Simon {
 	}
 	
 	/**
-	 * Adds a registry to SIMONs internal list of registries.
+	 * Adds a registry to SIMONs internal list of registrys.
 	 * 
 	 * @param aRegistry the registry to add
 	 */
