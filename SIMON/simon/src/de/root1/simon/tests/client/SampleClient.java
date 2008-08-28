@@ -3,6 +3,7 @@ package de.root1.simon.tests.client;
 
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import de.root1.simon.Simon;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
@@ -26,7 +27,7 @@ public class SampleClient {
 		System.out.println("Callback2 Objekt angelegt");
 		
 		
-		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
+		ServerInterface server = (ServerInterface) Simon.lookup(InetAddress.getByName("localhost"), 2000, "server");
 		ServerSessionInterface serverSession = server.login(clientCallbackImpl);
 		
 		System.out.println("equals="+serverSession.equals(true));

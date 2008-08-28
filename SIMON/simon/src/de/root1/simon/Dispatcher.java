@@ -98,7 +98,7 @@ public class Dispatcher implements Runnable {
 	private DGC dgc;
 
 	/** an identifier string to determine to which server this dispatcher is connected to  */
-	private String serverString;
+	private final String serverString;
 	
 	private Object incomingInvocationCounterMonitor = new Object();
 	private int incomingInvocationCounter = 0;
@@ -223,11 +223,17 @@ public class Dispatcher implements Runnable {
 				
 			} catch (IOException e) {
 				
+				
 				_log.warning("I/O Exception: "+e.getMessage());
 				
 				if (key!=null) {
 					cancelKey(key);
 					lookupTable.unreference(key);
+				}
+				
+				if (!isServerDispatcher()){
+					_log.warning("Connection to server is broken. Shutdown client dispatcher.");
+					shutdown();
 				}
 				
 			} catch (Exception e) {
@@ -237,6 +243,11 @@ public class Dispatcher implements Runnable {
 				wakeAllMonitors();
 				cancelKey(key);
 				lookupTable.unreference(key);
+				
+				if (!isServerDispatcher()){
+					_log.warning("Connection to server is broken. Shutdown client dispatcher.");
+					shutdown();
+				}
 			}
 		}
 		isRunning = false;
@@ -474,7 +485,6 @@ public class Dispatcher implements Runnable {
 				return getRequestResult(requestID);
 		}
 		
-		// got to sleep until result is present
 		synchronized (monitor) {
 			try {
 				monitor.wait();
@@ -504,8 +514,12 @@ public class Dispatcher implements Runnable {
 	 * @return the result of the request
 	 */
 	private Object getRequestResult(final int requestID) {
+		if (_log.isLoggable(Level.FINEST))
+			_log.finest("getting result for request ID "+requestID);
+		
 		Object o = requestResults.remove(requestID); 
 		if (o instanceof SimonRemoteException) {
+			_log.finest("result is an exception, throwing it ...");
 			throw ((SimonRemoteException) o);
 		}
 		return o;
@@ -524,6 +538,8 @@ public class Dispatcher implements Runnable {
 	 * @throws IOException 
 	 */	 
  	protected Object invokeMethod(SelectionKey key, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
+ 		if (shutdown) return new ConnectionException("Shutdown received. Could not process request ...");
+ 		
  		final int requestID = generateRequestID();
  		
  		if (_log.isLoggable(Level.FINE))
@@ -569,6 +585,9 @@ public class Dispatcher implements Runnable {
 		
 		synchronized (monitor) {
 			send(key, packet.getByteBuffer());
+			
+			if (_log.isLoggable(Level.FINER))
+				_log.finer("data send. waiting for answer for requestID="+requestID);
 
 			// check if need to wait for the result
 			synchronized (requestResults) {
@@ -576,7 +595,6 @@ public class Dispatcher implements Runnable {
 					return getRequestResult(requestID);
 			}
 		
-			// got to sleep until result is present
 			try {
 				monitor.wait();
 			} catch (InterruptedException e) {
@@ -884,11 +902,27 @@ public class Dispatcher implements Runnable {
 	}
 	
 	private void cancelWaitingMonitors(SelectableChannel selectableChannel){
+		_log.fine("begin");
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("cancel "+Utils.getChannelIdentifier(selectableChannel));
+		
 		List<Integer> requestIdList = getRequestId(selectableChannel);
 		for (Integer id : requestIdList) {
 			putResultToQueue(id, new ConnectionException("Connection is broken!"));
 			wakeWaitingProcess(id);
 		}
+		_log.fine("end");
+	}
+	
+	private void cancelAllChannels(){
+		_log.fine("begin");
+		Iterator<Integer> iterator = idSelectableChannelMap.keySet().iterator();
+		while (iterator.hasNext()){
+			int reqId = iterator.next();
+			SelectableChannel selectableChannel = idSelectableChannelMap.get(reqId);
+			cancelWaitingMonitors(selectableChannel);
+		}
+		_log.fine("end");
 	}
 
 	/**
@@ -1022,6 +1056,7 @@ public class Dispatcher implements Runnable {
 	public void shutdown() {
 		_log.fine("begin");
 		shutdown = true;
+		cancelAllChannels();
 		selector.wakeup();
 		dgc.shutdown();
 		eventHandlerPool.shutdown();
@@ -1046,6 +1081,13 @@ public class Dispatcher implements Runnable {
 	public void cancelKey(SelectionKey key) {
 		_log.fine("begin");
 		cancelWaitingMonitors(key.channel());
+		String inetAddressString = ((SocketChannel)key.channel()).socket().getInetAddress().getHostAddress();
+		int port = ((SocketChannel)key.channel()).socket().getPort();
+		
+		String serverString = inetAddressString+":"+port;
+		System.out.println(serverString);
+		Simon.releaseServerDispatcherRelation(serverString);
+		
 		key.cancel();
 		selector.wakeup();
 		_log.fine("end");
@@ -1096,6 +1138,14 @@ public class Dispatcher implements Runnable {
 	 */
 	protected boolean isRunning(){
 		return isRunning;
+	}
+	
+	/**
+	 * Returns whether this dispatcher is a server dispatcher or not
+	 * @return true, if THIS dispatcher is a server dispatcher, false if it's an client dispatcher
+	 */
+	private boolean isServerDispatcher(){
+		return (serverString==null);
 	}
 	
 }

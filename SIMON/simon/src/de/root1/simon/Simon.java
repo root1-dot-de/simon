@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import de.root1.simon.exceptions.ConnectionException;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -76,6 +77,8 @@ public class Simon {
 	private static boolean registryCreated;
 
 	private static Statistics statistics;
+
+	private static int poolSize = -1;
 
 	/**
 	 * Try to load 'config/simon_logging.properties'
@@ -221,7 +224,7 @@ public class Simon {
 	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
 	 * @throws LookupFailedException if there's no such object on the server
 	 */
-	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
+	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
 		_log.fine("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
@@ -230,6 +233,8 @@ public class Simon {
 		SelectionKey key = null;
 		
 		String serverString = createServerString(host, port);
+		
+		_log.finer("check if serverstring '"+serverString+"' is already in the serverDispatcherRelation list");
 		
 		synchronized (serverDispatcherRelation) {
 			
@@ -252,6 +257,10 @@ public class Simon {
 				try {
 					dispatcher = new Dispatcher(serverString, lookupTableGlobal, getThreadPool());
 				} catch (IOException e) {
+					if (dispatcher!=null) {
+						_log.finest("Dispatcher creating failed, call shutdown() ...");
+						dispatcher.shutdown();
+					}
 					throw new EstablishConnectionFailed(e.getMessage());
 				}
 				
@@ -259,7 +268,12 @@ public class Simon {
 				clientDispatcherThread.start();
 				
 				Client client = new Client(dispatcher);
-				client.connect(host, port);
+				try {
+					client.connect(host, port);
+				} catch (Exception e){
+					dispatcher.shutdown();
+					throw new EstablishConnectionFailed(e.getMessage());
+				}
 				if (_log.isLoggable(Level.FINER))
 					_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
 				key = client.getKey();
@@ -295,6 +309,7 @@ public class Simon {
 		    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
 		    
 		} catch (IOException e){
+			dispatcher.shutdown();
 			throw new EstablishConnectionFailed(e.getMessage());
 		}
 		
@@ -310,8 +325,8 @@ public class Simon {
 	 * @param port the port the server listens on
 	 * @return a server string
 	 */
-	private static String createServerString(String host, int port) {
-		return host+":"+port;
+	private static String createServerString(InetAddress host, int port) {
+		return host.getHostAddress()+":"+port;
 	}
 	
 	/**
@@ -414,8 +429,12 @@ public class Simon {
 	 * @return the threadPool
 	 */
 	protected static ExecutorService getThreadPool() {
-		if (threadPool==null){
-			setWorkerThreadPoolSize(-1);
+		if (threadPool==null || threadPool.isShutdown()){
+			
+			if (poolSize!=-1)
+				setWorkerThreadPoolSize(poolSize);
+			else
+				setWorkerThreadPoolSize(-1);
 		}
 		return threadPool;
 	}
@@ -434,7 +453,7 @@ public class Simon {
 	 */
 	public static void setWorkerThreadPoolSize(int size) {
 
-		if (threadPool!=null) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");
+		if (threadPool!=null && !threadPool.isShutdown()) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");
 		
 		if (size==-1){
 			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
@@ -443,6 +462,8 @@ public class Simon {
 		} else {
 			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
 		}
+		
+		poolSize = size;
 	}
 	
 	/**
@@ -458,7 +479,6 @@ public class Simon {
 	public static boolean release(Object proxyObject) {
 		_log.fine("begin");
 		
-		boolean result = false;
 		// retrieve the proxyobject 
 		SimonProxy proxy = getSimonProxy(proxyObject);
 		
@@ -469,6 +489,19 @@ public class Simon {
 		
 		// get the serverstring the dispatcher is connected to
 		String serverString = dispatcher.getServerString();
+		boolean result = releaseServerDispatcherRelation(serverString);
+		_log.fine("end");
+		return result;
+	}
+
+	/**
+	 * TODO Document Me
+	 * @param serverString
+	 * @return
+	 */
+	protected static boolean releaseServerDispatcherRelation(String serverString) {
+		boolean result = false;
+
 		synchronized (serverDispatcherRelation) {
 			
 			// if there's an instance of this connection known ...
@@ -477,6 +510,9 @@ public class Simon {
 				// ... remove the connection from the list ...
 				ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
 				int refCount = ctsc.delRef();
+				
+				if (_log.isLoggable(Level.FINER))
+					_log.finer("removed serverString '"+serverString+"' from serverDispatcherRelation. new refcount is "+refCount);
 				
 				if (refCount==0) {
 					// .. and shutdown the dispatcher if there's no further reference
@@ -491,7 +527,6 @@ public class Simon {
 			}
 		
 		}
-		_log.fine("end");
 		return result;
 	}
 	
