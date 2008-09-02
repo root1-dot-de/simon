@@ -34,7 +34,12 @@ import de.root1.simon.utils.Utils;
 
 /**
  * 
- * TODO document me
+ * This class is "the brain" of SIMON. It saves all known 
+ * remote object <-> name relations, as well as hashcodes 
+ * for all the methods in the remote object.
+ * If a object etting unreferenced over the network connection, 
+ * it gets "informed" by the <code>unreferenced()</code> method, 
+ * if {@link SimonUnreferenced} is implemented.
  * 
  * @author ACHR
  *

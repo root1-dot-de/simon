@@ -613,11 +613,12 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'invokeToString', by 'ACHR'..
+	 * Sends a "toString()" request to the remote host.
 	 * 
-	 * @param remoteObjectName
-	 * @return
-	 * @throws IOException 
+	 * @param key the key associated with the network connection
+	 * @param remoteObjectName the remote object on which the call has to be made
+	 * @return the result of the remote "toString()" call.
+	 * @throws IOException if there is a problem with the network connection
 	 */
 	protected String invokeToString(SelectionKey key, String remoteObjectName) throws IOException {
 		final int requestID = generateRequestID();
@@ -661,9 +662,9 @@ public class Dispatcher implements Runnable {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'invokeHashCode', by 'ACHR'..
+	 * @TODO document me ...
 	 * 
-	 * @param remoteObjectName
+	 * @param remoteObjectName the 
 	 * @return
 	 * @throws IOException 
 	 */
@@ -927,10 +928,10 @@ public class Dispatcher implements Runnable {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'removeRequestReturnType', by 'ACHR'..
+	 * Removes the return type from the list of awaited result types for a specific request ID.
 	 * 
-	 * @param requestID
-	 * @return
+	 * @param requestID the request id which was waiting for a result of the type saved in the list
+	 * @return the return type which has been removed
 	 */
 	protected Class<?> removeRequestReturnType(int requestID) {
 		
@@ -961,9 +962,8 @@ public class Dispatcher implements Runnable {
 
 
 	/**
-	 * 
-	 * TODO Documentation to be done
-	 * @param channel
+	 * Puts a change request for "READ" for a given channel to the queue of selector changes
+	 * @param channel the channel o change to read mode
 	 */
 	public void changeOpForReadiness(SocketChannel channel) {
 		_log.fine("begin");

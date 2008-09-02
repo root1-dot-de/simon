@@ -140,16 +140,5 @@ public class Client {
 	public SelectionKey getKey() {
 		return key;
 	}
-	
-// UNUSED:	
-//	/**
-//	 * 
-//	 * TODO: Documentation to be done for method 'getChannelToServer', by 'ACHR'..
-//	 * 
-//	 * @return
-//	 */
-//	public SelectableChannel getChannelToServer() {
-//		return key.channel();
-//	}
 
 }
