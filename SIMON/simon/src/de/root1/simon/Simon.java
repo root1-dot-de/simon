@@ -36,7 +36,6 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import de.root1.simon.exceptions.ConnectionException;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -113,7 +112,7 @@ public class Simon {
 				
 			}
 		}
-		_log.log(Level.INFO, "Simon lib loaded");
+		_log.log(Level.INFO, "Simon lib loaded [version="+Statics.SIMON_VERSION+"|rev="+Statics.SIMON_BUILD_REVISION+"|timestamp="+Statics.SIMON_BUILD_TIMESTAMP+"]");
 	}
 	
 	public static Statistics getStatistics() {
@@ -513,7 +512,8 @@ public class Simon {
 		// retrieve the proxyobject 
 		SimonProxy proxy = getSimonProxy(proxyObject);
 		
-		_log.fine("releasing "+proxy);
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("releasing "+proxy);
 		
 		// release the proxy and get the related dispatcher
 		Dispatcher dispatcher = proxy.release();

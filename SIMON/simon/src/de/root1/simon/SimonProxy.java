@@ -156,9 +156,9 @@ public class SimonProxy implements InvocationHandler {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'getInetAddress', by 'ACHR'..
+	 * Returns the {@link InetAddress} of the remote host connected with this proxy 
 	 * 
-	 * @return
+	 * @return the {@link InetAddress} of the remote host
 	 */
 	protected InetAddress getInetAddress() {
 		return ((SocketChannel)key.channel()).socket().getInetAddress();
@@ -166,19 +166,17 @@ public class SimonProxy implements InvocationHandler {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'getPort', by 'ACHR'..
-	 * 
-	 * @return
+	 * Returns the port of the remote host connected with this proxy
+	 * @return the remote hosts port
 	 */
 	protected int getRemotePort(){
 		return ((SocketChannel)key.channel()).socket().getPort();
 	}
 	
 	/**
+	 * Returns the port locally used by the proxy
 	 * 
-	 * TODO: Documentation to be done for method 'getLocalPort', by 'ACHR'..
-	 * 
-	 * @return
+	 * @return the local port of this proxy
 	 */
 	protected int getLocalPort(){
 		return ((SocketChannel)key.channel()).socket().getLocalPort();
@@ -186,9 +184,13 @@ public class SimonProxy implements InvocationHandler {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'remoteToString', by 'ACHR'..
+	 * Redirects the toString() call to the remote host to be called there. 
+	 * The result is a String in the format:<br>
+	 * <pre>
+	 * [Proxy={ame of the remote object}|invocationHandler={result of proxy's super.toString()}|remote={result of remote toString() call}]
+	 * </pre>
 	 * 
-	 * @return
+	 * @return the result of the remote "toString()" call
 	 * @throws SimonRemoteException
 	 */
 	private String remoteToString() throws SimonRemoteException {
@@ -204,9 +206,9 @@ public class SimonProxy implements InvocationHandler {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'remoteHashCode', by 'ACHR'..
+	 * Redirects hashCode() method call to the remote host and returns his result
 	 * 
-	 * @return
+	 * @return the result of the remote hashCode() call
 	 * @throws IOException
 	 */
 	private int remoteHashCode() throws IOException {
@@ -215,10 +217,10 @@ public class SimonProxy implements InvocationHandler {
 	
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'remoteEquals', by 'ACHR'..
+	 * Redirects hashEquals() method call to the remote host and returns his result
 	 * 
-	 * @param object
-	 * @return
+	 * @param object the object to compare with
+	 * @return the result of the remote equals() call
 	 * @throws IOException
 	 */
 	private boolean remoteEquals(Object object) throws IOException {
@@ -227,7 +229,7 @@ public class SimonProxy implements InvocationHandler {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'release', by 'ACHR'..
+	 * Releases this proxy. This cancels the key on the dispatcher. 
 	 *
 	 */
 	public Dispatcher release() {
@@ -240,11 +242,7 @@ public class SimonProxy implements InvocationHandler {
 	
 	@Override
 	public String toString() {
-	
-		return "[Proxy="+remoteObjectName+
-		"|invocationHandler="+super.toString()+
-		"|dispatcher="+dispatcher.toString()+
-		"]";
+		return remoteToString();
 	}
 	
 	/**

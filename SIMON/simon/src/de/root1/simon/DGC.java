@@ -157,9 +157,9 @@ public class DGC extends Thread {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'addKey', by 'ACHR'..
+	 * Adds a {@link SelectionKey} to the list of keys observed by the DGC
 	 * 
-	 * @param connectedClientKey
+	 * @param connectedClientKey the key to add
 	 */
 	public void addKey(SelectionKey connectedClientKey) {
 		_log.finest("Adding client key to dgc list");
@@ -199,9 +199,9 @@ public class DGC extends Thread {
 
 	/**
 	 * 
-	 * TODO: Documentation to be done for method 'removeKey', by 'ACHR'..
+	 * Removes a key that is observed by the DGC.
 	 * 
-	 * @param key
+	 * @param key the key to remove
 	 */
 	public void removeKey(SelectionKey key) {
 		synchronized (clientKeyList) {
