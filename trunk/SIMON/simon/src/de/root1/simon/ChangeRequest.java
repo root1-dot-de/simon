@@ -49,7 +49,7 @@ public class ChangeRequest {
 	public SocketChannel socket;
 	
 	/**
-	 * TODO documentation do be done
+	 * the type of this change request. Should be either {@link ChangeRequest#REGISTER} of {@link ChangeRequest#CHANGEOPS}.
 	 */
 	public int type;
 	
@@ -61,7 +61,7 @@ public class ChangeRequest {
 	
 	/**
 	 * 
-	 * Creates a new "transportobject" for a change request on a selector
+	 * Creates a new "transport object" for a change request on a selector
 	 * 
 	 * @param socket the SocketChannel to which the change is related to
 	 * @param type the type of the change (either {@link ChangeRequest#REGISTER} or {@link ChangeRequest#CHANGEOPS}

@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 
 import de.root1.simon.exceptions.InvalidPacketTypeException;
 import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.PacketCorruptedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
@@ -156,6 +157,7 @@ class ReadEventHandler implements Runnable {
 					dispatcher.putResultToQueue(requestID, new InvalidPacketTypeException(msg));
 			}
 			
+			// TODO what about shutting down dispatcher if there's a connection problem?
 		} catch (CancelledKeyException e) {
 			
 			String msg = "I/O exception, connection broken on "+Utils.getKeyIdentifier(key)+": "+e.getMessage();
@@ -187,6 +189,17 @@ class ReadEventHandler implements Runnable {
 			_log.fine(msg);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new LookupFailedException(msg));
 			
+		} catch (PacketCorruptedException e) {
+			dispatcher.cancelKey(key);
+
+			String msg = "Packet corrupted on "+Utils.getKeyIdentifier(key)+". Cannot continue. Shutdown dispatcher ... errorMsg: "+e.getMessage();
+			_log.fine(msg);
+			
+			dispatcher.getLookupTable().unreference(key);
+			
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
+
+			dispatcher.shutdown();
 		}
 		_log.fine("end");
 	}

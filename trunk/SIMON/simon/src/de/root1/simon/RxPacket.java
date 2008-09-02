@@ -24,8 +24,10 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import de.root1.simon.exceptions.PacketCorruptedException;
+
 /**
- * TODO document me
+ * Simple class that holds all bytes received with a packet by SIMON.
  * @author alexanderchristian
  *
  */
@@ -33,18 +35,28 @@ public class RxPacket {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
+	/** a 11 byte big header, holding the request id, message type, the size of the body and some additional bytes to identify a simon packet */
 	private  ByteBuffer header;
+
+	/** the message type, see fields in {@link Statics} */
 	private  byte msgType;
+	
+	/** the request id of the received packet */
 	private  int requestID;
+	
+	/** the body contains additional information for the packet */
 	private  ByteBuffer body;
+	
+	/** the size of the body in bytes */
 	private int bodySize;
 	
 	/**
-	 * TODO document me
-	 * @param socketChannel
-	 * @throws IOException
+	 * Creates a new instance of {@link RxPacket}, which suddenly reads all needed bytes to get the packet.
+	 * @param socketChannel the channel to read from
+	 * @throws IOException if there is a problem with the network connection
+	 * @throws PacketCorruptedException 
 	 */
-	RxPacket(SocketChannel socketChannel) throws IOException {
+	RxPacket(SocketChannel socketChannel) throws IOException, PacketCorruptedException {
 		
 		header = ByteBuffer.allocate(11);
 		
@@ -92,7 +104,7 @@ public class RxPacket {
 			_log.severe("error header bytes: \n"+headerError);
 			
 			
-			System.exit(1);
+			throw new PacketCorruptedException("the received packet is currupted. See logging output.");
 		}
 
 		if (_log.isLoggable(Level.FINEST)){
