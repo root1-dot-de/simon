@@ -39,18 +39,18 @@ public class ConsoleLogFormatter extends Formatter
 
 	private static final String CRLF = "\r\n";
 	private GregorianCalendar calendar = new GregorianCalendar(); 
+	StringBuilder output = new StringBuilder();
 
 	/* (non-Javadoc)
 	 * @see java.util.logging.Formatter#format(java.util.logging.LogRecord)
 	 */
 	public String format(LogRecord record)
 	{
-		StringBuilder output = new StringBuilder();
+		
+		output.delete(0, output.length());
 
 		calendar.setTimeInMillis(record.getMillis());
 		
-// Versuch das Datum deutsch darzustellen. Ist aber eher unnötig.	
-				
 		output.append(df4.format(calendar.get(GregorianCalendar.YEAR)));
 		output.append("-");
 		output.append(df2.format((calendar.get(GregorianCalendar.MONTH)+ 1)));
