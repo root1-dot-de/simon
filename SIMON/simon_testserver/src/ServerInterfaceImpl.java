@@ -6,11 +6,11 @@ public class ServerInterfaceImpl implements ServerInterface {
 	private static final long serialVersionUID = 1L;
 
 	public ServerSessionInterface login(ClientCallbackInterface clientCallback) throws SimonRemoteException {
-		clientCallback.callback("Dies ist der Callback. " +
+		clientCallback.callback("login callback: Dies ist der Callback. " +
 				"Deine Adresse lautet "+Simon.getRemoteInetAddress(clientCallback)+" "+
 				"und du bist verbunden auf dem lokalen Port "+Simon.getRemotePort(clientCallback));
-		System.out.println("Hallo Welt auf dem Server");
-		return new ServerSessionImpl();
+		System.out.println("login callback: Hallo Welt auf dem Server: "+clientCallback);
+		return new ServerSessionImpl(clientCallback);
 	}
 	
 }
