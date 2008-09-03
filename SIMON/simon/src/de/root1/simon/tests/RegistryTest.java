@@ -35,12 +35,12 @@ import junit.framework.TestCase;
  * @author ACHR
  * 
  */
-public class IndividualRegistryTest extends TestCase {
+public class RegistryTest extends TestCase {
 
 	private ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
 	private Registry registry;
 	
-	public IndividualRegistryTest(String name) {
+	public RegistryTest(String name) {
 		super(name);
 	}
 
@@ -60,7 +60,7 @@ public class IndividualRegistryTest extends TestCase {
 
 	// tear down after each test
 	protected void tearDown() {
-		registry.stop();
+		Simon.shutdownRegistry(registry);
 		while (registry.isRunning()) {
 			try {
 				Thread.sleep(2000);
