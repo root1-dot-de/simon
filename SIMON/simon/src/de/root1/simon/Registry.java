@@ -20,7 +20,6 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Logger;
 
@@ -48,24 +47,6 @@ public class Registry {
 	/** The pool in which the dispatcher, acceptor and registry lives */
 	private ExecutorService threadPool;
 
-//	/**
-//	 * Creates a registry with a reference to a given {@link LookupTable}.
-//	 * This is used by the main class {@link Simon} if one uses a global registry.
-//	 *  
-//	 * @param lookupTable a reference to an existing {@link LookupTable}
-//	 * @param port the port the registry listens on for new connections
-//	 * @param threadPool a reference to an existing thread pool
-//	 * @throws UnknownHostException 
-//	 */
-//	public Registry(LookupTable lookupTable, int port, ExecutorService threadPool) throws UnknownHostException {
-//		_log.fine("begin");
-//		this.lookupTableServer = lookupTable;
-//		this.address = InetAddress.getByName("0.0.0.0");
-//		this.port = port;
-//		this.threadPool = threadPool;
-//		_log.fine("end");
-//	}
-	
 	/**
 	 * Creates a registry which has it's own {@link LookupTable} instead of a global.
 	 *  
