@@ -31,8 +31,8 @@ public class SampleClient {
 		serverSession.printMessageOnServer("Hello World");
 		
 		// release all known remote objects to release the connection to the server
-		Simon.release(serverSession);
-		Simon.release(server);
+//		Simon.release(serverSession);
+//		Simon.release(server);
 	}
 
 
