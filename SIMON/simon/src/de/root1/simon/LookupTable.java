@@ -133,7 +133,7 @@ public class LookupTable {
 	public synchronized SimonRemote getRemoteBinding(String name) throws LookupFailedException {
 		_log.fine("begin");
 		if (!bindings.containsKey(name)) {
-			_log.warning("remote object name=["+name+"] not found in LookupTable!");	
+			_log.fine("remote object name=["+name+"] not found in LookupTable!");	
 			throw new LookupFailedException("remoteobject with name ["+name+"] not found in lookup table.");
 		}
 
