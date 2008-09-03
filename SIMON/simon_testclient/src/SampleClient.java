@@ -4,48 +4,36 @@
 import java.io.IOException;
 
 import de.root1.simon.Simon;
+import de.root1.simon.exceptions.EstablishConnectionFailed;
+import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
 
 public class SampleClient {
 	
-	public static void main(String[] args) throws SimonRemoteException, IOException, InterruptedException {
+	public static void main(String[] args) throws SimonRemoteException, IOException, InterruptedException, EstablishConnectionFailed, LookupFailedException {
 		
+		// for enabling debug mode
+		//Utils.DEBUG = true;
 		
-		Utils.DEBUG = true;
-		
-		// Callbackobjekt anlegen
+		// Create the client's callback object
 		ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
-		System.out.println("Callback Objekt angelegt");
 		
+		// lookup the server object
+		ServerInterface server = (ServerInterface) Simon.lookup("127.0.0.1", 2000, "server");
 		
-		ServerInterface server = (ServerInterface) Simon.lookup("localhost", 2000, "server");
+		// do the login and provide the callback interface to the server
+		// as a result, we get a "server callback" object which includes all the methods for 
+		// interacting with the server
 		ServerSessionInterface serverSession = server.login(clientCallbackImpl);
 		
-//		while(true) {
-			serverSession.printMessageOnServer("Hello World ...");
-//		}
+		// call a method on the server's callback object
+		serverSession.printMessageOnServer("Hello World");
 		
-		
-		
-//		Thread.sleep(10000);
-//		server = null;
-//		System.gc();
-		
-//		try {
-//			
-////			ServerSession serverSession1 = server.login(clientCallbackImpl);
-////			ServerSession serverSession2 = server.login(clientCallbackImpl);
-////			System.out.println(serverSession1);
-////			System.out.println(serverSession2);
-//			
-//			serverSession1.printMessageOnServer("Hallo du da auf dem Server");
-//		} catch (ConnectionException e) {
-//			System.out.println("connection is broken");
-//			e.printStackTrace();
-//		}
-			Simon.release(serverSession);
-			Simon.release(server);
+		// release all known remote objects to release the connection to the server
+		Simon.release(serverSession);
+		Simon.release(server);
 	}
+
 
 }
