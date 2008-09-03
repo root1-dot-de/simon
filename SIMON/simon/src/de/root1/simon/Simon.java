@@ -50,12 +50,6 @@ public class Simon {
 	
 	protected transient static Logger _log = Logger.getLogger(Simon.class.getName());
 	
-	/** the global registry which is created by the server and holds it's own lookup table. */
-	private static Registry registry = null;
-	
-	/** the lookup-table that is used by SIMON as a global lookuptable (only if you use the anonymous registry. See {@link #createRegistry(int)}) */
-	private static LookupTable lookupTableGlobal = new LookupTable();
-	
 	/**
 	 * A relation map between remote object names and the SelectionKey + Dispatcher
 	 */
@@ -72,8 +66,6 @@ public class Simon {
 	 * Is used by "ProcessMethodInvocationRunnable"
 	 */
 	private static ExecutorService threadPool = null;
-
-	private static boolean registryCreated;
 
 	private static Statistics statistics;
 
@@ -123,78 +115,36 @@ public class Simon {
 	}
 
 	/**
-	 * Creates a registry (listening on all interfaces) with the scope of a global {@link LookupTable}. This registry is called "global registry". 
-	 * <br><br>
-	 * <b>Example:</b><br>
-	 * You want to run two servers in one application:<br>
-	 * <ul>
-	 * <li>Server #1 has server object 'A'.</li>
-	 * <li>Server #2 has server object 'B'.</li>
-	 * </ul>
-	 * If you use <i>this</i> method to create the registry, you have to use 
-	 * {@link Simon#bind(String, SimonRemote)} to register remote object 'A' and 'B'.
-	 * 
-	 * Remote object 'A' is also lookup'able from server #2. And remote object 'B' is lookup'able from
-	 * server #1.<br>
-	 * This is what is meant by "scope of global LookupTable".
+	 * Creates a registry listening on all interfaces with the last known 
+	 * worker thread pool size set by {@link Simon#setWorkerThreadPoolSize}
 	 * 
 	 * @param port the port on which SIMON listens for connections
 	 * @throws UnknownHostException if no IP address for the host could be found
-	 * @throws IllegalStateException if a global registry is already created
 	 * @throws IOException if there is a problem with the networking layer
 	 */
-	public static void createRegistry(int port) throws UnknownHostException, IllegalStateException, IOException{
-		_log.fine("begin");
-		if (!registryCreated) {
-			registry = new Registry(lookupTableGlobal, port, getThreadPool());
-			registryList.add(registry);
-			registryCreated = true;
-			registry.start();
-		} else {
-			throw new IllegalStateException("global registry already created. Cannot create a " +
-					"second global registry. Please consider to use " +
-					"Simon.createRegistry(InetAddress, int).");
-		}
-		_log.fine("end");
+	public static Registry createRegistry(int port) throws UnknownHostException, IOException{
+		
+		return createRegistry(InetAddress.getByName("0.0.0.0"),port);
+		
 	}
 	
 	/**
-	 * TODO document me
-	 * @return
-	 */
-	public static boolean isRegistryRunning(){
-		return registryCreated;
-	}
-	
-	/**
-	 * TODO document me
-	 * @throws IllegalStateException
-	 */
-	public static void shutdownRegistry() throws IllegalStateException {
-		if (registryCreated) {
-			registry.stop();
-		} else throw new IllegalStateException("there is no global registry running...");
-	}
-	
-	/**
-	 * Stops the global registry. This cleares the {@link LookupTable}, 
-	 * stopps the {@link Acceptor} and the {@link Dispatcher}.
-	 * After running this method, no further connection/communication is possible. YOu have to create
+	 * Stops the given registry. This cleares the {@link LookupTable}, 
+	 * stops the {@link Acceptor} and the {@link Dispatcher}.
+	 * After running this method, no further connection/communication is possible. You have to create
 	 * again a registry to run server mode again.
 	 *
-	 * @throws IllegalStateException if there is no global registry created which can be stopped
+	 * @param registry the registry to shut down
 	 */
-	public static void stopRegistry() throws IllegalStateException {
-		_log.fine("begin");
-		if (registryCreated)
+	public static void shutdownRegistry(Registry registry) throws IllegalStateException {
+		if (!registry.isRunning()) 
 			registry.stop();
-		else
-			throw new IllegalStateException("cannot stop a not started registry");
-		_log.fine("end");
 	}
 	
 	/**
-	 * Creates a registry with the scope of an own lookup table. 
+	 * Creates a registry listening on a specific network interface, 
+	 * identified by the given {@link InetAddress} with the last known 
+	 * worker thread pool size set by {@link Simon#setWorkerThreadPoolSize} 
 	 *  
 	 * @param address the {@link InetAddress} the registry is bind to
 	 * @param port the port the registry is bind to
@@ -204,7 +154,6 @@ public class Simon {
 	public static Registry createRegistry(InetAddress address, int port) throws IOException {
 		_log.fine("begin");
 		Registry registry = new Registry(address, port, getThreadPool());
-		registry.start();
 		_log.fine("end");
 		return registry;
 	}
@@ -273,7 +222,8 @@ public class Simon {
 				
 				try {
 					
-					dispatcher = new Dispatcher(serverString, lookupTableGlobal, getThreadPool());
+//					dispatcher = new Dispatcher(serverString, lookupTableGlobal, getThreadPool());
+					dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
 					
 				} catch (IOException e) {
 					
@@ -360,29 +310,6 @@ public class Simon {
 	}
 	
 	/**
-	 * Binds an remote object to the global registry
-	 * 
-	 * @param name a name for object to bind
-	 * @param remoteObject the object to bind
-	 * @throws IllegalStateException if there is no instance of an global registry
-	 */
-	public static void bind(String name, SimonRemote remoteObject) throws IllegalStateException {
-		if (registryCreated) {
-			lookupTableGlobal.putRemoteBinding(name, remoteObject);
-		} else throw new IllegalStateException("object cannot be bind to the the global registry, because there is no such instance. Call createRegistry(int) first.");
-	}
-	
-	/**
-	 * Unbinds a already bind object from the global registry.
-	 *  
-	 * @param name the object to unbind
-	 */
-	public static void unbind(String name){
-		//TODO what to do with already connected users?
-		lookupTableGlobal.releaseRemoteBinding(name);
-	}
-
-	/**
 	 * 
 	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
 	 * 
@@ -430,28 +357,6 @@ public class Simon {
 				return (SimonProxy) invocationHandler;
 			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy");
 		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy");
-	}
-
-	/**
-	 * 
-	 * Sets the number of times a remote-invocation has to be called until the object-cache is cleared.<br>
-	 * This is only client-related and will be ignored by the server. So the value can differ from client to client.
-	 * 
-	 * @param value the int value to set
-	 * @throws IllegalArgumentException if objectCacheLifetime is <1
-	 * @deprecated this method doesn't have any effect on the use of simon
-	 */
-	public static void setObjectCacheLifetime(int value) throws IllegalArgumentException{
-	}
-	
-	/**
-	 * Gets the number of times a remote-invocation has to be called until the object-cache is cleared.
-	 * 
-	 * @return int value 
-	 * @deprecated this will from now on return -1 ...!!!
-	 */
-	public static int getObjectCacheLifetime(){
-		return -1;
 	}
 
 	/**

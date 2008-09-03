@@ -18,7 +18,7 @@ public class SampleClient {
 	public static void main(String[] args) throws SimonRemoteException, IOException, InterruptedException, EstablishConnectionFailed, LookupFailedException {
 		
 		
-//		Utils.DEBUG = true;
+		Utils.DEBUG = true;
 		
 		// Callbackobjekt anlegen
 		ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
@@ -28,12 +28,12 @@ public class SampleClient {
 		
 		
 		ServerInterface server = (ServerInterface) Simon.lookup(InetAddress.getByName("localhost"), 2000, "server");
-		ServerSessionInterface serverSession = server.login(clientCallbackImpl);
+//		ServerSessionInterface serverSession = server.login(clientCallbackImpl);
+//		
+//		System.out.println("equals="+serverSession.equals(true));
 		
-		System.out.println("equals="+serverSession.equals(true));
-		
-		Simon.release(serverSession);
-		Simon.release(server);
+//		Simon.release(serverSession);
+//		Simon.release(server);
 	}
 
 }

@@ -48,36 +48,38 @@ public class Registry {
 	/** The pool in which the dispatcher, acceptor and registry lives */
 	private ExecutorService threadPool;
 
-	/**
-	 * Creates a registry with a reference to a given {@link LookupTable}.
-	 * This is used by the main class {@link Simon} if one uses a global registry.
-	 *  
-	 * @param lookupTable a reference to an existing {@link LookupTable}
-	 * @param port the port the registry listens on for new connections
-	 * @param threadPool a reference to an existing thread pool
-	 * @throws UnknownHostException 
-	 */
-	public Registry(LookupTable lookupTable, int port, ExecutorService threadPool) throws UnknownHostException {
-		_log.fine("begin");
-		this.lookupTableServer = lookupTable;
-		this.address = InetAddress.getByName("0.0.0.0");
-		this.port = port;
-		this.threadPool = threadPool;
-		_log.fine("end");
-	}
+//	/**
+//	 * Creates a registry with a reference to a given {@link LookupTable}.
+//	 * This is used by the main class {@link Simon} if one uses a global registry.
+//	 *  
+//	 * @param lookupTable a reference to an existing {@link LookupTable}
+//	 * @param port the port the registry listens on for new connections
+//	 * @param threadPool a reference to an existing thread pool
+//	 * @throws UnknownHostException 
+//	 */
+//	public Registry(LookupTable lookupTable, int port, ExecutorService threadPool) throws UnknownHostException {
+//		_log.fine("begin");
+//		this.lookupTableServer = lookupTable;
+//		this.address = InetAddress.getByName("0.0.0.0");
+//		this.port = port;
+//		this.threadPool = threadPool;
+//		_log.fine("end");
+//	}
 	
 	/**
 	 * Creates a registry which has it's own {@link LookupTable} instead of a global.
 	 *  
 	 * @param port the port the registry listens on for new connections
 	 * @param threadPool a reference to an existing thread pool
+	 * @throws IOException 
 	 */
-	public Registry(InetAddress address, int port, ExecutorService threadPool) {
+	public Registry(InetAddress address, int port, ExecutorService threadPool) throws IOException {
 		_log.fine("begin");
 		this.lookupTableServer = new LookupTable();
 		this.address  = address;
 		this.port = port;
 		this.threadPool = threadPool;
+		start();
 		_log.fine("end");
 	}
 
@@ -86,7 +88,7 @@ public class Registry {
 	 * @throws IOException if there's a problem getting a selector for the non-blocking network communication, or if the 
 	 *
 	 */
-	protected void start() throws IOException {
+	private void start() throws IOException {
 
 		_log.fine("begin");
 		
@@ -110,7 +112,7 @@ public class Registry {
 	 * registry.
 	 *
 	 */
-	public void stop() {
+	protected void stop() {
 		lookupTableServer.clear();
 		acceptor.shutdown();
 		dispatcher.shutdown();
