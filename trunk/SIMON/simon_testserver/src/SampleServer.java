@@ -13,7 +13,7 @@ public class SampleServer {
 	public static void main(String[] args) throws InterruptedException, IllegalStateException, IOException, NameBindingException {
 
 		// for enabling debug mode
-		// Utils.DEBUG = true;
+//		Utils.DEBUG = true;
 
 		// create the server implementation
 		ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
