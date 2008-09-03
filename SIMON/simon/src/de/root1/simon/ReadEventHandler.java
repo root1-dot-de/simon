@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -166,10 +167,23 @@ class ReadEventHandler implements Runnable {
 			dispatcher.getLookupTable().unreference(key);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
-		} catch (IOException e) {
+		} catch (NotSerializableException e){
 			
+			String msg = "on "+Utils.getKeyIdentifier(key)+" an object (parameter or return value) is not serializable: "+e.getMessage();
+			_log.fine(msg);
+			
+//			e.printStackTrace();
+
+			dispatcher.cancelKey(key);
+			
+			dispatcher.getLookupTable().unreference(key);
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
+			
+		} catch (IOException e) {
 			String msg = "I/O exception on "+Utils.getKeyIdentifier(key)+". Maybe client released the remote object. errorMsg: "+e.getMessage();
 			_log.fine(msg);
+			
+			e.printStackTrace();
 
 			dispatcher.cancelKey(key);
 			
@@ -378,7 +392,7 @@ class ReadEventHandler implements Runnable {
 	 * @throws ClassNotFoundException
 	 * @throws LookupFailedException 
 	 */
-	private void processInvokeMethod(String remoteObjectName) throws IOException, ClassNotFoundException, LookupFailedException{
+	private void processInvokeMethod(String remoteObjectName) throws NotSerializableException, IOException, ClassNotFoundException, LookupFailedException{
 		
 		if (_log.isLoggable(Level.FINE))
 			_log.fine("begin. requestID="+requestID);
