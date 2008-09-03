@@ -282,7 +282,7 @@ public class Dispatcher implements Runnable {
 							if (_log.isLoggable(Level.FINER)) {
 								_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelIdentifier(change.socket)+" is 'gone'... changerequest was: "+change);
 							}
-							dgc.removeKey(key);
+//							dgc.removeKey(key); // key is null, so no need to remove a null key from dgc...
 							cancelWaitingMonitors(change.socket);
 							
 						} else if (key.attachment()!=null && change.ops==SelectionKey.OP_READ){
@@ -1107,7 +1107,6 @@ public class Dispatcher implements Runnable {
 		int port = ((SocketChannel)key.channel()).socket().getPort();
 		
 		String serverString = inetAddressString+":"+port;
-		System.out.println(serverString);
 		Simon.releaseServerDispatcherRelation(serverString);
 		
 		key.cancel();
