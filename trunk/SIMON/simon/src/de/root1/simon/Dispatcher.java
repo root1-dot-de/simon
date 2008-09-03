@@ -40,6 +40,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import sun.java2d.pipe.LoopPipe;
+
 import de.root1.simon.exceptions.ConnectionException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -458,6 +460,7 @@ public class Dispatcher implements Runnable {
 	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException {
 		if (shutdown) return new ConnectionException("Cannot handle method call due to shutdown request of broken connection.");
 		final int requestID = generateRequestID(); 
+		Object result = null;
 		
 		if (_log.isLoggable(Level.FINE)) {
 			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
@@ -482,26 +485,41 @@ public class Dispatcher implements Runnable {
 		// check if need to wait for the result
 		synchronized (requestResults) {
 			if (requestResults.containsKey(requestID))
-				return getRequestResult(requestID);
+				result = getRequestResult(requestID);
 		}
 		
-		synchronized (monitor) {
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+		if (result==null) {
+
+			// wait for result
+			synchronized (monitor) {
+				try {
+					monitor.wait();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
-		}
+				
+			// get result
+			synchronized (requestResults) {
+				result = getRequestResult(requestID);			
+			}
 			
+		}
+		
 		if (_log.isLoggable(Level.FINER))
 			_log.finer("got answer for requestID="+requestID);
-			
-		// get result
-		synchronized (requestResults) {
-			if (_log.isLoggable(Level.FINE))
-				_log.fine("end requestID="+requestID);
-			return getRequestResult(requestID);			
+		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end requestID="+requestID);
+		
+		// throw an exception if the returned "lookup result" is an exception
+		if (result instanceof Exception) {
+			throw new LookupFailedException(((Exception)result).getMessage());
+		} else {
+			return result;
 		}
+		
+		
 
 	}
 
