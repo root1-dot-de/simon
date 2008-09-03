@@ -117,7 +117,7 @@ public class Utils {
 	/**
      * wrap the value into the given bytebuffer
      */
-    public static TxPacket wrapValue(Class<?> type, Object value, TxPacket bb) throws IOException {
+    public static TxPacket wrapValue(Class<?> type, Object value, TxPacket bb) throws NotSerializableException, IOException {
     	
     	_log.finest("start");
     	
