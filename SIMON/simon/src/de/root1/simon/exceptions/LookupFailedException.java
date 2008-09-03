@@ -26,4 +26,8 @@ public class LookupFailedException extends Exception {
 		super(msg);
 	}
 
+	public LookupFailedException(Throwable result) {
+		super(result);
+	}
+
 }
