@@ -137,7 +137,7 @@ public class Simon {
 	 * @param registry the registry to shut down
 	 */
 	public static void shutdownRegistry(Registry registry) throws IllegalStateException {
-		if (!registry.isRunning()) 
+		if (registry.isRunning()) 
 			registry.stop();
 	}
 	

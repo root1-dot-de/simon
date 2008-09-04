@@ -151,7 +151,7 @@ public class TxPacket {
 	 * TODO document me
 	 * @param b
 	 */
-	public void put(byte[] b){
+	public int put(byte[] b){
 		if (!headerOkay) throw new IllegalStateException("header not set");
 //		try {
 			
@@ -165,6 +165,7 @@ public class TxPacket {
 //			bb = Utils.doubleByteBuffer(bb);
 //			put(b);
 //		}
+		return b.length;
 	}
 	
 	/**
