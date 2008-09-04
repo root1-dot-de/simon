@@ -19,6 +19,7 @@
 package de.root1.simon.utils;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -56,7 +57,7 @@ public class Utils {
 	public static boolean DEBUG = false;
 		
 	/** 
-	 * A map that memories some method hashs so that they need not to be re-generated each time the hash is used.
+	 * A map that memories some method hashes so that they need not to be re-generated each time the hash is used.
 	 * If memory is getting short, some entries are gc'ed so that more memory is available. There is no need to
 	 * clear the map ourselves.
 	 */
@@ -124,7 +125,9 @@ public class Utils {
     	if (type == void.class || value instanceof Throwable) {
            	
     		_log.finest("void, writing as object, may be 'null' or 'Throwable'");
-           	bb.put(objectToBytes(value));
+           	int length = bb.put(objectToBytes(value));
+    		if (_log.isLoggable(Level.FINEST))
+    			_log.finest("void of throwable had a length of: "+length);
            	
     	} else if (type == String.class) {
     		
@@ -181,8 +184,10 @@ public class Utils {
         } else {
         	
         	_log.finest("non primitive object");
-    		bb.put(objectToBytes(value));
-        	
+    		int length = bb.put(objectToBytes(value));
+    		if (_log.isLoggable(Level.FINEST))
+    			_log.finest("non primitive object had a length of: "+length);
+    		
         }
     	_log.finest("end");
     	return bb;
@@ -310,12 +315,35 @@ public class Utils {
     	
     	// tests showed that the simplest object has at least 28 bytes
     	// so we prepare for at least this size
-    	ByteArrayOutputStream2 baos = new ByteArrayOutputStream2(28);
-			ObjectOutputStream oos = new ObjectOutputStream(baos);
+//    	ByteBufferOutputStream bbos = new ByteBufferOutputStream();
+//    	ObjectOutputStream oos = new ObjectOutputStream(bbos);
+    	
+    	ByteArrayOutputStream2 baos = new ByteArrayOutputStream2();
+		ObjectOutputStream oos = new ObjectOutputStream(baos);
 		
-			oos.writeObject(object);
-			oos.flush();
-		return baos.getBuf();
+		oos.writeObject(object);
+		oos.flush();
+		oos.close();
+		
+		byte[] objectBytes = baos.toByteArray();
+
+		int objectLength = baos.toByteArray().length;
+		
+		
+		byte[] objectSerialized = new byte[4+objectLength];
+		
+		objectSerialized[0]=(byte) ((objectLength >>> 24) & 0xFF);
+		objectSerialized[1]=(byte) ((objectLength >>> 16) & 0xFF);
+		objectSerialized[2]=(byte) ((objectLength >>>  8) & 0xFF);
+		objectSerialized[3]=(byte) ((objectLength >>>  0) & 0xFF);
+
+		System.arraycopy(objectBytes,0,objectSerialized,4,objectLength);
+			
+//		for (int i = 0; i < objectSerialized.length; i++) {
+//			System.out.println("array["+i+"]="+objectSerialized[i]);
+//		}
+		
+		return objectSerialized;
     }
     
     /**
@@ -335,8 +363,17 @@ public class Utils {
     public static Object getObject(ByteBuffer bb) throws IOException, ClassNotFoundException{
     	
     	// TODO optimization tips, see: http://www.theserverside.com/discussions/thread.tss?thread_id=21568
+//    	ObjectInputStream ois = new ObjectInputStream(new ByteBufferInputStream(bb));
+
     	
-    	ObjectInputStream ois = new ObjectInputStream(new ByteBufferInputStream(bb));
+    	int objectLength = bb.getInt();
+    	byte[] objectBytes = new byte[objectLength];
+    	
+    	bb.get(objectBytes);
+    	
+    	ByteArrayInputStream bais = new ByteArrayInputStream(objectBytes);
+    	
+    	ObjectInputStream ois = new ObjectInputStream(bais);
     	
     	// read and return the object from the stream
     	return ois.readObject();

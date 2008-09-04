@@ -20,6 +20,7 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
+import java.io.StreamCorruptedException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -164,6 +165,9 @@ class ReadEventHandler implements Runnable {
 			String msg = "I/O exception, connection broken on "+Utils.getKeyIdentifier(key)+": "+e.getMessage();
 			_log.severe(msg);
 			
+			if (_log.isLoggable(Level.FINEST))
+				e.printStackTrace();
+			
 			dispatcher.getLookupTable().unreference(key);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
@@ -172,18 +176,31 @@ class ReadEventHandler implements Runnable {
 			String msg = "on "+Utils.getKeyIdentifier(key)+" an object (parameter or return value) is not serializable: "+e.getMessage();
 			_log.fine(msg);
 			
-//			e.printStackTrace();
+			if (_log.isLoggable(Level.FINEST))
+				e.printStackTrace();
 
 			dispatcher.cancelKey(key);
 			
 			dispatcher.getLookupTable().unreference(key);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
+		} catch (StreamCorruptedException e){
+			
+			String msg = "StreamCorruptedException on "+Utils.getKeyIdentifierExtended(key)+": "+e.getMessage();
+			_log.warning(msg);
+			
+//			if (_log.isLoggable(Level.FINEST))
+				e.printStackTrace();
+			
+			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
+
+			
 		} catch (IOException e) {
 			String msg = "I/O exception on "+Utils.getKeyIdentifier(key)+". Maybe client released the remote object. errorMsg: "+e.getMessage();
 			_log.fine(msg);
 			
-			e.printStackTrace();
+			if (_log.isLoggable(Level.FINEST))
+				e.printStackTrace();
 
 			dispatcher.cancelKey(key);
 			
@@ -194,11 +211,18 @@ class ReadEventHandler implements Runnable {
 			
 			String msg = "class not found on "+Utils.getKeyIdentifierExtended(key)+": "+e.getMessage();
 			_log.warning(msg);
+			
+			if (_log.isLoggable(Level.FINEST))
+				e.printStackTrace();
+			
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new SimonRemoteException(msg));
 			
 		} catch (LookupFailedException e) {
 			
 			String msg = "lookup failed on "+Utils.getKeyIdentifierExtended(key)+"!";
+			
+			if (_log.isLoggable(Level.FINEST))
+				e.printStackTrace();
 			
 			_log.fine(msg);
 			if (requestID!=-1) dispatcher.putResultToQueue(requestID, new LookupFailedException(msg));
@@ -208,6 +232,9 @@ class ReadEventHandler implements Runnable {
 
 			String msg = "Packet corrupted on "+Utils.getKeyIdentifier(key)+". Cannot continue. Shutdown dispatcher ... errorMsg: "+e.getMessage();
 			_log.fine(msg);
+			
+			if (_log.isLoggable(Level.FINEST))
+				e.printStackTrace();
 			
 			dispatcher.getLookupTable().unreference(key);
 			

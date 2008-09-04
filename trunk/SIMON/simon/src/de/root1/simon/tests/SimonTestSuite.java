@@ -2,6 +2,8 @@ package de.root1.simon.tests;
 
 import java.util.Enumeration;
 
+import de.root1.simon.tests.transferDatatypes.TransferDatatypesTest;
+
 import junit.framework.Test;
 import junit.framework.TestFailure;
 import junit.framework.TestResult;
@@ -15,6 +17,7 @@ public class SimonTestSuite {
 		  testSuite.addTestSuite(EmptyTest.class);
 		  testSuite.addTestSuite(RegistryTest.class);
 		  testSuite.addTestSuite(UtilsTest.class);
+		  testSuite.addTestSuite(TransferDatatypesTest.class);
 
 	}
 	
