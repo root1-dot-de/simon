@@ -16,18 +16,37 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon.tests;
+package de.root1.simon.tests.transferDatatypes;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 
 import de.root1.simon.Registry;
+import de.root1.simon.RxPacket;
 import de.root1.simon.Simon;
+import de.root1.simon.SimonRemote;
+import de.root1.simon.Statics;
+import de.root1.simon.TxPacket;
+import de.root1.simon.exceptions.EstablishConnectionFailed;
+import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
+import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.tests.server.ServerInterfaceImpl;
+import de.root1.simon.tests.transferDatatypes.server.ServerImpl;
+import de.root1.simon.tests.transferDatatypes.shared.Dummyobject;
+import de.root1.simon.tests.transferDatatypes.shared.IServer;
+import de.root1.simon.utils.Utils;
 import junit.framework.TestCase;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+
+import javax.lang.model.element.TypeParameterElement;
 
 /**
  * TODO document me
@@ -35,24 +54,30 @@ import junit.framework.TestCase;
  * @author ACHR
  * 
  */
-public class RegistryTest extends TestCase {
+public class TransferDatatypesTest extends TestCase {
 
 	private ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
 	private Registry registry;
 	
-	public RegistryTest(String name) {
+	public TransferDatatypesTest(String name) {
 		super(name);
 	}
 
 	// initial for each test setup
 	protected void setUp() {
+		Utils.DEBUG = true;
 		try {
 			registry = Simon.createRegistry(InetAddress.getLocalHost(),22222);
+			registry.bind("server", new ServerImpl());
+			System.out.println("Server on 22222 running");
 		} catch (UnknownHostException e) {
 			new AssertionError("localhost must be present!");
 		} catch (IllegalStateException e) {
 			new AssertionError("the first time the registry is created, there should not be any IllegalStateException while creating the registry!");
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NameBindingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -63,45 +88,50 @@ public class RegistryTest extends TestCase {
 		Simon.shutdownRegistry(registry);
 		while (registry.isRunning()) {
 			try {
-				System.out.println("waiting for registry to shutdown!");
 				Thread.sleep(2000);
 			} catch (InterruptedException e) {
 			}
 		}
+		Utils.DEBUG = false;
 	}
 
 	// -----------------------
 	// TESTS
 	// -----------------------
 
-	public void testCreateIndividualRegistry2Times() {
-
+	public void testTransferHashtable() {
+		
+		
+		Hashtable<String, String> myHashtable = new Hashtable<String, String>();
+		
+		for (int i=0;i<100;i++) {
+			myHashtable.put("myKey"+i, "myValue"+i);
+		}
+		
 		try {
-			Simon.createRegistry(InetAddress.getLocalHost(),22222);
-			new AssertionError("creating a second individual registry with the same port must fail with an BindException/IOException");
-		} catch (UnknownHostException e) {
-			new AssertionError("Testing is only possible on system where at least localhost is useable!");
-		} catch (BindException e) {
-			// this is expected
-		} catch (IOException e){
-			new AssertionError("this shouldn't happen");
+			
+			IServer server = (IServer)Simon.lookup(InetAddress.getLocalHost(), 22222, "server");
+			
+			server.transfer1(new Dummyobject(), myHashtable);
+			
+			Simon.release(server);
+			
+		} catch (SimonRemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (EstablishConnectionFailed e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (LookupFailedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 
 	}
 	
-	public void testNameBindingException (){
-		try {
-			registry.bind("myServer", serverImpl);
-		} catch (NameBindingException e) {
-			new AssertionError("bindung a remoteobject the first time, there should not be an exception");
-		}
-//		
-//		try {
-//			registry.bind("myServer", serverImpl);
-//		} catch (NameBindingException e) {
-//			// this is expected
-//		}
-	}
 
 
 };
