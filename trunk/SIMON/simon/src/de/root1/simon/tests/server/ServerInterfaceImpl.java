@@ -2,8 +2,8 @@ package de.root1.simon.tests.server;
 
 import de.root1.simon.Simon;
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.tests.shared.ServerInterface;
 import de.root1.simon.tests.shared.ClientCallbackInterface;
+import de.root1.simon.tests.shared.ServerInterface;
 import de.root1.simon.tests.shared.ServerSessionInterface;
 
 public class ServerInterfaceImpl implements ServerInterface {

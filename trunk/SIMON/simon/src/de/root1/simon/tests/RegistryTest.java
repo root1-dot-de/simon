@@ -23,11 +23,11 @@ import java.net.BindException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import junit.framework.TestCase;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.tests.server.ServerInterfaceImpl;
-import junit.framework.TestCase;
 
 /**
  * TODO document me
