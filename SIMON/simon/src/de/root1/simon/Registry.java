@@ -117,6 +117,11 @@ public class Registry {
 		lookupTableServer.putRemoteBinding(name, remoteObject);
 	}
 	
+	public void bindAndPublish(String name, SimonRemote remoteObject) throws NameBindingException {
+		bind(name, remoteObject);
+		new SimonPublishment(address, port, name);
+	}
+	
 	/**
 	 * Unbinds a remote object from the registry's own {@link LookupTable}
 	 *  

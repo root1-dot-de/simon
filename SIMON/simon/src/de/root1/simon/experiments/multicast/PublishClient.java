@@ -39,14 +39,14 @@ import java.net.SocketTimeoutException;
 
 import de.root1.simon.Statics;
 
-public class MulticastClient {
+public class PublishClient {
 	
 	private int groupPort = 4446;
 	private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
-	private long searchTime = 20000;
+	private long searchTime = 2000;
 	
 
-	public MulticastClient() throws IOException {
+	public PublishClient() throws IOException {
 		DatagramSocket socket = new DatagramSocket(groupPort-1);
 		
 		byte[] requestData = Statics.REQUEST_STRING.getBytes();
@@ -58,23 +58,25 @@ public class MulticastClient {
 
 		long startTime = System.currentTimeMillis();
 		while (System.currentTimeMillis()<(startTime+searchTime)) {
-//		while (true) {
+			
 			try {
 				byte[] buf = new byte[256];
 				packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 				String received = new String(packet.getData(), 0, packet.getLength());
 				System.out.println(received+" address="+packet.getAddress()+" port="+packet.getPort());
+				
 			} catch (SocketTimeoutException e) {
-//				System.out.println("no packet received");
+				// do nothing
 			}
+			
 		}
 		socket.close();
 
 	}
 	
 	public static void main(String[] args) throws IOException {
-		 new MulticastClient();
+		 new PublishClient();
 	}
 
 }
