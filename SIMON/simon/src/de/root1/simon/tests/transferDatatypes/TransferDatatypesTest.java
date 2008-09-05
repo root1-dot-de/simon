@@ -19,44 +19,30 @@
 package de.root1.simon.tests.transferDatatypes;
 
 import java.io.IOException;
-import java.io.NotSerializableException;
-import java.net.BindException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
+import java.util.Hashtable;
 
+import junit.framework.TestCase;
 import de.root1.simon.Registry;
-import de.root1.simon.RxPacket;
 import de.root1.simon.Simon;
-import de.root1.simon.SimonRemote;
-import de.root1.simon.Statics;
-import de.root1.simon.TxPacket;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.tests.server.ServerInterfaceImpl;
 import de.root1.simon.tests.transferDatatypes.server.ServerImpl;
 import de.root1.simon.tests.transferDatatypes.shared.Dummyobject;
 import de.root1.simon.tests.transferDatatypes.shared.IServer;
 import de.root1.simon.utils.Utils;
-import junit.framework.TestCase;
-
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-
-import javax.lang.model.element.TypeParameterElement;
 
 /**
- * TODO document me
+ * Tests transferring different data types
  * 
  * @author ACHR
  * 
  */
 public class TransferDatatypesTest extends TestCase {
 
-	private ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
 	private Registry registry;
 	
 	public TransferDatatypesTest(String name) {
@@ -75,10 +61,8 @@ public class TransferDatatypesTest extends TestCase {
 		} catch (IllegalStateException e) {
 			new AssertionError("the first time the registry is created, there should not be any IllegalStateException while creating the registry!");
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (NameBindingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -99,7 +83,7 @@ public class TransferDatatypesTest extends TestCase {
 	// TESTS
 	// -----------------------
 
-	public void testTransferHashtable() {
+	public void testTransferDummyobjectAndHashtable() {
 		
 		
 		Hashtable<String, String> myHashtable = new Hashtable<String, String>();
@@ -117,16 +101,12 @@ public class TransferDatatypesTest extends TestCase {
 			Simon.release(server);
 			
 		} catch (SimonRemoteException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (EstablishConnectionFailed e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (LookupFailedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 

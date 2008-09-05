@@ -2,7 +2,6 @@ package de.root1.simon.tests.server;
 
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;

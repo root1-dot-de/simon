@@ -20,7 +20,6 @@ public class SampleClient {
 		
 		Utils.DEBUG = true;
 		
-		// Callbackobjekt anlegen
 		ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
 		System.out.println("Callback Objekt angelegt");
 		
@@ -28,12 +27,12 @@ public class SampleClient {
 		
 		
 		ServerInterface server = (ServerInterface) Simon.lookup(InetAddress.getByName("localhost"), 2000, "server");
-//		ServerSessionInterface serverSession = server.login(clientCallbackImpl);
-//		
-//		System.out.println("equals="+serverSession.equals(true));
+		ServerSessionInterface serverSession = server.login(clientCallbackImpl);
 		
-//		Simon.release(serverSession);
-//		Simon.release(server);
+		System.out.println("equals="+serverSession.equals(true));
+		
+		Simon.release(serverSession);
+		Simon.release(server);
 	}
 
 }
