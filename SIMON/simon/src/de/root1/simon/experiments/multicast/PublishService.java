@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 import de.root1.simon.Statics;
 
-public class FindServerService extends Thread {
+public class PublishService extends Thread {
 
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
@@ -40,8 +40,8 @@ public class FindServerService extends Thread {
 
 	private boolean shutdown;
 
-	public FindServerService() throws IOException {
-		super("Simon.FindServerService");
+	public PublishService() throws IOException {
+		super("Simon.PublishService");
 		socket = new MulticastSocket(groupPort);
 		socket.joinGroup(groupAddress);
 		socket.setSoTimeout(Statics.DEFAULT_SOCKET_TIMEOUT);
@@ -65,8 +65,12 @@ public class FindServerService extends Thread {
 				if (requestString.equals(Statics.REQUEST_STRING)) {
 					
 					// send answer pack to sender
-					byte[] answerData ="[192.168.0.123:1234|myServer,myServer2]".toString().getBytes();
+					byte[] answerData ="[SIMON|192.168.0.123:1234|myServer]".toString().getBytes();
 					DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
+					socket.send(answerPacket);
+					
+					answerData ="[SIMON|192.168.0.123:1234|myServer2]".toString().getBytes();
+					answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
 					socket.send(answerPacket);
 
 				}
@@ -86,6 +90,6 @@ public class FindServerService extends Thread {
 	}
 	
 	public static void main(String[] args) throws IOException {
-        new FindServerService().start();
+        new PublishService().start();
 	}
 }
