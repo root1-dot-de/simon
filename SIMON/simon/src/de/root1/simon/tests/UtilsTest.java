@@ -20,26 +20,15 @@ package de.root1.simon.tests;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
-import java.net.BindException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-
-import de.root1.simon.Registry;
-import de.root1.simon.RxPacket;
-import de.root1.simon.Simon;
-import de.root1.simon.Statics;
-import de.root1.simon.TxPacket;
-import de.root1.simon.exceptions.NameBindingException;
-import de.root1.simon.tests.server.ServerInterfaceImpl;
-import de.root1.simon.utils.Utils;
-import junit.framework.TestCase;
-
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 
-import javax.lang.model.element.TypeParameterElement;
+import junit.framework.TestCase;
+import de.root1.simon.Statics;
+import de.root1.simon.TxPacket;
+import de.root1.simon.utils.Utils;
+
 
 /**
  * TODO document me
@@ -49,9 +38,6 @@ import javax.lang.model.element.TypeParameterElement;
  */
 public class UtilsTest extends TestCase {
 
-	private ServerInterfaceImpl serverImpl = new ServerInterfaceImpl();
-	private Registry registry;
-	
 	public UtilsTest(String name) {
 		super(name);
 	}
@@ -70,6 +56,7 @@ public class UtilsTest extends TestCase {
 	// TESTS
 	// -----------------------
 
+	@SuppressWarnings("unchecked")
 	public void testWrapUnwrapHashtable() {
 		
 		
@@ -95,11 +82,16 @@ public class UtilsTest extends TestCase {
 		
 		ByteBuffer byteBuffer = txPacket.getByteBuffer();
 		
+		@SuppressWarnings("unused")
 		int simonPacketHeaderId0 = byteBuffer.get();
+		@SuppressWarnings("unused")
 		int simonPacketHeaderId1 = byteBuffer.get();
 		
+		@SuppressWarnings("unused")
 		byte msgType = byteBuffer.get();
+		@SuppressWarnings("unused")
 		int requestID = byteBuffer.getInt();
+		@SuppressWarnings("unused")
 		int bodySize = byteBuffer.getInt();
 		
 		try {
