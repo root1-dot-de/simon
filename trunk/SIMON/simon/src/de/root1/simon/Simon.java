@@ -71,9 +71,11 @@ public class Simon {
 
 	private static int poolSize = -1;
 
-	private static List<SimonPublishment> publishments = new ArrayList<SimonPublishment>();
+	private static List<SimonPublication> publishments = new ArrayList<SimonPublication>();
 
 	private static PublishService publishService;
+
+	private static PublicationSearcher publicationSearcher;
 
 	/**
 	 * Try to load 'config/simon_logging.properties'
@@ -513,23 +515,33 @@ public class Simon {
 		}
 	}
 
-	protected static void publish(SimonPublishment simonPublishment) throws IOException {
+	protected static void publish(SimonPublication simonPublication) throws IOException {
 		if (publishments.isEmpty()){
 			publishService = new PublishService(publishments);
 			publishService.start();
 		}
-		publishments.add(simonPublishment);
+		publishments.add(simonPublication);
 		
 	}
 
-	public static void unpublish(SimonPublishment simonPublishment) {
-		publishments.remove(simonPublishment);
+	public static void unpublish(SimonPublication simonPublication) {
+		publishments.remove(simonPublication);
 		if (publishments.isEmpty()) {
 			publishService.shutdown();
 		}
 	}
 	
-	
-	
+	public static PublicationSearcher searchRemoteObjects(SearchProgressListener listener, int searchTime){
+		if (publicationSearcher==null || !publicationSearcher.isSearching()) {
+			try {
+				publicationSearcher = new PublicationSearcher(listener, searchTime);
+				publicationSearcher.start();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} else throw new IllegalStateException("search currently in progress ...");
+		return publicationSearcher;
+	}
 
 }

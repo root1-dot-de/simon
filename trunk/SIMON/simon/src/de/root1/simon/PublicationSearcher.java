@@ -41,18 +41,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class PublishClient {
+public class PublicationSearcher extends Thread {
 	
 	private static final int groupPort = 4446;
 	private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
 	private long searchTime = 2000;
+	private List<SimonPublication> foundPublications;
+	private boolean shutdown = false;
+	private int searchProgress = 0;
+	private List<SearchProgressListener> listeners = new ArrayList<SearchProgressListener>();
 	
 
-	public PublishClient() throws IOException {
+	public PublicationSearcher(SearchProgressListener listener, int searchTime) throws IOException {
+		setName(Statics.PUBLISH_CLIENT_THREAD_NAME);
+		foundPublications = new ArrayList<SimonPublication>();
+		addSearchProgressListener(listener);
+		this.searchTime = searchTime;
 	}
-	
-	public synchronized List<SimonPublishment> search(){
-		List<SimonPublishment> result = new ArrayList<SimonPublishment>();
+
+	@Override
+	public void run() {
 		DatagramSocket socket;
 		try {
 			socket = new DatagramSocket(groupPort-1);
@@ -65,37 +73,85 @@ public class PublishClient {
 			DatagramPacket packet;
 	
 			long startTime = System.currentTimeMillis();
-			while (System.currentTimeMillis()<(startTime+searchTime)) {
+			while (System.currentTimeMillis()<(startTime+searchTime) && !shutdown ) {
 				
 				try {
 					byte[] buf = new byte[256];
 					packet = new DatagramPacket(buf, buf.length);
 					socket.receive(packet);
 					String received = new String(packet.getData(), 0, packet.getLength());
-					result.add(new SimonPublishment(received));
+					synchronized (foundPublications) {
+						foundPublications.add(new SimonPublication(received));
+					}
+						
 				} catch (SocketTimeoutException e) {
 					// do nothing
 				}
 				
+				searchProgress = (int)(100d/searchTime * (System.currentTimeMillis()-startTime));
+				if (searchProgress>100) searchProgress = 100;
+				updateListeners(searchProgress);
+				
 			}
+			if (searchProgress!=100)
+				updateListeners(100);
+			listeners.clear();
 			socket.close();
 			
 		} catch (SocketException e1) {
-			// TODO Auto-generated catch block
+			// TODO react on exception
 			e1.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// TODO react on exception
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Shutdown and interrupt a search
+	 */
+	public void shutdown() {
+		shutdown = true;
+	}
+	
+	/**
+	 * Returns new found publications
+	 * @return  found publications since the last call of {@link PublicationSearcher#getNewPublications}
+	 */
+	public List<SimonPublication> getNewPublications(){
+		List<SimonPublication> result;
+		synchronized (foundPublications) {
+			result = new ArrayList<SimonPublication>(foundPublications);
+		}
+		foundPublications.clear();
 		return result;
 	}
 	
-	public static void main(String[] args) throws IOException {
-		 PublishClient publishClient = new PublishClient();
-		 List<SimonPublishment> search = publishClient.search();
-		 for (SimonPublishment simonPublishment : search) {
-			System.out.println(simonPublishment);
+	/**
+	 * Returns a value from 0..100 indicating the search progress. 0 is at beginning, 100 at end.
+	 * @return value 0..100
+	 */
+	public int getSearchProgress(){
+		return searchProgress;
+	}
+	
+	private void addSearchProgressListener(SearchProgressListener listener){
+		if (listener!=null)
+			listeners.add(listener);
+	}
+	
+	private void updateListeners(int value){
+		int numberOfObjects = 0;
+		synchronized (foundPublications) {
+			numberOfObjects = foundPublications.size();
+		}
+		for (SearchProgressListener listener : listeners) {
+			listener.update(value, numberOfObjects);
 		}
 	}
-
+	
+	public boolean isSearching(){
+		return isAlive();
+	}
+	
 }

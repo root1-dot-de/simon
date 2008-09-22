@@ -64,5 +64,6 @@ public class Statics {
 	protected static final String PINGWORKER_POOL_NAME = SIMON_DGC_THREAD_NAME+".PingWorkerPool";
 	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon._Dispatcher.WorkerPool";
 	public static final String PUBLISH_SERVICE_THREAD_NAME = "Simon.PublishService";
+	public static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
 	
 }
