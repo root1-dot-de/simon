@@ -45,7 +45,7 @@ public class Statics {
 
 	protected static int DGC_INTERVAL = 30000;
 
-	/**String that is needed for answering a "find server" packet */
+	/** String that is needed for answering a "find server" packet */
 	public static final String REQUEST_STRING = "[SIMON|FindServer]";
 
 	// some variables configured during ant build

@@ -69,7 +69,7 @@ public class PublishService extends Thread {
 					DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
 					socket.send(answerPacket);
 					
-					answerData ="[SIMON|192.168.0.123:1234|myServer2]".toString().getBytes();
+					answerData ="[SIMON|192.168.123.123:1234|myServer2]".toString().getBytes();
 					answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
 					socket.send(answerPacket);
 

@@ -37,11 +37,12 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 
+import de.root1.simon.SimonPublishment;
 import de.root1.simon.Statics;
 
 public class PublishClient {
 	
-	private int groupPort = 4446;
+	private static final int groupPort = 4446;
 	private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
 	private long searchTime = 2000;
 	
@@ -52,7 +53,7 @@ public class PublishClient {
 		byte[] requestData = Statics.REQUEST_STRING.getBytes();
 		DatagramPacket searchPacket = new DatagramPacket(requestData,requestData.length, groupAddress, groupPort);
 		socket.send(searchPacket);
-		socket.setSoTimeout(100);
+		socket.setSoTimeout(100); // set socket timeout to 100ms
 
 		DatagramPacket packet;
 
@@ -64,7 +65,8 @@ public class PublishClient {
 				packet = new DatagramPacket(buf, buf.length);
 				socket.receive(packet);
 				String received = new String(packet.getData(), 0, packet.getLength());
-				System.out.println(received+" address="+packet.getAddress()+" port="+packet.getPort());
+				SimonPublishment simonPublishment = new SimonPublishment(received);
+				System.out.println(simonPublishment);
 				
 			} catch (SocketTimeoutException e) {
 				// do nothing
