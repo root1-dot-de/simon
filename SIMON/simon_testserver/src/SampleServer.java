@@ -21,8 +21,11 @@ public class SampleServer {
 		// create the registry where we bind the server implementation
 		Registry serverRegistry = Simon.createRegistry(InetAddress.getByName("127.0.0.1"), 2000);
 		
-		// and finally find the implementation
-		serverRegistry.bind("server", serverImpl);
+		// and finally bind the implementation
+		serverRegistry.bind("MyHiddenSampleServer", serverImpl);
+		
+		// for demonstration, bind the same object with another name, but also publish it
+		serverRegistry.bindAndPublish("MyPublicSampleServer", serverImpl);
 		
 		// to stop the server, call stop() on the registry
 		//serverRegistry.stop();
