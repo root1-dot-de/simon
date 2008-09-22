@@ -71,6 +71,10 @@ public class Simon {
 
 	private static int poolSize = -1;
 
+	private static List<SimonPublishment> publishments = new ArrayList<SimonPublishment>();
+
+	private static PublishService publishService;
+
 	/**
 	 * Try to load 'config/simon_logging.properties'
 	 */
@@ -508,6 +512,24 @@ public class Simon {
 			registryList.add(aRegistry);
 		}
 	}
+
+	protected static void publish(SimonPublishment simonPublishment) throws IOException {
+		if (publishments.isEmpty()){
+			publishService = new PublishService(publishments);
+			publishService.start();
+		}
+		publishments.add(simonPublishment);
+		
+	}
+
+	public static void unpublish(SimonPublishment simonPublishment) {
+		publishments.remove(simonPublishment);
+		if (publishments.isEmpty()) {
+			publishService.shutdown();
+		}
+	}
+	
+	
 	
 
 }

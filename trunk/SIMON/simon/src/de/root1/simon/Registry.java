@@ -119,17 +119,24 @@ public class Registry {
 	
 	public void bindAndPublish(String name, SimonRemote remoteObject) throws NameBindingException {
 		bind(name, remoteObject);
-		new SimonPublishment(address, port, name);
+		try {
+			Simon.publish(new SimonPublishment(address, port, name));
+		} catch (IOException e) {
+			unbind(name);
+			throw new NameBindingException("can't publish '"+name+"'. object is not bind! error="+e.getMessage());
+		}
 	}
 	
 	/**
-	 * Unbinds a remote object from the registry's own {@link LookupTable}
+	 * Unbinds a remote object from the registry's own {@link LookupTable}.
+	 * If it's published, it's removed from the list of published objects
 	 *  
-	 * @param name the object to unbind
+	 * @param name the object to unbind (and unpublish, if published)
 	 */
 	public void unbind(String name){
 		//TODO what to do with already connected users?
 		lookupTableServer.releaseRemoteBinding(name);
+		Simon.unpublish(new SimonPublishment(address, port, name));
 	}
 	
 	/**
