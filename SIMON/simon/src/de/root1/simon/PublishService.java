@@ -42,9 +42,9 @@ public class PublishService extends Thread {
 	private boolean shutdown;
 
 
-	private List<SimonPublishment> publishments;
+	private List<SimonPublication> publishments;
 
-	public PublishService(List<SimonPublishment> publishments) throws IOException {
+	public PublishService(List<SimonPublication> publishments) throws IOException {
 		_log.fine("preparing publish service");
 		setName(Statics.PUBLISH_SERVICE_THREAD_NAME);
 		socket = new MulticastSocket(groupPort);
@@ -71,7 +71,7 @@ public class PublishService extends Thread {
 				if (requestString.equals(Statics.REQUEST_STRING)) {
 					
 					// send answer pack to sender
-					for (SimonPublishment publishment : publishments) {
+					for (SimonPublication publishment : publishments) {
 						_log.fine("answering: "+publishment);
 						byte[] answerData = publishment.toString().getBytes();
 						DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);

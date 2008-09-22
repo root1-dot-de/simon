@@ -33,7 +33,7 @@ import java.net.UnknownHostException;
  * @author achristian
  *
  */
-public class SimonPublishment {
+public class SimonPublication {
 	
 	private static final String SIMON_PUBLISHMENT_HEADER = "[SIMON|";
 	private String remoteObjectName;
@@ -47,7 +47,7 @@ public class SimonPublishment {
 	 * @param port the port on which the registry listens
 	 * @param remoteObjectName the bind remote object name
 	 */
-	public SimonPublishment(InetAddress address, int port, String remoteObjectName) {
+	public SimonPublication(InetAddress address, int port, String remoteObjectName) {
 		this.address = address;
 		this.port = port;
 		this.remoteObjectName = remoteObjectName;
@@ -57,12 +57,12 @@ public class SimonPublishment {
 	 * Creates an object instance according to a raw string with the format:<br>
 	 * <i>[SIMON|192.168.0.123:1234|myServer]</i>
 	 * 
-	 * @param rawString the string that delivers the needed data to create an instance of {@link SimonPublishment} 
+	 * @param rawString the string that delivers the needed data to create an instance of {@link SimonPublication} 
 	 * @throws IllegalArgumentException if raw string has the wrong format
 	 * @throws UnknownHostException if the host in the raw string is unknown
 	 * @throws NumberFormatException if the port in the raw string has the wrong format (e.g. non numeric)
 	 */
-	public SimonPublishment(String rawString) throws IllegalArgumentException, UnknownHostException, NumberFormatException {
+	public SimonPublication(String rawString) throws IllegalArgumentException, UnknownHostException, NumberFormatException {
 		if ((!rawString.substring(0, SIMON_PUBLISHMENT_HEADER.length()).equals(SIMON_PUBLISHMENT_HEADER) &&
 				!rawString.substring(SIMON_PUBLISHMENT_HEADER.length()-1,SIMON_PUBLISHMENT_HEADER.length()).equals("]"))) 
 			throw new IllegalArgumentException("provided raw string has the wrong format: "+rawString);
@@ -123,9 +123,9 @@ public class SimonPublishment {
 	@Override
 	public boolean equals(Object obj) {
 		
-		if (obj instanceof SimonPublishment) {
+		if (obj instanceof SimonPublication) {
 			
-			SimonPublishment other = (SimonPublishment) obj;
+			SimonPublication other = (SimonPublication) obj;
 			
 			return (getAddress().equals(other.getAddress()) &&
 					getPort()==other.getPort() &&
