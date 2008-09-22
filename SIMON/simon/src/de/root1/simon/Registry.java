@@ -120,7 +120,7 @@ public class Registry {
 	public void bindAndPublish(String name, SimonRemote remoteObject) throws NameBindingException {
 		bind(name, remoteObject);
 		try {
-			Simon.publish(new SimonPublishment(address, port, name));
+			Simon.publish(new SimonPublication(address, port, name));
 		} catch (IOException e) {
 			unbind(name);
 			throw new NameBindingException("can't publish '"+name+"'. object is not bind! error="+e.getMessage());
@@ -136,7 +136,7 @@ public class Registry {
 	public void unbind(String name){
 		//TODO what to do with already connected users?
 		lookupTableServer.releaseRemoteBinding(name);
-		Simon.unpublish(new SimonPublishment(address, port, name));
+		Simon.unpublish(new SimonPublication(address, port, name));
 	}
 	
 	/**
