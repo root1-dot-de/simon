@@ -104,7 +104,7 @@ public class Simon {
 				
 			}
 		}
-		_log.log(Level.INFO, "Simon lib loaded [version="+Statics.SIMON_VERSION+"|rev="+Statics.SIMON_BUILD_REVISION+"|timestamp="+Statics.SIMON_BUILD_TIMESTAMP+"]");
+		_log.log(Level.FINE, "Simon lib loaded [version="+Statics.SIMON_VERSION+"|rev="+Statics.SIMON_BUILD_REVISION+"|timestamp="+Statics.SIMON_BUILD_TIMESTAMP+"]");
 	}
 	
 	public static Statistics getStatistics() {
