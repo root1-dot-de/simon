@@ -16,16 +16,17 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon.experiments.multicast;
+package de.root1.simon;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
+import java.util.Iterator;
+import java.util.List;
 import java.util.logging.Logger;
 
-import de.root1.simon.Statics;
 
 public class PublishService extends Thread {
 
@@ -40,19 +41,24 @@ public class PublishService extends Thread {
 
 	private boolean shutdown;
 
-	public PublishService() throws IOException {
-		super("Simon.PublishService");
+
+	private List<SimonPublishment> publishments;
+
+	public PublishService(List<SimonPublishment> publishments) throws IOException {
+		_log.fine("preparing publish service");
+		setName(Statics.PUBLISH_SERVICE_THREAD_NAME);
 		socket = new MulticastSocket(groupPort);
 		socket.joinGroup(groupAddress);
 		socket.setSoTimeout(Statics.DEFAULT_SOCKET_TIMEOUT);
+		this.publishments = publishments;
 	}
 
 	public void run() {
-		
+		_log.fine("publish service up and running");
 		while (!shutdown) {
 			try {
 				
-				byte[] searchData = new byte[18];
+				byte[] searchData = new byte[Statics.REQUEST_STRING.length()];
 				DatagramPacket searchPacket = new DatagramPacket(searchData,searchData.length);
 				socket.receive(searchPacket);
 				
@@ -60,19 +66,18 @@ public class PublishService extends Thread {
 				int requestPort = searchPacket.getPort();
 				String requestString = new String(searchPacket.getData());
 				
-				System.out.println("requestHost="+requestAddress+" requestPort="+requestPort+" requestString="+requestString);
+				_log.fine("got 'find server' request. requestHost="+requestAddress+" requestPort="+requestPort+" requestString="+requestString);
 				
 				if (requestString.equals(Statics.REQUEST_STRING)) {
 					
 					// send answer pack to sender
-					byte[] answerData ="[SIMON|192.168.0.123:1234|myServer]".toString().getBytes();
-					DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
-					socket.send(answerPacket);
+					for (SimonPublishment publishment : publishments) {
+						_log.fine("answering: "+publishment);
+						byte[] answerData = publishment.toString().getBytes();
+						DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
+						socket.send(answerPacket);
+					}
 					
-					answerData ="[SIMON|192.168.123.123:1234|myServer2]".toString().getBytes();
-					answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
-					socket.send(answerPacket);
-
 				}
 
 
@@ -83,13 +88,12 @@ public class PublishService extends Thread {
 			}
 		}
 		socket.close();
+		_log.fine("publish service terminated!");
 	}
 	
 	public void shutdown(){
 		shutdown = true;
+		_log.fine("Shutting down the publish service now ...");
 	}
 	
-	public static void main(String[] args) throws IOException {
-        new PublishService().start();
-	}
 }

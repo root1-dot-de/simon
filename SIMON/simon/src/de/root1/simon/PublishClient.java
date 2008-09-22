@@ -1,4 +1,4 @@
-package de.root1.simon.experiments.multicast;
+package de.root1.simon;
 
 /*
  * Copyright (c) 1995 - 2008 Sun Microsystems, Inc.  All rights reserved.
@@ -35,10 +35,11 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 
-import de.root1.simon.SimonPublishment;
-import de.root1.simon.Statics;
 
 public class PublishClient {
 	
@@ -48,37 +49,53 @@ public class PublishClient {
 	
 
 	public PublishClient() throws IOException {
-		DatagramSocket socket = new DatagramSocket(groupPort-1);
+	}
+	
+	public synchronized List<SimonPublishment> search(){
+		List<SimonPublishment> result = new ArrayList<SimonPublishment>();
+		DatagramSocket socket;
+		try {
+			socket = new DatagramSocket(groupPort-1);
 		
-		byte[] requestData = Statics.REQUEST_STRING.getBytes();
-		DatagramPacket searchPacket = new DatagramPacket(requestData,requestData.length, groupAddress, groupPort);
-		socket.send(searchPacket);
-		socket.setSoTimeout(100); // set socket timeout to 100ms
-
-		DatagramPacket packet;
-
-		long startTime = System.currentTimeMillis();
-		while (System.currentTimeMillis()<(startTime+searchTime)) {
-			
-			try {
-				byte[] buf = new byte[256];
-				packet = new DatagramPacket(buf, buf.length);
-				socket.receive(packet);
-				String received = new String(packet.getData(), 0, packet.getLength());
-				SimonPublishment simonPublishment = new SimonPublishment(received);
-				System.out.println(simonPublishment);
+			byte[] requestData = Statics.REQUEST_STRING.getBytes();
+			DatagramPacket searchPacket = new DatagramPacket(requestData,requestData.length, groupAddress, groupPort);
+			socket.send(searchPacket);
+			socket.setSoTimeout(Statics.DEFAULT_SOCKET_TIMEOUT); // set socket timeout to 100ms
+	
+			DatagramPacket packet;
+	
+			long startTime = System.currentTimeMillis();
+			while (System.currentTimeMillis()<(startTime+searchTime)) {
 				
-			} catch (SocketTimeoutException e) {
-				// do nothing
+				try {
+					byte[] buf = new byte[256];
+					packet = new DatagramPacket(buf, buf.length);
+					socket.receive(packet);
+					String received = new String(packet.getData(), 0, packet.getLength());
+					result.add(new SimonPublishment(received));
+				} catch (SocketTimeoutException e) {
+					// do nothing
+				}
+				
 			}
+			socket.close();
 			
+		} catch (SocketException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-		socket.close();
-
+		return result;
 	}
 	
 	public static void main(String[] args) throws IOException {
-		 new PublishClient();
+		 PublishClient publishClient = new PublishClient();
+		 List<SimonPublishment> search = publishClient.search();
+		 for (SimonPublishment simonPublishment : search) {
+			System.out.println(simonPublishment);
+		}
 	}
 
 }

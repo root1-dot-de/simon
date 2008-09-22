@@ -23,7 +23,7 @@ import java.net.UnknownHostException;
 
 /**
  * This class holds a 3-tupel of data needed to identify a remote object on a registry.
- * The tupel constsits of:
+ * The tupel consists of:
  * <ol>
  * <li>address to which the registry of the remote object is bind to</li>
  * <li>the port on which the registry listens</li>
@@ -63,13 +63,14 @@ public class SimonPublishment {
 	 * @throws NumberFormatException if the port in the raw string has the wrong format (e.g. non numeric)
 	 */
 	public SimonPublishment(String rawString) throws IllegalArgumentException, UnknownHostException, NumberFormatException {
-		if (!rawString.substring(0, SIMON_PUBLISHMENT_HEADER.length()).equals(SIMON_PUBLISHMENT_HEADER) ) 
+		if ((!rawString.substring(0, SIMON_PUBLISHMENT_HEADER.length()).equals(SIMON_PUBLISHMENT_HEADER) &&
+				!rawString.substring(SIMON_PUBLISHMENT_HEADER.length()-1,SIMON_PUBLISHMENT_HEADER.length()).equals("]"))) 
 			throw new IllegalArgumentException("provided raw string has the wrong format: "+rawString);
 		
 		String values = rawString.substring(SIMON_PUBLISHMENT_HEADER.length(), rawString.length()-1);
 		
 		String[] valuesSplit = values.split("\\|");
-		if (valuesSplit.length!=2) throw new IllegalArgumentException("except the header, there must be two values in the raw string. 1st: 'ip:port' 2nd: 'remoteObjectName'");
+		if (valuesSplit.length!=2) throw new IllegalArgumentException("except the header, there must be two values in the raw string. 1st: 'ip:port' 2nd: 'remoteObjectName'. values="+values);
 		
 		String[] addressSplit = valuesSplit[0].split(":");
 		
@@ -108,6 +109,7 @@ public class SimonPublishment {
 	
 	@Override
 	public String toString() {
+		sb.delete(0, sb.length());
 		sb.append(SIMON_PUBLISHMENT_HEADER);
 		sb.append(address.getHostAddress());
 		sb.append(":");
@@ -116,6 +118,21 @@ public class SimonPublishment {
 		sb.append(remoteObjectName);
 		sb.append("]");
 		return sb.toString();
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		
+		if (obj instanceof SimonPublishment) {
+			
+			SimonPublishment other = (SimonPublishment) obj;
+			
+			return (getAddress().equals(other.getAddress()) &&
+					getPort()==other.getPort() &&
+					getRemoteObjectName().equals(other.getRemoteObjectName()));
+			
+		} else return false;
+		
 	}
 	
 
