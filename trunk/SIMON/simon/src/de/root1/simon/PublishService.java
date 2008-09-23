@@ -23,7 +23,6 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
-import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 
