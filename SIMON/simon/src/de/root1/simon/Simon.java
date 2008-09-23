@@ -562,20 +562,12 @@ public class Simon {
 			
 			try {
 				publicationSearcher = new PublicationSearcher(null, searchTime);
-				publicationSearcher.start();
-				
-				// wait until the search is finished
-				while (publicationSearcher.isSearching()) {
-					Thread.sleep(Statics.DEFAULT_SOCKET_TIMEOUT);
-				}
+				publicationSearcher.run(); // call run without starting the thread. call is synchronously!
 			} catch (IOException e) {
 				// TODO what to do?
 				e.printStackTrace();
 				return null;
-			} catch (InterruptedException e) {
-				// if we get interrupted, return immediately with result so far
-				return publicationSearcher.getNewPublications();
-			}
+			} 
 			
 			return publicationSearcher.getNewPublications();
 		} else throw new IllegalStateException("another search is currently in progress ...");
