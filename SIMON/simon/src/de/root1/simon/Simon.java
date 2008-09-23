@@ -531,17 +531,54 @@ public class Simon {
 		}
 	}
 	
+	/**
+	 * Creates a background thread that searches for published remote objects
+	 * 
+	 * @param listener a {@link SearchProgressListener} implementation which is informed about the current search progress
+	 * @param searchTime the time the background search thread spends for searching published remote objects
+	 * @return a {@link PublicationSearcher} which is used to access the search result
+	 */
 	public static PublicationSearcher searchRemoteObjects(SearchProgressListener listener, int searchTime){
 		if (publicationSearcher==null || !publicationSearcher.isSearching()) {
 			try {
 				publicationSearcher = new PublicationSearcher(listener, searchTime);
 				publicationSearcher.start();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				// TODO what to do?
 				e.printStackTrace();
 			}
-		} else throw new IllegalStateException("search currently in progress ...");
+		} else throw new IllegalStateException("another search is currently in progress ...");
 		return publicationSearcher;
+	}
+	
+	/**
+	 * Starts a search for published remote objects. <br>
+	 * <b><u>Be warned:</u> This method blocks until the search is finished or the current thread is interrupted</b>
+	 * @param searchTime the time that is spend to search for published remote objects
+	 * @return a {@link List} of {@link SimonPublication}s
+	 */
+	public static List<SimonPublication> searchRemoteObjects(int searchTime){
+		if (publicationSearcher==null || !publicationSearcher.isSearching()) {
+			
+			try {
+				publicationSearcher = new PublicationSearcher(null, searchTime);
+				publicationSearcher.start();
+				
+				// wait until the search is finished
+				while (publicationSearcher.isSearching()) {
+					Thread.sleep(Statics.DEFAULT_SOCKET_TIMEOUT);
+				}
+			} catch (IOException e) {
+				// TODO what to do?
+				e.printStackTrace();
+				return null;
+			} catch (InterruptedException e) {
+				// if we get interrupted, return immediately with result so far
+				return publicationSearcher.getNewPublications();
+			}
+			
+			return publicationSearcher.getNewPublications();
+		} else throw new IllegalStateException("another search is currently in progress ...");
 	}
 
 }

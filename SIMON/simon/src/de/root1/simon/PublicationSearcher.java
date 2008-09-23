@@ -90,11 +90,13 @@ public class PublicationSearcher extends Thread {
 				
 				searchProgress = (int)(100d/searchTime * (System.currentTimeMillis()-startTime));
 				if (searchProgress>100) searchProgress = 100;
-				updateListeners(searchProgress);
+				updateListeners();
 				
 			}
-			if (searchProgress!=100)
-				updateListeners(100);
+			if (searchProgress!=100){
+				searchProgress=100;
+				updateListeners();
+			}
 			listeners.clear();
 			socket.close();
 			
@@ -135,18 +137,26 @@ public class PublicationSearcher extends Thread {
 		return searchProgress;
 	}
 	
+	/**
+	 * Adds a new Listener to the list of listeners which have to be informed about the current status
+	 * @param listener
+	 */
 	private void addSearchProgressListener(SearchProgressListener listener){
 		if (listener!=null)
 			listeners.add(listener);
 	}
 	
-	private void updateListeners(int value){
+	/**
+	 * Forwards the current search status to the registered listeners
+	 * @param value
+	 */
+	private void updateListeners(){
 		int numberOfObjects = 0;
 		synchronized (foundPublications) {
 			numberOfObjects = foundPublications.size();
 		}
 		for (SearchProgressListener listener : listeners) {
-			listener.update(value, numberOfObjects);
+			listener.update(searchProgress, numberOfObjects);
 		}
 	}
 	
