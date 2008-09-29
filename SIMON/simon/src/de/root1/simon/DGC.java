@@ -111,7 +111,7 @@ public class DGC extends Thread {
 			synchronized (clientKeyList) {
 				tempClientKeyList = new ArrayList<SelectionKey>(clientKeyList);				
 			}
-			
+			_log.fine("Sending Pings to "+tempClientKeyList.size()+" clients");
 			// for each known client in the local copy
 			for (SelectionKey clientKey : tempClientKeyList) {
 				
@@ -123,6 +123,9 @@ public class DGC extends Thread {
 				if (shutdown) break;
 				
 			}
+			
+			tempClientKeyList.clear();
+			tempClientKeyList = null;
 
 			if (shutdown) break;
 			
