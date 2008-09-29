@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -86,29 +87,29 @@ public class Simon {
 		if (Utils.DEBUG) {
 			
 			InputStream is;
-			
+			File f = new File("config/simon_logging.properties");
 			try {
-				
-				is = new FileInputStream("config/simon_logging.properties");
+				is = new FileInputStream(f);
 				LogManager.getLogManager().readConfiguration(is);
 				
 			} catch (FileNotFoundException e) {
 				
-				System.err.println("File not fount: config/simon_logging.properties.\n" +
+				System.err.println("File not fount: "+f.getAbsolutePath()+".\n" +
 						"If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
 						"Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
 				
 			} catch (SecurityException e) {
 				
-				System.err.println("Security exception occured while trying to load config/logging.properties\n" +
+				System.err.println("Security exception occured while trying to load "+f.getAbsolutePath()+"\n" +
 						"Logging with SIMON not possible!.");
 				
 			} catch (IOException e) {
 				
-				System.err.println("Cannot load config/logging.properties ...\n" +
+				System.err.println("Cannot load "+f.getAbsolutePath()+" ...\n" +
 						"Please make sure that Java has access to that file.");
 				
 			}
+			
 		}
 		_log.log(Level.FINE, "Simon lib loaded [version="+Statics.SIMON_VERSION+"|rev="+Statics.SIMON_BUILD_REVISION+"|timestamp="+Statics.SIMON_BUILD_TIMESTAMP+"]");
 	}
