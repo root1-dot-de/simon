@@ -94,7 +94,7 @@ public class Simon {
 				
 			} catch (FileNotFoundException e) {
 				
-				System.err.println("File not fount: config/logging.properties.\n" +
+				System.err.println("File not fount: config/simon_logging.properties.\n" +
 						"If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
 						"Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
 				
