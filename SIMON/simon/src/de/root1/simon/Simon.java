@@ -91,6 +91,7 @@ public class Simon {
 			try {
 				is = new FileInputStream(f);
 				LogManager.getLogManager().readConfiguration(is);
+				_log.info("Logging: Loaded config "+f.getAbsolutePath());
 				
 			} catch (FileNotFoundException e) {
 				

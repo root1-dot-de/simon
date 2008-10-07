@@ -167,6 +167,7 @@ public class Acceptor implements Runnable {
 		InetSocketAddress isa = new InetSocketAddress(address, listenPort);
 		serverChannel.socket().bind(isa);
 
+		_log.info("Listening on "+isa);
 		register = serverChannel.register(socketSelector, SelectionKey.OP_ACCEPT);
 		_log.fine("end");
 	} 
