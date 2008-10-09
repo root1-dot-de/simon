@@ -189,7 +189,7 @@ public class Simon {
 	 * Retrieves a remote object from the server. At least, it tries to retrieve it.
 	 * This may fail if the named object is not available or if the connection could not be established.
 	 * 
-	 * @param host hostaddress where the lookup takes place
+	 * @param host host address where the lookup takes place
 	 * @param port port number of the simon remote registry
 	 * @param remoteObjectName name of the remote object which is bind to the remote registry 
 	 * @return and instance of the remote object
@@ -372,40 +372,28 @@ public class Simon {
 	 * @return the threadPool
 	 */
 	protected static ExecutorService getThreadPool() {
-		if (threadPool==null || threadPool.isShutdown()){
-			
-			if (poolSize!=-1)
-				setWorkerThreadPoolSize(poolSize);
-			else
-				setWorkerThreadPoolSize(-1);
+		if (poolSize==-1){
+			return Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
+		} else if (poolSize==1) {
+			return Executors.newSingleThreadExecutor(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));			
+		} else {
+			return Executors.newFixedThreadPool(poolSize, new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
 		}
-		return threadPool;
 	}
 
 	/**
-	 * Sets the size of the worker thread pool.<br>
-	 * If given size has value -1, the pool will create new threads as needed, 
-	 * but will reuse previously constructed threads when they are available. 
+	 * Sets the size of the worker thread pool.<br>This will setting only affect new pool that have to be created in future.
+	 * If given size has value -1, a new pool will create new threads as needed, 
+	 * but will reuse previously constructed threads when they are available. This is the most common setting.
 	 * Old, for 60 seconds unused threads will be removed. These pools will 
 	 * typically improve the performance of programs that execute many short-lived 
 	 * asynchronous tasks. See documentation of {@link Executors#newCachedThreadPool()}<br>
 	 * 
-	 * If size has value >=1, the pool has a fixed size by the given value
+	 * If size has value >=1, a new pool has a fixed size by the given value
 	 * 
 	 * @param size the size of the used worker thread pool
 	 */
 	public static void setWorkerThreadPoolSize(int size) {
-
-		if (threadPool!=null && !threadPool.isShutdown()) throw new IllegalStateException("You have to set the size BEFORE using createRegistry() or lookup()...");
-		
-		if (size==-1){
-			threadPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
-		} else if (size==1) {
-			threadPool = Executors.newSingleThreadExecutor(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));			
-		} else {
-			threadPool = Executors.newFixedThreadPool(size, new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
-		}
-		
 		poolSize = size;
 	}
 	
