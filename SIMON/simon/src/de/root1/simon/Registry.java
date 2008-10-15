@@ -93,7 +93,7 @@ public class Registry {
 	 * registry.
 	 *
 	 */
-	protected void stop() {
+	public void stop() {
 		lookupTableServer.clear();
 		acceptor.shutdown();
 		dispatcher.shutdown();
@@ -117,6 +117,15 @@ public class Registry {
 		lookupTableServer.putRemoteBinding(name, remoteObject);
 	}
 	
+	/**
+	 * Binds the object to the {@link Registry} and publishes it to the network, 
+	 * so that they can be found with {@link Simon#searchRemoteObjects(int)} or 
+	 * {@link Simon#searchRemoteObjects(SearchProgressListener, int)}
+	 * 
+	 * @param name a name for the object to bind and publish
+	 * @param remoteObject the object to bind and publish
+	 * @throws NameBindingException if binding fails
+	 */
 	public void bindAndPublish(String name, SimonRemote remoteObject) throws NameBindingException {
 		bind(name, remoteObject);
 		try {
