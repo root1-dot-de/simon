@@ -62,12 +62,6 @@ public class Simon {
 	 */
 	private static final List<Registry> registryList = new ArrayList<Registry>();
 		
-	/*
-	 * Different ThreadPool implementations
-	 * Is used by "ProcessMethodInvocationRunnable"
-	 */
-	private static ExecutorService threadPool = null;
-
 	private static Statistics statistics;
 
 	private static int poolSize = -1;
@@ -505,6 +499,12 @@ public class Simon {
 		}
 	}
 
+	/**
+	 * Publishes a remote object. If not already done, start the publish service thread.
+	 * 
+	 * @param simonPublication the object to publish
+	 * @throws IOException if the publish service cannot be started due to IO problems
+	 */
 	protected static void publish(SimonPublication simonPublication) throws IOException {
 		if (publishments.isEmpty()){
 			publishService = new PublishService(publishments);
@@ -514,9 +514,15 @@ public class Simon {
 		
 	}
 
+	/**
+	 * Unpublishs a already published {@link SimonPublication}. If there are no more
+	 * publications available, shutdown the publish service.
+	 * 
+	 * @param simonPublication the publication to unpublish
+	 */
 	public static void unpublish(SimonPublication simonPublication) {
 		publishments.remove(simonPublication);
-		if (publishments.isEmpty()) {
+		if (publishments.isEmpty() && publishService!=null && publishService.isAlive()) {
 			publishService.shutdown();
 		}
 	}
