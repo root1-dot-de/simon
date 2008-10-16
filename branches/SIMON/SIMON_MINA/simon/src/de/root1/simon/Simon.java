@@ -26,6 +26,8 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
@@ -37,6 +39,15 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import org.apache.mina.core.future.ConnectFuture;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.filter.logging.LoggingFilter;
+import org.apache.mina.transport.socket.nio.NioSocketConnector;
+
+import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
+import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -198,7 +209,7 @@ public class Simon {
 		// check if there is already an dispatcher and key for THIS server
 		SimonRemote proxy = null;
 		Dispatcher dispatcher = null;
-		SelectionKey key = null;
+		IoSession session = null;
 		
 		String serverString = createServerString(host, port);
 		
@@ -213,7 +224,7 @@ public class Simon {
 				ctsc.addRef();
 				serverDispatcherRelation.put(serverString, ctsc);
 				dispatcher = ctsc.getDispatcher();
-				key = ctsc.getKey();
+				session = ctsc.getSession();
 				
 				_log.fine("Got ClientToServerConnection from list");
 				
@@ -222,46 +233,25 @@ public class Simon {
 				
 				_log.fine("No ClientToServerConnection in list. Creating new one.");
 				
-				try {
-					
-//					dispatcher = new Dispatcher(serverString, lookupTableGlobal, getThreadPool());
-					dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
-					
-				} catch (IOException e) {
-					
-					if (dispatcher!=null) {
-						_log.finest("Dispatcher creating failed, call shutdown() ...");
-						dispatcher.shutdown();
-					}
-					// forward the exception
-					throw new EstablishConnectionFailed(e.getMessage());
-					
-				}
+				dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
+				ExecutorService executorPool = Executors.newCachedThreadPool();
+				NioSocketConnector connector = new NioSocketConnector();
+				connector.setHandler(dispatcher);
 				
-				Thread clientDispatcherThread = new Thread(dispatcher,Statics.CLIENT_DISPATCHER_THREAD_NAME);
-				clientDispatcherThread.start();
+				ConnectFuture future = connector.connect(new InetSocketAddress(host, port));
+				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
+				session = future.getSession();
 				
-				Client client = new Client(dispatcher);
-				try {
-					
-					client.connect(host, port);
-					
-				} catch (Exception e){
-					_log.finest("Connection to server failed, call shutdown() on Dispatcher");
-					dispatcher.shutdown();
-					// forward exception
-					throw new EstablishConnectionFailed(e.getMessage());
-					
-				}
+				session.getFilterChain().addFirst("executor", new ExecutorFilter(executorPool));
+				session.getFilterChain().addLast( "logger", new LoggingFilter() );
+				session.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(false)));
 				
 				if (_log.isLoggable(Level.FINER)) {
 					_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
 				}
 				
-				key = client.getKey();
-				
 				// store this connection for later re-use
-				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,key);
+				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session);
 				ctsc.addRef();
 				serverDispatcherRelation.put(serverString, ctsc);
 				
@@ -269,31 +259,27 @@ public class Simon {
 			
 		}
 		
-		try {
 			
 			
-			/*
-			 * Create array with interfaces the proxy should have
-			 * first contact server for lookup of interfaces
-			 * this request blocks!
-			 */
-			Class<?>[] listenerInterfaces = (Class<?>[]) dispatcher.invokeLookup(key, remoteObjectName);
+		/*
+		 * Create array with interfaces the proxy should have
+		 * first contact server for lookup of interfaces
+		 * this request blocks!
+		 */
+		MsgLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
+		Class<?>[] listenerInterfaces = msg.getInterfaces();
 
-			/*
-			 * Creates proxy for method-call-forwarding to server 
-			 */
-			SimonProxy handler = new SimonProxy(dispatcher, key, remoteObjectName);
-			_log.finer("proxy created");
-			
-			 /* 
-		     * Create the proxy-object with the needed interfaces
-		     */
-		    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
+		/*
+		 * Creates proxy for method-call-forwarding to server 
+		 */
+		SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
+		_log.finer("proxy created");
+		
+		 /* 
+	     * Create the proxy-object with the needed interfaces
+	     */
+	    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
 		    
-		} catch (IOException e){
-			dispatcher.shutdown();
-			throw new EstablishConnectionFailed(e.getMessage());
-		}
 		
 		_log.fine("end");
 		return proxy;
@@ -313,35 +299,35 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
+	 * Gets the SocketAddress used on the remote-side of the given proxy object
 	 * 
 	 * @param proxyObject the proxy-object
-	 * @return the InetAddress on the remote-side
+	 * @return the SocketAddress on the remote-side
 	 */
-	public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
+	public static SocketAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
 		return getSimonProxy(proxyObject).getInetAddress();
 	}
 	
 	/**
 	 * 
-	 * Gets the socket-port used on the remote-side of the given proxy object
+	 * FIXME Gets the socket-port used on the remote-side of the given proxy object
 	 * 
 	 * @param proxyObject the proxy-object
 	 * @return the port on the remote-side
 	 */
 	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
-		return getSimonProxy(proxyObject).getRemotePort();
+		return 0;
 	}
 	
 	/**
 	 * 
-	 * Gets the socket-port used on the local-side of the given proxy object
+	 * FIXME Gets the socket-port used on the local-side of the given proxy object
 	 * 
 	 * @param proxyObject the proxy-object
 	 * @return the port on the local-side
 	 */
 	public static int getLocalPort(Object proxyObject) throws IllegalArgumentException {
-		return getSimonProxy(proxyObject).getLocalPort();
+		return 0;
 	}
 	
 	/**

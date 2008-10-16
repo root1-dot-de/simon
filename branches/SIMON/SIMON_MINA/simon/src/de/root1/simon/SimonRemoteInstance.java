@@ -24,6 +24,8 @@ import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.mina.core.session.IoSession;
+
 /**
  * This class is used by an endpoint if a remote object has to be "transferred" to the 
  * opposite endpoint. In such case, only the interface name is relevant. So an 
@@ -54,7 +56,7 @@ public class SimonRemoteInstance implements Serializable {
 	 * @param key the key to which the remote object is related to
 	 * @param remoteObject the remote object for which we generate this transport object for
 	 */
-	public SimonRemoteInstance(SelectionKey key, SimonRemote remoteObject) {
+	public SimonRemoteInstance(IoSession session, SimonRemote remoteObject) {
 		_log.fine("begin");
 		
 		try {
@@ -63,12 +65,11 @@ public class SimonRemoteInstance implements Serializable {
 			remoteObjectName="{SimonRemoteInstance:RemoteObjectNameNotAvailable}";
 		}
 		
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		String IP = socketChannel.socket().getInetAddress().getHostAddress();
-		int remotePort = socketChannel.socket().getPort();
-		int localPort = socketChannel.socket().getLocalPort();
 		
-		this.id = "["+remoteObject.getClass().getName()+"|ip="+IP+";l_port="+localPort+";r_port="+remotePort+";remoteObjectHash="+remoteObject.hashCode()+"]";
+		String IP = session.getRemoteAddress().toString();
+		long id = session.getId();
+		
+		this.id = "["+remoteObject.getClass().getName()+"|ip="+IP+";id="+id+";remoteObjectHash="+remoteObject.hashCode()+"]";
 		
 		if (_log.isLoggable(Level.FINER)){
 			_log.finer("remoteObjectId="+this.id);

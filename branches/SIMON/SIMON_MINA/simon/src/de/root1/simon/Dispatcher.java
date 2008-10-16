@@ -18,18 +18,6 @@
  */
 package de.root1.simon;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InvalidClassException;
-import java.io.NotSerializableException;
-import java.nio.ByteBuffer;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -40,6 +28,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.mina.core.service.IoHandler;
+import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.core.session.IoSession;
+
+import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgLookup;
+import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.ConnectionException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -51,44 +46,26 @@ import de.root1.simon.utils.Utils;
  * 
  * @author ACHR
  */
-public class Dispatcher implements Runnable {
+public class Dispatcher implements IoHandler{
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 
 	/** The table that holds all the registered/bind remote objects */
 	private LookupTable lookupTable;
 	
-	/** a simple counter that is used for creating request IDs */
-	private int requestIdCounter = 0;
-	
-	/** The map that holds the relation between the request ID and the corresponding monitor */
-	private HashMap<Integer, Object> idMonitorMap = new HashMap<Integer, Object>();
-
-	/** The map that holds the relation between a current active request and a connected SelectableChannel */
-	private HashMap<Integer, SelectableChannel> idSelectableChannelMap = new HashMap<Integer, SelectableChannel>();
+	/** a simple counter that is used for creating sequence IDs */
+	private int sequenceIdCounter = 0;
 	
 	/** The map that holds the relation between the request ID and the received result */
-	private HashMap<Integer, Object> requestResults = new HashMap<Integer, Object>();
+	private HashMap<Integer, Object> requestMonitorAndReturnMap = new HashMap<Integer, Object>();
 	
 	/** a memory map for the client the unwrap the incoming return value after executing a method on the server */
 	private HashMap<Integer, Class<?>> requestReturnType = new HashMap<Integer, Class<?>>();
 	
-	// -----------------------
-	// NIO STUFF
-	
-	/** The selector we'll be monitoring. This contains alle the connected channels/clients */
-	private Selector selector;
-	
-	/** A list of PendingChange instances.  */
-	private List<ChangeRequest> pendingSelectorChanges = new LinkedList<ChangeRequest>();
-	
-	/** Maps a SocketChannel to a list of ByteBuffer instances */
-	private Map<SocketChannel, List<ByteBuffer>> pendingData = new HashMap<SocketChannel, List<ByteBuffer>>();
-	
 	/** the thread-pool where the worker-threads live in */
-	private ExecutorService eventHandlerPool = null;
+	private ExecutorService messageProcessorPool = null;
 
-	/** Shutdownflag. If set to true, the dispatcher is going to shutdown itself and all related stuff */
+	/** Shutdown flag. If set to true, the dispatcher is going to shutdown itself and all related stuff */
 	private boolean shutdown;
 
 	/** indicates if the dispatcher is running or not */
@@ -100,12 +77,6 @@ public class Dispatcher implements Runnable {
 	/** an identifier string to determine to which server this dispatcher is connected to  */
 	private final String serverString;
 	
-	private Object incomingInvocationCounterMonitor = new Object();
-	private int incomingInvocationCounter = 0;
-
-	private Object outgoingInvocationCounterMonitor = new Object();
-	private int outgoingInvocationCounter;
-
 	/**
 	 * 
 	 * Creates a packet dispatcher which delegates 
@@ -117,13 +88,12 @@ public class Dispatcher implements Runnable {
 	 * @param threadPool the pool the worker threads live in
 	 * @throws IOException if the {@link Selector} cannot be initiated
 	 */
-	public Dispatcher(String serverString, LookupTable lookupTable, ExecutorService threadPool) throws IOException {
+	public Dispatcher(String serverString, LookupTable lookupTable, ExecutorService threadPool) {
 		_log.fine("begin");
 		
 		this.serverString = serverString;
 		this.lookupTable = lookupTable;
-		this.eventHandlerPool = threadPool;
-		this.selector = SelectorProvider.provider().openSelector();
+		this.messageProcessorPool = threadPool;
 		this.dgc = new DGC(this);
 		dgc.start();
 		_log.fine("end");
@@ -138,386 +108,63 @@ public class Dispatcher implements Runnable {
 	 * 
 	 * @return a request ID
 	 */
-	private synchronized Integer generateRequestID() {
-		return (++requestIdCounter == Integer.MAX_VALUE ? 0 : requestIdCounter);
+	private synchronized Integer generateSequenceId() {
+		return (++sequenceIdCounter == Integer.MAX_VALUE ? 0 : sequenceIdCounter);
 	}
 	
-	/**
-	 * The main receive-loop
-	 * @see java.lang.Thread#run()
-	 */
-	public void run() {
-		
-		_log.fine("begin");
-		
-		isRunning = true;
-		SelectionKey key = null;
-		
-		while (!shutdown) {
-			
-			try {
-				
-				processPendingSelectorChanges();
 
-				_log.finer("W A I T I N G for an event");
-				int numOfselectableKeys = selector.select();
-
-				if (numOfselectableKeys>0) {
-
-					if (_log.isLoggable(Level.FINER)) {
-						_log.finer(numOfselectableKeys+ " keys ready");
-					}
-					
-					// Iterate over the set of keys for which events are available
-					Iterator<SelectionKey> selectedKeys = selector.selectedKeys().iterator();
-					while (selectedKeys.hasNext() && !shutdown) {
-					
-						key = (SelectionKey) selectedKeys.next();
-						selectedKeys.remove();
-						 
-						if (_log.isLoggable(Level.FINER)){
-
-							_log.finer("processing key="+Utils.getKeyIdentifierExtended(key));
-							
-						}
-						
-						if (!key.isValid()) {
-							_log.finer("key is invalid: "+key);
-							continue; // .. with next in "while"
-						}
-	
-						// Check what event is available and deal with it
-						if (key.isAcceptable()){ // used by the server
-
-							_log.finer("key is acceptable. Accepting is done by the 'Acceptor'!");
-							
-						} else if (key.isConnectable()) { // used by the client
-
-							_log.finer("key is connectable.  FinishConnection is done by the 'Client'!");
-							
-						} else if (key.isReadable()) {
-
-							_log.finer("key is readable");
-
-							key.interestOps(key.interestOps() & ~SelectionKey.OP_READ); // deregister for read-events
-							key.attach(true); // remember that this key is currently being read ...
-							
-							handleRead(key);
-							
-						} else if (key.isWritable()) {
-							
-							if (_log.isLoggable(Level.FINER))
-								_log.finer("key  is writeable");
-							
-							key.interestOps(key.interestOps() & ~SelectionKey.OP_WRITE); // deregister for write events
-
-							handleWrite(key);
-							
-						}
-					}
-
-				} else {
-				
-						_log.finer("no keys available");
-				}
-				
-			} catch (IOException e) {
-				
-				
-				_log.warning("I/O Exception: "+e.getMessage());
-				
-				if (key!=null) {
-					cancelKey(key);
-					lookupTable.unreference(key);
-				}
-				
-				if (!isServerDispatcher()){
-					_log.warning("Connection to server is broken. Shutdown client dispatcher.");
-					shutdown();
-				}
-				
-			} catch (Exception e) {
-				// TODO correct exception handling here?
-				_log.severe("General Exception: e="+e+" msg="+e.getMessage());e.printStackTrace();		
-
-				wakeAllMonitors();
-				cancelKey(key);
-				lookupTable.unreference(key);
-				
-				if (!isServerDispatcher()){
-					_log.warning("Connection to server is broken. Shutdown client dispatcher.");
-					shutdown();
-				}
-			}
-		}
-		isRunning = false;
-	}
-
-
-	/**
-	 * Process any pending selector changes. 
- 	 * (changing read/write interests and registrations)
-	 */
-	private void processPendingSelectorChanges() throws ClosedChannelException {
-		
-		synchronized (this.pendingSelectorChanges) {
-			
-			Iterator<ChangeRequest> changes = this.pendingSelectorChanges.iterator();
-			while (changes.hasNext()) {
-				
-				ChangeRequest change = (ChangeRequest) changes.next();
-				
-				if (_log.isLoggable(Level.FINER))
-					_log.finer("changerequest: "+change);
-				
-				switch (change.type) {
-
-					case ChangeRequest.CHANGEOPS:
-						
-						SelectionKey key = change.socket.keyFor(this.selector);
-						
-						if (key==null) {
-							if (_log.isLoggable(Level.FINER)) {
-								_log.finer("changing ops not possible. key for socketchannel "+Utils.getChannelIdentifier(change.socket)+" is 'gone'... changerequest was: "+change);
-							}
-//							dgc.removeKey(key); // key is null, so no need to remove a null key from dgc...
-							cancelWaitingMonitors(change.socket);
-							
-						} else if (key.attachment()!=null && change.ops==SelectionKey.OP_READ){
-							if (_log.isLoggable(Level.FINER)) {
-								_log.finer("cannot change to read mode, key="+Utils.getKeyIdentifierExtended(key)+" is currently busy with reading. cannot interrupt him!");
-							}
-//							System.err.flush();
-//							System.exit(1);
-						}
-						else {
-							if (key.isValid())
-								key.interestOps(change.ops);
-						}
-						break;
-						
-					case ChangeRequest.REGISTER:
-
-						SelectionKey connectedClientKey = change.socket.register(this.selector, change.ops);
-						dgc.addKey(connectedClientKey);
-						break;
-						
-				}
-			}
-			this.pendingSelectorChanges.clear();
-		}
-		// -------------
-	}
-
-
-
-	private void handleRead(SelectionKey key) {
-		_log.fine("begin");
-		if (!eventHandlerPool.isShutdown()) 
-			eventHandlerPool.execute(new ReadEventHandler(key,this));
-		else
-			_log.finer("cannot add new ReadEventHandler thread to pool due to shutdown command received.");
-		_log.fine("end");
-	}
-	
-	private void handleWrite(SelectionKey key) throws IOException {
-		_log.fine("begin");
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-		
-		if (_log.isLoggable(Level.FINER)) {
-			_log.finer("sending data for key=" + Utils.getKeyIdentifierExtended(key) + " from queue");
-		}
-		
-		synchronized (pendingData) {
-		
-			List<ByteBuffer> queue = (List<ByteBuffer>) pendingData.get(socketChannel);
-
-			// Write until there's not more data ...
-			while (!queue.isEmpty()) {
-				
-				ByteBuffer buf = (ByteBuffer) queue.get(0);
-
-				if (_log.isLoggable(Level.FINEST)) {
-					_log.finest(Utils.inspectPacket(buf));
-				}
-
-				// FIXME corrent workaround?!
-				while (buf.remaining()>0) {
-					socketChannel.write(buf);
-				}
-				
-//				if (buf.remaining() > 0) {
-//					System.err.println("Dispatcher#handleWrite() -> not enough bytes written!");
-//					System.err.flush();
-//					System.exit(0);
-//				}
-				queue.remove(0);
-				
-			}
-
-			// We wrote away all data, so we're no longer interested
-			// in writing on this socket. Switch back to waiting for
-			// data.
-			if (queue.isEmpty()) {
-				
-				
-				if (_log.isLoggable(Level.FINE)) {
-					_log.fine("sending is done. no more data in queue. return key="+Utils.getKeyIdentifierExtended(key)+" to OP_READ");
-				}
-				
-				// ... but first check if key is "busy with reading" ...
-				Boolean keyInReadProcess = (Boolean) key.attachment();
-				
-				if (keyInReadProcess!=null && keyInReadProcess.booleanValue()){
-					
-					_log.finer("key is currently being read!!! do nothing!!!");
-					
-				} else {
-				
-					_log.finer("key is not in use, set OP to OP_READ!");
-					selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
-					
-				}
-			}
-		}
-		_log.fine("end");
-	}
-	
-	/**
-	 * Sends the data to the socket channel Be warned: only the data from start
-	 * to position is sent
-	 */
-	protected void send(SelectionKey key, ByteBuffer packet) throws CancelledKeyException {
-		_log.fine("begin");
-		
-		SocketChannel socketChannel = (SocketChannel) key.channel();
-
-		if (_log.isLoggable(Level.FINER)){
-			_log.finer("sending data for key="+Utils.getKeyIdentifierExtended(key));
-		}
-		
-		
-		// queue the data we want written
-		synchronized (this.pendingData) {
-			List<ByteBuffer> queue = this.pendingData.get(socketChannel);
-			if (queue == null) {
-				queue = new ArrayList<ByteBuffer>();
-				this.pendingData.put(socketChannel, queue);
-			}
-				
-			queue.add(packet);
-			
-		}
-		if (_log.isLoggable(Level.FINEST)){
-			_log.finer("added packet for key="+Utils.getKeyIdentifierExtended(key)+" with limit="+packet.limit()+" position="+packet.position()+" to queue");
-		}
-		if (_log.isLoggable(Level.FINER)) {
-			_log.finer("changing key="+Utils.getKeyIdentifierExtended(key)+" to OP_WRITE");
-		}
-		selectorChangeRequest(socketChannel, ChangeRequest.CHANGEOPS, SelectionKey.OP_WRITE);
-
-		_log.fine("end");
-	}
 
 
 	/**
 	 * 
-	 * Changes the interested operation of a specific {@link SocketChannel}
-	 *  
-	 * @param socketChannel the channel which wants to change its interested operation
-	 * @param type the the of the operation: {@link ChangeRequest#CHANGEOPS} or {@link ChangeRequest#REGISTER} 
-	 * @param operation the new operation. One of SelectionKey#OP_* ...
-	 */
-	private void selectorChangeRequest(SocketChannel socketChannel, int type, int operation) {
-		_log.fine("begin");
-
-		if (_log.isLoggable(Level.FINER)){
-			_log.finer("got changerequest for client "+Utils.getChannelIdentifier(socketChannel)+" -> type="+type+" operation="+Utils.getOperationKeyAsString(operation));
-		}
-		
-		synchronized (pendingSelectorChanges) {
-			// Indicate we want the interest ops set changed
-			pendingSelectorChanges.add(new ChangeRequest(socketChannel, type, operation));
-		}
-				
-		// Finally, wake up our selecting thread so it can make the required changes
-		selector.wakeup();
-		
-		_log.fine("end");
-	}
-
-	/**
-	 * 
-	 * Sends a remoteobject lookup to the server
+	 * Sends a remote object lookup to the server
 	 * 
 	 * @param remoteObjectName
 	 * @return the object we made the lookup for
 	 * @throws SimonRemoteException 
-	 * @throws IOException 
 	 */
-	protected Object invokeLookup(SelectionKey key, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException {
-		if (shutdown) return new ConnectionException("Cannot handle method call due to shutdown request of broken connection.");
-		final int requestID = generateRequestID(); 
-		Object result = null;
+	protected MsgLookupReturn invokeLookup(IoSession session, String remoteObjectName) throws LookupFailedException, SimonRemoteException {
+		final int sequenceId = generateSequenceId(); 
 		
 		if (_log.isLoggable(Level.FINE)) {
-			_log.fine("begin requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
+			_log.fine("begin requestID="+sequenceId+" session="+session);
 		}
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(key.channel(), requestID);
+		final Object monitor = createMonitor(sequenceId);
 		
-		byte[] remoteObject = Utils.stringToBytes(remoteObjectName);
+		MsgLookup msgLookup = new MsgLookup();
+		msgLookup.setSequence(sequenceId);
+		msgLookup.setRemoteObjectName(remoteObjectName);
 		
-		TxPacket packet = new TxPacket();
-		packet.setHeader(Statics.LOOKUP_PACKET, requestID);
-		packet.put(remoteObject);
-		packet.setComplete();
-		
-		// send the packet to the connected channel
-		send(key, packet.getByteBuffer());	
+		session.write(msgLookup);
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for requestID="+requestID);
+			_log.finer("data send. waiting for answer for requestID="+sequenceId);
 		
-		// check if need to wait for the result
-		synchronized (requestResults) {
-			if (requestResults.containsKey(requestID))
-				result = getRequestResult(requestID);
-		}
-		
-		if (result==null) {
 
-			// wait for result
-			synchronized (monitor) {
-				try {
-					monitor.wait();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+		// wait for result
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
-				
-			// get result
-			synchronized (requestResults) {
-				result = getRequestResult(requestID);			
-			}
-			
 		}
+		MsgLookupReturn result;
+		// get result
+		synchronized (requestMonitorAndReturnMap) {
+			result = (MsgLookupReturn) getRequestResult(sequenceId);			
+		}
+			
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for requestID="+requestID);
+			_log.finer("got answer for requestID="+sequenceId);
 		
 		if (_log.isLoggable(Level.FINE))
-			_log.fine("end requestID="+requestID);
+			_log.fine("end requestID="+sequenceId);
 		
-		// throw an exception if the returned "lookup result" is an exception
-		if (result instanceof Exception) {
-			throw new LookupFailedException(((Exception)result).getMessage());
-		} else {
-			return result;
-		}
-		
-		
+		return result;
 
 	}
 
@@ -533,7 +180,7 @@ public class Dispatcher implements Runnable {
 		if (_log.isLoggable(Level.FINEST))
 			_log.finest("getting result for request ID "+requestID);
 		
-		Object o = requestResults.remove(requestID); 
+		Object o = requestMonitorAndReturnMap.remove(requestID); 
 		if (o instanceof SimonRemoteException) {
 			_log.finest("result is an exception, throwing it ...");
 			throw ((SimonRemoteException) o);
@@ -553,78 +200,10 @@ public class Dispatcher implements Runnable {
 	 * @throws SimonRemoteException if there's a problem with the communication
 	 * @throws IOException 
 	 */	 
- 	protected Object invokeMethod(SelectionKey key, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException, IOException {
+ 	protected Object invokeMethod(IoSession session, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException {
  		
- 		if (shutdown) return new ConnectionException("Cannot handle method call due to shutdown request of broken connection.");
+ 		return null;
  		
- 		final int requestID = generateRequestID();
- 		
- 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
- 		
- 		incOutgoingInvocationCounter();
- 		
- 		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(key.channel(), requestID);
-		
-		// memory the return-type for later unwrap
-		synchronized (requestReturnType) {
-			requestReturnType.put(requestID, returnType);
-		}
-		
-		// register remote instance objects in the lookup-table
-		if (args != null) {
-			for (int i = 0; i < args.length; i++) {
-				if (args[i] instanceof SimonRemote) {
-					SimonRemoteInstance sc = new SimonRemoteInstance(key,(SimonRemote)args[i]);
-					if (_log.isLoggable(Level.FINER)){
-						_log.fine("SimonRemoteInstance found! id="+sc.getId());
-					}
-					
-//					lookupTable.putRemoteBinding(sc.getId(), (SimonRemote)args[i]);
-					lookupTable.putRemoteInstanceBinding(key, sc.getId(), (SimonRemote) args[i]);
-					
-					args[i] = sc; // overwrite arg with wrapped remote instance-interface
-				}
-			}
-		}
-		
-		TxPacket packet = new TxPacket();
-		packet.setHeader(Statics.INVOCATION_PACKET, requestID);
-		packet.put(Utils.stringToBytes(remoteObjectName));
-		packet.putLong(methodHash);
-		
-		for (int i = 0; i < parameterTypes.length; i++) {
-            Utils.wrapValue(parameterTypes[i], args[i], packet);
-        }
-		
-		packet.setComplete();
-		
-		synchronized (monitor) {
-			send(key, packet.getByteBuffer());
-			
-			if (_log.isLoggable(Level.FINER))
-				_log.finer("data send. waiting for answer for requestID="+requestID);
-
-			// check if need to wait for the result
-			synchronized (requestResults) {
-				if (requestResults.containsKey(requestID))
-					return getRequestResult(requestID);
-			}
-		
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end. requestID="+requestID);
-
-		synchronized (requestResults) {
-			return getRequestResult(requestID);
-		}
 	}
 
 	/**
@@ -634,45 +213,9 @@ public class Dispatcher implements Runnable {
 	 * @param key the key associated with the network connection
 	 * @param remoteObjectName the remote object on which the call has to be made
 	 * @return the result of the remote "toString()" call.
-	 * @throws IOException if there is a problem with the network connection
 	 */
-	protected String invokeToString(SelectionKey key, String remoteObjectName) throws IOException {
-		final int requestID = generateRequestID();
-
-		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
-		
-		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(key.channel(), requestID);
-
-		TxPacket packet = new TxPacket();
-		packet.setHeader(Statics.TOSTRING_PACKET, requestID);
-		packet.put(Utils.stringToBytes(remoteObjectName));
-		packet.setComplete();
-		
-		synchronized (monitor) {
-			send(key, packet.getByteBuffer());
-
-			// check if need to wait for the result
-			synchronized (requestResults) {
-				if (requestResults.containsKey(requestID))
-					return (String)getRequestResult(requestID);
-			}
-		
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end. requestID="+requestID);
-
-		synchronized (requestResults) {
-			return (String)getRequestResult(requestID);
-		}
+	protected String invokeToString(IoSession key, String remoteObjectName) {
+		return null;
 	}
 
 	
@@ -682,45 +225,9 @@ public class Dispatcher implements Runnable {
 	 * 
 	 * @param remoteObjectName the 
 	 * @return
-	 * @throws IOException 
 	 */
-	protected int invokeHashCode(SelectionKey key, String remoteObjectName) throws IOException {
-		final int requestID = generateRequestID();
-		
-		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
-		
-		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(key.channel(), requestID);
-
-		TxPacket packet = new TxPacket();
-		packet.setHeader(Statics.HASHCODE_PACKET, requestID);
-		packet.put(Utils.stringToBytes(remoteObjectName));
-		packet.setComplete();
-		
-		synchronized (monitor) {
-			send(key, packet.getByteBuffer());
-
-			// check if need to wait for the result
-			synchronized (requestResults) {
-				if (requestResults.containsKey(requestID))
-					return (Integer)getRequestResult(requestID);
-			}
-		
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end. requestID="+requestID);
-
-		synchronized (requestResults) {
-			return (Integer)getRequestResult(requestID);
-		}	
+	protected int invokeHashCode(IoSession session, String remoteObjectName) {
+		return 0;
 	}
 
 
@@ -732,85 +239,24 @@ public class Dispatcher implements Runnable {
 	 * @param remoteObjectName the name of the remote object that has to be compared
 	 * @param object the object to which the remote object is compared with
 	 * @return the result of the comparison
-	 * @throws InvalidClassException Something is wrong with a class used by serialization.
-	 * @throws NotSerializableException if the object in the argument that has to be compared with the remote object is not serializable
-	 * @throws IOException If there was a problem with the underlying output stream (should normally not occur, because we only use {@link ByteArrayOutputStream})
 	 */
-	protected boolean invokeEquals(SelectionKey key, String remoteObjectName, Object object) throws InvalidClassException, NotSerializableException, IOException {
-		final int requestID = generateRequestID();
-		
-		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
-		
-		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(key.channel(), requestID);
-
-		TxPacket packet = new TxPacket();
-		packet.setHeader(Statics.EQUALS_PACKET, requestID);
-		packet.put(Utils.stringToBytes(remoteObjectName));
-		packet.put(Utils.objectToBytes(object));
-		packet.setComplete();
-		
-		synchronized (monitor) {
-			send(key, packet.getByteBuffer());
-
-			// check if need to wait for the result
-			synchronized (requestResults) {
-				if (requestResults.containsKey(requestID))
-					return (Boolean)getRequestResult(requestID);
-			}
-		
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end. requestID="+requestID);
-
-		synchronized (requestResults) {
-			return (Boolean)getRequestResult(requestID);
-		}
+	protected boolean invokeEquals(IoSession session, String remoteObjectName, Object object) {
+		return true;
 	}
 
 
 	/**
 	 * Wake the process with the related requestID
 	 * 
-	 * @param requestID the process to wake  
+	 * @param sequenceId the process to wake  
 	 */
-	protected void wakeWaitingProcess(int requestID) {
+	protected void wakeWaitingProcess(int sequenceId) {
 		
 		if (_log.isLoggable(Level.FINE))
-			_log.fine("begin. wakeing requestID="+requestID);
+			_log.fine("begin. wakeing sequenceId="+sequenceId);
 		
-		synchronized (idMonitorMap) {
-			synchronized (idSelectableChannelMap) {
-		
-				final Object monitor = idMonitorMap.remove(requestID);
-				idSelectableChannelMap.remove(requestID);
-				
-				if (monitor!=null) {
-					synchronized (monitor) {
-						monitor.notify(); // wake the waiting method
-
-						if (_log.isLoggable(Level.FINER))
-				 			_log.finer("id="+requestID+" monitor="+monitor+" waked");
-					}
-					
-				} else {
-					if (_log.isLoggable(Level.FINER)) {
-						_log.finer("no monitor for requestID="+requestID+" idmonitormapsize="+idMonitorMap.size());
-					}
-				}
-				
-			}
-		}
 		if (_log.isLoggable(Level.FINE))
- 			_log.fine("end. wakeing requestID="+requestID);
+ 			_log.fine("end. wakeing sequenceId="+sequenceId);
 	}
 
 	/** 
@@ -818,17 +264,6 @@ public class Dispatcher implements Runnable {
 	 */
 	private void wakeAllMonitors() {
 		_log.fine("begin");
-		List<Integer> idList = new ArrayList<Integer>();
-		
-		synchronized (idMonitorMap) {
-			for (Integer id: idMonitorMap.keySet()){
-				idList.add(id);
-			}
-		}
-			
-			for (Integer id : idList) {
-				wakeWaitingProcess(id.intValue());
-			}
 		_log.fine("end");
 	}
 
@@ -838,19 +273,22 @@ public class Dispatcher implements Runnable {
 	 * ready that has to be returned to the "caller".
 	 * after adding the result to the queue, the waiting request-method is waked.
 	 * 
-	 * @param requestID the request id that is waiting for the result
-	 * @param result the result itself
+	 * @param sequenceId the sequence id that is waiting for the result
+	 * @param msg the result itself
 	 */
-	protected void putResultToQueue(int requestID, Object result){
+	protected void putResultToQueue(int sequenceId, AbstractMessage msg){
 		_log.fine("begin");
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("requestID="+requestID+" result="+result);
+			_log.finer("sequenceId="+sequenceId+" msg="+msg);
 		
-		synchronized (requestResults) {
-			requestResults.put(requestID,result);
+		synchronized (requestMonitorAndReturnMap) {
+			Object monitor = requestMonitorAndReturnMap.get(sequenceId);
+			requestMonitorAndReturnMap.put(sequenceId, msg);
+			synchronized (monitor) {
+				monitor.notify();
+			}
 		}
-		wakeWaitingProcess(requestID);
 		_log.fine("end");
 	}
 	
@@ -866,82 +304,27 @@ public class Dispatcher implements Runnable {
 	 * 
 	 * create a monitor that waits for the request-result that 
 	 * is associated with the given request-id
-	 * @param selectableChannel 
 	 * 
-	 * @param requestID
+	 * @param sequenceId
 	 * @return the monitor used for waiting for the result
 	 */
-	private Object createMonitor(SelectableChannel selectableChannel, final int requestID) {
+	private Object createMonitor(final int sequenceId) {
 		_log.fine("begin");
 		
 		final Object monitor = new Object();
-		synchronized (idMonitorMap) {
-			synchronized (idSelectableChannelMap) {
-				
-				idMonitorMap.put(requestID, monitor);
-				idSelectableChannelMap.put(requestID, selectableChannel);
-				
-				if (_log.isLoggable(Level.FINER)){
-						_log.finer("created monitor for requestID="+requestID);
-				}
-				
-			}
+
+		synchronized (requestMonitorAndReturnMap) {
+			requestMonitorAndReturnMap.put(sequenceId, monitor);
+		}
+		
+		if (_log.isLoggable(Level.FINER)){
+			_log.finer("created monitor for requestID="+sequenceId);
 		}
 		
 		_log.fine("end");
 		return monitor;
 	}
 	
-	/**
-	 * Returns a list of waiting request-ids related to the given SelectableChannel
-	 * 
-	 * @param selectableChannel
-	 * @return a list of waiting request-ids related to the given SelectableChannel
-	 */
-	private List<Integer> getRequestId(SelectableChannel selectableChannel){
-		
-		List<Integer> idList = new ArrayList<Integer>();
-		
-		synchronized (idSelectableChannelMap) {
-			
-			if (idSelectableChannelMap.containsValue(selectableChannel)){
-				Iterator<Integer> iterator = idSelectableChannelMap.keySet().iterator();
-				while (iterator.hasNext()){
-					Integer requestID = iterator.next();
-					SelectableChannel selectableChannel2 = idSelectableChannelMap.get(requestID);
-					if (selectableChannel==selectableChannel2) idList.add(requestID);
-				}
-			}
-			
-		}
-		
-		return idList;
-	}
-	
-	private void cancelWaitingMonitors(SelectableChannel selectableChannel){
-		_log.fine("begin");
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("cancel "+Utils.getChannelIdentifier(selectableChannel));
-		
-		List<Integer> requestIdList = getRequestId(selectableChannel);
-		for (Integer id : requestIdList) {
-			putResultToQueue(id, new ConnectionException("Connection is broken!"));
-			wakeWaitingProcess(id);
-		}
-		_log.fine("end");
-	}
-	
-	private void cancelAllChannels(){
-		_log.fine("begin");
-		Iterator<Integer> iterator = idSelectableChannelMap.keySet().iterator();
-		while (iterator.hasNext()){
-			int reqId = iterator.next();
-			SelectableChannel selectableChannel = idSelectableChannelMap.get(reqId);
-			cancelWaitingMonitors(selectableChannel);
-		}
-		_log.fine("end");
-	}
-
 	/**
 	 * 
 	 * Removes the return type from the list of awaited result types for a specific request ID.
@@ -956,37 +339,7 @@ public class Dispatcher implements Runnable {
 		}
 		
 	}
-	
-	/**
-	 * Registers a channel with the dispatcher's selector
-	 * @param channel
-	 * @throws ClosedChannelException 
-	 */
-	protected void registerChannel(SocketChannel channel) throws ClosedChannelException {
-		_log.fine("begin");
-		if (_log.isLoggable(Level.FINE)){
-			_log.fine("registering client " + Utils.getChannelIdentifier(channel) + " for [OP_READ] on dispatcher.");
-		}
-		
-		selectorChangeRequest(channel, ChangeRequest.REGISTER, SelectionKey.OP_READ);
-		selector.wakeup();
-		_log.fine("end");
-	}
 
-
-
-
-
-	/**
-	 * Puts a change request for "READ" for a given channel to the queue of selector changes
-	 * @param channel the channel o change to read mode
-	 */
-	public void changeOpForReadiness(SocketChannel channel) {
-		_log.fine("begin");
-		selectorChangeRequest(channel, ChangeRequest.CHANGEOPS, SelectionKey.OP_READ);
-		_log.fine("end");
-	}
-	
 	/**
 	 * 
 	 * All received results are saved in a queue. With this method you can get the received result 
@@ -994,75 +347,75 @@ public class Dispatcher implements Runnable {
 	 * <br/>
 	 * <b>Attention:</b> Be sure that you only call this method if you were notified by the receiver! 
 	 * 
-	 * @param requestID the requestID which is related to the result
+	 * @param sequenceId the sequenceId which is related to the result
 	 * @return the received result
 	 */
-	protected Object getResult(int requestID){
-		synchronized (requestResults) {
-			return getRequestResult(requestID);			
+	protected Object getResult(int sequenceId){
+		synchronized (requestMonitorAndReturnMap) {
+			return getRequestResult(sequenceId);			
 		}
 	}
 
-	/**
-	 * 
-	 * Sends a "ping" packet to the opposite. This has to be replied with a "pong" packet.
-	 * This method is (mainly) used by the DGC to check whether the client is available or not.
-	 * 
-	 * @param key
-	 * @return
-	 */
-	protected long sendPing(SelectionKey key) {
-		
-		if (!key.isValid()) {
-			dgc.removeKey(key);
-			return -1;
-		}
-		
-		final int requestID = generateRequestID();
-		
-		if (_log.isLoggable(Level.FINE))
- 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
-		
-		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(key.channel(), requestID);
-
-		TxPacket packet = new TxPacket();
-		packet.setHeader(Statics.PING_PACKET, requestID);
-		packet.put((byte)0x00);
-		packet.setComplete();
-		long startPing;
-		synchronized (monitor) {
-			startPing = System.nanoTime();
-			send(key, packet.getByteBuffer());
-			
-			// check if need to wait for the result
-			synchronized (requestResults) {
-				if (requestResults.containsKey(requestID)){
-					if (_log.isLoggable(Level.FINE))
-			 			_log.fine("end. requestID="+requestID);
-					getRequestResult(requestID);			
-					long receivePong = System.nanoTime();
-					return receivePong-startPing;
-				}
-			}
-	
-			// got to sleep until result is present
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-			
-		// get result
-		synchronized (requestResults) {
-			if (_log.isLoggable(Level.FINE))
-	 			_log.fine("end. requestID="+requestID);
-			getRequestResult(requestID);			
-			long receivePong = System.nanoTime();
-			return receivePong-startPing;
-		}
-	}
+//	/**
+//	 * 
+//	 * Sends a "ping" packet to the opposite. This has to be replied with a "pong" packet.
+//	 * This method is (mainly) used by the DGC to check whether the client is available or not.
+//	 * 
+//	 * @param key
+//	 * @return
+//	 */
+//	protected long sendPing(SelectionKey key) {
+//		
+//		if (!key.isValid()) {
+//			dgc.removeKey(key);
+//			return -1;
+//		}
+//		
+//		final int requestID = generateSequenceId();
+//		
+//		if (_log.isLoggable(Level.FINE))
+// 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
+//		
+//		// create a monitor that waits for the request-result
+//		final Object monitor = createMonitor(key.channel(), requestID);
+//
+//		TxPacket packet = new TxPacket();
+//		packet.setHeader(Statics.PING_PACKET, requestID);
+//		packet.put((byte)0x00);
+//		packet.setComplete();
+//		long startPing;
+//		synchronized (monitor) {
+//			startPing = System.nanoTime();
+//			send(key, packet.getByteBuffer());
+//			
+//			// check if need to wait for the result
+//			synchronized (requestMonitorAndReturnMap) {
+//				if (requestMonitorAndReturnMap.containsKey(requestID)){
+//					if (_log.isLoggable(Level.FINE))
+//			 			_log.fine("end. requestID="+requestID);
+//					getRequestResult(requestID);			
+//					long receivePong = System.nanoTime();
+//					return receivePong-startPing;
+//				}
+//			}
+//	
+//			// got to sleep until result is present
+//			try {
+//				monitor.wait();
+//			} catch (InterruptedException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//			
+//		// get result
+//		synchronized (requestMonitorAndReturnMap) {
+//			if (_log.isLoggable(Level.FINE))
+//	 			_log.fine("end. requestID="+requestID);
+//			getRequestResult(requestID);			
+//			long receivePong = System.nanoTime();
+//			return receivePong-startPing;
+//		}
+//	}
 
 	/**
 	 * 
@@ -1073,14 +426,10 @@ public class Dispatcher implements Runnable {
 		_log.fine("begin");
 		
 		shutdown = true;
-		
-		cancelAllChannels();
-		
 		dgc.shutdown();
-		eventHandlerPool.shutdown();
-		selector.wakeup();
+		messageProcessorPool.shutdown();
 		
-		while (isRunning || dgc.isRunning() || !eventHandlerPool.isShutdown()) {
+		while (isRunning || dgc.isRunning() || !messageProcessorPool.isShutdown()) {
 			_log.finest("waiting for dispatcher to shutdown...");
 			try {
 				Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
@@ -1092,25 +441,6 @@ public class Dispatcher implements Runnable {
 	}
 
 
-	/**
-	 * 
-	 * Cancels a key and all waiting monitors.
-	 * 
-	 * @param key the key to cancel
-	 */
-	public void cancelKey(SelectionKey key) {
-		_log.fine("begin");
-		cancelWaitingMonitors(key.channel());
-		String inetAddressString = ((SocketChannel)key.channel()).socket().getInetAddress().getHostAddress();
-		int port = ((SocketChannel)key.channel()).socket().getPort();
-		
-		String serverString = inetAddressString+":"+port;
-		Simon.releaseServerDispatcherRelation(serverString);
-		
-		key.cancel();
-		selector.wakeup();
-		_log.fine("end");
-	}
 	
 	/**
 	 * 
@@ -1120,35 +450,6 @@ public class Dispatcher implements Runnable {
 	 */
 	public String getServerString() {
 		return serverString;
-	}
-	
-	
-	protected void incIncomingInvocationCounter() {
-		synchronized (incomingInvocationCounterMonitor) {
-			incomingInvocationCounter++;
-		}
-	}
-	
-	protected int getIncomingInvocationCounter() {
-		synchronized (incomingInvocationCounterMonitor) {
-			int x = incomingInvocationCounter;
-			incomingInvocationCounter = 0;
-			return x;
-		}
-	}
-
-	protected void incOutgoingInvocationCounter() {
-		synchronized (outgoingInvocationCounterMonitor) {
-			outgoingInvocationCounter++;
-		}
-	}
-	
-	protected int getOutgoingInvocationCounter() {
-		synchronized (outgoingInvocationCounterMonitor) {
-			int x = outgoingInvocationCounter;
-			outgoingInvocationCounter = 0;
-			return x;
-		}
 	}
 	
 	/**
@@ -1165,6 +466,41 @@ public class Dispatcher implements Runnable {
 	 */
 	private boolean isServerDispatcher(){
 		return (serverString==null);
+	}
+
+	public void exceptionCaught(IoSession session, Throwable throwable)
+			throws Exception {
+		_log.info("exception Caught. session="+session+" cause="+throwable);
+	}
+
+	public void messageReceived(IoSession session, Object message) throws Exception {
+		_log.fine("Received message from "+session.getRemoteAddress());
+		
+		AbstractMessage abstractMessage = (AbstractMessage) message;
+		
+		_log.fine("Put message into message processor pool");
+		messageProcessorPool.execute(new ProcessMessageRunnable(this, session, abstractMessage));
+	}
+
+	public void messageSent(IoSession session, Object msg) throws Exception {
+		_log.info("message sent. session="+session+" msg="+msg);
+		
+	}
+
+	public void sessionClosed(IoSession session) throws Exception {
+		_log.info("session closed. session="+session);
+	}
+
+	public void sessionCreated(IoSession session) throws Exception {
+		_log.info("session created. session="+session);
+	}
+
+	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
+		_log.info("session idle. session="+session+" idleStatus="+idleStatus);		
+	}
+
+	public void sessionOpened(IoSession session) throws Exception {
+		_log.info("session opened. session="+session);
 	}
 	
 }

@@ -50,18 +50,18 @@ public class DGC extends Thread {
 		}
 		
 		public void run() {
-			long rtt = dispatcher.sendPing(key);
-			if (_log.isLoggable(Level.FINER))
-				if (key.isValid())
-					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyIdentifierExtended(key));
-				else {
-					_log.finer("key removed from DGC. "+Utils.getKeyIdentifier(key));
-					dispatcher.getLookupTable().unreference(key);
-				}
-			
-			int port = ((SocketChannel)key.channel()).socket().getPort();
-			String address = ((SocketChannel)key.channel()).socket().getInetAddress().toString();
-			Simon.getStatistics().setRtt(address+":"+port, rtt);
+//			long rtt = dispatcher.sendPing(key);
+//			if (_log.isLoggable(Level.FINER))
+//				if (key.isValid())
+//					_log.finer("rtt="+rtt+"ns, key="+Utils.getKeyIdentifierExtended(key));
+//				else {
+//					_log.finer("key removed from DGC. "+Utils.getKeyIdentifier(key));
+//					dispatcher.getLookupTable().unreference(key);
+//				}
+//			
+//			int port = ((SocketChannel)key.channel()).socket().getPort();
+//			String address = ((SocketChannel)key.channel()).socket().getInetAddress().toString();
+//			Simon.getStatistics().setRtt(address+":"+port, rtt);
 			
 		}
 		
@@ -136,9 +136,6 @@ public class DGC extends Thread {
 				// nothing to do
 			}
 			
-			// Update statistics
-			Simon.getStatistics().setIncomingInvocationsPerMilli((int) (dispatcher.getIncomingInvocationCounter()/Statics.DGC_INTERVAL));
-			Simon.getStatistics().setOutgoingInvocationsPerMilli((int) (dispatcher.getOutgoingInvocationCounter()/Statics.DGC_INTERVAL));
 			
 		}
 		

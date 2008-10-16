@@ -20,6 +20,8 @@ package de.root1.simon;
 
 import java.nio.channels.SelectionKey;
 
+import org.apache.mina.core.session.IoSession;
+
 /**
  * 
  * This class is used to store the relation between:
@@ -39,7 +41,7 @@ import java.nio.channels.SelectionKey;
 public class ClientToServerConnection {
 	
 	private Dispatcher dispatcher;
-	private SelectionKey key;
+	private IoSession session;
 	private String ServerString;
 	private int referenceCount = 0;
 
@@ -51,11 +53,11 @@ public class ClientToServerConnection {
 	 * @param key the used key
 	 */
 	public ClientToServerConnection(String serverString,
-			Dispatcher dispatcher, SelectionKey key) {
+			Dispatcher dispatcher, IoSession session) {
 		
 		this.ServerString = serverString;
 		this.dispatcher = dispatcher;
-		this.key = key;
+		this.session = session;
 	}
 	
 	/**
@@ -94,20 +96,20 @@ public class ClientToServerConnection {
 	}
 	
 	/**
-	 * Gets the key which is used by the client to communicate with the server via {@link Dispatcher}
+	 * Gets the session which is used by the client to communicate with the server via {@link Dispatcher}
 	 *
 	 */
 	
-	public SelectionKey getKey() {
-		return key;
+	public IoSession getSession() {
+		return session;
 	}
 	
 	/**
-	 * Sets the key which is used by the client to communicate with the server via {@link Dispatcher}
+	 * Sets the session which is used by the client to communicate with the server via {@link Dispatcher}
 	 *
 	 */
-	public void setKey(SelectionKey key) {
-		this.key = key;
+	public void setSession(IoSession session) {
+		this.session = session;
 	}
 	
 	/**

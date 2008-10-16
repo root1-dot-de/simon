@@ -24,10 +24,13 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.apache.mina.core.session.IoSession;
 
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
@@ -51,8 +54,8 @@ public class SimonProxy implements InvocationHandler {
 	/** a reference to the associated dispatcher */
 	private Dispatcher dispatcher;
 	
-	/** a reference to the SelectionKey which is the reference to the related network connection */
-	private SelectionKey key;
+	/** a reference to the session which is the reference to the related network connection */
+	private IoSession session;
 	
 	/**
 	 * 
@@ -62,9 +65,9 @@ public class SimonProxy implements InvocationHandler {
 	 * @param key a reference to the key of the corresponding network connection
 	 * @param remoteObjectName name of the remote object
 	 */
-	public SimonProxy(Dispatcher dispatcher, SelectionKey key, String remoteObjectName) {
+	public SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName) {
 		this.dispatcher = dispatcher;
-		this.key = key;
+		this.session = session;
 
 		this.remoteObjectName = remoteObjectName;
 	}
@@ -92,7 +95,7 @@ public class SimonProxy implements InvocationHandler {
 					Object o;
 					if (args[0] instanceof SimonRemote) {
 						
-						o = new SimonRemoteInstance(key,(SimonRemote)args[0]);
+						o = new SimonRemoteInstance(session,(SimonRemote)args[0]);
 //						o = "simonRemoteObjectName="+Simon.getSimonProxy(args[0]).getRemoteObjectName();
 						
 					} else { // else, it's a standard object
@@ -127,7 +130,7 @@ public class SimonProxy implements InvocationHandler {
 		 * server gets according to the method name and parameter types the method
 		 * and invokes the method. the result is communicated back to the client 
 		 */
-		Object result = dispatcher.invokeMethod(key, remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
+		Object result = dispatcher.invokeMethod(session, remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
 		
 		
 		// Check for exceptions ...
@@ -142,7 +145,7 @@ public class SimonProxy implements InvocationHandler {
 			Class<?>[] listenerInterfaces = new Class<?>[1];
 			listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
-			SimonProxy handler = new SimonProxy(dispatcher, key, simonCallback.getId());
+			SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId());
 
 			// reimplant the proxy object
 			result = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, handler);
@@ -160,26 +163,8 @@ public class SimonProxy implements InvocationHandler {
 	 * 
 	 * @return the {@link InetAddress} of the remote host
 	 */
-	protected InetAddress getInetAddress() {
-		return ((SocketChannel)key.channel()).socket().getInetAddress();
-	}
-	
-	/**
-	 * 
-	 * Returns the port of the remote host connected with this proxy
-	 * @return the remote hosts port
-	 */
-	protected int getRemotePort(){
-		return ((SocketChannel)key.channel()).socket().getPort();
-	}
-	
-	/**
-	 * Returns the port locally used by the proxy
-	 * 
-	 * @return the local port of this proxy
-	 */
-	protected int getLocalPort(){
-		return ((SocketChannel)key.channel()).socket().getLocalPort();
+	protected SocketAddress getInetAddress() {
+		return session.getRemoteAddress();
 	}
 	
 	/**
@@ -193,15 +178,11 @@ public class SimonProxy implements InvocationHandler {
 	 * @return the result of the remote "toString()" call
 	 * @throws SimonRemoteException
 	 */
-	private String remoteToString() throws SimonRemoteException {
-		try {
-			return "[Proxy="+remoteObjectName+
-						"|invocationHandler="+super.toString()+
-						"|remote="+dispatcher.invokeToString(key, remoteObjectName)+
-					"]";
-		} catch (IOException e) {
-			throw new SimonRemoteException(e.getMessage());
-		}
+	private String remoteToString() {
+		return "[Proxy="+remoteObjectName+
+					"|invocationHandler="+super.toString()+
+					"|remote="+dispatcher.invokeToString(session, remoteObjectName)+
+				"]";
 	}
 	
 	/**
@@ -212,7 +193,7 @@ public class SimonProxy implements InvocationHandler {
 	 * @throws IOException
 	 */
 	private int remoteHashCode() throws IOException {
-		return dispatcher.invokeHashCode(key, remoteObjectName);
+		return dispatcher.invokeHashCode(session, remoteObjectName);
 	}
 	
 	/**
@@ -224,7 +205,7 @@ public class SimonProxy implements InvocationHandler {
 	 * @throws IOException
 	 */
 	private boolean remoteEquals(Object object) throws IOException {
-		return dispatcher.invokeEquals(key, remoteObjectName, object);
+		return dispatcher.invokeEquals(session, remoteObjectName, object);
 	}
 
 	/**
@@ -234,7 +215,6 @@ public class SimonProxy implements InvocationHandler {
 	 */
 	public Dispatcher release() {
 		_log.fine("begin");
-		dispatcher.cancelKey(key);
 		remoteObjectName=null;
 		_log.fine("end");
 		return dispatcher;

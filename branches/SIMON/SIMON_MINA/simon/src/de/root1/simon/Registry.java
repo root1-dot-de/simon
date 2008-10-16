@@ -20,9 +20,19 @@ package de.root1.simon;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.mina.core.service.IoAcceptor;
+import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.filter.codec.ProtocolCodecFilter;
+import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.filter.logging.LoggingFilter;
+import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+
+import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 
@@ -42,7 +52,8 @@ public class Registry {
 	private int port;
 
 	private Dispatcher dispatcher;
-	private Acceptor acceptor;
+	
+	private IoAcceptor acceptor;
 	
 	/** The pool in which the dispatcher, acceptor and registry lives */
 	private ExecutorService threadPool;
@@ -75,11 +86,22 @@ public class Registry {
 		
 			
 		dispatcher = new Dispatcher(null, lookupTableServer, threadPool);
-		new Thread(dispatcher,Statics.SERVER_DISPATCHER_THREAD_NAME).start();
-		_log.finer("dispatcher thread created and started");
+		_log.finer("dispatcher created");
 		
-		acceptor = new Acceptor(address, dispatcher,port);
-		new Thread(acceptor,Statics.SERVER_ACCEPTOR_THREAD_NAME).start();
+		acceptor = new NioSocketAcceptor();
+        
+		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(threadPool));
+        if (_log.isLoggable(Level.FINEST))
+        	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
+        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(true)));
+
+		acceptor.setHandler(  dispatcher );
+        
+//        acceptor.getSessionConfig().setReadBufferSize( 2048 );
+        acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
+        
+        acceptor.bind( new InetSocketAddress(address, port) );
+		
 		_log.finer("acceptor thread created and started");			
 			
 		
@@ -95,7 +117,6 @@ public class Registry {
 	 */
 	public void stop() {
 		lookupTableServer.clear();
-		acceptor.shutdown();
 		dispatcher.shutdown();
 		Simon.removeRegistryFromList(this);
 	}
@@ -174,7 +195,7 @@ public class Registry {
 	 * @return boolean
 	 */
 	public boolean isRunning(){
-		return (dispatcher.isRunning() || acceptor.isRunning());
+		return (dispatcher.isRunning() || acceptor.isActive());
 	}
 	
 }
