@@ -1,0 +1,55 @@
+Methods in Dispatcher:
+=============================
+
+For Proxy:
+--------------
+invokeEquals(session, object)
+invokeHashCode(session, string)
+invokeMethod(session, string, long, class[], object[], class)
+invokeToString(session, string)
+
+For static calls from Simon class:
+--------------------------------------
+invokeLookup(session, string)
+
+Packets:
+======================
+Lookup Request:
+-------------------
+byte: simon header id0
+byte: simon header id1
+byte: packet type
+int: request id
+int: body length
+string: name of remote object
+
+Lookup Result:
+--------------------
+byte: simon header id0
+byte: simon header id1
+byte: packet type
+int: request id
+int: body length
+object: serialized remote object interface(s)
+
+Invoke Request:
+--------------------
+byte: simon header id0
+byte: simon header id1
+byte: packet type
+int: request id
+int: body length
+String: name of remote object
+Long: method hash
+object[]: object parameters
+
+Invoke Result:
+--------------------
+byte: simon header id0
+byte: simon header id1
+byte: packet type
+int: request id
+int: body length
+object
+
+
