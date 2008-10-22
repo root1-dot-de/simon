@@ -32,7 +32,6 @@ import org.apache.mina.core.session.IoSession;
 
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
-import de.root1.simon.utils.Utils;
 
 /**
  * The InvocationHandler which redirects each method call over the network to the related dispatcher

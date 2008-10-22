@@ -1,10 +1,14 @@
 package de.root1.simon;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
 import org.apache.mina.core.session.IoSession;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgInvoke;
+import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.LookupFailedException;
@@ -23,25 +27,72 @@ public class ProcessMessageRunnable implements Runnable {
 	}
 
 	public void run() {
-		System.out.println("ProcessMessagePool: "+abstractMessage);
+		System.out.println("ProcessMessageRunnable: "+abstractMessage);
 		
 		if (abstractMessage instanceof MsgLookup) {
 			try {
-				processLookup(abstractMessage);
+				processLookup();
 			} catch (LookupFailedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
 		} else if (abstractMessage instanceof MsgLookupReturn) {
-			processLookupResult(abstractMessage);
+			processLookupResult();
+		} else if (abstractMessage instanceof MsgInvoke) {
+			processInvoke();
+		} else if (abstractMessage instanceof MsgInvokeReturn){
+			processInvokeReturn();
 		}
 		
 	}
 	
 	
 
-//	/**
+	private void processInvokeReturn() {
+		_log.fine("begin");
+
+		_log.fine("processing MsgInvokeReturn...");
+		MsgInvokeReturn msg = (MsgInvokeReturn) abstractMessage;
+		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		_log.fine("put result to queue="+msg);
+		_log.fine("end");
+	}
+
+	private void processInvoke() {
+		_log.fine("begin");
+
+		_log.fine("processing MsgInvoke...");
+		MsgInvoke msg = (MsgInvoke) abstractMessage;
+		Method method = msg.getMethod();
+		Object[] arguments = msg.getArguments();
+		String remoteObjectName = msg.getRemoteObjectName();
+		_log.fine("ron="+remoteObjectName+" method="+method+" args="+arguments);
+		
+		try {
+			SimonRemote simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
+			Object returnValue = method.invoke(simonRemote, arguments);
+			MsgInvokeReturn returnMsg = new MsgInvokeReturn();
+			returnMsg.setReturnValue(returnValue);
+			_log.fine("Sending result="+returnMsg);
+			session.write(returnMsg);
+		} catch (LookupFailedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (InvocationTargetException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		_log.fine("end");
+	}
+
+	//	/**
 //	 * 
 //	 * processes a request for a "equals()" call on a remote-object
 //	 * 
@@ -92,7 +143,7 @@ public class ProcessMessageRunnable implements Runnable {
 	 * processes a lookup
 	 * @throws LookupFailedException 
 	 */
-	private void processLookup(AbstractMessage abstractMessage) throws LookupFailedException {
+	private void processLookup() throws LookupFailedException {
 		_log.fine("begin");
 
 		_log.fine("processing MsgLookup...");
@@ -109,7 +160,7 @@ public class ProcessMessageRunnable implements Runnable {
 		_log.fine("end");
 	}
 	
-	private void processLookupResult(AbstractMessage abstractMessage2) {
+	private void processLookupResult() {
 		_log.fine("begin");
 		_log.fine("processing MsgLookupReturn...");	
 		MsgLookupReturn msg = (MsgLookupReturn)abstractMessage;

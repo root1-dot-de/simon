@@ -18,7 +18,7 @@ import de.root1.simon.utils.Utils;
 public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncoder<T> {
 	
     public MsgInvokeEncoder() {
-        super(SimonStdProtocolConstants.LOOKUP_MSG);
+        super(SimonStdProtocolConstants.INVOKE_MSG);
     }
 
     @Override

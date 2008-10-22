@@ -1,5 +1,4 @@
 package de.root1.simon.codec.base;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -13,7 +12,6 @@ import de.root1.simon.LookupTable;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgLookup;
-import de.root1.simon.exceptions.LookupFailedException;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgLookup}.
@@ -23,7 +21,7 @@ import de.root1.simon.exceptions.LookupFailedException;
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
 
     public MsgInvokeDecoder() {
-        super(SimonStdProtocolConstants.LOOKUP_MSG);
+        super(SimonStdProtocolConstants.INVOKE_MSG);
     }
 
     @Override

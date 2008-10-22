@@ -21,6 +21,10 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
 
     private boolean readHeader;
 
+    /**
+     * Creates a new message decoder
+     * @param msgType specifies a unique ID for the type of message
+     */
     protected AbstractMessageDecoder(int msgType) {
         this.msgType = msgType;
     }

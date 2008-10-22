@@ -38,8 +38,7 @@ import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 
 /**
- * This is the "main" class of Simon. Each packet has to be handled by this class.<br>
- * There's only one dispatcher per client/server.
+ * TODO documentation
  * 
  * @author ACHR
  */

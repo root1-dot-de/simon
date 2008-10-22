@@ -15,6 +15,10 @@ import de.root1.simon.codec.messages.AbstractMessage;
 public abstract class AbstractMessageEncoder<T extends AbstractMessage> implements MessageEncoder<T> {
     private final int msgType;
 
+    /**
+     * Creates a new message encoder
+     * @param msgType specifies a unique ID for the type of message
+     */
     protected AbstractMessageEncoder(int msgType) {
         this.msgType = msgType;
     }
