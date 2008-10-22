@@ -2,7 +2,6 @@ package de.root1.simon.tests.manual;
 
 import java.io.IOException;
 
-
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import de.root1.simon.exceptions.NameBindingException;

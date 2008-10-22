@@ -19,8 +19,6 @@
 package de.root1.simon;
 
 import java.io.Serializable;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

@@ -6,23 +6,23 @@ package de.root1.simon.codec.messages;
  */
 public class MsgLookupReturn extends AbstractMessage {
 	
-    private static final long serialVersionUID = 7371210248110219946L;
+    private static final long serialVersionUID = 1L;
 
-    private Class<?>[] value;
+    private Class<?>[] interfaces;
 
     public MsgLookupReturn() {
     }
 
     public Class<?>[] getInterfaces() {
-        return value;
+        return interfaces;
     }
 
-    public void setInterfaces(Class<?>[] value) {
-        this.value = value;
+    public void setInterfaces(Class<?>[] interfaces) {
+        this.interfaces = interfaces;
     }
 
     @Override
     public String toString() {
-        return getSequence() + ":MsgLookupReturn(" + value + ')';
+        return getSequence() + ":MsgLookupReturn(" + interfaces + ')';
     }
 }

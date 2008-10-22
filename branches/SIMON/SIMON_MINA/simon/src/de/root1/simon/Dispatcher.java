@@ -18,12 +18,9 @@
  */
 package de.root1.simon;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,12 +30,12 @@ import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgInvoke;
+import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
-import de.root1.simon.exceptions.ConnectionException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.utils.Utils;
 
 /**
  * This is the "main" class of Simon. Each packet has to be handled by this class.<br>
@@ -192,17 +189,54 @@ public class Dispatcher implements IoHandler{
 	 * sends a requested invocation to the server
 	 * 
 	 * @param remoteObjectName
-	 * @param methodName
-	 * @param parameterTypes
+	 * @param method
 	 * @param args
-	 * @param returnType 
 	 * @return the method's result
 	 * @throws SimonRemoteException if there's a problem with the communication
-	 * @throws IOException 
 	 */	 
- 	protected Object invokeMethod(IoSession session, String remoteObjectName, long methodHash, Class<?>[] parameterTypes, Object[] args, Class<?> returnType) throws SimonRemoteException {
- 		
- 		return null;
+ 	protected Object invokeMethod(IoSession session, String remoteObjectName, Method method, Object[] args) throws SimonRemoteException {
+ 		final int sequenceId = generateSequenceId(); 
+		
+		if (_log.isLoggable(Level.FINE)) {
+			_log.fine("begin requestID="+sequenceId+" session="+session);
+		}
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(sequenceId);
+		
+		MsgInvoke msgInvoke = new MsgInvoke();
+		msgInvoke.setSequence(sequenceId);
+		msgInvoke.setRemoteObjectName(remoteObjectName);
+		msgInvoke.setMethod(method);
+		
+		session.write(msgInvoke);
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("data send. waiting for answer for requestID="+sequenceId);
+		
+
+		// wait for result
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		MsgInvokeReturn result;
+		// get result
+		synchronized (requestMonitorAndReturnMap) {
+			result = (MsgInvokeReturn) getRequestResult(sequenceId);			
+		}
+			
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("got answer for requestID="+sequenceId);
+		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end requestID="+sequenceId);
+		
+		return result;
  		
 	}
 
@@ -254,6 +288,8 @@ public class Dispatcher implements IoHandler{
 		
 		if (_log.isLoggable(Level.FINE))
 			_log.fine("begin. wakeing sequenceId="+sequenceId);
+		
+		// FIXME how to wake and present error?
 		
 		if (_log.isLoggable(Level.FINE))
  			_log.fine("end. wakeing sequenceId="+sequenceId);
@@ -493,6 +529,7 @@ public class Dispatcher implements IoHandler{
 
 	public void sessionCreated(IoSession session) throws Exception {
 		_log.info("session created. session="+session);
+		session.setAttribute("LookupTable", lookupTable);
 	}
 
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {

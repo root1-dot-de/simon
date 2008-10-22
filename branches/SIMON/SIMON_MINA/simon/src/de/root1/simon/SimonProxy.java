@@ -25,8 +25,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.SocketAddress;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -130,7 +128,7 @@ public class SimonProxy implements InvocationHandler {
 		 * server gets according to the method name and parameter types the method
 		 * and invokes the method. the result is communicated back to the client 
 		 */
-		Object result = dispatcher.invokeMethod(session, remoteObjectName, Utils.computeMethodHash(method), method.getParameterTypes(),args, method.getReturnType());
+		Object result = dispatcher.invokeMethod(session, remoteObjectName, method, args);
 		
 		
 		// Check for exceptions ...
