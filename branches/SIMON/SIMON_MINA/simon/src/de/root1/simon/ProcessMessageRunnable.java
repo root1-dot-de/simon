@@ -38,7 +38,7 @@ public class ProcessMessageRunnable implements Runnable {
 			}
 			
 		} else if (abstractMessage instanceof MsgLookupReturn) {
-			processLookupResult();
+			processLookupReturn();
 		} else if (abstractMessage instanceof MsgInvoke) {
 			processInvoke();
 		} else if (abstractMessage instanceof MsgInvokeReturn){
@@ -73,6 +73,7 @@ public class ProcessMessageRunnable implements Runnable {
 			SimonRemote simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
 			Object returnValue = method.invoke(simonRemote, arguments);
 			MsgInvokeReturn returnMsg = new MsgInvokeReturn();
+			returnMsg.setSequence(msg.getSequence());
 			returnMsg.setReturnValue(returnValue);
 			_log.fine("Sending result="+returnMsg);
 			session.write(returnMsg);
@@ -160,7 +161,7 @@ public class ProcessMessageRunnable implements Runnable {
 		_log.fine("end");
 	}
 	
-	private void processLookupResult() {
+	private void processLookupReturn() {
 		_log.fine("begin");
 		_log.fine("processing MsgLookupReturn...");	
 		MsgLookupReturn msg = (MsgLookupReturn)abstractMessage;

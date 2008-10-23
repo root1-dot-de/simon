@@ -197,7 +197,7 @@ public class Dispatcher implements IoHandler{
  		final int sequenceId = generateSequenceId(); 
 		
 		if (_log.isLoggable(Level.FINE)) {
-			_log.fine("begin requestID="+sequenceId+" session="+session);
+			_log.fine("begin sequenceId="+sequenceId+" session="+session);
 		}
 
  		// create a monitor that waits for the request-result
@@ -235,7 +235,7 @@ public class Dispatcher implements IoHandler{
 		if (_log.isLoggable(Level.FINE))
 			_log.fine("end requestID="+sequenceId);
 		
-		return result;
+		return result.getReturnValue();
  		
 	}
 

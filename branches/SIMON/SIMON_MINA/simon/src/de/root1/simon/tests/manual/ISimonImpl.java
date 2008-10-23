@@ -13,8 +13,9 @@ class ISimonImpl implements IServer {
 			// TODO Auto-generated constructor stub
 		}
 
-		public void helloServerWorld() throws SimonRemoteException {
-			System.out.println("Hello World");
+		public String helloServerWorld() throws SimonRemoteException {
+			System.out.println("Hello World on Server");
+			return "Hello World on Client";
 		}
 
 }

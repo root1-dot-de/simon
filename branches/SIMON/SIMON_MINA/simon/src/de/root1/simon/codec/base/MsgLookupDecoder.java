@@ -17,6 +17,9 @@ import de.root1.simon.codec.messages.MsgLookup;
  */
 public class MsgLookupDecoder extends AbstractMessageDecoder {
 
+	
+	private MsgLookup m = new MsgLookup();
+	
     public MsgLookupDecoder() {
         super(SimonStdProtocolConstants.LOOKUP_MSG);
     }
@@ -25,7 +28,7 @@ public class MsgLookupDecoder extends AbstractMessageDecoder {
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
     	System.out.println("MsgLookupDecoder#decodeBody(): ");
-        MsgLookup m = new MsgLookup();
+        
         try {
         	String remoteObjectName = in.getString(Charset.forName("UTF-8").newDecoder());
 			m.setRemoteObjectName(remoteObjectName);

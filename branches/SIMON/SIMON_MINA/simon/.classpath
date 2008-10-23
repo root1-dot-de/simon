@@ -6,7 +6,7 @@
 	<classpathentry kind="lib" path="lib/mina/mina-core-2.0.0-M3-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mina/mina-core-2.0.0-M3.jar" sourcepath="lib/mina/mina-core-2.0.0-M3-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mina/mina-example-2.0.0-M3-sources.jar"/>
-	<classpathentry kind="lib" path="lib/mina/mina-example-2.0.0-M3.jar"/>
+	<classpathentry kind="lib" path="lib/mina/mina-example-2.0.0-M3.jar" sourcepath="lib/mina/mina-example-2.0.0-M3-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mina/mina-filter-codec-netty-2.0.0-M3-sources.jar"/>
 	<classpathentry kind="lib" path="lib/mina/mina-filter-codec-netty-2.0.0-M3.jar"/>
 	<classpathentry kind="lib" path="lib/mina/mina-filter-compression-2.0.0-M3-sources.jar"/>

@@ -14,7 +14,7 @@ public abstract class AbstractMessage implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private int sequence;
+	private int sequence = -1;
 
     public int getSequence() {
         return sequence;

@@ -25,8 +25,8 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	System.out.println("MsgInvokeEncoder#encodeBody(): message="+message);
         try {
-        	
-			out.putString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
+        	out.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
+//			out.putString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
 			out.putLong(Utils.computeMethodHash(message.getMethod()));
 			out.putObject(message.getArguments());
 		} catch (CharacterCodingException e) {

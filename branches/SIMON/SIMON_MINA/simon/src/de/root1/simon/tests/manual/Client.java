@@ -14,7 +14,8 @@ public class Client {
 	public static void main(String[] args) throws UnknownHostException, IOException, SimonRemoteException, EstablishConnectionFailed, LookupFailedException {
 		Utils.DEBUG = true;
 		IServer simonRemote = (IServer) Simon.lookup("127.0.0.1", 2000, "server");
-		simonRemote.helloServerWorld();
+		String helloServerWorld = simonRemote.helloServerWorld();
+		System.out.println(helloServerWorld);
 		Simon.release(simonRemote);
 		
 	}

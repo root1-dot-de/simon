@@ -11,34 +11,46 @@ import org.apache.mina.filter.codec.demux.MessageDecoder;
 import de.root1.simon.LookupTable;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvoke;
-import de.root1.simon.codec.messages.MsgLookup;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgLookup}.
+ * A {@link MessageDecoder} that decodes {@link MsgInvoke}.
  *
  * @author ACHR
  */
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
 
+	
     public MsgInvokeDecoder() {
         super(SimonStdProtocolConstants.INVOKE_MSG);
+    }
+    
+    private static class DecoderState {
+    	
     }
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
+    	MsgInvoke msgInvoke = new MsgInvoke();
+    	
     	System.out.println("MsgInvokeDecoder#decodeBody(): ");
-        MsgInvoke m = new MsgInvoke();
         try {
-        	String remoteObjectName = in.getString(Charset.forName("UTF-8").newDecoder());
-			m.setRemoteObjectName(remoteObjectName);
-			LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
-			Method method = lookupTable.getMethod(remoteObjectName, in.getLong());
-			Object[] args = (Object[]) in.getObject();
+        	
+//	        	String remoteObjectName = in.getString(Charset.forName("UTF-8").newDecoder());
+	        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+	        	
+	        	msgInvoke.setRemoteObjectName(remoteObjectName);
+        		// ---------- Get Long (8 bytes)
+	        		LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
+	        		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), in.getLong());
 			
-			m.setArguments(args);
-			m.setRemoteObjectName(remoteObjectName);
-			m.setMethod(method);
+				
+				
+				Object[] args = (Object[]) in.getObject();
+			
+			msgInvoke.setArguments(args);
+			msgInvoke.setRemoteObjectName(remoteObjectName);
+			msgInvoke.setMethod(method);
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -49,9 +61,11 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        return m;
+        return msgInvoke;
     }
-
+    
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
+    
+   
 }

@@ -5,6 +5,6 @@ import de.root1.simon.exceptions.SimonRemoteException;
 
 public interface IServer extends SimonRemote {
 	
-	public void helloServerWorld() throws SimonRemoteException;
+	public String helloServerWorld() throws SimonRemoteException;
 	
 }

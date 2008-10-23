@@ -23,6 +23,6 @@ public class MsgInvokeReturn extends AbstractMessage {
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgLookup(" + returnValue + ')';
+        return getSequence() + ":MsgInvokeReturn(" + returnValue + ')';
     }
 }
