@@ -203,6 +203,22 @@ public class Dispatcher implements IoHandler{
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
 		
+		// register remote instance objects in the lookup-table
+		if (args != null) {
+			for (int i = 0; i < args.length; i++) {
+				if (args[i] instanceof SimonRemote) {
+					SimonRemoteInstance sc = new SimonRemoteInstance(session,(SimonRemote)args[i]);
+					if (_log.isLoggable(Level.FINER)){
+						_log.fine("SimonRemoteInstance found! id="+sc.getId());
+					}
+					
+					lookupTable.putRemoteInstanceBinding(session, sc.getId(), (SimonRemote) args[i]);
+					
+					args[i] = sc; // overwrite arg with wrapped remote instance-interface
+				}
+			}
+		}
+				
 		MsgInvoke msgInvoke = new MsgInvoke();
 		msgInvoke.setSequence(sequenceId);
 		msgInvoke.setRemoteObjectName(remoteObjectName);
@@ -506,6 +522,7 @@ public class Dispatcher implements IoHandler{
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
 		_log.info("exception Caught. session="+session+" cause="+throwable);
+		throwable.printStackTrace(System.out);
 	}
 
 	public void messageReceived(IoSession session, Object message) throws Exception {
@@ -524,6 +541,7 @@ public class Dispatcher implements IoHandler{
 
 	public void sessionClosed(IoSession session) throws Exception {
 		_log.info("session closed. session="+session);
+		System.out.println(session.getReadMessagesThroughput());
 	}
 
 	public void sessionCreated(IoSession session) throws Exception {

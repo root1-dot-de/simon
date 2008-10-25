@@ -36,7 +36,6 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     	System.out.println("MsgInvokeDecoder#decodeBody(): ");
         try {
         	
-//	        	String remoteObjectName = in.getString(Charset.forName("UTF-8").newDecoder());
 	        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
 	        	
 	        	msgInvoke.setRemoteObjectName(remoteObjectName);

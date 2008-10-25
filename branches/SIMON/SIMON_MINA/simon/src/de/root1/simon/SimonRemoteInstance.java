@@ -70,7 +70,7 @@ public class SimonRemoteInstance implements Serializable {
 		this.id = "["+remoteObject.getClass().getName()+"|ip="+IP+";id="+id+";remoteObjectHash="+remoteObject.hashCode()+"]";
 		
 		if (_log.isLoggable(Level.FINER)){
-			_log.finer("remoteObjectId="+this.id);
+			_log.finer("SimonRemoteInstance created with id="+this.id);
 		}
 
 		// get the interfaces the arg has implemented

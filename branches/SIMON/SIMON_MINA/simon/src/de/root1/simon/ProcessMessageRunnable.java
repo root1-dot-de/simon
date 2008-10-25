@@ -2,6 +2,7 @@ package de.root1.simon;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.util.logging.Logger;
 
 import org.apache.mina.core.session.IoSession;
@@ -12,6 +13,7 @@ import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.utils.SimonClassLoader;
 
 public class ProcessMessageRunnable implements Runnable {
 	
@@ -40,7 +42,12 @@ public class ProcessMessageRunnable implements Runnable {
 		} else if (abstractMessage instanceof MsgLookupReturn) {
 			processLookupReturn();
 		} else if (abstractMessage instanceof MsgInvoke) {
-			processInvoke();
+			try {
+				processInvoke();
+			} catch (ClassNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		} else if (abstractMessage instanceof MsgInvokeReturn){
 			processInvokeReturn();
 		}
@@ -59,13 +66,38 @@ public class ProcessMessageRunnable implements Runnable {
 		_log.fine("end");
 	}
 
-	private void processInvoke() {
+	private void processInvoke() throws ClassNotFoundException {
 		_log.fine("begin");
 
 		_log.fine("processing MsgInvoke...");
 		MsgInvoke msg = (MsgInvoke) abstractMessage;
 		Method method = msg.getMethod();
 		Object[] arguments = msg.getArguments();
+		
+		// ------------
+		// replace existing SimonRemote objects with proxy object
+		if (arguments != null) {
+
+			for (int i = 0; i < arguments.length; i++) {
+				
+				// search the arguments for remote instances 
+				if (arguments[i] instanceof SimonRemoteInstance) {
+					
+					final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
+					_log.finer("SimonCallback in args found. id="+simonCallback.getId());					
+										
+					Class<?>[] listenerInterfaces = new Class<?>[1];
+					listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
+
+					// reimplant the proxy object
+					arguments[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
+					_log.finer("proxy object for SimonCallback injected");
+				} 
+			} 
+		} 
+		// ------------
+		
+		
 		String remoteObjectName = msg.getRemoteObjectName();
 		_log.fine("ron="+remoteObjectName+" method="+method+" args="+arguments);
 		

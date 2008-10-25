@@ -7,11 +7,10 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
 
 import de.root1.simon.codec.messages.MsgInvoke;
-import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.utils.Utils;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgLookup}.
+ * A {@link MessageEncoder} that encodes {@link MsgInvoke}.
  *
  * @author ACHR
  */
@@ -26,7 +25,6 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
     	System.out.println("MsgInvokeEncoder#encodeBody(): message="+message);
         try {
         	out.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
-//			out.putString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
 			out.putLong(Utils.computeMethodHash(message.getMethod()));
 			out.putObject(message.getArguments());
 		} catch (CharacterCodingException e) {

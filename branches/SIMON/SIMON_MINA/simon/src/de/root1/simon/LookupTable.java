@@ -19,7 +19,6 @@
 package de.root1.simon;
 
 import java.lang.reflect.Method;
-import java.nio.channels.SelectionKey;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -29,6 +28,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.mina.core.session.IoSession;
+
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.Utils;
 
@@ -37,7 +38,7 @@ import de.root1.simon.utils.Utils;
  * This class is "the brain" of SIMON. It saves all known 
  * remote object <-> name relations, as well as hashcodes 
  * for all the methods in the remote object.
- * If a object etting unreferenced over the network connection, 
+ * If a object is getting unreferenced over the network connection, 
  * it gets "informed" by the <code>unreferenced()</code> method, 
  * if {@link SimonUnreferenced} is implemented.
  * 
@@ -58,7 +59,7 @@ public class LookupTable {
 	 * A Map that holds a list of remote instances for each socket connection, which contains names of 
 	 * remote objects which have to be removed if {@link DGC} finds a related broken connection
 	 * 
-	 * <Utils.getKeyIdentifier(key), List<remoteObjectName>>
+	 * <Utils.getKeyIdentifier(session), List<remoteObjectName>>
 	 */
 	private Map<String, List<String>> gcRemoteInstances = new HashMap<String, List<String>>();
 	
@@ -86,29 +87,29 @@ public class LookupTable {
 	}
 	
 	/**
-	 * This method is used by the {@link ReadEventHandler} in the invoke method event. If a method result is a 
+	 * This method is used by the {@link Dispatcher} and the {@link ProcessMessageRunnable} class. If a method to invoke or a invoke result is a 
 	 * remote object, then this is saved in an extra map in the lookup table. This is necessary for the DGC to 
-	 * release all remote instances which are related to a specific SelectionKey.
+	 * release all remote instances which are related to a specific {@link IoSession}.
 	 * 
-	 * @param key 
-	 * @param remoteObjectName
-	 * @param remoteObject
+	 * @param session the related IoSession
+	 * @param remoteObjectName the related remote object name
+	 * @param remoteObject the remote object that has been found in a method argument or method result
 	 */
-	public synchronized void putRemoteInstanceBinding(SelectionKey key, String remoteObjectName, SimonRemote remoteObject){
+	public synchronized void putRemoteInstanceBinding(IoSession session, String remoteObjectName, SimonRemote remoteObject){
 		_log.fine("begin");
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("key="+key+" remoteObjectName="+remoteObjectName+"  remoteObject="+remoteObject);
+			_log.finer("session="+session+" remoteObjectName="+remoteObjectName+"  remoteObject="+remoteObject);
 		
 		List<String> remotes;
 		
 		// if there no list present, create one
-		if (!gcRemoteInstances.containsKey(Utils.getKeyIdentifier(key))) {
-			_log.finer("key unknown, creating new remote instance list!");
+		if (!gcRemoteInstances.containsKey(session.toString())) {
+			_log.finer("session unknown, creating new remote instance list!");
 			remotes = new ArrayList<String>();
-			gcRemoteInstances.put(Utils.getKeyIdentifier(key), remotes);
+			gcRemoteInstances.put(session.toString(), remotes);
 		} else {
-			remotes = gcRemoteInstances.get(Utils.getKeyIdentifier(key));
+			remotes = gcRemoteInstances.get(session.toString());
 		}
 		
 		remotes.add(remoteObjectName);
@@ -116,7 +117,7 @@ public class LookupTable {
 		putRemoteBinding(remoteObjectName, remoteObject);
 		
 		if (_log.isLoggable(Level.FINEST))
-			_log.finest("key="+Utils.getKeyIdentifier(key)+" now has "+remotes.size()+" entries.");
+			_log.finest("session="+session.toString()+" now has "+remotes.size()+" entries.");
 				
 		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
 		_log.fine("end");		
@@ -266,18 +267,18 @@ public class LookupTable {
 	/**
 	 * removes remote instance objects from {@link LookupTable}.
 	 * 
-	 * @param key the key which is the parent of those remote instance objects
+	 * @param session the session which is the parent of those remote instance objects
 	 */
-	public void unreference(SelectionKey key) {
+	public void unreference(IoSession session) {
 		
 		_log.fine("begin");
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("unreferencing key="+Utils.getKeyIdentifier(key));
+			_log.finer("unreferencing session="+session);
 		
 		List<String> list;
 		synchronized (gcRemoteInstances) {
-			 list = gcRemoteInstances.remove(Utils.getKeyIdentifier(key));
+			 list = gcRemoteInstances.remove(session);
 		}
 		
 		if (list!=null) {

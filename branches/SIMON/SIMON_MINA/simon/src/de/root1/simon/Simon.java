@@ -38,7 +38,10 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.future.ConnectFuture;
+import org.apache.mina.core.future.IoFuture;
+import org.apache.mina.core.future.IoFutureListener;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
@@ -204,7 +207,7 @@ public class Simon {
 	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
 	 * @throws LookupFailedException if there's no such object on the server
 	 */
-	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
+	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		_log.fine("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
@@ -235,10 +238,10 @@ public class Simon {
 				_log.fine("No ClientToServerConnection in list. Creating new one.");
 				
 				dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
-				ExecutorService executorPool = Executors.newCachedThreadPool();
+				ExecutorService executorPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
 				NioSocketConnector connector = new NioSocketConnector();
 				connector.setHandler(dispatcher);
-				
+								
 				ConnectFuture future = connector.connect(new InetSocketAddress(host, port));
 				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
 				session = future.getSession();
@@ -252,7 +255,7 @@ public class Simon {
 				}
 				
 				// store this connection for later re-use
-				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session);
+				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session, connector, executorPool);
 				ctsc.addRef();
 				serverDispatcherRelation.put(serverString, ctsc);
 				
@@ -426,7 +429,7 @@ public class Simon {
 			if (serverDispatcherRelation.containsKey(serverString)) {
 				
 				// ... remove the connection from the list ...
-				ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
+				final ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
 				int refCount = ctsc.delRef();
 				
 				if (_log.isLoggable(Level.FINER))
@@ -434,9 +437,19 @@ public class Simon {
 				
 				if (refCount==0) {
 					// .. and shutdown the dispatcher if there's no further reference
-					ctsc.getDispatcher().shutdown();
-					result = true;
 					_log.fine("refCount reached 0. shutting down dispatcher.");
+					ctsc.getDispatcher().shutdown();
+					CloseFuture closeFuture = ctsc.getSession().close(false);
+					
+					closeFuture.addListener(new IoFutureListener<IoFuture>(){
+
+						public void operationComplete(IoFuture future) {
+							ctsc.getExecutorPool().shutdown();
+							ctsc.getConnector().dispose();
+						}
+						
+					});
+					result = true;
 				} else {
 					_log.fine("refCount="+refCount+". put back the ClientToServerConnection.");
 					serverDispatcherRelation.put(serverString, ctsc);

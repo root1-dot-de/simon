@@ -19,8 +19,10 @@
 package de.root1.simon;
 
 import java.nio.channels.SelectionKey;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.mina.core.session.IoSession;
+import org.apache.mina.transport.socket.nio.NioSocketConnector;
 
 /**
  * 
@@ -44,22 +46,44 @@ public class ClientToServerConnection {
 	private IoSession session;
 	private String ServerString;
 	private int referenceCount = 0;
+	private NioSocketConnector connector;
+	private ExecutorService executorPool;
+
+	NioSocketConnector getConnector() {
+		return connector;
+	}
+
+	private void setConnector(NioSocketConnector connector) {
+		this.connector = connector;
+	}
 
 	/**
 	 * Creates a new Instance of {@link ClientToServerConnection}
 	 * 
 	 * @param serverString the used server string
 	 * @param dispatcher the used dispatcher
+	 * @param connector 
+	 * @param executorPool 
 	 * @param key the used key
 	 */
 	public ClientToServerConnection(String serverString,
-			Dispatcher dispatcher, IoSession session) {
+			Dispatcher dispatcher, IoSession session, NioSocketConnector connector, ExecutorService executorPool) {
 		
 		this.ServerString = serverString;
 		this.dispatcher = dispatcher;
 		this.session = session;
+		this.connector = connector;
+		this.executorPool = executorPool;
 	}
 	
+	public ExecutorService getExecutorPool() {
+		return executorPool;
+	}
+
+	public void setExecutorPool(ExecutorService executorPool) {
+		this.executorPool = executorPool;
+	}
+
 	/**
 	 * 
 	 * Increases the reference count by one
