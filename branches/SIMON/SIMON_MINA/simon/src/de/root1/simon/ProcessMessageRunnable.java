@@ -29,7 +29,8 @@ public class ProcessMessageRunnable implements Runnable {
 	}
 
 	public void run() {
-		System.out.println("ProcessMessageRunnable: "+abstractMessage);
+		
+		_log.finer("ProcessMessageRunnable: "+abstractMessage);
 		
 		if (abstractMessage instanceof MsgLookup) {
 			try {
@@ -73,7 +74,6 @@ public class ProcessMessageRunnable implements Runnable {
 		MsgInvoke msg = (MsgInvoke) abstractMessage;
 		Method method = msg.getMethod();
 		Object[] arguments = msg.getArguments();
-		
 		// ------------
 		// replace existing SimonRemote objects with proxy object
 		if (arguments != null) {
@@ -98,15 +98,35 @@ public class ProcessMessageRunnable implements Runnable {
 		// ------------
 		
 		
+		
 		String remoteObjectName = msg.getRemoteObjectName();
 		_log.fine("ron="+remoteObjectName+" method="+method+" args="+arguments);
 		
 		try {
 			SimonRemote simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
-			Object returnValue = method.invoke(simonRemote, arguments);
+			_log.finest("arguments="+arguments);
+			Object result = method.invoke(simonRemote, arguments);
+			
+			
+			// register "SimonCallback"-results in lookup-table
+			if (result instanceof SimonRemote){
+				_log.finer("Result of method is instance of SimonRemote");
+				
+				SimonRemoteInstance simonCallback = new SimonRemoteInstance(session,(SimonRemote)result);
+				simonCallback.getId();
+
+//				dispatcher.getLookupTable().putRemoteBinding(simonCallback.getId(), (SimonRemote)result);
+				dispatcher.getLookupTable().putRemoteInstanceBinding(session, simonCallback.getId(), (SimonRemote) result);
+				result = simonCallback;
+				
+			}
+			
+			
 			MsgInvokeReturn returnMsg = new MsgInvokeReturn();
 			returnMsg.setSequence(msg.getSequence());
-			returnMsg.setReturnValue(returnValue);
+			
+			returnMsg.setReturnValue(result);
+			
 			_log.fine("Sending result="+returnMsg);
 			session.write(returnMsg);
 		} catch (LookupFailedException e) {

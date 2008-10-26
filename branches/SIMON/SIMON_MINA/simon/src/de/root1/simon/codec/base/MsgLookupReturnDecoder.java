@@ -1,4 +1,6 @@
 package de.root1.simon.codec.base;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -30,10 +32,20 @@ public class MsgLookupReturnDecoder extends AbstractMessageDecoder {
     	
     	try {
     		_log.finer("trying to read interfaces value");
-    		Class<?>[] interfaces = (Class<?>[])in.getObject();
-    		_log.finer("got it ...");
+    		int arraySize = in.getInt();
+    		Class<?>[] interfaces = new Class<?>[arraySize];
+    		for (int i=0;i<arraySize;i++){
+    			interfaces[i] = Class.forName(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
+    			_log.finer("got interface="+interfaces[i].getCanonicalName());
+    		}
+    		
+//    		Class<?>[] interfaces = (Class<?>[])in.getObject();
+    		_log.finer("finished");
 			m.setInterfaces( interfaces);
 		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

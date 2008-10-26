@@ -76,7 +76,14 @@ public class SimonProxy implements InvocationHandler {
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if (_log.isLoggable(Level.FINE)) {
 			_log.fine("begin");
-			_log.fine("method="+method.getName()+" args="+args);
+			_log.fine("method="+method.getName()+" argsLength="+(args==null?0:args.length));
+			if (args!=null) {
+				for (int i = 0; i < args.length; i++) {
+					_log.fine("args["+i+"]="+args[i]);
+				}
+			} else {
+				_log.fine("args=null");
+			}
 		}
 		
 		/*

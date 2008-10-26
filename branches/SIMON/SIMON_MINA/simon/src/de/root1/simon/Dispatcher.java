@@ -223,6 +223,7 @@ public class Dispatcher implements IoHandler{
 		msgInvoke.setSequence(sequenceId);
 		msgInvoke.setRemoteObjectName(remoteObjectName);
 		msgInvoke.setMethod(method);
+		msgInvoke.setArguments(args);
 		
 		session.write(msgInvoke);
 		

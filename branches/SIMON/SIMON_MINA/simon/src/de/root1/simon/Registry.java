@@ -96,13 +96,17 @@ public class Registry {
         if (_log.isLoggable(Level.FINEST))
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(true)));
-
+        
 		acceptor.setHandler(  dispatcher );
         
 //        acceptor.getSessionConfig().setReadBufferSize( 2048 );
         acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
         
+        // FIXME should be configurable ...
+        ((NioSocketAcceptor) acceptor).setReuseAddress(true);
+        
         acceptor.bind( new InetSocketAddress(address, port) );
+        
 		
 		_log.finer("acceptor thread created and started");			
 			

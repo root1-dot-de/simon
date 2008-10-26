@@ -27,6 +27,11 @@ public class SimonStdProtocolCodecFactory extends DemuxingProtocolCodecFactory {
             // outgoing invoke return
             super.addMessageEncoder(MsgInvokeReturn.class, MsgInvokeReturnEncoder.class);
             
+            // outgoing invoke (callbacks)
+        	super.addMessageEncoder(MsgInvoke.class, MsgInvokeEncoder.class);
+        	// incoming invoke return (callbacks)
+        	super.addMessageDecoder(MsgInvokeReturnDecoder.class);
+            
         } else // **** CLIENT ****
         {
         	// outgoing lookup
@@ -38,6 +43,11 @@ public class SimonStdProtocolCodecFactory extends DemuxingProtocolCodecFactory {
         	super.addMessageEncoder(MsgInvoke.class, MsgInvokeEncoder.class);
         	// incoming invoke return
         	super.addMessageDecoder(MsgInvokeReturnDecoder.class);
+        	
+        	 // incoming invoke (callbacks from server)
+            super.addMessageDecoder(MsgInvokeDecoder.class);
+            // outgoing invoke return (callbacks from server)
+            super.addMessageEncoder(MsgInvokeReturn.class, MsgInvokeReturnEncoder.class);
         	
         }
     }

@@ -1,4 +1,6 @@
 package de.root1.simon.codec.base;
+import java.util.logging.Logger;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
@@ -15,6 +17,9 @@ import de.root1.simon.codec.messages.AbstractMessage;
  * @version $Rev: 671827 $, $Date: 2008-06-26 10:49:48 +0200 (jeu, 26 jun 2008) $
  */
 public abstract class AbstractMessageDecoder implements MessageDecoder {
+	
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	
     private final int msgType;
 
     private int sequence;
@@ -46,7 +51,6 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
 
     public MessageDecoderResult decode(IoSession session, IoBuffer in, ProtocolDecoderOutput out) throws Exception {
     	
-    	System.out.println("AbstractMessageDecoder#decode(): ");
         // Try to skip header if not read.
         if (!readHeader) {
             in.getShort(); // Skip 'type'.

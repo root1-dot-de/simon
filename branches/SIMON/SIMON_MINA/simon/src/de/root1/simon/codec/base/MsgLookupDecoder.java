@@ -1,6 +1,7 @@
 package de.root1.simon.codec.base;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -16,6 +17,8 @@ import de.root1.simon.codec.messages.MsgLookup;
  * @author ACHR
  */
 public class MsgLookupDecoder extends AbstractMessageDecoder {
+	
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 
 	
 	private MsgLookup m = new MsgLookup();
@@ -27,7 +30,7 @@ public class MsgLookupDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	System.out.println("MsgLookupDecoder#decodeBody(): ");
+    	
         
         try {
         	String remoteObjectName = in.getString(Charset.forName("UTF-8").newDecoder());
@@ -36,6 +39,8 @@ public class MsgLookupDecoder extends AbstractMessageDecoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		_log.finer("message="+m);
         return m;
     }
 

@@ -1,4 +1,6 @@
 package de.root1.simon.codec.base;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -22,8 +24,19 @@ public class MsgLookupReturnEncoder<T extends MsgLookupReturn> extends AbstractM
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	_log.finer("message="+message+" interfacesvalue="+message.getInterfaces());
-        out.putObject(message.getInterfaces());
+    	_log.finer("sending interfaces ...");
+    	Class<?>[] interfaces = message.getInterfaces();
+    	out.putInt(interfaces.length);
+    	for (Class<?> class1 : interfaces) {
+			try {
+				_log.finer("interface="+class1.getCanonicalName());
+				out.putPrefixedString(class1.getCanonicalName(), Charset.forName("UTF-8").newEncoder());
+			} catch (CharacterCodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+    	_log.finer("finished");
     }
 
     public void dispose() throws Exception {

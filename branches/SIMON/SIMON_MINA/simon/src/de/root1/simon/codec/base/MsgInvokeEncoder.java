@@ -1,6 +1,7 @@
 package de.root1.simon.codec.base;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -16,21 +17,39 @@ import de.root1.simon.utils.Utils;
  */
 public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncoder<T> {
 	
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	
     public MsgInvokeEncoder() {
         super(SimonStdProtocolConstants.INVOKE_MSG);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	System.out.println("MsgInvokeEncoder#encodeBody(): message="+message);
+    	
+    	_log.finer("begin. message="+message);
         try {
         	out.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
 			out.putLong(Utils.computeMethodHash(message.getMethod()));
-			out.putObject(message.getArguments());
+		
+			int argsLen=0;
+			
+			if (message.getArguments()!=null) 
+				argsLen = message.getArguments().length;
+			
+			_log.finer("argsLength="+argsLen);
+			out.putInt(argsLen);
+			
+			for (int i=0; i<argsLen;i++){
+				_log.finer("args["+i+"]="+message.getArguments()[i]);
+				out.putObject(message.getArguments()[i]);
+				
+			}
+			
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		_log.finer("end");
     }
 
     public void dispose() throws Exception {

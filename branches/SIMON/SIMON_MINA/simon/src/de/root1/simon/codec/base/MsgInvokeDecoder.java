@@ -2,6 +2,7 @@ package de.root1.simon.codec.base;
 import java.lang.reflect.Method;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -18,7 +19,8 @@ import de.root1.simon.codec.messages.MsgInvoke;
  * @author ACHR
  */
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
-
+	
+	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
     public MsgInvokeDecoder() {
         super(SimonStdProtocolConstants.INVOKE_MSG);
@@ -33,7 +35,6 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 
     	MsgInvoke msgInvoke = new MsgInvoke();
     	
-    	System.out.println("MsgInvokeDecoder#decodeBody(): ");
         try {
         	
 	        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
@@ -44,8 +45,12 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 	        		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), in.getLong());
 			
 				
-				
-				Object[] args = (Object[]) in.getObject();
+	    			int argsLength = in.getInt();
+	    			_log.fine("getting "+argsLength+" args");
+	    			Object[] args = new Object[argsLength];
+	    			for (int i=0;i<argsLength;i++){
+	    				args[i]=in.getObject();
+	    			}
 			
 			msgInvoke.setArguments(args);
 			msgInvoke.setRemoteObjectName(remoteObjectName);
@@ -60,6 +65,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		_log.finer("message="+msgInvoke);
         return msgInvoke;
     }
     

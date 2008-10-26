@@ -32,7 +32,7 @@ public class MsgInvoke extends AbstractMessage {
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgLookup(" + remoteObjectName + "|" + method + "|" + args + ")";
+        return getSequence() + ":MsgInvoke(ron=" + remoteObjectName + "|method=" + method + "|args=" + args + ")";
     }
 
 	public void setMethod(Method method) {
