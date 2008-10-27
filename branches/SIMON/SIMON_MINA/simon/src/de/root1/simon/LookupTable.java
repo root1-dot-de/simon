@@ -61,7 +61,7 @@ public class LookupTable {
 	 * 
 	 * <Utils.getKeyIdentifier(session), List<remoteObjectName>>
 	 */
-	private Map<String, List<String>> gcRemoteInstances = new HashMap<String, List<String>>();
+	private Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
 	
 	/**
 	 * Maps the remote object to the map with the hash-mapped methods.
@@ -107,9 +107,9 @@ public class LookupTable {
 		if (!gcRemoteInstances.containsKey(session.toString())) {
 			_log.finer("session unknown, creating new remote instance list!");
 			remotes = new ArrayList<String>();
-			gcRemoteInstances.put(session.toString(), remotes);
+			gcRemoteInstances.put(session.getId(), remotes);
 		} else {
-			remotes = gcRemoteInstances.get(session.toString());
+			remotes = gcRemoteInstances.get(session.getId());
 		}
 		
 		remotes.add(remoteObjectName);
@@ -278,7 +278,7 @@ public class LookupTable {
 		
 		List<String> list;
 		synchronized (gcRemoteInstances) {
-			 list = gcRemoteInstances.remove(session);
+			 list = gcRemoteInstances.remove(session.getId());
 		}
 		
 		if (list!=null) {

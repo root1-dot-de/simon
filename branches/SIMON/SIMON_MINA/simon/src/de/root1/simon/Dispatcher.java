@@ -541,8 +541,11 @@ public class Dispatcher implements IoHandler{
 	}
 
 	public void sessionClosed(IoSession session) throws Exception {
-		_log.info("session closed. session="+session);
-		System.out.println(session.getReadMessagesThroughput());
+		_log.info("################################################");
+		_log.info("######## session closed. session="+session);
+		_log.info("################################################");
+		
+		lookupTable.unreference(session);
 	}
 
 	public void sessionCreated(IoSession session) throws Exception {
