@@ -7,20 +7,20 @@ import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
 
-import de.root1.simon.codec.messages.MsgToStringReturn;
+import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgToStringReturn}.
+ * A {@link MessageEncoder} that encodes {@link MsgHashCode}.
  *
  * @author ACHR
  */
-public class MsgToStringReturnEncoder<T extends MsgToStringReturn> extends AbstractMessageEncoder<T> {
+public class MsgHashCodeEncoder<T extends MsgHashCode> extends AbstractMessageEncoder<T> {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-    public MsgToStringReturnEncoder() {
-        super(SimonMessageConstants.MSG_TOSTRING_RETURN);
+    public MsgHashCodeEncoder() {
+        super(SimonMessageConstants.MSG_HASHCODE);
     }
 
     @Override
@@ -28,7 +28,7 @@ public class MsgToStringReturnEncoder<T extends MsgToStringReturn> extends Abstr
     	
     	_log.finer("begin. message="+message);
         try {
-        	out.putPrefixedString(message.getReturnValue(),Charset.forName("UTF-8").newEncoder());
+        	out.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

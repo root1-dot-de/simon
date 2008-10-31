@@ -1,6 +1,4 @@
 package de.root1.simon.codec.base;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -9,36 +7,27 @@ import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.mina.filter.codec.demux.MessageDecoder;
 
 import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgToStringReturn;
+import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgToStringReturn}.
+ * A {@link MessageDecoder} that decodes {@link MsgHashCodeReturn}.
  *
  * @author ACHR
  */
-public class MsgToStringReturnDecoder extends AbstractMessageDecoder {
+public class MsgHashCodeReturnDecoder extends AbstractMessageDecoder {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-    public MsgToStringReturnDecoder() {
-        super(SimonMessageConstants.MSG_TOSTRING_RETURN);
+    public MsgHashCodeReturnDecoder() {
+        super(SimonMessageConstants.MSG_HASHCODE_RETURN);
     }
     
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-
-    	MsgToStringReturn message = new MsgToStringReturn();
-    	
-        try {
-        	
-	        	String returnValue = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-	        	
-	        	message.setReturnValue(returnValue);
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
+    	MsgHashCodeReturn message = new MsgHashCodeReturn();
+    	int returnValue = in.getInt();
+    	message.setReturnValue(returnValue);
 		_log.finer("message="+message);
         return message;
     }

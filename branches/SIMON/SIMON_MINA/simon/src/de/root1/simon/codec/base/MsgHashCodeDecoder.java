@@ -9,32 +9,32 @@ import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.mina.filter.codec.demux.MessageDecoder;
 
 import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgToStringReturn;
+import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgToStringReturn}.
+ * A {@link MessageDecoder} that decodes {@link MsgHashCode}.
  *
  * @author ACHR
  */
-public class MsgToStringReturnDecoder extends AbstractMessageDecoder {
+public class MsgHashCodeDecoder extends AbstractMessageDecoder {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-    public MsgToStringReturnDecoder() {
-        super(SimonMessageConstants.MSG_TOSTRING_RETURN);
+    public MsgHashCodeDecoder() {
+        super(SimonMessageConstants.MSG_HASHCODE);
     }
     
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	MsgToStringReturn message = new MsgToStringReturn();
+    	MsgHashCode message = new MsgHashCode();
     	
         try {
         	
-	        	String returnValue = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+	        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
 	        	
-	        	message.setReturnValue(returnValue);
+	        	message.setRemoteObjectName(remoteObjectName);
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

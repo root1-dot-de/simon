@@ -30,6 +30,8 @@ import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgHashCode;
+import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
@@ -294,7 +296,48 @@ public class Dispatcher implements IoHandler{
 	protected int invokeHashCode(IoSession session, String remoteObjectName) {
 		
 		checkForInvalidState("hashCode()");
-		return 0;
+
+		final int sequenceId = generateSequenceId(); 
+		
+		if (_log.isLoggable(Level.FINE)) {
+			_log.fine("begin sequenceId="+sequenceId+" session="+session);
+		}
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(sequenceId);
+		
+		MsgHashCode msgInvoke = new MsgHashCode();
+		msgInvoke.setSequence(sequenceId);
+		msgInvoke.setRemoteObjectName(remoteObjectName);
+		
+		session.write(msgInvoke);
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
+		
+
+		// wait for result
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		MsgHashCodeReturn result;
+		// get result
+		synchronized (requestMonitorAndReturnMap) {
+			result = (MsgHashCodeReturn) getRequestResult(sequenceId);			
+		}
+			
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("got answer for sequenceId="+sequenceId);
+		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end sequenceId="+sequenceId);
+		
+		return result.getReturnValue();
 	}
 
 

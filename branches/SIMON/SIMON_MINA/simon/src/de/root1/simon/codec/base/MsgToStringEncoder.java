@@ -7,10 +7,8 @@ import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
 
-import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.SimonMessageConstants;
-import de.root1.simon.utils.Utils;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgToString}.

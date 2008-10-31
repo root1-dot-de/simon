@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 import org.apache.mina.core.session.IoSession;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgHashCode;
+import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
@@ -80,9 +82,11 @@ public class ProcessMessageRunnable implements Runnable {
 				break;
 				
 			case SimonMessageConstants.MSG_HASHCODE:
+				processHashCode();
 				break;
 
 			case SimonMessageConstants.MSG_HASHCODE_RETURN:
+				processHashCodeReturn();
 				break;
 
 			default:
@@ -93,7 +97,8 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		
 	}
-	
+
+
 	/**
 	 * 
 	 * processes a lookup
@@ -242,6 +247,37 @@ public class ProcessMessageRunnable implements Runnable {
 		_log.fine("begin");
 		_log.fine("processing MsgToStringReturn...");
 		 MsgToStringReturn msg = (MsgToStringReturn) abstractMessage;
+		 dispatcher.putResultToQueue(msg.getSequence(), msg);
+		_log.fine("put result to queue="+msg);
+		_log.fine("end");
+	}
+
+	private void processHashCode() {
+		_log.fine("begin");
+		
+		_log.fine("processing MsgHashCode...");
+		 MsgHashCode msg = (MsgHashCode) abstractMessage;
+		 
+		 String remoteObjectName = msg.getRemoteObjectName();
+		 int returnValue = -1;
+		 try {
+			returnValue = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();
+		} catch (LookupFailedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		MsgHashCodeReturn returnMsg = new MsgHashCodeReturn();
+		returnMsg.setSequence(msg.getSequence());
+		returnMsg.setReturnValue(returnValue);
+		session.write(returnMsg);
+		_log.fine("end");
+	}
+	
+	private void processHashCodeReturn() {
+		_log.fine("begin");
+		_log.fine("processing MsgHashCodeReturn...");
+		 MsgHashCodeReturn msg = (MsgHashCodeReturn) abstractMessage;
 		 dispatcher.putResultToQueue(msg.getSequence(), msg);
 		_log.fine("put result to queue="+msg);
 		_log.fine("end");
