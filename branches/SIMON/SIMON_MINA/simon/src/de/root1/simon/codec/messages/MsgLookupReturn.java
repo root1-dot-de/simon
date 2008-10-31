@@ -13,7 +13,7 @@ public class MsgLookupReturn extends AbstractMessage {
     private Class<?>[] interfaces;
 
     public MsgLookupReturn() {
-    	setMsgType(SimonMessageConstants.MSG_LOOKUP_RETURN);
+    	super(SimonMessageConstants.MSG_LOOKUP_RETURN);
     }
 
     public Class<?>[] getInterfaces() {

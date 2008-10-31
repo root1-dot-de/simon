@@ -12,7 +12,7 @@ public class MsgToStringReturn extends AbstractMessage {
     private String returnValue;
 
     public MsgToStringReturn() {
-    	setMsgType(SimonMessageConstants.MSG_TOSTRING_RETURN);
+    	super(SimonMessageConstants.MSG_TOSTRING_RETURN);
     }
 
     public String getReturnValue() {

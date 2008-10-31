@@ -12,7 +12,7 @@ public class MsgInvokeReturn extends AbstractMessage {
     private Object returnValue;
 
     public MsgInvokeReturn() {
-    	setMsgType(SimonMessageConstants.MSG_INVOKE_RETURN);
+    	super(SimonMessageConstants.MSG_INVOKE_RETURN);
     }
 
     public Object getReturnValue() {

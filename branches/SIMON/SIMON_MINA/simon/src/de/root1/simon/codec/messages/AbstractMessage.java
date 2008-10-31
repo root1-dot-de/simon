@@ -15,21 +15,20 @@ public abstract class AbstractMessage implements Serializable {
 	private int msgType = -1;
 	private int sequence = -1;
 	
-
+    /**
+     * Creates a new message decoder
+     * @param msgType specifies a unique ID for the type of message
+     */
+    protected AbstractMessage(int msgType) {
+        this.msgType = msgType;
+    }
+	
 	/**
 	 * TODO
 	 * @return the msgType
 	 */
 	public int getMsgType() {
 		return msgType;
-	}
-
-	/**
-	 * TODO
-	 * @param msgType the msgType to set
-	 */
-	public void setMsgType(int msgType) {
-		this.msgType = msgType;
 	}
 
 	/**

@@ -12,7 +12,7 @@ public class MsgLookup extends AbstractMessage {
     private String remoteObjectName;
 
     public MsgLookup() {
-    	setMsgType(SimonMessageConstants.MSG_LOOKUP);
+    	super(SimonMessageConstants.MSG_LOOKUP);
     }
 
     public String getRemoteObjectName() {

@@ -204,9 +204,6 @@ public class ProcessMessageRunnable implements Runnable {
 		}
 		_log.fine("end");
 	}
-	
-
-	
 
 	private void processInvokeReturn() {
 		_log.fine("begin");

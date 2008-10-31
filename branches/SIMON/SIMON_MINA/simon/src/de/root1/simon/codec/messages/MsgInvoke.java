@@ -16,7 +16,7 @@ public class MsgInvoke extends AbstractMessage {
     Object[] args;
     
     public MsgInvoke() {
-    	setMsgType(SimonMessageConstants.MSG_INVOKE);
+    	super(SimonMessageConstants.MSG_INVOKE);
     }
 
     public String getRemoteObjectName() {

@@ -14,7 +14,7 @@ public class MsgToString extends AbstractMessage {
     String remoteObjectName;
     
     public MsgToString() {
-    	setMsgType(SimonMessageConstants.MSG_TOSTRING);
+    	super(SimonMessageConstants.MSG_TOSTRING);
     }
 
     public String getRemoteObjectName() {
