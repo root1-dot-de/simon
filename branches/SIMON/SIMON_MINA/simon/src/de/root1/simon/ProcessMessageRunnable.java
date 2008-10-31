@@ -110,13 +110,13 @@ public class ProcessMessageRunnable implements Runnable {
 			
 			// register "SimonCallback"-results in lookup-table
 			if (result instanceof SimonRemote){
-				_log.finer("Result of method is instance of SimonRemote");
+				_log.finer("Result of method "+method+" is instance of SimonRemote: "+result);
 				
 				SimonRemoteInstance simonCallback = new SimonRemoteInstance(session,(SimonRemote)result);
 				simonCallback.getId();
 
 //				dispatcher.getLookupTable().putRemoteBinding(simonCallback.getId(), (SimonRemote)result);
-				dispatcher.getLookupTable().putRemoteInstanceBinding(session, simonCallback.getId(), (SimonRemote) result);
+				dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), (SimonRemote) result);
 				result = simonCallback;
 				
 			}

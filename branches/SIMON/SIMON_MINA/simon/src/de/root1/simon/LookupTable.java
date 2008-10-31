@@ -95,21 +95,21 @@ public class LookupTable {
 	 * @param remoteObjectName the related remote object name
 	 * @param remoteObject the remote object that has been found in a method argument or method result
 	 */
-	public synchronized void putRemoteInstanceBinding(IoSession session, String remoteObjectName, SimonRemote remoteObject){
+	public synchronized void putRemoteInstanceBinding(long sessionId, String remoteObjectName, SimonRemote remoteObject){
 		_log.fine("begin");
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("session="+session+" remoteObjectName="+remoteObjectName+"  remoteObject="+remoteObject);
+			_log.finer("sessionId="+sessionId+" remoteObjectName="+remoteObjectName+"  remoteObject="+remoteObject);
 		
 		List<String> remotes;
 		
 		// if there no list present, create one
-		if (!gcRemoteInstances.containsKey(session.toString())) {
-			_log.finer("session unknown, creating new remote instance list!");
+		if (!gcRemoteInstances.containsKey(sessionId)) {
+			_log.finer("session '"+sessionId+"' unknown, creating new remote instance list!");
 			remotes = new ArrayList<String>();
-			gcRemoteInstances.put(session.getId(), remotes);
+			gcRemoteInstances.put(sessionId, remotes);
 		} else {
-			remotes = gcRemoteInstances.get(session.getId());
+			remotes = gcRemoteInstances.get(sessionId);
 		}
 		
 		remotes.add(remoteObjectName);
@@ -117,7 +117,7 @@ public class LookupTable {
 		putRemoteBinding(remoteObjectName, remoteObject);
 		
 		if (_log.isLoggable(Level.FINEST))
-			_log.finest("session="+session.toString()+" now has "+remotes.size()+" entries.");
+			_log.finest("session '"+sessionId+"' now has "+remotes.size()+" entries.");
 				
 		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
 		_log.fine("end");		
@@ -269,16 +269,16 @@ public class LookupTable {
 	 * 
 	 * @param session the session which is the parent of those remote instance objects
 	 */
-	public void unreference(IoSession session) {
+	public void unreference(long sessionId) {
 		
 		_log.fine("begin");
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("unreferencing session="+session);
+			_log.finer("unreferencing sessionId="+sessionId);
 		
 		List<String> list;
 		synchronized (gcRemoteInstances) {
-			 list = gcRemoteInstances.remove(session.getId());
+			 list = gcRemoteInstances.remove(sessionId);
 		}
 		
 		if (list!=null) {

@@ -212,7 +212,7 @@ public class Dispatcher implements IoHandler{
 						_log.fine("SimonRemoteInstance found! id="+sc.getId());
 					}
 					
-					lookupTable.putRemoteInstanceBinding(session, sc.getId(), (SimonRemote) args[i]);
+					lookupTable.putRemoteInstanceBinding(session.getId(), sc.getId(), (SimonRemote) args[i]);
 					
 					args[i] = sc; // overwrite arg with wrapped remote instance-interface
 				}
@@ -523,7 +523,7 @@ public class Dispatcher implements IoHandler{
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
 		_log.info("exception Caught. session="+session+" cause="+throwable);
-		throwable.printStackTrace(System.out);
+//		throwable.printStackTrace(System.err);
 	}
 
 	public void messageReceived(IoSession session, Object message) throws Exception {
@@ -545,7 +545,7 @@ public class Dispatcher implements IoHandler{
 		_log.info("######## session closed. session="+session);
 		_log.info("################################################");
 		
-		lookupTable.unreference(session);
+		lookupTable.unreference(session.getId());
 	}
 
 	public void sessionCreated(IoSession session) throws Exception {
