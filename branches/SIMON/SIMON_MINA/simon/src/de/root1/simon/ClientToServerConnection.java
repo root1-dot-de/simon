@@ -18,9 +18,9 @@
  */
 package de.root1.simon;
 
-import java.nio.channels.SelectionKey;
 import java.util.concurrent.ExecutorService;
 
+import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 
@@ -46,14 +46,22 @@ public class ClientToServerConnection {
 	private IoSession session;
 	private String ServerString;
 	private int referenceCount = 0;
-	private NioSocketConnector connector;
-	private ExecutorService executorPool;
+	private IoConnector connector;
+	private ExecutorService filterchainWorkerPool;
 
-	NioSocketConnector getConnector() {
+	/**
+	 * TODO document me
+	 * @return
+	 */
+	public IoConnector getConnector() {
 		return connector;
 	}
 
-	private void setConnector(NioSocketConnector connector) {
+	/**
+	 * TODO document me
+	 * @param connector
+	 */
+	public void setConnector(NioSocketConnector connector) {
 		this.connector = connector;
 	}
 
@@ -62,26 +70,26 @@ public class ClientToServerConnection {
 	 * 
 	 * @param serverString the used server string
 	 * @param dispatcher the used dispatcher
+	 * @param session
 	 * @param connector 
-	 * @param executorPool 
-	 * @param key the used key
+	 * @param filterchainWorkerPool 
 	 */
 	public ClientToServerConnection(String serverString,
-			Dispatcher dispatcher, IoSession session, NioSocketConnector connector, ExecutorService executorPool) {
+			Dispatcher dispatcher, IoSession session, NioSocketConnector connector, ExecutorService filterchainWorkerPool) {
 		
 		this.ServerString = serverString;
 		this.dispatcher = dispatcher;
 		this.session = session;
 		this.connector = connector;
-		this.executorPool = executorPool;
+		this.filterchainWorkerPool = filterchainWorkerPool;
 	}
 	
-	public ExecutorService getExecutorPool() {
-		return executorPool;
+	public ExecutorService getFilterchainWorkerPool() {
+		return filterchainWorkerPool;
 	}
 
-	public void setExecutorPool(ExecutorService executorPool) {
-		this.executorPool = executorPool;
+	public void setFilterchainWorkerPool(ExecutorService filterchainWorkerPool) {
+		this.filterchainWorkerPool = filterchainWorkerPool;
 	}
 
 	/**
@@ -90,7 +98,7 @@ public class ClientToServerConnection {
 	 * 
 	 * @return the new reference count
 	 */
-	public int addRef() {
+	public synchronized int addRef() {
 		return ++referenceCount;
 	}
 	
@@ -99,21 +107,29 @@ public class ClientToServerConnection {
 	 * 
 	 * @return the new reference count
 	 */
-	public int delRef(){
+	public synchronized int delRef(){
 		return --referenceCount;
+	}
+	
+	/**
+	 * Returns the current valid reference count
+	 * @return the current reference count
+	 */
+	public int getRefCount(){
+		return referenceCount;
 	}
 
 	/**
-	 * Gets the {@link Dispatcher} the client uses to cummunicate with the network
-	 *
+	 * Gets the {@link Dispatcher} the client uses to communicate with the network
+	 * @return the stored dispatcher
 	 */
 	public Dispatcher getDispatcher() {
 		return dispatcher;
 	}
 	
 	/**
-	 * Sets the {@link Dispatcher} the client uses to cummunicate with the network
-	 *
+	 * Sets the {@link Dispatcher} the client uses to communicate with the network
+	 * @param dispatcher the dispatcher to store
 	 */
 	public void setDispatcher(Dispatcher dispatcher) {
 		this.dispatcher = dispatcher;
@@ -121,16 +137,15 @@ public class ClientToServerConnection {
 	
 	/**
 	 * Gets the session which is used by the client to communicate with the server via {@link Dispatcher}
-	 *
+	 * @return the stored session
 	 */
-	
 	public IoSession getSession() {
 		return session;
 	}
 	
 	/**
 	 * Sets the session which is used by the client to communicate with the server via {@link Dispatcher}
-	 *
+	 * @param session the session to store
 	 */
 	public void setSession(IoSession session) {
 		this.session = session;
@@ -138,7 +153,7 @@ public class ClientToServerConnection {
 	
 	/**
 	 * Gets the server string
-	 *
+	 * @return the stored server string
 	 */
 	public String getServerString() {
 		return ServerString;
@@ -146,7 +161,7 @@ public class ClientToServerConnection {
 	
 	/**
 	 * Sets the server string
-	 *
+	 * @param serverString the server string to store
 	 */
 	public void setServerString(String serverString) {
 		ServerString = serverString;

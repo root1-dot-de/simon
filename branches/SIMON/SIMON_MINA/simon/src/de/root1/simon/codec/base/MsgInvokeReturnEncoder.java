@@ -7,6 +7,7 @@ import org.apache.mina.filter.codec.demux.MessageEncoder;
 
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
+import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgLookup}.
@@ -19,7 +20,7 @@ public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractM
 	
 
     public MsgInvokeReturnEncoder() {
-        super(SimonStdProtocolConstants.INVOKE_RETURN_MSG);
+        super(SimonMessageConstants.MSG_INVOKE_RETURN);
     }
 
     @Override

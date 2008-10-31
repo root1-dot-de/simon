@@ -8,6 +8,7 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
 
 import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgLookupReturn}.
@@ -19,7 +20,7 @@ public class MsgLookupReturnEncoder<T extends MsgLookupReturn> extends AbstractM
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
 	public MsgLookupReturnEncoder() {
-        super(SimonStdProtocolConstants.LOOKUP_RETURN_MSG);
+        super(SimonMessageConstants.MSG_LOOKUP_RETURN);
     }
 
     @Override

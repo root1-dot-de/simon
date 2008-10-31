@@ -10,6 +10,7 @@ import de.root1.simon.SimonRemote;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
+import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.SimonClassLoader;
 
 /**
@@ -22,7 +23,7 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 
     public MsgInvokeReturnDecoder() {
-        super(SimonStdProtocolConstants.INVOKE_RETURN_MSG);
+        super(SimonMessageConstants.MSG_INVOKE_RETURN);
     }
 
     @Override

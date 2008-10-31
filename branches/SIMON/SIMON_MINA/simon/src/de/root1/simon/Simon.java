@@ -48,8 +48,6 @@ import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 
-import com.sun.corba.se.pept.transport.Acceptor;
-
 import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
 import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
@@ -71,12 +69,6 @@ public class Simon {
 	 */
 	private static final HashMap<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
 	
-	/**
-	 * A list with registries. This is used by the "automatically find servers" feature.
-	 * Each registry listed here, will be published to anyone who asks.
-	 */
-	private static final List<Registry> registryList = new ArrayList<Registry>();
-		
 	private static Statistics statistics;
 
 	private static int poolSize = -1;
@@ -146,8 +138,7 @@ public class Simon {
 	}
 	
 	/**
-	 * Stops the given registry. This cleares the {@link LookupTable}, 
-	 * stops the {@link Acceptor} and the {@link Dispatcher}.
+	 * Stops the given registry. This clears the {@link LookupTable} and stops the {@link Dispatcher}.
 	 * After running this method, no further connection/communication is possible. You have to create
 	 * again a registry to run server mode again.
 	 *
@@ -238,7 +229,7 @@ public class Simon {
 				_log.fine("No ClientToServerConnection in list. Creating new one.");
 				
 				dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
-				ExecutorService executorPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.DISPATCHER_WORKERPOOL_NAME));
+				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
 				NioSocketConnector connector = new NioSocketConnector();
 				connector.setHandler(dispatcher);
 								
@@ -246,7 +237,7 @@ public class Simon {
 				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
 				session = future.getSession();
 				
-				session.getFilterChain().addFirst("executor", new ExecutorFilter(executorPool));
+				session.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
 				session.getFilterChain().addLast( "logger", new LoggingFilter() );
 				session.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(false)));
 				
@@ -255,15 +246,13 @@ public class Simon {
 				}
 				
 				// store this connection for later re-use
-				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session, connector, executorPool);
+				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session, connector, filterchainWorkerPool);
 				ctsc.addRef();
 				serverDispatcherRelation.put(serverString, ctsc);
 				
 			}
 			
 		}
-		
-			
 			
 		/*
 		 * Create array with interfaces the proxy should have
@@ -283,7 +272,6 @@ public class Simon {
 	     * Create the proxy-object with the needed interfaces
 	     */
 	    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
-		    
 		
 		_log.fine("end");
 		return proxy;
@@ -389,16 +377,16 @@ public class Simon {
 	 * called on the same server.
 	 * 
 	 * @param proxyObject the object to release
-	 * @return true if the serverconnection is closed, false if there's still a reference pending 
+	 * @return true if the server connection is closed, false if there's still a reference pending 
 	 */
 	public static boolean release(Object proxyObject) {
 		_log.fine("begin");
 		
-		// retrieve the proxyobject 
+		// retrieve the proxy object 
 		SimonProxy proxy = getSimonProxy(proxyObject);
 		
 		if (_log.isLoggable(Level.FINE))
-			_log.fine("releasing "+proxy);
+			_log.fine("releasing proxy "+proxy.getDetailString());
 		
 		// release the proxy and get the related dispatcher
 		Dispatcher dispatcher = proxy.release();
@@ -437,14 +425,14 @@ public class Simon {
 				
 				if (refCount==0) {
 					// .. and shutdown the dispatcher if there's no further reference
-					_log.fine("refCount reached 0. shutting down dispatcher.");
+					_log.fine("refCount reached 0. shutting down session and all related stuff.");
 					ctsc.getDispatcher().shutdown();
 					CloseFuture closeFuture = ctsc.getSession().close(false);
 					
 					closeFuture.addListener(new IoFutureListener<IoFuture>(){
 
 						public void operationComplete(IoFuture future) {
-							ctsc.getExecutorPool().shutdown();
+							ctsc.getFilterchainWorkerPool().shutdown();
 							ctsc.getConnector().dispose();
 						}
 						
@@ -464,43 +452,27 @@ public class Simon {
 	/**
 	 * Sets the DGC's interval time in milliseconds
 	 * @param milliseconds time in milliseconds
+	 * 
+	 * @deprecated This is now handled by MINA. Using this method is obsolete.
 	 */
 	public static void setDgcInterval(int milliseconds){
-		Statics.DGC_INTERVAL = milliseconds;
+//		Statics.DGC_INTERVAL = milliseconds;
 	}
 	
 	/**
 	 * Gets the DGC's interval time in milliseconds
 	 * return DGC interval time in milliseconds
+	 * 
+	 * @return the current set DGC interval
+	 * 
+	 * @deprecated this is now done internally with MINA. There's no global value available...This method now always returns zero.
 	 */
 	public static int getDgcInterval(){
-		return Statics.DGC_INTERVAL;
+		return 0;
 	}
 
 	/**
-	 * Removes a registry from SIMONs internal list of registrys.
-	 * @param aRegistry the registry to remove
-	 */
-	protected static void removeRegistryFromList(Registry aRegistry) {
-		synchronized (registryList) {
-			registryList.remove(aRegistry);
-		}
-			
-	}
-	
-	/**
-	 * Adds a registry to SIMONs internal list of registrys.
-	 * 
-	 * @param aRegistry the registry to add
-	 */
-	protected static void addRegistryToList(Registry aRegistry) {
-		synchronized (registryList) {
-			registryList.add(aRegistry);
-		}
-	}
-
-	/**
-	 * Publishes a remote object. If not already done, start the publish service thread.
+	 * Publishes a remote object. If not already done, publish service thread is started.
 	 * 
 	 * @param simonPublication the object to publish
 	 * @throws IOException if the publish service cannot be started due to IO problems

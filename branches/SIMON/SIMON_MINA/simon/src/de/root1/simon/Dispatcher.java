@@ -34,6 +34,9 @@ import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgToString;
+import de.root1.simon.codec.messages.MsgToStringReturn;
+import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 
@@ -62,13 +65,10 @@ public class Dispatcher implements IoHandler{
 	private ExecutorService messageProcessorPool = null;
 
 	/** Shutdown flag. If set to true, the dispatcher is going to shutdown itself and all related stuff */
-	private boolean shutdown;
+	private boolean shutdownInProgress;
 
 	/** indicates if the dispatcher is running or not */
 	private boolean isRunning;
-
-	/** a instance of the distributed garbage collector */
-	private DGC dgc;
 
 	/** an identifier string to determine to which server this dispatcher is connected to  */
 	private final String serverString;
@@ -87,30 +87,15 @@ public class Dispatcher implements IoHandler{
 	public Dispatcher(String serverString, LookupTable lookupTable, ExecutorService threadPool) {
 		_log.fine("begin");
 		
+		isRunning = true;
+
 		this.serverString = serverString;
 		this.lookupTable = lookupTable;
 		this.messageProcessorPool = threadPool;
-		this.dgc = new DGC(this);
-		dgc.start();
+		
 		_log.fine("end");
 	}
 	
-	/**
-	 * 
-	 * Generates a request ID<br>
-	 * IDs have a unique value from 0..Integer.MAX_VALUE<br>
-	 * The range should be big enough so that there should 
-	 * not be two oder more identical IDs
-	 * 
-	 * @return a request ID
-	 */
-	private synchronized Integer generateSequenceId() {
-		return (++sequenceIdCounter == Integer.MAX_VALUE ? 0 : sequenceIdCounter);
-	}
-	
-
-
-
 	/**
 	 * 
 	 * Sends a remote object lookup to the server
@@ -120,10 +105,11 @@ public class Dispatcher implements IoHandler{
 	 * @throws SimonRemoteException 
 	 */
 	protected MsgLookupReturn invokeLookup(IoSession session, String remoteObjectName) throws LookupFailedException, SimonRemoteException {
+		checkForInvalidState("Simon.lookup({...}, "+remoteObjectName+")");
 		final int sequenceId = generateSequenceId(); 
 		
 		if (_log.isLoggable(Level.FINE)) {
-			_log.fine("begin requestID="+sequenceId+" session="+session);
+			_log.fine("begin sequenceId="+sequenceId+" session="+session);
 		}
 
  		// create a monitor that waits for the request-result
@@ -136,7 +122,7 @@ public class Dispatcher implements IoHandler{
 		session.write(msgLookup);
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for requestID="+sequenceId);
+			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
 		
 
 		// wait for result
@@ -155,34 +141,16 @@ public class Dispatcher implements IoHandler{
 			
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for requestID="+sequenceId);
+			_log.finer("got answer for sequenceId="+sequenceId);
 		
 		if (_log.isLoggable(Level.FINE))
-			_log.fine("end requestID="+sequenceId);
+			_log.fine("end sequenceId="+sequenceId);
 		
 		return result;
 
 	}
 
-	/**
-	 * 
-	 * Checks if the request result is an {@link SimonRemoteException}. 
-	 * If yes, the exception is thrown, if not, the result is returned
-	 * 
-	 * @param requestID the request-id related to the result
-	 * @return the result of the request
-	 */
-	private Object getRequestResult(final int requestID) {
-		if (_log.isLoggable(Level.FINEST))
-			_log.finest("getting result for request ID "+requestID);
-		
-		Object o = requestMonitorAndReturnMap.remove(requestID); 
-		if (o instanceof SimonRemoteException) {
-			_log.finest("result is an exception, throwing it ...");
-			throw ((SimonRemoteException) o);
-		}
-		return o;
-	}
+	
 	
 	/**
 	 * sends a requested invocation to the server
@@ -194,6 +162,9 @@ public class Dispatcher implements IoHandler{
 	 * @throws SimonRemoteException if there's a problem with the communication
 	 */	 
  	protected Object invokeMethod(IoSession session, String remoteObjectName, Method method, Object[] args) throws SimonRemoteException {
+ 		
+ 		checkForInvalidState(method.toString());
+ 		
  		final int sequenceId = generateSequenceId(); 
 		
 		if (_log.isLoggable(Level.FINE)) {
@@ -228,7 +199,7 @@ public class Dispatcher implements IoHandler{
 		session.write(msgInvoke);
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for requestID="+sequenceId);
+			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
 		
 
 		// wait for result
@@ -247,14 +218,16 @@ public class Dispatcher implements IoHandler{
 			
 		
 		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for requestID="+sequenceId);
+			_log.finer("got answer for sequenceId="+sequenceId);
 		
 		if (_log.isLoggable(Level.FINE))
-			_log.fine("end requestID="+sequenceId);
+			_log.fine("end sequenceId="+sequenceId);
 		
 		return result.getReturnValue();
  		
 	}
+
+	
 
 	/**
 	 * 
@@ -264,8 +237,50 @@ public class Dispatcher implements IoHandler{
 	 * @param remoteObjectName the remote object on which the call has to be made
 	 * @return the result of the remote "toString()" call.
 	 */
-	protected String invokeToString(IoSession key, String remoteObjectName) {
-		return null;
+	protected String invokeToString(IoSession session, String remoteObjectName) {
+		checkForInvalidState("toString()");
+
+		final int sequenceId = generateSequenceId(); 
+		
+		if (_log.isLoggable(Level.FINE)) {
+			_log.fine("begin sequenceId="+sequenceId+" session="+session);
+		}
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(sequenceId);
+		
+		MsgToString msgInvoke = new MsgToString();
+		msgInvoke.setSequence(sequenceId);
+		msgInvoke.setRemoteObjectName(remoteObjectName);
+		
+		session.write(msgInvoke);
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
+		
+
+		// wait for result
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		MsgToStringReturn result;
+		// get result
+		synchronized (requestMonitorAndReturnMap) {
+			result = (MsgToStringReturn) getRequestResult(sequenceId);			
+		}
+			
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("got answer for sequenceId="+sequenceId);
+		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end sequenceId="+sequenceId);
+		
+		return result.getReturnValue();
 	}
 
 	
@@ -277,6 +292,8 @@ public class Dispatcher implements IoHandler{
 	 * @return
 	 */
 	protected int invokeHashCode(IoSession session, String remoteObjectName) {
+		
+		checkForInvalidState("hashCode()");
 		return 0;
 	}
 
@@ -291,12 +308,13 @@ public class Dispatcher implements IoHandler{
 	 * @return the result of the comparison
 	 */
 	protected boolean invokeEquals(IoSession session, String remoteObjectName, Object object) {
+		checkForInvalidState("equals()");
 		return true;
 	}
 
 
 	/**
-	 * Wake the process with the related requestID
+	 * Wake the process with the related sequenceId
 	 * 
 	 * @param sequenceId the process to wake  
 	 */
@@ -310,15 +328,6 @@ public class Dispatcher implements IoHandler{
 		if (_log.isLoggable(Level.FINE))
  			_log.fine("end. wakeing sequenceId="+sequenceId);
 	}
-
-	/** 
-	 * wake all waiting processes. This is only called due to global errors ...
-	 */
-	private void wakeAllMonitors() {
-		_log.fine("begin");
-		_log.fine("end");
-	}
-
 
 	/**
 	 * This method is called from worker-threads which processed an invocation and have data 
@@ -352,42 +361,19 @@ public class Dispatcher implements IoHandler{
 		return lookupTable;
 	}
 
-	/**
-	 * 
-	 * create a monitor that waits for the request-result that 
-	 * is associated with the given request-id
-	 * 
-	 * @param sequenceId
-	 * @return the monitor used for waiting for the result
-	 */
-	private Object createMonitor(final int sequenceId) {
-		_log.fine("begin");
-		
-		final Object monitor = new Object();
-
-		synchronized (requestMonitorAndReturnMap) {
-			requestMonitorAndReturnMap.put(sequenceId, monitor);
-		}
-		
-		if (_log.isLoggable(Level.FINER)){
-			_log.finer("created monitor for requestID="+sequenceId);
-		}
-		
-		_log.fine("end");
-		return monitor;
-	}
+	
 	
 	/**
 	 * 
 	 * Removes the return type from the list of awaited result types for a specific request ID.
 	 * 
-	 * @param requestID the request id which was waiting for a result of the type saved in the list
+	 * @param sequenceId the request id which was waiting for a result of the type saved in the list
 	 * @return the return type which has been removed
 	 */
-	protected Class<?> removeRequestReturnType(int requestID) {
+	protected Class<?> removeRequestReturnType(int sequenceId) {
 		
 		synchronized (requestReturnType) {
-			return requestReturnType.remove(requestID);
+			return requestReturnType.remove(sequenceId);
 		}
 		
 	}
@@ -395,7 +381,7 @@ public class Dispatcher implements IoHandler{
 	/**
 	 * 
 	 * All received results are saved in a queue. With this method you can get the received result 
-	 * by its requestID.
+	 * by its sequenceId.
 	 * <br/>
 	 * <b>Attention:</b> Be sure that you only call this method if you were notified by the receiver! 
 	 * 
@@ -423,16 +409,16 @@ public class Dispatcher implements IoHandler{
 //			return -1;
 //		}
 //		
-//		final int requestID = generateSequenceId();
+//		final int sequenceId = generateSequenceId();
 //		
 //		if (_log.isLoggable(Level.FINE))
-// 			_log.fine("begin. requestID="+requestID+" key="+Utils.getKeyIdentifierExtended(key));
+// 			_log.fine("begin. sequenceId="+sequenceId+" key="+Utils.getKeyIdentifierExtended(key));
 //		
 //		// create a monitor that waits for the request-result
-//		final Object monitor = createMonitor(key.channel(), requestID);
+//		final Object monitor = createMonitor(key.channel(), sequenceId);
 //
 //		TxPacket packet = new TxPacket();
-//		packet.setHeader(Statics.PING_PACKET, requestID);
+//		packet.setHeader(Statics.PING_PACKET, sequenceId);
 //		packet.put((byte)0x00);
 //		packet.setComplete();
 //		long startPing;
@@ -442,10 +428,10 @@ public class Dispatcher implements IoHandler{
 //			
 //			// check if need to wait for the result
 //			synchronized (requestMonitorAndReturnMap) {
-//				if (requestMonitorAndReturnMap.containsKey(requestID)){
+//				if (requestMonitorAndReturnMap.containsKey(sequenceId)){
 //					if (_log.isLoggable(Level.FINE))
-//			 			_log.fine("end. requestID="+requestID);
-//					getRequestResult(requestID);			
+//			 			_log.fine("end. sequenceId="+sequenceId);
+//					getRequestResult(sequenceId);			
 //					long receivePong = System.nanoTime();
 //					return receivePong-startPing;
 //				}
@@ -462,8 +448,8 @@ public class Dispatcher implements IoHandler{
 //		// get result
 //		synchronized (requestMonitorAndReturnMap) {
 //			if (_log.isLoggable(Level.FINE))
-//	 			_log.fine("end. requestID="+requestID);
-//			getRequestResult(requestID);			
+//	 			_log.fine("end. sequenceId="+sequenceId);
+//			getRequestResult(sequenceId);			
 //			long receivePong = System.nanoTime();
 //			return receivePong-startPing;
 //		}
@@ -477,18 +463,19 @@ public class Dispatcher implements IoHandler{
 	public void shutdown() {
 		_log.fine("begin");
 		
-		shutdown = true;
-		dgc.shutdown();
+		shutdownInProgress = true;
 		messageProcessorPool.shutdown();
 		
-		while (isRunning || dgc.isRunning() || !messageProcessorPool.isShutdown()) {
-			_log.finest("waiting for dispatcher to shutdown...");
+		while (!messageProcessorPool.isShutdown()) {
+			_log.finest("waiting for messageProcessorPool to shutdown...");
 			try {
 				Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
 			} catch (InterruptedException e) {
 				// nothing to do
 			}
 		}
+		isRunning = false;
+		_log.finer("shutdown completed");
 		_log.fine("end");
 	}
 
@@ -512,12 +499,75 @@ public class Dispatcher implements IoHandler{
 		return isRunning;
 	}
 	
+//	/**
+//	 * Returns whether this dispatcher is a server dispatcher or not
+//	 * @return true, if THIS dispatcher is a server dispatcher, false if it's an client dispatcher
+//	 */
+//	private boolean isServerDispatcher(){
+//		return (serverString==null);
+//	}
+	
+	private void checkForInvalidState(String method) {
+		if (shutdownInProgress) throw new SessionException("Cannot handle method call \""+method+"\" while shutdown.");
+		if (!isRunning) throw new SessionException("Cannot handle method call \""+method+"\" on already closed session.");
+	}
+	
 	/**
-	 * Returns whether this dispatcher is a server dispatcher or not
-	 * @return true, if THIS dispatcher is a server dispatcher, false if it's an client dispatcher
+	 * 
+	 * create a monitor that waits for the request-result that 
+	 * is associated with the given request-id
+	 * 
+	 * @param sequenceId
+	 * @return the monitor used for waiting for the result
 	 */
-	private boolean isServerDispatcher(){
-		return (serverString==null);
+	private Object createMonitor(final int sequenceId) {
+		_log.fine("begin");
+		
+		final Object monitor = new Object();
+
+		synchronized (requestMonitorAndReturnMap) {
+			requestMonitorAndReturnMap.put(sequenceId, monitor);
+		}
+		
+		if (_log.isLoggable(Level.FINER)){
+			_log.finer("created monitor for sequenceId="+sequenceId);
+		}
+		
+		_log.fine("end");
+		return monitor;
+	}
+	
+	/**
+	 * 
+	 * Checks if the request result is an {@link SimonRemoteException}. 
+	 * If yes, the exception is thrown, if not, the result is returned
+	 * 
+	 * @param sequenceId the request-id related to the result
+	 * @return the result of the request
+	 */
+	private Object getRequestResult(final int sequenceId) {
+		if (_log.isLoggable(Level.FINEST))
+			_log.finest("getting result for request ID "+sequenceId);
+		
+		Object o = requestMonitorAndReturnMap.remove(sequenceId); 
+		if (o instanceof SimonRemoteException) {
+			_log.finest("result is an exception, throwing it ...");
+			throw ((SimonRemoteException) o);
+		}
+		return o;
+	}
+	
+	/**
+	 * 
+	 * Generates a request ID<br>
+	 * IDs have a unique value from 0..Integer.MAX_VALUE<br>
+	 * The range should be big enough so that there should 
+	 * not be two oder more identical IDs
+	 * 
+	 * @return a request ID
+	 */
+	private synchronized Integer generateSequenceId() {
+		return (++sequenceIdCounter == Integer.MAX_VALUE ? 0 : sequenceIdCounter);
 	}
 
 	public void exceptionCaught(IoSession session, Throwable throwable)

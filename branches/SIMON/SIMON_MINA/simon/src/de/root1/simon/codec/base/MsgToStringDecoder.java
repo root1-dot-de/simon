@@ -12,58 +12,38 @@ import org.apache.mina.filter.codec.demux.MessageDecoder;
 import de.root1.simon.LookupTable;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvoke;
+import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgInvoke}.
+ * A {@link MessageDecoder} that decodes {@link MsgToString}.
  *
  * @author ACHR
  */
-public class MsgInvokeDecoder extends AbstractMessageDecoder {
+public class MsgToStringDecoder extends AbstractMessageDecoder {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-    public MsgInvokeDecoder() {
-        super(SimonMessageConstants.MSG_INVOKE);
+    public MsgToStringDecoder() {
+        super(SimonMessageConstants.MSG_TOSTRING);
     }
     
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	MsgInvoke msgInvoke = new MsgInvoke();
+    	MsgToString message = new MsgToString();
     	
         try {
         	
 	        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
 	        	
-	        	msgInvoke.setRemoteObjectName(remoteObjectName);
-        		// ---------- Get Long (8 bytes)
-	        		LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
-	        		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), in.getLong());
-			
-				
-	    			int argsLength = in.getInt();
-	    			_log.fine("getting "+argsLength+" args");
-	    			Object[] args = new Object[argsLength];
-	    			for (int i=0;i<argsLength;i++){
-	    				args[i]=in.getObject();
-	    			}
-			
-			msgInvoke.setArguments(args);
-			msgInvoke.setRemoteObjectName(remoteObjectName);
-			msgInvoke.setMethod(method);
+	        	message.setRemoteObjectName(remoteObjectName);
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		_log.finer("message="+msgInvoke);
-        return msgInvoke;
+		} 
+		_log.finer("message="+message);
+        return message;
     }
     
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {

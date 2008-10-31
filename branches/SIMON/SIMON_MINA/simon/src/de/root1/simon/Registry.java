@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -60,6 +61,8 @@ public class Registry {
 	/** The pool in which the dispatcher, acceptor and registry lives */
 	private ExecutorService threadPool;
 
+	private ExecutorService filterchainWorkerPool;
+
 	/**
 	 * Creates a registry which has it's own {@link LookupTable} instead of a global.
 	 *  
@@ -91,8 +94,10 @@ public class Registry {
 		_log.finer("dispatcher created");
 		
 		acceptor = new NioSocketAcceptor();
-        
-		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(threadPool));
+		
+		filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
+		
+		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
         if (_log.isLoggable(Level.FINEST))
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(true)));
@@ -122,9 +127,9 @@ public class Registry {
 	 *
 	 */
 	public void stop() {
+		filterchainWorkerPool.shutdown();
 		lookupTableServer.clear();
 		dispatcher.shutdown();
-		Simon.removeRegistryFromList(this);
 	}
 	
 	/**
@@ -201,7 +206,7 @@ public class Registry {
 	 * @return boolean
 	 */
 	public boolean isRunning(){
-		return (dispatcher.isRunning() || acceptor.isActive());
+		return (dispatcher.isRunning() || acceptor.isActive() || !filterchainWorkerPool.isTerminated());
 	}
 	
 }

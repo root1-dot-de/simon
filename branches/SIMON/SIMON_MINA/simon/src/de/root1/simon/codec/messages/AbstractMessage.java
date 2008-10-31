@@ -2,10 +2,9 @@ package de.root1.simon.codec.messages;
 import java.io.Serializable;
 
 /**
- * A base message for SumUp protocol messages.
+ * A base message for SIMON protocol messages.
  *
- * @author The Apache MINA Project (dev@mina.apache.org)
- * @version $Rev: 576217 $, $Date: 2007-09-17 01:55:27 +0200 (lun, 17 sep 2007) $
+ * @author ACHR
  */
 public abstract class AbstractMessage implements Serializable {
     
@@ -13,14 +12,40 @@ public abstract class AbstractMessage implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	
+	private int msgType = -1;
 	private int sequence = -1;
+	
 
-    public int getSequence() {
-        return sequence;
-    }
+	/**
+	 * TODO
+	 * @return the msgType
+	 */
+	public int getMsgType() {
+		return msgType;
+	}
 
-    public void setSequence(int sequence) {
-        this.sequence = sequence;
-    }
+	/**
+	 * TODO
+	 * @param msgType the msgType to set
+	 */
+	public void setMsgType(int msgType) {
+		this.msgType = msgType;
+	}
+
+	/**
+	 * TODO
+	 * @return the sequence
+	 */
+	public int getSequence() {
+		return sequence;
+	}
+	
+	/**
+	 * TODO
+	 * @param sequence the sequence to set
+	 */
+	public void setSequence(int sequence) {
+		this.sequence = sequence;
+	}
+
 }

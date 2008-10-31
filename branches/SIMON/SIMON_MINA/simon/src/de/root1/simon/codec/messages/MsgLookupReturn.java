@@ -1,4 +1,6 @@
 package de.root1.simon.codec.messages;
+
+
 /**
  * Lookup return message
  *
@@ -11,6 +13,7 @@ public class MsgLookupReturn extends AbstractMessage {
     private Class<?>[] interfaces;
 
     public MsgLookupReturn() {
+    	setMsgType(SimonMessageConstants.MSG_LOOKUP_RETURN);
     }
 
     public Class<?>[] getInterfaces() {

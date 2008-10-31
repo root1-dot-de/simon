@@ -8,20 +8,21 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
 
 import de.root1.simon.codec.messages.MsgInvoke;
+import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgInvoke}.
+ * A {@link MessageEncoder} that encodes {@link MsgToString}.
  *
  * @author ACHR
  */
-public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncoder<T> {
+public class MsgToStringEncoder<T extends MsgToString> extends AbstractMessageEncoder<T> {
 	
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 	
-    public MsgInvokeEncoder() {
-        super(SimonMessageConstants.MSG_INVOKE);
+    public MsgToStringEncoder() {
+        super(SimonMessageConstants.MSG_TOSTRING);
     }
 
     @Override
@@ -30,22 +31,6 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
     	_log.finer("begin. message="+message);
         try {
         	out.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
-			out.putLong(Utils.computeMethodHash(message.getMethod()));
-		
-			int argsLen=0;
-			
-			if (message.getArguments()!=null) 
-				argsLen = message.getArguments().length;
-			
-			_log.finer("argsLength="+argsLen);
-			out.putInt(argsLen);
-			
-			for (int i=0; i<argsLen;i++){
-				_log.finer("args["+i+"]="+message.getArguments()[i]);
-				out.putObject(message.getArguments()[i]);
-				
-			}
-			
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -2,6 +2,7 @@ package de.root1.simon.codec.messages;
 
 import java.lang.reflect.Method;
 
+
 /**
  * <code>INVOKE</code> message
  *
@@ -15,6 +16,7 @@ public class MsgInvoke extends AbstractMessage {
     Object[] args;
     
     public MsgInvoke() {
+    	setMsgType(SimonMessageConstants.MSG_INVOKE);
     }
 
     public String getRemoteObjectName() {

@@ -10,6 +10,7 @@ import org.apache.mina.filter.codec.demux.MessageDecoder;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgLookupReturn}.
@@ -21,7 +22,7 @@ public class MsgLookupReturnDecoder extends AbstractMessageDecoder {
 	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
 
     public MsgLookupReturnDecoder() {
-        super(SimonStdProtocolConstants.LOOKUP_RETURN_MSG);
+        super(SimonMessageConstants.MSG_LOOKUP_RETURN);
     }
 
     @Override

@@ -176,7 +176,7 @@ public class SimonProxy implements InvocationHandler {
 	 * Redirects the toString() call to the remote host to be called there. 
 	 * The result is a String in the format:<br>
 	 * <pre>
-	 * [Proxy={ame of the remote object}|invocationHandler={result of proxy's super.toString()}|remote={result of remote toString() call}]
+	 * [Proxy={name of the remote object}|invocationHandler={result of proxy's super.toString()}|remote={result of remote toString() call}]
 	 * </pre>
 	 * 
 	 * @return the result of the remote "toString()" call
@@ -214,8 +214,9 @@ public class SimonProxy implements InvocationHandler {
 
 	/**
 	 * 
-	 * Releases this proxy. This cancels the key on the dispatcher. 
+	 * Releases this proxy. This cancels also the session on the {@link Dispatcher}. 
 	 *
+	 * @return the {@link Dispatcher} related to this proxy.
 	 */
 	public Dispatcher release() {
 		_log.fine("begin");
@@ -227,6 +228,12 @@ public class SimonProxy implements InvocationHandler {
 	@Override
 	public String toString() {
 		return remoteToString();
+	}
+	
+	public String getDetailString() {
+		return "[Proxy="+remoteObjectName+
+			"|invocationHandler="+super.toString()+
+			"|session="+session+"]";
 	}
 	
 	/**

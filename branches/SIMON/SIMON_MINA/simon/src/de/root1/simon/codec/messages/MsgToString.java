@@ -1,18 +1,20 @@
 package de.root1.simon.codec.messages;
 
 
+
 /**
- * <code>LOOKUP</code> message
+ * <code>ToString</code> message
  *
  * @author ACHR
  */
-public class MsgLookup extends AbstractMessage {
+public class MsgToString extends AbstractMessage {
+	
     private static final long serialVersionUID = 1L;
 
-    private String remoteObjectName;
-
-    public MsgLookup() {
-    	setMsgType(SimonMessageConstants.MSG_LOOKUP);
+    String remoteObjectName;
+    
+    public MsgToString() {
+    	setMsgType(SimonMessageConstants.MSG_TOSTRING);
     }
 
     public String getRemoteObjectName() {
@@ -26,6 +28,7 @@ public class MsgLookup extends AbstractMessage {
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgLookup(" + remoteObjectName + ')';
+        return getSequence() + ":MsgToString(ron=" + remoteObjectName + ")";
     }
+
 }

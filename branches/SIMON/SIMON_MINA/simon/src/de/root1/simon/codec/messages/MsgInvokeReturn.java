@@ -1,4 +1,6 @@
 package de.root1.simon.codec.messages;
+
+
 /**
  * <code>INVOKE RETURN</code> message 
  *
@@ -10,6 +12,7 @@ public class MsgInvokeReturn extends AbstractMessage {
     private Object returnValue;
 
     public MsgInvokeReturn() {
+    	setMsgType(SimonMessageConstants.MSG_INVOKE_RETURN);
     }
 
     public Object getReturnValue() {

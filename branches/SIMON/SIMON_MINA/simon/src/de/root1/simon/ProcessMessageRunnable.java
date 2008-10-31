@@ -12,6 +12,9 @@ import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgToString;
+import de.root1.simon.codec.messages.MsgToStringReturn;
+import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.SimonClassLoader;
 
@@ -31,45 +34,102 @@ public class ProcessMessageRunnable implements Runnable {
 	public void run() {
 		
 		_log.finer("ProcessMessageRunnable: "+abstractMessage);
+
+		int msgType = abstractMessage.getMsgType();
 		
-		if (abstractMessage instanceof MsgLookup) {
-			try {
-				processLookup();
-			} catch (LookupFailedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		} else if (abstractMessage instanceof MsgLookupReturn) {
-			processLookupReturn();
-		} else if (abstractMessage instanceof MsgInvoke) {
-			try {
-				processInvoke();
-			} catch (ClassNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		} else if (abstractMessage instanceof MsgInvokeReturn){
-			processInvokeReturn();
+		switch (msgType) {
+		
+			case SimonMessageConstants.MSG_LOOKUP:
+				try {
+					processLookup();
+				} catch (LookupFailedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				break;
+				
+			case SimonMessageConstants.MSG_LOOKUP_RETURN:
+				processLookupReturn();
+				break;
+				
+			case SimonMessageConstants.MSG_INVOKE:
+				try {
+					processInvoke();
+				} catch (ClassNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				break;
+				
+			case SimonMessageConstants.MSG_INVOKE_RETURN:
+				processInvokeReturn();
+				break;
+				
+			case SimonMessageConstants.MSG_TOSTRING:
+				processToString();
+				break;
+				
+			case SimonMessageConstants.MSG_TOSTRING_RETURN:
+				processToStringReturn();
+				break;
+
+			case SimonMessageConstants.MSG_EQUALS:
+				break;
+
+			case SimonMessageConstants.MSG_EQUALS_RETURN:
+				break;
+				
+			case SimonMessageConstants.MSG_HASHCODE:
+				break;
+
+			case SimonMessageConstants.MSG_HASHCODE_RETURN:
+				break;
+
+			default:
+				System.err.println("ProcessMessageRunnable:: msgType="+msgType+" not supported!");
+				System.exit(1);
+				break;
 		}
 		
+		
 	}
 	
-	
-
-	private void processInvokeReturn() {
+	/**
+	 * 
+	 * processes a lookup
+	 * @throws LookupFailedException 
+	 */
+	private void processLookup() throws LookupFailedException {
 		_log.fine("begin");
 
-		_log.fine("processing MsgInvokeReturn...");
-		MsgInvokeReturn msg = (MsgInvokeReturn) abstractMessage;
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
-		_log.fine("put result to queue="+msg);
+		_log.fine("processing MsgLookup...");
+		MsgLookup msg = (MsgLookup)abstractMessage;
+		String remoteObjectName = msg.getRemoteObjectName();
+		
+		_log.fine("Sending result for remoteObjectName="+remoteObjectName);
+		
+		MsgLookupReturn ret = new MsgLookupReturn();
+		ret.setSequence(msg.getSequence());
+		ret.setInterfaces(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());
+		session.write(ret);
+		
 		_log.fine("end");
 	}
-
+	
+	private void processLookupReturn() {
+		_log.fine("begin");
+		_log.fine("processing MsgLookupReturn...");	
+		MsgLookupReturn msg = (MsgLookupReturn)abstractMessage;
+		Class<?>[] interfaces = msg.getInterfaces();
+		_log.fine("Forward result to waiting monitor");
+		_log.fine("remoteObjectName="+interfaces);
+		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		_log.fine("end");
+	}
+	
 	private void processInvoke() throws ClassNotFoundException {
 		_log.fine("begin");
-
+		
 		_log.fine("processing MsgInvoke...");
 		MsgInvoke msg = (MsgInvoke) abstractMessage;
 		Method method = msg.getMethod();
@@ -77,7 +137,7 @@ public class ProcessMessageRunnable implements Runnable {
 		// ------------
 		// replace existing SimonRemote objects with proxy object
 		if (arguments != null) {
-
+			
 			for (int i = 0; i < arguments.length; i++) {
 				
 				// search the arguments for remote instances 
@@ -85,10 +145,10 @@ public class ProcessMessageRunnable implements Runnable {
 					
 					final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
 					_log.finer("SimonCallback in args found. id="+simonCallback.getId());					
-										
+					
 					Class<?>[] listenerInterfaces = new Class<?>[1];
 					listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
-
+					
 					// reimplant the proxy object
 					arguments[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
 					_log.finer("proxy object for SimonCallback injected");
@@ -114,7 +174,7 @@ public class ProcessMessageRunnable implements Runnable {
 				
 				SimonRemoteInstance simonCallback = new SimonRemoteInstance(session,(SimonRemote)result);
 				simonCallback.getId();
-
+				
 //				dispatcher.getLookupTable().putRemoteBinding(simonCallback.getId(), (SimonRemote)result);
 				dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), (SimonRemote) result);
 				result = simonCallback;
@@ -144,6 +204,52 @@ public class ProcessMessageRunnable implements Runnable {
 		}
 		_log.fine("end");
 	}
+	
+
+	
+
+	private void processInvokeReturn() {
+		_log.fine("begin");
+
+		_log.fine("processing MsgInvokeReturn...");
+		MsgInvokeReturn msg = (MsgInvokeReturn) abstractMessage;
+		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		_log.fine("put result to queue="+msg);
+		_log.fine("end");
+	}
+
+	
+	private void processToString() {
+		_log.fine("begin");
+		
+		_log.fine("processing MsgToString...");
+		 MsgToString msg = (MsgToString) abstractMessage;
+		 
+		 String remoteObjectName = msg.getRemoteObjectName();
+		 String returnValue = null;
+		 try {
+			returnValue = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();
+		} catch (LookupFailedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		MsgToStringReturn returnMsg = new MsgToStringReturn();
+		returnMsg.setSequence(msg.getSequence());
+		returnMsg.setReturnValue(returnValue);
+		session.write(returnMsg);
+		_log.fine("end");
+	}
+
+	private void processToStringReturn() {
+		_log.fine("begin");
+		_log.fine("processing MsgToStringReturn...");
+		 MsgToStringReturn msg = (MsgToStringReturn) abstractMessage;
+		 dispatcher.putResultToQueue(msg.getSequence(), msg);
+		_log.fine("put result to queue="+msg);
+		_log.fine("end");
+	}
+
 
 	//	/**
 //	 * 
@@ -191,38 +297,7 @@ public class ProcessMessageRunnable implements Runnable {
 //		_log.fine("end");
 //	}
 //	
-	/**
-	 * 
-	 * processes a lookup
-	 * @throws LookupFailedException 
-	 */
-	private void processLookup() throws LookupFailedException {
-		_log.fine("begin");
-
-		_log.fine("processing MsgLookup...");
-		MsgLookup msg = (MsgLookup)abstractMessage;
-		String remoteObjectName = msg.getRemoteObjectName();
-		
-		_log.fine("Sending result for remoteObjectName="+remoteObjectName);
-		
-		MsgLookupReturn ret = new MsgLookupReturn();
-		ret.setSequence(msg.getSequence());
-		ret.setInterfaces(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());
-		session.write(ret);
-		
-		_log.fine("end");
-	}
 	
-	private void processLookupReturn() {
-		_log.fine("begin");
-		_log.fine("processing MsgLookupReturn...");	
-		MsgLookupReturn msg = (MsgLookupReturn)abstractMessage;
-		Class<?>[] interfaces = msg.getInterfaces();
-		_log.fine("Forward result to waiting monitor");
-		_log.fine("remoteObjectName="+interfaces);
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
-		_log.fine("end");
-	}
 
 	//	/**
 //	 * 

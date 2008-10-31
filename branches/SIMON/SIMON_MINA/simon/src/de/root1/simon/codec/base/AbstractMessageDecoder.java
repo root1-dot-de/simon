@@ -8,6 +8,7 @@ import org.apache.mina.filter.codec.demux.MessageDecoder;
 import org.apache.mina.filter.codec.demux.MessageDecoderResult;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageDecoder} that decodes message header and forwards
@@ -36,7 +37,7 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
 
     public MessageDecoderResult decodable(IoSession session, IoBuffer in) {
         // Return NEED_DATA if the whole header is not read yet.
-        if (in.remaining() < SimonStdProtocolConstants.HEADER_LEN) {
+        if (in.remaining() < SimonMessageConstants.HEADER_LEN) {
             return MessageDecoderResult.NEED_DATA;
         }
 

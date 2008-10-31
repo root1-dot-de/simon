@@ -20,16 +20,15 @@ package de.root1.simon.exceptions;
 
 /**
  * 
- * This exception is thrown, if the connection to SIMONs opposite is broken 
- * (IOException or things like that)
+ * This exception is thrown, if there's a problem with the underlying session, that is connected to the communications opposite. 
  * 
  * @author ACHR
  */
-public class ConnectionException extends SimonRemoteException {
+public class SessionException extends SimonRemoteException {
 	
 	private static final long serialVersionUID = 2999458111410425350L;
 
-	public ConnectionException(String msg){
+	public SessionException(String msg){
 		super(msg);
 	}
 
