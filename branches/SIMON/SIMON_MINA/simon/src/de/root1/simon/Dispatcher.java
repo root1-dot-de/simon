@@ -30,6 +30,8 @@ import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgEquals;
+import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
@@ -110,9 +112,9 @@ public class Dispatcher implements IoHandler{
 		checkForInvalidState("Simon.lookup({...}, "+remoteObjectName+")");
 		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) {
+		if (_log.isLoggable(Level.FINE)) 
 			_log.fine("begin sequenceId="+sequenceId+" session="+session);
-		}
+		
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -169,9 +171,9 @@ public class Dispatcher implements IoHandler{
  		
  		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) {
+		if (_log.isLoggable(Level.FINE)) 
 			_log.fine("begin sequenceId="+sequenceId+" session="+session);
-		}
+		
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -181,9 +183,10 @@ public class Dispatcher implements IoHandler{
 			for (int i = 0; i < args.length; i++) {
 				if (args[i] instanceof SimonRemote) {
 					SimonRemoteInstance sc = new SimonRemoteInstance(session,(SimonRemote)args[i]);
-					if (_log.isLoggable(Level.FINER)){
+					
+					if (_log.isLoggable(Level.FINER))
 						_log.fine("SimonRemoteInstance found! id="+sc.getId());
-					}
+					
 					
 					lookupTable.putRemoteInstanceBinding(session.getId(), sc.getId(), (SimonRemote) args[i]);
 					
@@ -244,9 +247,9 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) {
+		if (_log.isLoggable(Level.FINE)) 
 			_log.fine("begin sequenceId="+sequenceId+" session="+session);
-		}
+		
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -299,9 +302,9 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) {
+		if (_log.isLoggable(Level.FINE)) 
 			_log.fine("begin sequenceId="+sequenceId+" session="+session);
-		}
+		
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -347,12 +350,53 @@ public class Dispatcher implements IoHandler{
 	 * 
 	 * @param key the key to which the invocation is sent
 	 * @param remoteObjectName the name of the remote object that has to be compared
-	 * @param object the object to which the remote object is compared with
+	 * @param objectToCompareWith the object to which the remote object is compared with
 	 * @return the result of the comparison
 	 */
-	protected boolean invokeEquals(IoSession session, String remoteObjectName, Object object) {
+	protected boolean invokeEquals(IoSession session, String remoteObjectName, Object objectToCompareWith) {
 		checkForInvalidState("equals()");
-		return true;
+
+		final int sequenceId = generateSequenceId(); 
+		
+		if (_log.isLoggable(Level.FINE)) 
+			_log.fine("begin sequenceId="+sequenceId+" session="+session);
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(sequenceId);
+		
+		MsgEquals msgEquals = new MsgEquals();
+		msgEquals.setSequence(sequenceId);
+		msgEquals.setRemoteObjectName(remoteObjectName);
+		msgEquals.setObjectToCompareWith(objectToCompareWith);
+		
+		session.write(msgEquals);
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
+		
+
+		// wait for result
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		MsgEqualsReturn result;
+		// get result
+		synchronized (requestMonitorAndReturnMap) {
+			result = (MsgEqualsReturn) getRequestResult(sequenceId);			
+		}
+			
+		
+		if (_log.isLoggable(Level.FINER))
+			_log.finer("got answer for sequenceId="+sequenceId);
+		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("end sequenceId="+sequenceId);
+		
+		return result.getEqualsResult();
 	}
 
 
@@ -437,66 +481,6 @@ public class Dispatcher implements IoHandler{
 		}
 	}
 
-//	/**
-//	 * 
-//	 * Sends a "ping" packet to the opposite. This has to be replied with a "pong" packet.
-//	 * This method is (mainly) used by the DGC to check whether the client is available or not.
-//	 * 
-//	 * @param key
-//	 * @return
-//	 */
-//	protected long sendPing(SelectionKey key) {
-//		
-//		if (!key.isValid()) {
-//			dgc.removeKey(key);
-//			return -1;
-//		}
-//		
-//		final int sequenceId = generateSequenceId();
-//		
-//		if (_log.isLoggable(Level.FINE))
-// 			_log.fine("begin. sequenceId="+sequenceId+" key="+Utils.getKeyIdentifierExtended(key));
-//		
-//		// create a monitor that waits for the request-result
-//		final Object monitor = createMonitor(key.channel(), sequenceId);
-//
-//		TxPacket packet = new TxPacket();
-//		packet.setHeader(Statics.PING_PACKET, sequenceId);
-//		packet.put((byte)0x00);
-//		packet.setComplete();
-//		long startPing;
-//		synchronized (monitor) {
-//			startPing = System.nanoTime();
-//			send(key, packet.getByteBuffer());
-//			
-//			// check if need to wait for the result
-//			synchronized (requestMonitorAndReturnMap) {
-//				if (requestMonitorAndReturnMap.containsKey(sequenceId)){
-//					if (_log.isLoggable(Level.FINE))
-//			 			_log.fine("end. sequenceId="+sequenceId);
-//					getRequestResult(sequenceId);			
-//					long receivePong = System.nanoTime();
-//					return receivePong-startPing;
-//				}
-//			}
-//	
-//			// got to sleep until result is present
-//			try {
-//				monitor.wait();
-//			} catch (InterruptedException e) {
-//				e.printStackTrace();
-//			}
-//		}
-//			
-//		// get result
-//		synchronized (requestMonitorAndReturnMap) {
-//			if (_log.isLoggable(Level.FINE))
-//	 			_log.fine("end. sequenceId="+sequenceId);
-//			getRequestResult(sequenceId);			
-//			long receivePong = System.nanoTime();
-//			return receivePong-startPing;
-//		}
-//	}
 
 	/**
 	 * 
@@ -542,14 +526,6 @@ public class Dispatcher implements IoHandler{
 		return isRunning;
 	}
 	
-//	/**
-//	 * Returns whether this dispatcher is a server dispatcher or not
-//	 * @return true, if THIS dispatcher is a server dispatcher, false if it's an client dispatcher
-//	 */
-//	private boolean isServerDispatcher(){
-//		return (serverString==null);
-//	}
-	
 	private void checkForInvalidState(String method) {
 		if (shutdownInProgress) throw new SessionException("Cannot handle method call \""+method+"\" while shutdown.");
 		if (!isRunning) throw new SessionException("Cannot handle method call \""+method+"\" on already closed session.");
@@ -572,9 +548,8 @@ public class Dispatcher implements IoHandler{
 			requestMonitorAndReturnMap.put(sequenceId, monitor);
 		}
 		
-		if (_log.isLoggable(Level.FINER)){
+		if (_log.isLoggable(Level.FINER))
 			_log.finer("created monitor for sequenceId="+sequenceId);
-		}
 		
 		_log.fine("end");
 		return monitor;
@@ -615,12 +590,13 @@ public class Dispatcher implements IoHandler{
 
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
-		_log.info("exception Caught. session="+session+" cause="+throwable);
-//		throwable.printStackTrace(System.err);
+		if (_log.isLoggable(Level.INFO))
+			_log.info("exception Caught. session="+session+" cause="+throwable);
 	}
 
 	public void messageReceived(IoSession session, Object message) throws Exception {
-		_log.fine("Received message from "+session.getRemoteAddress());
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("Received message from "+session.getRemoteAddress());
 		
 		AbstractMessage abstractMessage = (AbstractMessage) message;
 		
@@ -629,29 +605,34 @@ public class Dispatcher implements IoHandler{
 	}
 
 	public void messageSent(IoSession session, Object msg) throws Exception {
-		_log.info("message sent. session="+session+" msg="+msg);
+		if (_log.isLoggable(Level.INFO))
+			_log.info("message sent. session="+session+" msg="+msg);
 		
 	}
 
 	public void sessionClosed(IoSession session) throws Exception {
-		_log.info("################################################");
-		_log.info("######## session closed. session="+session);
-		_log.info("################################################");
-		
+		if (_log.isLoggable(Level.INFO)) {
+			_log.info("################################################");
+			_log.info("######## session closed. session="+session);
+			_log.info("################################################");
+		}
 		lookupTable.unreference(session.getId());
 	}
 
 	public void sessionCreated(IoSession session) throws Exception {
-		_log.info("session created. session="+session);
+		if (_log.isLoggable(Level.INFO))
+			_log.info("session created. session="+session);
 		session.setAttribute("LookupTable", lookupTable);
 	}
 
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
-		_log.info("session idle. session="+session+" idleStatus="+idleStatus);		
+		if (_log.isLoggable(Level.INFO))
+			_log.info("session idle. session="+session+" idleStatus="+idleStatus);		
 	}
 
 	public void sessionOpened(IoSession session) throws Exception {
-		_log.info("session opened. session="+session);
+		if (_log.isLoggable(Level.INFO))
+			_log.info("session opened. session="+session);
 	}
 	
 }

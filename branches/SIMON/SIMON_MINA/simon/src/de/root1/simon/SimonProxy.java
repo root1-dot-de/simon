@@ -79,7 +79,7 @@ public class SimonProxy implements InvocationHandler {
 			_log.fine("method="+method.getName()+" argsLength="+(args==null?0:args.length));
 			if (args!=null) {
 				for (int i = 0; i < args.length; i++) {
-					_log.fine("args["+i+"]="+args[i]);
+					_log.fine("args["+i+"]="+(args[i] instanceof Proxy ? Simon.getSimonProxy(args[i]).getDetailString() : args[i]));
 				}
 			} else {
 				_log.fine("args=null");

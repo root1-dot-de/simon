@@ -65,14 +65,25 @@ public class SimonRemoteInstance implements Serializable {
 		
 		
 		String IP = session.getRemoteAddress().toString();
-		long id = session.getId();
+		long sessionId = session.getId();
 		
-		this.id = "["+remoteObject.getClass().getName()+"|ip="+IP+";id="+id+";remoteObjectHash="+remoteObject.hashCode()+"]";
+		StringBuilder sb = new StringBuilder();
 		
-		if (_log.isLoggable(Level.FINER)){
+		sb.append("[");
+		sb.append(remoteObject.getClass().getName());
+		sb.append("|ip=");
+		sb.append(IP);
+		sb.append(";sessionID=");
+		sb.append(sessionId);
+		sb.append(";remoteObjectHash=");
+		sb.append(remoteObject.hashCode());
+		sb.append("]");
+		
+		this.id = sb.toString();
+		
+		if (_log.isLoggable(Level.FINER))
 			_log.finer("SimonRemoteInstance created with id="+this.id);
-		}
-
+		
 		// get the interfaces the arg has implemented
 		Class<?>[] remoteObjectInterfaceClasses = remoteObject.getClass().getInterfaces();
 
@@ -81,6 +92,7 @@ public class SimonRemoteInstance implements Serializable {
 			
 
 			String remoteObjectInterfaceClassNameTemp = remoteObjectInterfaceClass.getName();
+			
 			if (_log.isLoggable(Level.FINER))
 				_log.finer("Checking interfacename='"+remoteObjectInterfaceClassNameTemp+"' for '"+SimonRemote.class.getName()+"'");
 			
@@ -89,8 +101,10 @@ public class SimonRemoteInstance implements Serializable {
 			
 			boolean isSimonRemote = false;
 			for (Class<?> remoteObjectInterfaceSubInterface : remoteObjectInterfaceSubInterfaces) {
+				
 				if (_log.isLoggable(Level.FINER))
 					_log.finer("Checking child interfaces for '"+remoteObjectInterfaceClassNameTemp+"': child="+remoteObjectInterfaceSubInterface);
+				
 				if (remoteObjectInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
 					isSimonRemote = true;
 					break;
@@ -99,8 +113,10 @@ public class SimonRemoteInstance implements Serializable {
 			
 			if (isSimonRemote){
 				interfaceName = remoteObjectInterfaceClassNameTemp;
+				
 				if (_log.isLoggable(Level.FINER))
 					_log.finer("SimonRemote found in arg: interfaceName='"+interfaceName+"'");
+				
 				break;
 
 			} else {

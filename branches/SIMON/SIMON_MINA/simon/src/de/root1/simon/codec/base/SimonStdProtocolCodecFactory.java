@@ -2,6 +2,8 @@ package de.root1.simon.codec.base;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.demux.DemuxingProtocolCodecFactory;
 
+import de.root1.simon.codec.messages.MsgEquals;
+import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
@@ -80,6 +82,20 @@ public class SimonStdProtocolCodecFactory extends DemuxingProtocolCodecFactory {
         super.addMessageDecoder(MsgHashCodeDecoder.class);
         // outgoing hashCode return
         super.addMessageEncoder(MsgHashCodeReturn.class, MsgHashCodeReturnEncoder.class);
+        
+        /*
+         * "equals()" handling
+         */
+        
+        // outgoing equals
+        super.addMessageEncoder(MsgEquals.class, MsgEqualsEncoder.class);
+        // incoming equals return
+        super.addMessageDecoder(MsgEqualsReturnDecoder.class);
+        
+        // incoming equals
+        super.addMessageDecoder(MsgEqualsDecoder.class);
+        // outgoing equals return
+        super.addMessageEncoder(MsgEqualsReturn.class, MsgEqualsReturnEncoder.class);
     }
 }
 
