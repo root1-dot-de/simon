@@ -605,34 +605,34 @@ public class Dispatcher implements IoHandler{
 	}
 
 	public void messageSent(IoSession session, Object msg) throws Exception {
-		if (_log.isLoggable(Level.INFO))
-			_log.info("message sent. session="+session+" msg="+msg);
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("message sent. session="+session+" msg="+msg);
 		
 	}
 
 	public void sessionClosed(IoSession session) throws Exception {
-		if (_log.isLoggable(Level.INFO)) {
-			_log.info("################################################");
-			_log.info("######## session closed. session="+session);
-			_log.info("################################################");
+		if (_log.isLoggable(Level.FINE)) {
+			_log.fine("################################################");
+			_log.fine("######## session closed. session="+session);
+			_log.fine("################################################");
 		}
 		lookupTable.unreference(session.getId());
 	}
 
 	public void sessionCreated(IoSession session) throws Exception {
-		if (_log.isLoggable(Level.INFO))
-			_log.info("session created. session="+session);
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("session created. session="+session);
 		session.setAttribute("LookupTable", lookupTable);
 	}
 
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
-		if (_log.isLoggable(Level.INFO))
-			_log.info("session idle. session="+session+" idleStatus="+idleStatus);		
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("session idle. session="+session+" idleStatus="+idleStatus);		
 	}
 
 	public void sessionOpened(IoSession session) throws Exception {
-		if (_log.isLoggable(Level.INFO))
-			_log.info("session opened. session="+session);
+		if (_log.isLoggable(Level.FINE))
+			_log.fine("session opened. session="+session);
 	}
 	
 }

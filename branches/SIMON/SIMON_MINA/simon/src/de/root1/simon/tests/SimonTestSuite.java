@@ -15,7 +15,6 @@ public class SimonTestSuite {
 
 		  testSuite.addTestSuite(EmptyTest.class);
 		  testSuite.addTestSuite(RegistryTest.class);
-		  testSuite.addTestSuite(UtilsTest.class);
 		  testSuite.addTestSuite(TransferDatatypesTest.class);
 
 	}

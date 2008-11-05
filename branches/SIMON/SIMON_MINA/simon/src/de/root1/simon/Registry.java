@@ -33,8 +33,6 @@ import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 
-import com.sun.corba.se.pept.transport.Acceptor;
-
 import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
@@ -98,8 +96,10 @@ public class Registry {
 		filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
 		
 		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
-        if (_log.isLoggable(Level.FINEST))
+        
+		if (_log.isLoggable(Level.FINEST))
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
+		
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(true)));
         
 		acceptor.setHandler(  dispatcher );

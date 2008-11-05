@@ -69,8 +69,6 @@ public class Simon {
 	 */
 	private static final HashMap<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
 	
-	private static Statistics statistics;
-
 	private static int poolSize = -1;
 
 	private static List<SimonPublication> publishments = new ArrayList<SimonPublication>();
@@ -116,13 +114,6 @@ public class Simon {
 		_log.log(Level.FINE, "Simon lib loaded [version="+Statics.SIMON_VERSION+"|rev="+Statics.SIMON_BUILD_REVISION+"|timestamp="+Statics.SIMON_BUILD_TIMESTAMP+"]");
 	}
 	
-	public static Statistics getStatistics() {
-		if (statistics==null) {
-			statistics = new Statistics();
-		}
-		return statistics;
-	}
-
 	/**
 	 * Creates a registry listening on all interfaces with the last known 
 	 * worker thread pool size set by {@link Simon#setWorkerThreadPoolSize}
@@ -238,12 +229,15 @@ public class Simon {
 				session = future.getSession();
 				
 				session.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
-				session.getFilterChain().addLast( "logger", new LoggingFilter() );
+				
+				if (_log.isLoggable(Level.FINEST))
+					session.getFilterChain().addLast( "logger", new LoggingFilter() );
+				
 				session.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(false)));
 				
-				if (_log.isLoggable(Level.FINER)) {
+				if (_log.isLoggable(Level.FINER)) 
 					_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
-				}
+				
 				
 				// store this connection for later re-use
 				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session, connector, filterchainWorkerPool);

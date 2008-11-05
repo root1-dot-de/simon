@@ -2,7 +2,7 @@
 <project name="SIMON" default="create_package" basedir=".">
     <description>SIMON: a kind of router-friendly RMI replacement</description>
 	
-	<property name="version" value="0.2_RC"/>
+	<property name="version" value="3.0_alpha1"/>
 	
 	<!-- destination of compiled and jared lib -->
 	<property name="dist" location="dist"/>
