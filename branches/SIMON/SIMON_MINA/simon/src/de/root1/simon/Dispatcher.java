@@ -80,13 +80,12 @@ public class Dispatcher implements IoHandler{
 	/**
 	 * 
 	 * Creates a packet dispatcher which delegates 
-	 * the packet-reading to {@link ReadEventHandler} threads in the given <code>threadPool</code>
+	 * the packet-reading to {@link ProcessMessageRunnable}'s which run in the given <code>threadPool</code>
 	 * 
 	 * @param serverString an identifier string to determine to which server this dispatcher is 
 	 * connected to. this must be set to <code>null</code> if this dispatcher is a server dispatcher.
-	 * @param lookupTable the global lookup table
-	 * @param threadPool the pool the worker threads live in
-	 * @throws IOException if the {@link Selector} cannot be initiated
+	 * @param lookupTable the lookup table related to THIS dispatcher
+	 * @param threadPool the pool where the {@link ProcessMessageRunnable}'s run in
 	 */
 	public Dispatcher(String serverString, LookupTable lookupTable, ExecutorService threadPool) {
 		_log.fine("begin");

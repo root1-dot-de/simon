@@ -30,8 +30,10 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * 
  * <ul>
  * <li>{@link Dispatcher}</li>
- * <li>{@link SelectionKey}</li>
+ * <li>{@link IoSession}</li>
+ * <li>{@link IoConnector}</li>
  * <li>a String of format "HOST:PORT" that identifies the server</li>
+ * <li>and the {@link ExecutorService} used on the filter chain</li>
  * </ul>
  * 
  * This information is used by {@link Simon} to establish only one connection to a server for
@@ -50,8 +52,8 @@ public class ClientToServerConnection {
 	private ExecutorService filterchainWorkerPool;
 
 	/**
-	 * TODO document me
-	 * @return
+	 * Returns the {@link IoConnector} related to the connection
+	 * @return the related {@link IoConnector}
 	 */
 	public IoConnector getConnector() {
 		return connector;

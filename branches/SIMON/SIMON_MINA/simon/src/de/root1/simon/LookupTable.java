@@ -91,7 +91,7 @@ public class LookupTable {
 	 * remote object, then this is saved in an extra map in the lookup table. This is necessary for the DGC to 
 	 * release all remote instances which are related to a specific {@link IoSession}.
 	 * 
-	 * @param session the related IoSession
+	 * @param sessionId the id from {@link IoSession#getId()} from the related {@link IoSession}
 	 * @param remoteObjectName the related remote object name
 	 * @param remoteObject the remote object that has been found in a method argument or method result
 	 */
@@ -163,23 +163,6 @@ public class LookupTable {
 		_log.fine("end");
 	}
 	
-//	/**
-//	 * 
-//	 * TODO Documentation to be done
-//	 * @param remoteObject
-//	 * @param methodHash
-//	 * @return
-//	 */
-//	public synchronized Method getMethod(SimonRemote remoteObject, long methodHash){
-//		_log.fine("begin");
-//		
-//		if (_log.isLoggable(Level.FINER))
-//			_log.finer("hash="+methodHash+" resolves to method='"+simonRemote_to_hashToMethod_Map.get(remoteObject).get(methodHash)+"'");
-//
-//		_log.fine("end");
-//		return simonRemote_to_hashToMethod_Map.get(remoteObject).get(methodHash);
-//	}
-
 	/**
 	 * 
 	 * Gets a method according to the given remote object name and method hash value
@@ -265,9 +248,11 @@ public class LookupTable {
 	}
 
 	/**
-	 * removes remote instance objects from {@link LookupTable}.
+	 * Removes remote instance objects from {@link LookupTable}.
+	 * If the remote object implements the interface {@link SimonUnreferenced}, 
+	 * the {@link SimonUnreferenced#unreferenced()} method is finally called.
 	 * 
-	 * @param session the session which is the parent of those remote instance objects
+	 * @param sessionId the id from {@link IoSession#getId()} from the related {@link IoSession}
 	 */
 	public void unreference(long sessionId) {
 		

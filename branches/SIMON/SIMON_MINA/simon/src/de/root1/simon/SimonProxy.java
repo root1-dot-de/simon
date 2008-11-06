@@ -59,7 +59,7 @@ public class SimonProxy implements InvocationHandler {
 	 * Constructor which sets the reference to the dispatcher and the remote object name
 	 * 
 	 * @param dispatcher a reference to the underlying dispatcher
-	 * @param key a reference to the key of the corresponding network connection
+	 * @param session a reference to the {@link IoSession} of the corresponding network connection
 	 * @param remoteObjectName name of the remote object
 	 */
 	public SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName) {

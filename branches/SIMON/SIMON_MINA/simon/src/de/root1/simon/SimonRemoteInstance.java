@@ -51,7 +51,7 @@ public class SimonRemoteInstance implements Serializable {
 	 * 
 	 * Creates a new SimonRemoteInstance transport object
 	 * 
-	 * @param key the key to which the remote object is related to
+	 * @param session the {@link IoSession} to which the remote object is related to
 	 * @param remoteObject the remote object for which we generate this transport object for
 	 */
 	public SimonRemoteInstance(IoSession session, SimonRemote remoteObject) {

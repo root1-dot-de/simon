@@ -121,12 +121,13 @@ public class Registry {
 	
 	/**
 	 * Stops the registry. This clears the {@link LookupTable}, 
-	 * stops the {@link Acceptor} and the {@link Dispatcher}.
+	 * stops the acceptor and the {@link Dispatcher}.
 	 * After running this method, no further connection/communication is possible with this 
 	 * registry.
 	 *
 	 */
 	public void stop() {
+		acceptor.unbind();
 		filterchainWorkerPool.shutdown();
 		lookupTableServer.clear();
 		dispatcher.shutdown();
