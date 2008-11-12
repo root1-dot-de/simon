@@ -35,7 +35,7 @@ public class SimonRemoteInstance implements Serializable {
 	
 	private static final long serialVersionUID = 1;
 	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private transient final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	/** Name of the interface that is used to implement the remote object */
 	private String interfaceName = null;

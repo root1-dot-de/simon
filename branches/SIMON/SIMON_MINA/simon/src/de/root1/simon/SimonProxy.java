@@ -165,13 +165,24 @@ public class SimonProxy implements InvocationHandler {
 	
 	/**
 	 * 
-	 * Returns the {@link InetAddress} of the remote host connected with this proxy 
+	 * Returns the {@link SocketAddress} of the remote host connected with this proxy 
 	 * 
-	 * @return the {@link InetAddress} of the remote host
+	 * @return the {@link SocketAddress} of the remote host
 	 */
-	protected SocketAddress getInetAddress() {
+	protected SocketAddress getRemoteSocketAddress() {
 		return session.getRemoteAddress();
 	}
+	
+	/**
+	 * 
+	 * Returns the {@link SocketAddress} of the local host connected with this proxy 
+	 * 
+	 * @return the {@link SocketAddress} of the local host
+	 */
+	protected SocketAddress getLocalSocketAddress() {
+		return session.getLocalAddress();
+	}
+
 	
 	/**
 	 * 

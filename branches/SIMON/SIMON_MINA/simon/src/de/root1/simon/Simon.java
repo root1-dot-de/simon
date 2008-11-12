@@ -285,24 +285,48 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Gets the SocketAddress used on the remote-side of the given proxy object
+	 * Gets the InetSocketAddress used on the remote-side of the given proxy object
 	 * 
-	 * @param proxyObject the proxy-object
-	 * @return the SocketAddress on the remote-side
+	 * @param proxyObject the proxy object
+	 * @return the InetSocketAddress on the remote-side
 	 */
-	public static SocketAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
-		return getSimonProxy(proxyObject).getInetAddress();
+	public static InetSocketAddress getRemoteInetSocketAddress(Object proxyObject) throws IllegalArgumentException {
+		return (InetSocketAddress) getSimonProxy(proxyObject).getRemoteSocketAddress();
 	}
 	
 	/**
 	 * 
-	 * FIXME Gets the socket-port used on the remote-side of the given proxy object
+	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
+	 * 
+	 * @param proxyObject the proxy-object
+	 * @return the InetAddress on the remote-side
+	 * @deprecated use {@link Simon#getRemoteInetSocketAddress(Object).getAddress()} instead!
+	 */
+	public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
+		return getRemoteInetSocketAddress(proxyObject).getAddress();
+	}
+	
+	/**
+	 * 
+	 * Gets the socket-port used on the remote-side of the given proxy object
 	 * 
 	 * @param proxyObject the proxy-object
 	 * @return the port on the remote-side
+	 * @deprecated use {@link Simon#getRemoteInetSocketAddress(proxyObject).getPort()} instead!
 	 */
 	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
-		return 0;
+		return getRemoteInetSocketAddress(proxyObject).getPort();
+	}
+	
+	/**
+	 * 
+	 * Gets the InetSocketAddress used on the local-side of the given proxy object
+	 * 
+	 * @param proxyObject the proxy object
+	 * @return the InetSocketAddress on the local-side
+	 */
+	public static InetSocketAddress getLocalInetSocketAddress(Object proxyObject) throws IllegalArgumentException {
+		return (InetSocketAddress) getSimonProxy(proxyObject).getLocalSocketAddress();
 	}
 	
 	/**
@@ -311,9 +335,10 @@ public class Simon {
 	 * 
 	 * @param proxyObject the proxy-object
 	 * @return the port on the local-side
+	 * @deprecated use {@link Simon#getLocalInetSocketAddress(proxyObject).getPort()} instead!
 	 */
 	public static int getLocalPort(Object proxyObject) throws IllegalArgumentException {
-		return 0;
+		return getLocalInetSocketAddress(proxyObject).getPort();
 	}
 	
 	/**
@@ -448,7 +473,6 @@ public class Simon {
 	 * @deprecated This is now handled by MINA. Using this method is obsolete.
 	 */
 	public static void setDgcInterval(int milliseconds){
-//		Statics.DGC_INTERVAL = milliseconds;
 	}
 	
 	/**
@@ -457,7 +481,7 @@ public class Simon {
 	 * 
 	 * @return the current set DGC interval
 	 * 
-	 * @deprecated this is now done internally with MINA. There's no global value available...This method now always returns zero.
+	 * @deprecated this is now done internally with MINA. There's no global value available...This method now always returns zero. So do not use it anymore!
 	 */
 	public static int getDgcInterval(){
 		return 0;
@@ -492,7 +516,7 @@ public class Simon {
 	}
 	
 	/**
-	 * Creates a background thread that searches for published remote objects
+	 * Creates a background thread that searches for published remote objects on the local network
 	 * 
 	 * @param listener a {@link SearchProgressListener} implementation which is informed about the current search progress
 	 * @param searchTime the time the background search thread spends for searching published remote objects
@@ -512,7 +536,7 @@ public class Simon {
 	}
 	
 	/**
-	 * Starts a search for published remote objects. <br>
+	 * Starts a search on the local network for published remote objects. <br>
 	 * <b><u>Be warned:</u> This method blocks until the search is finished or the current thread is interrupted</b>
 	 * @param searchTime the time that is spend to search for published remote objects
 	 * @return a {@link List} of {@link SimonPublication}s

@@ -560,6 +560,10 @@ public class Dispatcher implements IoHandler{
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
 		logger.info("exception Caught. session={} cause={}", session, throwable);
+		StackTraceElement[] stackTrace = throwable.getStackTrace();
+		for (StackTraceElement stackTraceElement : stackTrace) {
+			System.err.println(stackTraceElement);
+		}
 	}
 
 	public void messageReceived(IoSession session, Object message) throws Exception {
