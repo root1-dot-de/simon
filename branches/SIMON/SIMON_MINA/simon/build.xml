@@ -3,7 +3,7 @@
 	
     <description>SIMON: a kind of router-friendly RMI replacement</description>
 	
-	<property name="version" value="3.0_alpha1"/>
+	<property name="version" value="3.0_alpha2"/>
 	
 	
 	<!-- destination of compiled project -->
