@@ -41,6 +41,8 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private int msgSize;
+	private boolean readSize = false;
 	
     public MsgInvokeDecoder() {
         super(SimonMessageConstants.MSG_INVOKE);
@@ -49,22 +51,38 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
+    	if (!readSize) {
+    		readSize  = true;
+    		msgSize = in.getInt();
+    		logger.trace("msgSizeInBytes={}",msgSize);
+    	}
+    	
+    	if (in.remaining() < msgSize) {
+    		logger.trace("need more data. needed={} available={}",msgSize,in.remaining());
+    		return null;
+    	}
+    	
     	MsgInvoke msgInvoke = new MsgInvoke();
     	
         try {
-        	
+        
+        	logger.trace("start pos={} capacity={}",in.position(), in.capacity());
         	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+        	logger.trace("ron read ... pos={}",in.position());
         	
         	msgInvoke.setRemoteObjectName(remoteObjectName);
     		LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
     		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), in.getLong());
 	
 		
+    		
 			int argsLength = in.getInt();
+			logger.trace("args len read read ... pos={}",in.position());
 			logger.trace("getting {} args", argsLength);
 			Object[] args = new Object[argsLength];
 			for (int i=0;i<argsLength;i++){
 				args[i]=in.getObject();
+				logger.trace("{} object read ... pos={}",i, in.position());
 			}
 			
 			msgInvoke.setArguments(args);

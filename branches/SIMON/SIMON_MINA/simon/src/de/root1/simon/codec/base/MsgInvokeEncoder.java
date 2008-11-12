@@ -48,8 +48,12 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
     	
     	logger.trace("begin. message={}", message);
         try {
-        	out.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
-			out.putLong(Utils.computeMethodHash(message.getMethod()));
+
+			IoBuffer b = IoBuffer.allocate(4096);
+			b.setAutoExpand(true);
+
+        	b.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
+			b.putLong(Utils.computeMethodHash(message.getMethod()));
 		
 			int argsLen=0;
 			
@@ -57,12 +61,20 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
 				argsLen = message.getArguments().length;
 			
 			logger.trace("argsLength={}", argsLen);
-			out.putInt(argsLen);
 			
+			b.putInt(argsLen);
+						
 			for (int i=0; i<argsLen;i++){
 				logger.trace("args[{}]={}", i, message.getArguments()[i]);
-				out.putObject(message.getArguments()[i]);
+				b.putObject(message.getArguments()[i]);
 			}
+			
+			int msgSize = b.position();
+			b.flip();
+			logger.trace("msgSizeInBytes={}",msgSize);
+			out.putInt(msgSize);
+			out.put(b);
+
 			
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block

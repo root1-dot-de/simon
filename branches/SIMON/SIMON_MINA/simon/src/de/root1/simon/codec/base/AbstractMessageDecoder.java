@@ -97,4 +97,8 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
      * @return <tt>null</tt> if the whole body is not read yet
      */
     protected abstract AbstractMessage decodeBody(IoSession session, IoBuffer in);
+    
+    protected int getCurrentSequence(){
+    	return sequence;
+    }
 }
