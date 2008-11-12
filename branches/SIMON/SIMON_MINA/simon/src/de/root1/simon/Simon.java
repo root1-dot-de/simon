@@ -76,7 +76,7 @@ public class Simon {
 
 	private static PublicationSearcher publicationSearcher;
 
-	private static SimonProtocolCodecFactory protocolFactory = new SimonProtocolCodecFactory();
+	private static String protocolFactoryClassName = "de.root1.simon.codec.base.SimonProtocolCodecFactory";
 
 	/**
 	 * Try to load 'config/simon_logging.properties'
@@ -155,7 +155,7 @@ public class Simon {
 	 */
 	public static Registry createRegistry(InetAddress address, int port) throws IOException {
 		logger.debug("begin");
-		Registry registry = new Registry(address, port, getThreadPool(), protocolFactory);
+		Registry registry = new Registry(address, port, getThreadPool(), protocolFactoryClassName);
 		logger.debug("end");
 		return registry;
 	}
@@ -236,7 +236,20 @@ public class Simon {
 				if (logger.isTraceEnabled())
 					session.getFilterChain().addLast( "logger", new LoggingFilter() );
 				
-				protocolFactory.setup(true);
+				SimonProtocolCodecFactory protocolFactory = null;
+				try {
+					protocolFactory = Utils.getFactoryInstance(protocolFactoryClassName);
+				} catch (ClassNotFoundException e) {
+					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+					// already proved
+				} catch (InstantiationException e) {
+					// already proved
+					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+				} catch (IllegalAccessException e) {
+					// already proved
+					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+				}
+				protocolFactory.setup(false);
 				
 				session.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
 				
@@ -589,13 +602,10 @@ public class Simon {
 	 *             {@link SimonProtocolCodecFactory}
 	 */
 	public static void setProtocolCodecFactory(String protocolFactory) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException{
-		Class<?> clazz = Class.forName(protocolFactory);
-		try {
-			SimonProtocolCodecFactory instance = (SimonProtocolCodecFactory) clazz.newInstance();
-			Simon.protocolFactory = instance;
-		} catch (ClassCastException e){
-			throw new ClassCastException("The given class '"+protocolFactory+"' must extend 'de.root1.simon.codec.base.SimonProtocolCodecFactory' !");
-		}
+		Utils.getFactoryInstance(protocolFactory);
+		Simon.protocolFactoryClassName = protocolFactory;
 	}
+
+	
 
 }

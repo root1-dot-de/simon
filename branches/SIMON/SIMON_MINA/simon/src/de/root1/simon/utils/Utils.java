@@ -30,6 +30,8 @@ import java.util.WeakHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+
 /**
  * 
  * A class with some static helper-methods
@@ -99,6 +101,47 @@ public class Utils {
 			return result;
 		}
 	}
+	
+	/**
+	 * Loads a protocol codec factory by a given classname
+	 * 
+	 * @param protocolFactory
+	 *            a class name like
+	 *            "com.mydomain.myproject.codec.mySimonProtocolCodecFactory"
+	 *            which points to a class, that extends
+	 *            {@link SimonProtocolCodecFactory}. <i>The important thing is,
+	 *            that this class correctly overrides
+	 *            {@link SimonProtocolCodecFactory#setup(boolean)}. For further
+	 *            details, look at {@link SimonProtocolCodecFactory}!</i>
+	 * @throws IllegalAccessException
+	 *             if the class or its nullary constructor is not accessible.
+	 * @throws InstantiationException
+	 *             if this Class represents an abstract class, an interface, an
+	 *             array class, a primitive type, or void; or if the class has
+	 *             no nullary constructor; or if the instantiation fails for
+	 *             some other reason.
+	 * @throws ClassNotFoundException
+	 *             if the class is not found by the classloader. if so, please
+	 *             check your classpath.
+	 * @throws ClassCastException
+	 *             if the given class is no instance of
+	 *             {@link SimonProtocolCodecFactory}
+	 */
+	public static SimonProtocolCodecFactory getFactoryInstance(String protocolFactory)
+			throws ClassNotFoundException, InstantiationException,
+			IllegalAccessException {
+		Class<?> clazz = Class.forName(protocolFactory);
+		try {
+			SimonProtocolCodecFactory instance = (SimonProtocolCodecFactory) clazz
+					.newInstance();
+			return instance;
+		} catch (ClassCastException e) {
+			throw new ClassCastException(
+					"The given class '"
+							+ protocolFactory
+							+ "' must extend 'de.root1.simon.codec.base.SimonProtocolCodecFactory' !");
+		}
+}
 	
 
 }

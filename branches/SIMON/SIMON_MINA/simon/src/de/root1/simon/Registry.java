@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
+import de.root1.simon.utils.Utils;
 
 /**
  * The SIMON server acts as a registry for remote objects. 
@@ -59,7 +60,7 @@ public class Registry {
 	private ExecutorService threadPool;
 
 	private ExecutorService filterchainWorkerPool;
-	private SimonProtocolCodecFactory protocolFactory;
+	private String protocolFactoryClassName;
 
 	/**
 	 * Creates a registry which has it's own {@link LookupTable} instead of a global.
@@ -68,13 +69,13 @@ public class Registry {
 	 * @param threadPool a reference to an existing thread pool
 	 * @throws IOException 
 	 */
-	protected Registry(InetAddress address, int port, ExecutorService threadPool, SimonProtocolCodecFactory protocolFactory) throws IOException {
+	protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
 		logger.debug("begin");
 		this.lookupTableServer = new LookupTable();
 		this.address  = address;
 		this.port = port;
 		this.threadPool = threadPool;
-		this.protocolFactory = protocolFactory;
+		this.protocolFactoryClassName = protocolFactoryClassName;
 		start();
 		logger.debug("end");
 	}
@@ -101,6 +102,19 @@ public class Registry {
 		if (logger.isTraceEnabled())
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
 		
+		SimonProtocolCodecFactory protocolFactory = null;
+		try {
+			protocolFactory = Utils.getFactoryInstance(protocolFactoryClassName);
+		} catch (ClassNotFoundException e) {
+			logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+			// already proved
+		} catch (InstantiationException e) {
+			// already proved
+			logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+		} catch (IllegalAccessException e) {
+			// already proved
+			logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+		}
 		protocolFactory.setup(true);
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
         
