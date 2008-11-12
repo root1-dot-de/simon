@@ -26,8 +26,9 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.WeakHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -37,7 +38,7 @@ import java.util.logging.Logger;
  */
 public class Utils {
 	
-	protected static transient Logger _log = Logger.getLogger(Utils.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(Utils.class);
 	
 	/** if this flag is set to TRUE, SIMON tries to load the java.util.logging properties and enabled the debug-mode */
 	public static boolean DEBUG = false;
@@ -60,8 +61,7 @@ public class Utils {
 		if (methodHashs.containsKey(m)) {
 
 			synchronized (methodHashs) {
-				if (_log.isLoggable(Level.FINEST))
-					_log.finest("Got hash from map. map contains "+methodHashs.size()+" entries.");
+				logger.trace("Got hash from map. map contains {} entries.", methodHashs.size());
 				return methodHashs.get(m);
 			}
 			
@@ -93,8 +93,7 @@ public class Utils {
 
 			synchronized (methodHashs) {
 				methodHashs.put(m, result);
-				if (_log.isLoggable(Level.FINEST))
-					_log.finest("computed new hash. map now contains "+methodHashs.size()+" entries.");
+				logger.trace("computed new hash. map now contains {} entries.", methodHashs.size());
 			}
 			
 			return result;

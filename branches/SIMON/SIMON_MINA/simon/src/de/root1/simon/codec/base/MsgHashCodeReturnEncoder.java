@@ -1,9 +1,10 @@
 package de.root1.simon.codec.base;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
@@ -15,7 +16,7 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  */
 public class MsgHashCodeReturnEncoder<T extends MsgHashCodeReturn> extends AbstractMessageEncoder<T> {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
     public MsgHashCodeReturnEncoder() {
         super(SimonMessageConstants.MSG_HASHCODE_RETURN);
@@ -24,9 +25,9 @@ public class MsgHashCodeReturnEncoder<T extends MsgHashCodeReturn> extends Abstr
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	
-    	_log.finer("begin. message="+message);
+    	logger.trace("begin. message={}", message);
     	out.putInt(message.getReturnValue());
-		_log.finer("end");
+		logger.trace("end");
     }
 
     public void dispose() throws Exception {

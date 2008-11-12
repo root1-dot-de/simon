@@ -23,6 +23,8 @@ import java.util.concurrent.ExecutorService;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -43,6 +45,9 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * @author ACHR
  */
 public class ClientToServerConnection {
+	
+	@SuppressWarnings("unused")
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	private Dispatcher dispatcher;
 	private IoSession session;

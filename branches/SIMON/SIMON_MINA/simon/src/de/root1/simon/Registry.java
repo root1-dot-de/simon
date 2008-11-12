@@ -23,8 +23,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
@@ -32,6 +30,8 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
 import de.root1.simon.exceptions.LookupFailedException;
@@ -46,8 +46,7 @@ import de.root1.simon.exceptions.NameBindingException;
  */
 public class Registry {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
-	
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private LookupTable lookupTableServer;
 	private InetAddress address;
 	private int port;
@@ -69,13 +68,13 @@ public class Registry {
 	 * @throws IOException 
 	 */
 	public Registry(InetAddress address, int port, ExecutorService threadPool) throws IOException {
-		_log.fine("begin");
+		logger.debug("begin");
 		this.lookupTableServer = new LookupTable();
 		this.address  = address;
 		this.port = port;
 		this.threadPool = threadPool;
 		start();
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 	/**
@@ -85,11 +84,11 @@ public class Registry {
 	 */
 	private void start() throws IOException {
 
-		_log.fine("begin");
+		logger.debug("begin");
 		
 			
 		dispatcher = new Dispatcher(null, lookupTableServer, threadPool);
-		_log.finer("dispatcher created");
+		logger.debug("dispatcher created");
 		
 		acceptor = new NioSocketAcceptor();
 		
@@ -97,7 +96,7 @@ public class Registry {
 		
 		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
         
-		if (_log.isLoggable(Level.FINEST))
+		if (logger.isTraceEnabled())
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
 		
         acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(true)));
@@ -113,10 +112,10 @@ public class Registry {
         acceptor.bind( new InetSocketAddress(address, port) );
         
 		
-		_log.finer("acceptor thread created and started");			
+        logger.debug("acceptor thread created and started");			
 			
 		
-		_log.fine("end");
+        logger.debug("end");
 	}
 	
 	/**
@@ -198,7 +197,7 @@ public class Registry {
 			bind(name, remoteObject);
 		} catch (NameBindingException e) {
 			// this should never happen, nevertheless, we log it
-			_log.warning("rebind() should never throw an NameBindingException. Contact SIMON author and send him this log.");
+			logger.warn("rebind() should never throw an NameBindingException. Contact SIMON author and send him this log.");
 		}
 	}
 	

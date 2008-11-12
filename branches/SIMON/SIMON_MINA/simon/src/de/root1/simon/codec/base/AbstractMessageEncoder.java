@@ -1,10 +1,11 @@
 package de.root1.simon.codec.base;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoderOutput;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 
@@ -16,7 +17,8 @@ import de.root1.simon.codec.messages.AbstractMessage;
  */
 public abstract class AbstractMessageEncoder<T extends AbstractMessage> implements MessageEncoder<T> {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	@SuppressWarnings("unused")
+	private final Logger logger = LoggerFactory.getLogger(getClass());
     private final int msgType;
 
     /**

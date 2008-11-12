@@ -18,7 +18,7 @@
  */
 package de.root1.simon.utils;
 
-// inspiriert durch http://www.javaworld.com/javaworld/javaqa/2003-06/01-qa-0606-load.html
+// inspired by http://www.javaworld.com/javaworld/javaqa/2003-06/01-qa-0606-load.html
 public class SimonClassLoader {
 	
 	// inherit javadoc

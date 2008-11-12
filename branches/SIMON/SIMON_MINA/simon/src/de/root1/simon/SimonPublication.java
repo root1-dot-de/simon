@@ -63,6 +63,7 @@ public class SimonPublication {
 	 * @throws NumberFormatException if the port in the raw string has the wrong format (e.g. non numeric)
 	 */
 	public SimonPublication(String rawString) throws IllegalArgumentException, UnknownHostException, NumberFormatException {
+		
 		if ((!rawString.substring(0, SIMON_PUBLISHMENT_HEADER.length()).equals(SIMON_PUBLISHMENT_HEADER) &&
 				!rawString.substring(SIMON_PUBLISHMENT_HEADER.length()-1,SIMON_PUBLISHMENT_HEADER.length()).equals("]"))) 
 			throw new IllegalArgumentException("provided raw string has the wrong format: "+rawString);
@@ -70,11 +71,13 @@ public class SimonPublication {
 		String values = rawString.substring(SIMON_PUBLISHMENT_HEADER.length(), rawString.length()-1);
 		
 		String[] valuesSplit = values.split("\\|");
-		if (valuesSplit.length!=2) throw new IllegalArgumentException("except the header, there must be two values in the raw string. 1st: 'ip:port' 2nd: 'remoteObjectName'. values="+values);
+		if (valuesSplit.length!=2) 
+			throw new IllegalArgumentException("except the header, there must be two values in the raw string. 1st: 'ip:port' 2nd: 'remoteObjectName'. values="+values);
 		
 		String[] addressSplit = valuesSplit[0].split(":");
 		
-		if (addressSplit.length!=2) throw new IllegalArgumentException("the address value must contain two values: 1st: 'ip' 2nd: 'port'.");
+		if (addressSplit.length!=2) 
+			throw new IllegalArgumentException("the address value must contain two values: 1st: 'ip' 2nd: 'port'.");
 		
 		address = InetAddress.getByName(addressSplit[0]);
 		port = Integer.parseInt(addressSplit[1]);

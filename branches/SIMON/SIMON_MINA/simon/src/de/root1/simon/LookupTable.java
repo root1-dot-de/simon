@@ -25,10 +25,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.Utils;
@@ -47,7 +47,7 @@ import de.root1.simon.utils.Utils;
  */
 public class LookupTable {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	/**
 	 * Maps the remote object name to the remote object
@@ -71,19 +71,18 @@ public class LookupTable {
 	/**
 	 * Saves a remote object in the lookup table for later reference
 	 * 
-	 * @param name the name of the remote object
+	 * @param remoteObjectName the name of the remote object
 	 * @param remoteObject a remote objects which implements SimonRemote
 	 */
-	public synchronized void putRemoteBinding(String name, SimonRemote remoteObject) {
-		_log.fine("begin");
+	public synchronized void putRemoteBinding(String remoteObjectName, SimonRemote remoteObject) {
+		logger.debug("begin");
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("name="+name+"  object="+remoteObject);
+		logger.debug("remoteObjectName={} object={}", remoteObjectName, remoteObject);
 		
-		bindings.put(name,remoteObject);	
+		bindings.put(remoteObjectName,remoteObject);	
 		
 		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
-		_log.fine("end");		
+		logger.debug("end");		
 	}
 	
 	/**
@@ -96,16 +95,15 @@ public class LookupTable {
 	 * @param remoteObject the remote object that has been found in a method argument or method result
 	 */
 	public synchronized void putRemoteInstanceBinding(long sessionId, String remoteObjectName, SimonRemote remoteObject){
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("sessionId="+sessionId+" remoteObjectName="+remoteObjectName+"  remoteObject="+remoteObject);
+		logger.debug("sessionId={} remoteObjectName={} remoteObject=", new Object[]{sessionId, remoteObjectName, remoteObject});
 		
 		List<String> remotes;
 		
 		// if there no list present, create one
 		if (!gcRemoteInstances.containsKey(sessionId)) {
-			_log.finer("session '"+sessionId+"' unknown, creating new remote instance list!");
+			logger.debug("session '{}' unknown, creating new remote instance list!", sessionId);
 			remotes = new ArrayList<String>();
 			gcRemoteInstances.put(sessionId, remotes);
 		} else {
@@ -116,33 +114,31 @@ public class LookupTable {
 		
 		putRemoteBinding(remoteObjectName, remoteObject);
 		
-		if (_log.isLoggable(Level.FINEST))
-			_log.finest("session '"+sessionId+"' now has "+remotes.size()+" entries.");
+		logger.debug("session '{}' now has {} entries.", sessionId, remotes.size());
 				
 		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
-		_log.fine("end");		
+		logger.debug("end");		
 	}
 	
 	/**
 	 * 
 	 * Gets a already bind remote object according to the given remote object name
 	 * 
-	 * @param name the name of the object we are interested in
+	 * @param remoteObjectName the name of the object we are interested in
 	 * @return the remote object
 	 * @throws LookupFailedException if remote object is not available in lookup table
 	 */
-	public synchronized SimonRemote getRemoteBinding(String name) throws LookupFailedException {
-		_log.fine("begin");
-		if (!bindings.containsKey(name)) {
-			_log.fine("remote object name=["+name+"] not found in LookupTable!");	
-			throw new LookupFailedException("remoteobject with name ["+name+"] not found in lookup table.");
+	public synchronized SimonRemote getRemoteBinding(String remoteObjectName) throws LookupFailedException {
+		logger.debug("begin");
+		if (!bindings.containsKey(remoteObjectName)) {
+			logger.debug("remote object name=[{}] not found in LookupTable!", remoteObjectName);	
+			throw new LookupFailedException("remoteobject with name ["+remoteObjectName+"] not found in lookup table.");
 		}
 
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("name="+name+" resolves to object='"+bindings.get(name)+"'");
+		logger.debug("name={} resolves to object='{}'", remoteObjectName, bindings.get(remoteObjectName));
 		
-		_log.fine("end");
-		return bindings.get(name);
+		logger.debug("end");
+		return bindings.get(remoteObjectName);
 	}
 
 	/**
@@ -152,15 +148,14 @@ public class LookupTable {
 	 * @param name the remote object to free
 	 */
 	public synchronized void releaseRemoteBinding(String name){
-		_log.fine("begin");
+		logger.debug("begin");
 
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("name="+name);
+		logger.debug("name={}",name);
 
 		bindings.remove(name);
 		simonRemote_to_hashToMethod_Map.remove(name);
 		
-		_log.fine("end");
+		logger.debug("end");
 	}
 	
 	/**
@@ -172,13 +167,14 @@ public class LookupTable {
 	 * @return the method
 	 */
 	public synchronized Method getMethod(String remoteObject, long methodHash){
-		_log.fine("begin");
+		logger.debug("begin");
 
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("hash="+methodHash+" resolves to method='"+simonRemote_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash)+"'");
+		Method m = simonRemote_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
+
+		logger.debug("hash={} resolves to method='{}'", methodHash, m);
+		logger.debug("end");
 		
-		_log.fine("end");
-		return simonRemote_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
+		return m;
 	}
 	
 	/**
@@ -188,27 +184,23 @@ public class LookupTable {
 	 * @return a map that holds the methods hash as the key and the method itself as the value
 	 */
 	protected HashMap<Long,Method> computeMethodHashMap(Class<?> remoteClass) {
-		_log.fine("begin");
+		logger.debug("begin");
 
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("computing for remoteclass='"+remoteClass+"'");
+		logger.debug("computing for remoteclass='{}'", remoteClass);
 
         HashMap<Long,Method> map = new HashMap<Long,Method>();
         
         for (Class<?> cl = remoteClass; cl != null; cl = cl.getSuperclass()) {
 
-        	if (_log.isLoggable(Level.FINEST))
-    			_log.finest("examin superclass='"+cl+"' for interfaces");
+			logger.debug("examin superclass='{}' for interfaces", cl);
         	
             for (Class<?> intf : cl.getInterfaces()) {
             	
-            	if (_log.isLoggable(Level.FINEST))
-        			_log.finest("examin superclass' interface='"+intf+"'");
+    			logger.debug("examin superclass' interface='{}'", intf);
 
             	if (SimonRemote.class.isAssignableFrom(intf)) {
 
-                	if (_log.isLoggable(Level.FINEST))
-            			_log.finest("SimonRemote is assignable from '"+intf+"'");
+        			logger.debug("SimonRemote is assignable from '{}'", intf);
                 	
                     for (Method method : intf.getMethods()) {
                     	
@@ -220,21 +212,21 @@ public class LookupTable {
                          */
                         AccessController.doPrivileged(
                             new PrivilegedAction<Void>() {
-                            public Void run() {
-                                m.setAccessible(true);
-                                return null;
-                            }
-                        });
-                        map.put(Utils.computeMethodHash(m), m);
-                    	if (_log.isLoggable(Level.FINEST))
-                			_log.finest("computing hash: method='"+m+"' hash="+Utils.computeMethodHash(m));
+	                            public Void run() {
+	                                m.setAccessible(true);
+	                                return null;
+	                            }
+                            });
+                        long methodHash = Utils.computeMethodHash(m);
+                        map.put(methodHash, m);
+            			logger.debug("computing hash: method='{}' hash={}", m, methodHash);
 
                     }
                 }
             } 
         }
         
-		_log.fine("begin");
+		logger.debug("begin");
         return map;
     }
 
@@ -256,10 +248,9 @@ public class LookupTable {
 	 */
 	public void unreference(long sessionId) {
 		
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("unreferencing sessionId="+sessionId);
+		logger.debug("unreferencing session with sessionId={}", sessionId);
 		
 		List<String> list;
 		synchronized (gcRemoteInstances) {
@@ -268,13 +259,13 @@ public class LookupTable {
 		
 		if (list!=null) {
 			
-			if (_log.isLoggable(Level.FINER))
-				_log.fine("There are "+list.size()+" remote instances to be removed.");
+			if (logger.isDebugEnabled())
+				logger.debug("There are {} remote instances to be unreferenced.", list.size());
 			
 			for (String remoteObjectName : list) {
 				
-				if (_log.isLoggable(Level.FINER))
-					_log.fine("Removing: "+remoteObjectName);
+				if (logger.isDebugEnabled())
+					logger.debug("Unreferencing: {}", remoteObjectName);
 				
 				synchronized (bindings) {
 					
@@ -286,14 +277,13 @@ public class LookupTable {
 						final SimonUnreferenced remoteBinding = (SimonUnreferenced) remoteInstanceBindingToRemove; 
 						remoteBinding.unreferenced();
 						
-						if (_log.isLoggable(Level.FINER))
-							_log.fine("Called the unreferenced() method on ["+remoteInstanceBindingToRemove+"]");
+						logger.debug("Called the unreferenced() method on {}", remoteInstanceBindingToRemove);
 
 					}
 				}
 			}
 		}
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 }

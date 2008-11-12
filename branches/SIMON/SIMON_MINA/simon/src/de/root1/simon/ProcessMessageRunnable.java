@@ -3,10 +3,10 @@ package de.root1.simon;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgEquals;
@@ -25,7 +25,8 @@ import de.root1.simon.utils.SimonClassLoader;
 
 public class ProcessMessageRunnable implements Runnable {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
+	
 	private AbstractMessage abstractMessage;
 	private IoSession session;
 	private Dispatcher dispatcher;
@@ -38,8 +39,7 @@ public class ProcessMessageRunnable implements Runnable {
 
 	public void run() {
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("ProcessMessageRunnable: "+abstractMessage);
+		logger.debug("ProcessMessageRunnable: {}", abstractMessage);
 
 		int msgType = abstractMessage.getMsgType();
 		
@@ -114,43 +114,41 @@ public class ProcessMessageRunnable implements Runnable {
 	 * @throws LookupFailedException 
 	 */
 	private void processLookup() throws LookupFailedException {
-		_log.fine("begin");
+		logger.debug("begin");
 
-		_log.fine("processing MsgLookup...");
+		logger.debug("processing MsgLookup...");
 		MsgLookup msg = (MsgLookup)abstractMessage;
 		String remoteObjectName = msg.getRemoteObjectName();
 		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("Sending result for remoteObjectName="+remoteObjectName);
+		logger.debug("Sending result for remoteObjectName={}", remoteObjectName);
 		
 		MsgLookupReturn ret = new MsgLookupReturn();
 		ret.setSequence(msg.getSequence());
 		ret.setInterfaces(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());
 		session.write(ret);
 		
-		_log.fine("end");
+		logger.debug("end");
 	}
 	
 	private void processLookupReturn() {
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		_log.fine("processing MsgLookupReturn...");	
+		logger.debug("processing MsgLookupReturn...");	
 		MsgLookupReturn msg = (MsgLookupReturn)abstractMessage;
 		Class<?>[] interfaces = msg.getInterfaces();
 		
-		_log.fine("Forward result to waiting monitor");
+		logger.debug("Forward result to waiting monitor");
 		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("remoteObjectName="+interfaces);
+		logger.debug("remoteObjectName={}", interfaces);
 		
 		dispatcher.putResultToQueue(msg.getSequence(), msg);
-		_log.fine("end");
+		logger.debug("end");
 	}
 	
 	private void processInvoke() throws ClassNotFoundException {
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		_log.fine("processing MsgInvoke...");
+		logger.debug("processing MsgInvoke...");
 		MsgInvoke msg = (MsgInvoke) abstractMessage;
 		Method method = msg.getMethod();
 		Object[] arguments = msg.getArguments();
@@ -165,15 +163,14 @@ public class ProcessMessageRunnable implements Runnable {
 					
 					final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
 					
-					if (_log.isLoggable(Level.FINER))
-						_log.finer("SimonCallback in args found. id="+simonCallback.getId());					
+					logger.debug("SimonCallback in args found. id={}", simonCallback.getId());					
 					
 					Class<?>[] listenerInterfaces = new Class<?>[1];
 					listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 					
 					// reimplant the proxy object
 					arguments[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
-					_log.finer("proxy object for SimonCallback injected");
+					logger.debug("proxy object for SimonCallback injected");
 				} 
 			} 
 		} 
@@ -183,8 +180,7 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		String remoteObjectName = msg.getRemoteObjectName();
 		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("ron="+remoteObjectName+" method="+method+" args="+arguments);
+		logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
 		
 		try {
 			SimonRemote simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
@@ -194,8 +190,7 @@ public class ProcessMessageRunnable implements Runnable {
 			// register "SimonCallback"-results in lookup-table
 			if (result instanceof SimonRemote){
 
-				if (_log.isLoggable(Level.FINER))
-					_log.finer("Result of method "+method+" is instance of SimonRemote: "+result);
+				logger.debug("Result of method {} is instance of SimonRemote: {}", method, result);
 				
 				SimonRemoteInstance simonCallback = new SimonRemoteInstance(session,(SimonRemote)result);
 				simonCallback.getId();
@@ -210,8 +205,7 @@ public class ProcessMessageRunnable implements Runnable {
 			
 			returnMsg.setReturnValue(result);
 			
-			if (_log.isLoggable(Level.FINE))
-				_log.fine("Sending result="+returnMsg);
+			logger.debug("Sending result={}", returnMsg);
 			
 			session.write(returnMsg);
 			
@@ -228,32 +222,31 @@ public class ProcessMessageRunnable implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 	private void processInvokeReturn() {
-		_log.fine("begin");
+		logger.debug("begin");
 
-		_log.fine("processing MsgInvokeReturn...");
+		logger.debug("processing MsgInvokeReturn...");
 		MsgInvokeReturn msg = (MsgInvokeReturn) abstractMessage;
 		dispatcher.putResultToQueue(msg.getSequence(), msg);
 		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("put result to queue="+msg);
+		logger.debug("put result to queue={}", msg);
 		
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 	
 	private void processToString() {
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		_log.fine("processing MsgToString...");
-		 MsgToString msg = (MsgToString) abstractMessage;
+		logger.debug("processing MsgToString...");
+		MsgToString msg = (MsgToString) abstractMessage;
 		 
-		 String remoteObjectName = msg.getRemoteObjectName();
-		 String returnValue = null;
-		 try {
+		String remoteObjectName = msg.getRemoteObjectName();
+		String returnValue = null;
+		try {
 			returnValue = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();
 		} catch (LookupFailedException e) {
 			// TODO Auto-generated catch block
@@ -264,25 +257,24 @@ public class ProcessMessageRunnable implements Runnable {
 		returnMsg.setSequence(msg.getSequence());
 		returnMsg.setReturnValue(returnValue);
 		session.write(returnMsg);
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 	private void processToStringReturn() {
-		_log.fine("begin");
-		_log.fine("processing MsgToStringReturn...");
-		 MsgToStringReturn msg = (MsgToStringReturn) abstractMessage;
-		 dispatcher.putResultToQueue(msg.getSequence(), msg);
+		logger.debug("begin");
+		logger.debug("processing MsgToStringReturn...");
+		MsgToStringReturn msg = (MsgToStringReturn) abstractMessage;
+		dispatcher.putResultToQueue(msg.getSequence(), msg);
 		 
-		 if (_log.isLoggable(Level.FINE))
-			 _log.fine("put result to queue="+msg);
+		logger.debug("put result to queue={}", msg);
 		 
-		_log.fine("end");
+		logger.debug("end");
 	}
 	
 	private void processEquals() {
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		_log.fine("processing MsgEquals...");
+		logger.debug("processing MsgEquals...");
 		MsgEquals msg = (MsgEquals) abstractMessage;
 		 
 		 String remoteObjectName = msg.getRemoteObjectName();
@@ -293,7 +285,7 @@ public class ProcessMessageRunnable implements Runnable {
 			 
 			 // if the object is a remote object, get the object out of the lookuptable
 			 if (objectToCompareWith instanceof SimonRemoteInstance) {
-				 _log.finer("Given argument is SimonRemoteInstance");
+				 logger.debug("Given argument is SimonRemoteInstance");
 				 
 				 final String argumentRemoteObjectName = ((SimonRemoteInstance)objectToCompareWith).getRemoteObjectName();
 				 
@@ -303,8 +295,7 @@ public class ProcessMessageRunnable implements Runnable {
 			 SimonRemote remoteBinding = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
 			 equalsResult = remoteBinding.toString().equals(objectToCompareWith.toString());
 			 
-			 if (_log.isLoggable(Level.FINER))
-				 _log.finer("remoteBinding='"+remoteBinding.toString()+"' objectToCompareWith='"+objectToCompareWith.toString()+"' equalsResult="+equalsResult);
+			 logger.debug("remoteBinding='{}' objectToCompareWith='{}' equalsResult={}", new Object[]{remoteBinding.toString(), objectToCompareWith.toString(), equalsResult});
 			 
 		} catch (LookupFailedException e) {
 			// TODO Auto-generated catch block
@@ -315,30 +306,29 @@ public class ProcessMessageRunnable implements Runnable {
 		returnMsg.setSequence(msg.getSequence());
 		returnMsg.setEqualsResult(equalsResult);
 		session.write(returnMsg);
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 	private void processEqualsReturn() {
-		_log.fine("begin");
-		_log.fine("processing MsgEqualsReturn...");
-		 MsgEqualsReturn msg = (MsgEqualsReturn) abstractMessage;
-		 dispatcher.putResultToQueue(msg.getSequence(), msg);
+		logger.debug("begin");
+		logger.debug("processing MsgEqualsReturn...");
+		MsgEqualsReturn msg = (MsgEqualsReturn) abstractMessage;
+		dispatcher.putResultToQueue(msg.getSequence(), msg);
 		 
-		 if (_log.isLoggable(Level.FINE))
-			 _log.fine("put result to queue="+msg);
+		logger.debug("put result to queue={}", msg);
 		 
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 	private void processHashCode() {
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		_log.fine("processing MsgHashCode...");
-		 MsgHashCode msg = (MsgHashCode) abstractMessage;
+		logger.debug("processing MsgHashCode...");
+		MsgHashCode msg = (MsgHashCode) abstractMessage;
 		 
-		 String remoteObjectName = msg.getRemoteObjectName();
-		 int returnValue = -1;
-		 try {
+		String remoteObjectName = msg.getRemoteObjectName();
+		int returnValue = -1;
+		try {
 			returnValue = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();
 		} catch (LookupFailedException e) {
 			// TODO Auto-generated catch block
@@ -349,19 +339,18 @@ public class ProcessMessageRunnable implements Runnable {
 		returnMsg.setSequence(msg.getSequence());
 		returnMsg.setReturnValue(returnValue);
 		session.write(returnMsg);
-		_log.fine("end");
+		logger.debug("end");
 	}
 	
 	private void processHashCodeReturn() {
-		_log.fine("begin");
-		_log.fine("processing MsgHashCodeReturn...");
+		logger.debug("begin");
+		logger.debug("processing MsgHashCodeReturn...");
 		 MsgHashCodeReturn msg = (MsgHashCodeReturn) abstractMessage;
 		 dispatcher.putResultToQueue(msg.getSequence(), msg);
 		 
-		 if (_log.isLoggable(Level.FINE))
-			 _log.fine("put result to queue="+msg);
+		 logger.debug("put result to queue={}", msg);
 		 
-		_log.fine("end");
+		 logger.debug("end");
 	}
 
 }

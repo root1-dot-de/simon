@@ -25,10 +25,10 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.SocketAddress;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
@@ -41,7 +41,7 @@ import de.root1.simon.utils.SimonClassLoader;
  */
 public class SimonProxy implements InvocationHandler {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	/** name of the corresponding remote object in the remote lookup table */
 	private String remoteObjectName;
@@ -74,15 +74,17 @@ public class SimonProxy implements InvocationHandler {
 	 * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
 	 */
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		if (_log.isLoggable(Level.FINE)) {
-			_log.fine("begin");
-			_log.fine("method="+method.getName()+" argsLength="+(args==null?0:args.length));
+		logger.debug("begin");
+		
+		// trace all the given arguments
+		if (logger.isTraceEnabled()) {
+			logger.trace("method={} argsLength={}", method.getName(), (args==null ? 0 : args.length));
 			if (args!=null) {
 				for (int i = 0; i < args.length; i++) {
-					_log.fine("args["+i+"]="+(args[i] instanceof Proxy ? Simon.getSimonProxy(args[i]).getDetailString() : args[i]));
+					logger.trace("args[{}]={}", i, (args[i] instanceof Proxy ? Simon.getSimonProxy(args[i]).getDetailString() : args[i]));
 				}
 			} else {
-				_log.fine("args=null");
+				logger.trace("args=null");
 			}
 		}
 		
@@ -156,7 +158,7 @@ public class SimonProxy implements InvocationHandler {
 			
 			
 		}
-		_log.fine("end");
+		logger.debug("end");
 		return  result;
 	}
 	
@@ -219,9 +221,7 @@ public class SimonProxy implements InvocationHandler {
 	 * @return the {@link Dispatcher} related to this proxy.
 	 */
 	public Dispatcher release() {
-		_log.fine("begin");
 		remoteObjectName=null;
-		_log.fine("end");
 		return dispatcher;
 	}
 	

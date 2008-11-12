@@ -52,7 +52,7 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 		if ((i++)==Long.MAX_VALUE) i=0;
 		sb.delete(0, sb.length());
 		sb.append(baseName);
-		sb.append(".Nr#");
+		sb.append(".#");
 		sb.append(i);
 		return new Thread(r,sb.toString());
 	}

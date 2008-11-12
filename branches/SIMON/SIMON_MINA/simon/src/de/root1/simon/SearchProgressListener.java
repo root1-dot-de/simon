@@ -30,8 +30,18 @@
  */
 package de.root1.simon;
 
+/**
+ * TODO document me
+ * @author achr
+ *
+ */
 public interface SearchProgressListener {
 	
+	/**
+	 * TODO document me
+	 * @param progress
+	 * @param numberOfNewObjects
+	 */
 	public void update(int progress, int numberOfNewObjects);
 
 }

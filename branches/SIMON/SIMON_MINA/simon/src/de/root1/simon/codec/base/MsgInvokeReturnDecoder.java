@@ -1,10 +1,11 @@
 package de.root1.simon.codec.base;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.mina.filter.codec.demux.MessageDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.SimonRemote;
 import de.root1.simon.codec.messages.AbstractMessage;
@@ -20,8 +21,8 @@ import de.root1.simon.utils.SimonClassLoader;
  */
 public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
-
+	private final Logger logger = LoggerFactory.getLogger(getClass());
+	
     public MsgInvokeReturnDecoder() {
         super(SimonMessageConstants.MSG_INVOKE_RETURN);
     }
@@ -37,7 +38,7 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-		_log.finer("message="+m);
+		logger.trace("message={}", m);
         return m;
     }
 

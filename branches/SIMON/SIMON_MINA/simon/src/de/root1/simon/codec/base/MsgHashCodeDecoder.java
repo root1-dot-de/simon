@@ -1,12 +1,13 @@
 package de.root1.simon.codec.base;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.mina.filter.codec.demux.MessageDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgHashCode;
@@ -19,7 +20,7 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  */
 public class MsgHashCodeDecoder extends AbstractMessageDecoder {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
     public MsgHashCodeDecoder() {
         super(SimonMessageConstants.MSG_HASHCODE);
@@ -39,7 +40,7 @@ public class MsgHashCodeDecoder extends AbstractMessageDecoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-		_log.finer("message="+message);
+		logger.trace("message={}", message);
         return message;
     }
     

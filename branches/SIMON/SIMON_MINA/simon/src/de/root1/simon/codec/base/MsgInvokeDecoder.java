@@ -2,12 +2,13 @@ package de.root1.simon.codec.base;
 import java.lang.reflect.Method;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
 import org.apache.mina.filter.codec.demux.MessageDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.LookupTable;
 import de.root1.simon.codec.messages.AbstractMessage;
@@ -21,7 +22,7 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  */
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
     public MsgInvokeDecoder() {
         super(SimonMessageConstants.MSG_INVOKE);
@@ -34,20 +35,19 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     	
         try {
         	
-	        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-	        	
-	        	msgInvoke.setRemoteObjectName(remoteObjectName);
-        		// ---------- Get Long (8 bytes)
-	        		LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
-	        		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), in.getLong());
-			
-				
-	    			int argsLength = in.getInt();
-	    			_log.fine("getting "+argsLength+" args");
-	    			Object[] args = new Object[argsLength];
-	    			for (int i=0;i<argsLength;i++){
-	    				args[i]=in.getObject();
-	    			}
+        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+        	
+        	msgInvoke.setRemoteObjectName(remoteObjectName);
+    		LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
+    		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), in.getLong());
+	
+		
+			int argsLength = in.getInt();
+			logger.trace("getting {} args", argsLength);
+			Object[] args = new Object[argsLength];
+			for (int i=0;i<argsLength;i++){
+				args[i]=in.getObject();
+			}
 			
 			msgInvoke.setArguments(args);
 			msgInvoke.setRemoteObjectName(remoteObjectName);
@@ -62,7 +62,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		_log.finer("message="+msgInvoke);
+		logger.trace("message={}", msgInvoke);
         return msgInvoke;
     }
     

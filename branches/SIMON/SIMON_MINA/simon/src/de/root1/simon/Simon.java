@@ -34,9 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.future.ConnectFuture;
@@ -47,6 +45,8 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
 import de.root1.simon.codec.messages.MsgLookupReturn;
@@ -62,7 +62,7 @@ import de.root1.simon.utils.Utils;
  */
 public class Simon {
 	
-	protected transient static Logger _log = Logger.getLogger(Simon.class.getName());
+	private final static Logger logger = LoggerFactory.getLogger(Simon.class);
 	
 	/**
 	 * A relation map between remote object names and the SelectionKey + Dispatcher
@@ -90,7 +90,8 @@ public class Simon {
 			try {
 				is = new FileInputStream(f);
 				LogManager.getLogManager().readConfiguration(is);
-				_log.fine("Logging: Loaded config "+f.getAbsolutePath());
+				
+				logger.debug("Logging: Loaded config {}",f.getAbsolutePath());
 				
 			} catch (FileNotFoundException e) {
 				
@@ -111,7 +112,8 @@ public class Simon {
 			}
 			
 		}
-		_log.log(Level.FINE, "Simon lib loaded [version="+Statics.SIMON_VERSION+"|rev="+Statics.SIMON_BUILD_REVISION+"|timestamp="+Statics.SIMON_BUILD_TIMESTAMP+"]");
+		logger.debug("Simon lib loaded [version={}|rev={}|timestamp={}]", new Object[]{Statics.SIMON_VERSION, Statics.SIMON_BUILD_REVISION, Statics.SIMON_BUILD_TIMESTAMP});
+		
 	}
 	
 	/**
@@ -151,9 +153,9 @@ public class Simon {
 	 * @throws IOException if there is a problem with the networking layer
 	 */
 	public static Registry createRegistry(InetAddress address, int port) throws IOException {
-		_log.fine("begin");
+		logger.debug("begin");
 		Registry registry = new Registry(address, port, getThreadPool());
-		_log.fine("end");
+		logger.debug("end");
 		return registry;
 	}
 	
@@ -190,7 +192,7 @@ public class Simon {
 	 * @throws LookupFailedException if there's no such object on the server
 	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-		_log.fine("begin");
+		logger.debug("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
 		SimonRemote proxy = null;
@@ -199,7 +201,7 @@ public class Simon {
 		
 		String serverString = createServerString(host, port);
 		
-		_log.finer("check if serverstring '"+serverString+"' is already in the serverDispatcherRelation list");
+		logger.trace("check if serverstring '{}' is already in the serverDispatcherRelation list",serverString);
 		
 		synchronized (serverDispatcherRelation) {
 			
@@ -212,12 +214,12 @@ public class Simon {
 				dispatcher = ctsc.getDispatcher();
 				session = ctsc.getSession();
 				
-				_log.fine("Got ClientToServerConnection from list");
+				logger.debug("Got ClientToServerConnection from list");
 				
 				
 			} else {
 				
-				_log.fine("No ClientToServerConnection in list. Creating new one.");
+				logger.debug("No ClientToServerConnection in list. Creating new one.");
 				
 				dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
 				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
@@ -230,14 +232,12 @@ public class Simon {
 				
 				session.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
 				
-				if (_log.isLoggable(Level.FINEST))
+				if (logger.isTraceEnabled())
 					session.getFilterChain().addLast( "logger", new LoggingFilter() );
 				
 				session.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(false)));
 				
-				if (_log.isLoggable(Level.FINER)) 
-					_log.finer("connected with server: host="+host+" port="+port+" remoteObjectName="+remoteObjectName);
-				
+				logger.trace("connected with server: host={} port={} remoteObjectName={}", new Object[]{host, port, remoteObjectName});
 				
 				// store this connection for later re-use
 				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session, connector, filterchainWorkerPool);
@@ -260,14 +260,14 @@ public class Simon {
 		 * Creates proxy for method-call-forwarding to server 
 		 */
 		SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
-		_log.finer("proxy created");
+		logger.trace("proxy created");
 		
 		 /* 
 	     * Create the proxy-object with the needed interfaces
 	     */
 	    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
 		
-		_log.fine("end");
+		logger.debug("end");
 		return proxy;
 	}
 
@@ -374,13 +374,12 @@ public class Simon {
 	 * @return true if the server connection is closed, false if there's still a reference pending 
 	 */
 	public static boolean release(Object proxyObject) {
-		_log.fine("begin");
+		logger.debug("begin");
 		
 		// retrieve the proxy object 
 		SimonProxy proxy = getSimonProxy(proxyObject);
 		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("releasing proxy "+proxy.getDetailString());
+		logger.debug("releasing proxy {}",proxy.getDetailString());
 		
 		// release the proxy and get the related dispatcher
 		Dispatcher dispatcher = proxy.release();
@@ -389,7 +388,7 @@ public class Simon {
 		String serverString = dispatcher.getServerString();
 		boolean result = releaseServerDispatcherRelation(serverString);
 		
-		_log.fine("end");
+		logger.debug("end");
 		return result;
 	}
 
@@ -414,12 +413,11 @@ public class Simon {
 				final ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
 				int refCount = ctsc.delRef();
 				
-				if (_log.isLoggable(Level.FINER))
-					_log.finer("removed serverString '"+serverString+"' from serverDispatcherRelation. new refcount is "+refCount);
+				logger.trace("removed serverString '{}' from serverDispatcherRelation. new refcount is {}",serverString, refCount);
 				
 				if (refCount==0) {
 					// .. and shutdown the dispatcher if there's no further reference
-					_log.fine("refCount reached 0. shutting down session and all related stuff.");
+					logger.debug("refCount reached 0. shutting down session and all related stuff.");
 					ctsc.getDispatcher().shutdown();
 					CloseFuture closeFuture = ctsc.getSession().close(false);
 					
@@ -433,7 +431,7 @@ public class Simon {
 					});
 					result = true;
 				} else {
-					_log.fine("refCount="+refCount+". put back the ClientToServerConnection.");
+					logger.debug("refCount={}. put back the ClientToServerConnection.",refCount);
 					serverDispatcherRelation.put(serverString, ctsc);
 				}
 				

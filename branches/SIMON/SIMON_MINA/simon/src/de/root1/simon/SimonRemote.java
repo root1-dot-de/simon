@@ -20,7 +20,11 @@ package de.root1.simon;
 
 import java.io.Serializable;
 
-
+/**
+ * TODO Document me
+ * @author achr
+ *
+ */
 public interface SimonRemote extends Serializable {
 
 }

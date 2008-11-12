@@ -18,16 +18,15 @@
  */
 package de.root1.simon;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.service.IoHandler;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgEquals;
@@ -51,7 +50,7 @@ import de.root1.simon.exceptions.SimonRemoteException;
  */
 public class Dispatcher implements IoHandler{
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	/** The table that holds all the registered/bind remote objects */
 	private LookupTable lookupTable;
@@ -88,15 +87,15 @@ public class Dispatcher implements IoHandler{
 	 * @param threadPool the pool where the {@link ProcessMessageRunnable}'s run in
 	 */
 	public Dispatcher(String serverString, LookupTable lookupTable, ExecutorService threadPool) {
-		_log.fine("begin");
-		
+		logger.debug("begin");
+				
 		isRunning = true;
 
 		this.serverString = serverString;
 		this.lookupTable = lookupTable;
 		this.messageProcessorPool = threadPool;
 		
-		_log.fine("end");
+		logger.debug("end");
 	}
 	
 	/**
@@ -111,8 +110,7 @@ public class Dispatcher implements IoHandler{
 		checkForInvalidState("Simon.lookup({...}, "+remoteObjectName+")");
 		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) 
-			_log.fine("begin sequenceId="+sequenceId+" session="+session);
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 		
 
  		// create a monitor that waits for the request-result
@@ -124,8 +122,7 @@ public class Dispatcher implements IoHandler{
 		
 		session.write(msgLookup);
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
+		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
 		
 
 		// wait for result
@@ -143,11 +140,9 @@ public class Dispatcher implements IoHandler{
 		}
 			
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for sequenceId="+sequenceId);
+		logger.debug("got answer for sequenceId={}",sequenceId);
 		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end sequenceId="+sequenceId);
+		logger.trace("end sequenceId={}",sequenceId);
 		
 		return result;
 
@@ -170,8 +165,7 @@ public class Dispatcher implements IoHandler{
  		
  		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) 
-			_log.fine("begin sequenceId="+sequenceId+" session="+session);
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 		
 
  		// create a monitor that waits for the request-result
@@ -183,9 +177,7 @@ public class Dispatcher implements IoHandler{
 				if (args[i] instanceof SimonRemote) {
 					SimonRemoteInstance sc = new SimonRemoteInstance(session,(SimonRemote)args[i]);
 					
-					if (_log.isLoggable(Level.FINER))
-						_log.fine("SimonRemoteInstance found! id="+sc.getId());
-					
+					logger.debug("SimonRemoteInstance found! id={}",sc.getId());
 					
 					lookupTable.putRemoteInstanceBinding(session.getId(), sc.getId(), (SimonRemote) args[i]);
 					
@@ -202,8 +194,7 @@ public class Dispatcher implements IoHandler{
 		
 		session.write(msgInvoke);
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
+		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
 		
 
 		// wait for result
@@ -221,11 +212,9 @@ public class Dispatcher implements IoHandler{
 		}
 			
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for sequenceId="+sequenceId);
-		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end sequenceId="+sequenceId);
+		logger.debug("got answer for sequenceId={}", sequenceId);
+	
+		logger.debug("end sequenceId={}", sequenceId);
 		
 		return result.getReturnValue();
  		
@@ -246,8 +235,7 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) 
-			_log.fine("begin sequenceId="+sequenceId+" session="+session);
+		logger.debug("begin sequenceId={} session=", sequenceId, session);
 		
 
  		// create a monitor that waits for the request-result
@@ -259,8 +247,7 @@ public class Dispatcher implements IoHandler{
 		
 		session.write(msgInvoke);
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
+		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 		
 
 		// wait for result
@@ -276,13 +263,10 @@ public class Dispatcher implements IoHandler{
 		synchronized (requestMonitorAndReturnMap) {
 			result = (MsgToStringReturn) getRequestResult(sequenceId);			
 		}
-			
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for sequenceId="+sequenceId);
-		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end sequenceId="+sequenceId);
+		logger.debug("got answer for sequenceId={}", sequenceId);
+	
+		logger.debug("end sequenceId={}", sequenceId);
 		
 		return result.getReturnValue();
 	}
@@ -301,9 +285,7 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) 
-			_log.fine("begin sequenceId="+sequenceId+" session="+session);
-		
+		logger.debug("begin sequenceId={} session=", sequenceId, session);
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -314,9 +296,7 @@ public class Dispatcher implements IoHandler{
 		
 		session.write(msgInvoke);
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
-		
+		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
 		// wait for result
 		synchronized (monitor) {
@@ -332,12 +312,9 @@ public class Dispatcher implements IoHandler{
 			result = (MsgHashCodeReturn) getRequestResult(sequenceId);			
 		}
 			
-		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for sequenceId="+sequenceId);
-		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end sequenceId="+sequenceId);
+		logger.debug("got answer for sequenceId={}", sequenceId);
+	
+		logger.debug("end sequenceId={}", sequenceId);
 		
 		return result.getReturnValue();
 	}
@@ -357,8 +334,7 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		if (_log.isLoggable(Level.FINE)) 
-			_log.fine("begin sequenceId="+sequenceId+" session="+session);
+		logger.debug("begin sequenceId={} session=", sequenceId, session);
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -370,9 +346,7 @@ public class Dispatcher implements IoHandler{
 		
 		session.write(msgEquals);
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("data send. waiting for answer for sequenceId="+sequenceId);
-		
+		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
 		// wait for result
 		synchronized (monitor) {
@@ -388,12 +362,9 @@ public class Dispatcher implements IoHandler{
 			result = (MsgEqualsReturn) getRequestResult(sequenceId);			
 		}
 			
-		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("got answer for sequenceId="+sequenceId);
-		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("end sequenceId="+sequenceId);
+		logger.debug("got answer for sequenceId={}", +sequenceId);
+	
+		logger.debug("end sequenceId={}", sequenceId);
 		
 		return result.getEqualsResult();
 	}
@@ -406,13 +377,11 @@ public class Dispatcher implements IoHandler{
 	 */
 	protected void wakeWaitingProcess(int sequenceId) {
 		
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("begin. wakeing sequenceId="+sequenceId);
+		logger.debug("begin. wakeing sequenceId={}", sequenceId);
 		
 		// FIXME how to wake and present error?
 		
-		if (_log.isLoggable(Level.FINE))
- 			_log.fine("end. wakeing sequenceId="+sequenceId);
+		logger.trace("end. wakeing sequenceId={}", sequenceId);
 	}
 
 	/**
@@ -424,10 +393,9 @@ public class Dispatcher implements IoHandler{
 	 * @param msg the result itself
 	 */
 	protected void putResultToQueue(int sequenceId, AbstractMessage msg){
-		_log.fine("begin");
+		logger.debug("begin");
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("sequenceId="+sequenceId+" msg="+msg);
+		logger.debug("sequenceId={} msg={}", sequenceId, msg);
 		
 		synchronized (requestMonitorAndReturnMap) {
 			Object monitor = requestMonitorAndReturnMap.get(sequenceId);
@@ -436,7 +404,7 @@ public class Dispatcher implements IoHandler{
 				monitor.notify();
 			}
 		}
-		_log.fine("end");
+		logger.debug("end");
 	}
 	
 	
@@ -487,13 +455,13 @@ public class Dispatcher implements IoHandler{
 	 *
 	 */
 	public void shutdown() {
-		_log.fine("begin");
+		logger.debug("begin");
 		
 		shutdownInProgress = true;
 		messageProcessorPool.shutdown();
 		
 		while (!messageProcessorPool.isShutdown()) {
-			_log.finest("waiting for messageProcessorPool to shutdown...");
+			logger.debug("waiting for messageProcessorPool to shutdown...");
 			try {
 				Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
 			} catch (InterruptedException e) {
@@ -501,8 +469,8 @@ public class Dispatcher implements IoHandler{
 			}
 		}
 		isRunning = false;
-		_log.finer("shutdown completed");
-		_log.fine("end");
+		logger.debug("shutdown completed");
+		logger.debug("end");
 	}
 
 
@@ -525,6 +493,10 @@ public class Dispatcher implements IoHandler{
 		return isRunning;
 	}
 	
+	/**
+	 * TODO document me
+	 * @param method
+	 */
 	private void checkForInvalidState(String method) {
 		if (shutdownInProgress) throw new SessionException("Cannot handle method call \""+method+"\" while shutdown.");
 		if (!isRunning) throw new SessionException("Cannot handle method call \""+method+"\" on already closed session.");
@@ -539,7 +511,7 @@ public class Dispatcher implements IoHandler{
 	 * @return the monitor used for waiting for the result
 	 */
 	private Object createMonitor(final int sequenceId) {
-		_log.fine("begin");
+		logger.debug("begin");
 		
 		final Object monitor = new Object();
 
@@ -547,10 +519,9 @@ public class Dispatcher implements IoHandler{
 			requestMonitorAndReturnMap.put(sequenceId, monitor);
 		}
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("created monitor for sequenceId="+sequenceId);
+		logger.debug("created monitor for sequenceId={}", sequenceId);
 		
-		_log.fine("end");
+		logger.debug("end");
 		return monitor;
 	}
 	
@@ -563,12 +534,11 @@ public class Dispatcher implements IoHandler{
 	 * @return the result of the request
 	 */
 	private Object getRequestResult(final int sequenceId) {
-		if (_log.isLoggable(Level.FINEST))
-			_log.finest("getting result for request ID "+sequenceId);
+		logger.debug("getting result for sequenceId={}", sequenceId);
 		
 		Object o = requestMonitorAndReturnMap.remove(sequenceId); 
 		if (o instanceof SimonRemoteException) {
-			_log.finest("result is an exception, throwing it ...");
+			logger.debug("result is an exception, throwing it ...");
 			throw ((SimonRemoteException) o);
 		}
 		return o;
@@ -589,49 +559,40 @@ public class Dispatcher implements IoHandler{
 
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
-		if (_log.isLoggable(Level.INFO))
-			_log.info("exception Caught. session="+session+" cause="+throwable);
+		logger.info("exception Caught. session={} cause={}", session, throwable);
 	}
 
 	public void messageReceived(IoSession session, Object message) throws Exception {
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("Received message from "+session.getRemoteAddress());
+		logger.debug("Received message from {}", session.getRemoteAddress());
 		
 		AbstractMessage abstractMessage = (AbstractMessage) message;
 		
-		_log.fine("Put message into message processor pool");
+		logger.debug("Put message into message processor pool");
 		messageProcessorPool.execute(new ProcessMessageRunnable(this, session, abstractMessage));
 	}
 
 	public void messageSent(IoSession session, Object msg) throws Exception {
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("message sent. session="+session+" msg="+msg);
-		
+		logger.debug("message sent. session={} msg={}", session, msg);
 	}
 
 	public void sessionClosed(IoSession session) throws Exception {
-		if (_log.isLoggable(Level.FINE)) {
-			_log.fine("################################################");
-			_log.fine("######## session closed. session="+session);
-			_log.fine("################################################");
-		}
+		logger.debug("################################################");
+		logger.debug("######## session closed. session={}",session);
+		logger.debug("################################################");
 		lookupTable.unreference(session.getId());
 	}
 
 	public void sessionCreated(IoSession session) throws Exception {
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("session created. session="+session);
-		session.setAttribute("LookupTable", lookupTable);
+		logger.debug("session created. session={}", session);
+		session.setAttribute("LookupTable", lookupTable); // attach the lookup table to the session
 	}
 
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("session idle. session="+session+" idleStatus="+idleStatus);		
+		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);		
 	}
 
 	public void sessionOpened(IoSession session) throws Exception {
-		if (_log.isLoggable(Level.FINE))
-			_log.fine("session opened. session="+session);
+		logger.debug("session opened. session={}", session);
 	}
 	
 }

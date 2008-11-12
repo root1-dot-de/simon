@@ -19,10 +19,10 @@
 package de.root1.simon;
 
 import java.io.Serializable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is used by an endpoint if a remote object has to be "transferred" to the 
@@ -33,9 +33,9 @@ import org.apache.mina.core.session.IoSession;
  */
 public class SimonRemoteInstance implements Serializable {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
-	
 	private static final long serialVersionUID = 1;
+	
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	/** Name of the interface that is used to implement the remote object */
 	private String interfaceName = null;
@@ -55,7 +55,7 @@ public class SimonRemoteInstance implements Serializable {
 	 * @param remoteObject the remote object for which we generate this transport object for
 	 */
 	public SimonRemoteInstance(IoSession session, SimonRemote remoteObject) {
-		_log.fine("begin");
+		logger.debug("begin");
 		
 		try {
 			remoteObjectName = Simon.getSimonProxy(remoteObject).getRemoteObjectName();
@@ -81,8 +81,7 @@ public class SimonRemoteInstance implements Serializable {
 		
 		this.id = sb.toString();
 		
-		if (_log.isLoggable(Level.FINER))
-			_log.finer("SimonRemoteInstance created with id="+this.id);
+		logger.debug("SimonRemoteInstance created with id={}", this.id);
 		
 		// get the interfaces the arg has implemented
 		Class<?>[] remoteObjectInterfaceClasses = remoteObject.getClass().getInterfaces();
@@ -93,8 +92,7 @@ public class SimonRemoteInstance implements Serializable {
 
 			String remoteObjectInterfaceClassNameTemp = remoteObjectInterfaceClass.getName();
 			
-			if (_log.isLoggable(Level.FINER))
-				_log.finer("Checking interfacename='"+remoteObjectInterfaceClassNameTemp+"' for '"+SimonRemote.class.getName()+"'");
+			logger.debug("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, SimonRemote.class.getName());
 			
 			// Get the interfaces of the implementing interface
 			Class<?>[] remoteObjectInterfaceSubInterfaces = remoteObjectInterfaceClass.getInterfaces();
@@ -102,8 +100,7 @@ public class SimonRemoteInstance implements Serializable {
 			boolean isSimonRemote = false;
 			for (Class<?> remoteObjectInterfaceSubInterface : remoteObjectInterfaceSubInterfaces) {
 				
-				if (_log.isLoggable(Level.FINER))
-					_log.finer("Checking child interfaces for '"+remoteObjectInterfaceClassNameTemp+"': child="+remoteObjectInterfaceSubInterface);
+				logger.debug("Checking child interfaces for '{}': child={}", remoteObjectInterfaceClassNameTemp, remoteObjectInterfaceSubInterface);
 				
 				if (remoteObjectInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
 					isSimonRemote = true;
@@ -114,8 +111,7 @@ public class SimonRemoteInstance implements Serializable {
 			if (isSimonRemote){
 				interfaceName = remoteObjectInterfaceClassNameTemp;
 				
-				if (_log.isLoggable(Level.FINER))
-					_log.finer("SimonRemote found in arg: interfaceName='"+interfaceName+"'");
+				logger.debug("SimonRemote found in arg: interfaceName='{}'", interfaceName);
 				
 				break;
 
@@ -123,7 +119,7 @@ public class SimonRemoteInstance implements Serializable {
 				interfaceName = null;
 			}
 		}
-		_log.fine("end");
+		logger.debug("end");
 	}
 
 	/**

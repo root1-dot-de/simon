@@ -1,11 +1,12 @@
 package de.root1.simon.codec.base;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.util.logging.Logger;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
@@ -17,7 +18,7 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  */
 public class MsgLookupEncoder<T extends MsgLookup> extends AbstractMessageEncoder<T> {
 	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
     public MsgLookupEncoder() {
         super(SimonMessageConstants.MSG_LOOKUP);
@@ -25,7 +26,7 @@ public class MsgLookupEncoder<T extends MsgLookup> extends AbstractMessageEncode
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	_log.finer("message="+message);
+    	logger.trace("message={}", message);
         try {
 			out.putString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
 		} catch (CharacterCodingException e) {

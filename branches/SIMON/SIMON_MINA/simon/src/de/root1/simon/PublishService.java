@@ -24,27 +24,22 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 import java.util.List;
-import java.util.logging.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class PublishService extends Thread {
 
-	
-	protected transient Logger _log = Logger.getLogger(this.getClass().getName());
-	
-	
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private MulticastSocket socket;
-	
 	private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
 	private int groupPort = 4446;
-
 	private boolean shutdown;
-
-
 	private List<SimonPublication> publishments;
 
 	public PublishService(List<SimonPublication> publishments) throws IOException {
-		_log.fine("preparing publish service");
+		logger.debug("preparing publish service");
 		setName(Statics.PUBLISH_SERVICE_THREAD_NAME);
 		socket = new MulticastSocket(groupPort);
 		socket.joinGroup(groupAddress);
@@ -53,7 +48,7 @@ public class PublishService extends Thread {
 	}
 
 	public void run() {
-		_log.fine("publish service up and running");
+		logger.debug("publish service up and running");
 		while (!shutdown) {
 			try {
 				
@@ -65,13 +60,13 @@ public class PublishService extends Thread {
 				int requestPort = searchPacket.getPort();
 				String requestString = new String(searchPacket.getData());
 				
-				_log.fine("got 'find server' request. requestHost="+requestAddress+" requestPort="+requestPort+" requestString="+requestString);
+				logger.debug("got 'find server' request. requestHost="+requestAddress+" requestPort="+requestPort+" requestString="+requestString);
 				
 				if (requestString.equals(Statics.REQUEST_STRING)) {
 					
 					// send answer pack to sender
 					for (SimonPublication publishment : publishments) {
-						_log.fine("answering: "+publishment);
+						logger.debug("answering: "+publishment);
 						byte[] answerData = publishment.toString().getBytes();
 						DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
 						socket.send(answerPacket);
@@ -87,12 +82,12 @@ public class PublishService extends Thread {
 			}
 		}
 		socket.close();
-		_log.fine("publish service terminated!");
+		logger.debug("publish service terminated!");
 	}
 	
 	public void shutdown(){
 		shutdown = true;
-		_log.fine("Shutting down the publish service now ...");
+		logger.debug("Shutting down the publish service now ...");
 	}
 	
 }
