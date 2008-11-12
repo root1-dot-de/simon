@@ -27,7 +27,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,7 +47,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
+import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
@@ -76,6 +75,8 @@ public class Simon {
 	private static PublishService publishService;
 
 	private static PublicationSearcher publicationSearcher;
+
+	private static SimonProtocolCodecFactory protocolFactory = new SimonProtocolCodecFactory();
 
 	/**
 	 * Try to load 'config/simon_logging.properties'
@@ -154,7 +155,7 @@ public class Simon {
 	 */
 	public static Registry createRegistry(InetAddress address, int port) throws IOException {
 		logger.debug("begin");
-		Registry registry = new Registry(address, port, getThreadPool());
+		Registry registry = new Registry(address, port, getThreadPool(), protocolFactory);
 		logger.debug("end");
 		return registry;
 	}
@@ -235,7 +236,9 @@ public class Simon {
 				if (logger.isTraceEnabled())
 					session.getFilterChain().addLast( "logger", new LoggingFilter() );
 				
-				session.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(false)));
+				protocolFactory.setup(true);
+				
+				session.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
 				
 				logger.trace("connected with server: host={} port={} remoteObjectName={}", new Object[]{host, port, remoteObjectName});
 				
@@ -555,6 +558,44 @@ public class Simon {
 			
 			return publicationSearcher.getNewPublications();
 		} else throw new IllegalStateException("another search is currently in progress ...");
+	}
+	
+	/**
+	 * Sets class name for the protocol codec factory to use for all future
+	 * <code>createRegistry()</code> or <code>lookup()</code> calls. <i>This
+	 * does not affect already created registry or already established
+	 * sessions.</i>
+	 * 
+	 * @param protocolFactory
+	 *            a class name like
+	 *            "com.mydomain.myproject.codec.mySimonProtocolCodecFactory"
+	 *            which points to a class, that extends
+	 *            {@link SimonProtocolCodecFactory}. <i>The important thing is,
+	 *            that this class correctly overrides
+	 *            {@link SimonProtocolCodecFactory#setup(boolean)}. For further
+	 *            details, look at {@link SimonProtocolCodecFactory}!</i>
+	 * @throws IllegalAccessException
+	 *             if the class or its nullary constructor is not accessible.
+	 * @throws InstantiationException
+	 *             if this Class represents an abstract class, an interface, an
+	 *             array class, a primitive type, or void; or if the class has
+	 *             no nullary constructor; or if the instantiation fails for
+	 *             some other reason.
+	 * @throws ClassNotFoundException
+	 *             if the class is not found by the classloader. if so, please
+	 *             check your classpath.
+	 * @throws ClassCastException
+	 *             if the given class is no instance of
+	 *             {@link SimonProtocolCodecFactory}
+	 */
+	public static void setProtocolCodecFactory(String protocolFactory) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException{
+		Class<?> clazz = Class.forName(protocolFactory);
+		try {
+			SimonProtocolCodecFactory instance = (SimonProtocolCodecFactory) clazz.newInstance();
+			Simon.protocolFactory = instance;
+		} catch (ClassCastException e){
+			throw new ClassCastException("The given class '"+protocolFactory+"' must extend 'de.root1.simon.codec.base.SimonProtocolCodecFactory' !");
+		}
 	}
 
 }

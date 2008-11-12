@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * 
+ * This file is part of SIMON.
+ *
+ *   SIMON is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   SIMON is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package de.root1.simon.codec.base;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.demux.DemuxingProtocolCodecFactory;
@@ -15,15 +33,19 @@ import de.root1.simon.codec.messages.MsgToStringReturn;
 
 /**
  * A {@link ProtocolCodecFactory} that provides a protocol codec for
- * Simon Standard protocol.
+ * Simon Standard protocol. If one wants to create his own protocol, the new factory
+ * has to extend this method and override the setup() method explicitly!
  *
  * @author ACHR
  */
-public class SimonStdProtocolCodecFactory extends DemuxingProtocolCodecFactory {
+public class SimonProtocolCodecFactory extends DemuxingProtocolCodecFactory {
 
-    public SimonStdProtocolCodecFactory(boolean server) {
-        
-    	if (server) { // **** SERVER **** 
+	/**
+	 * Sets up the factory, either in server, or in client mode
+	 * @param isServer if true, setup for server mode, false for client mode
+	 */
+	public void setup(boolean isServer){
+		if (isServer) { // **** SERVER **** 
         	// incoming lookup
             super.addMessageDecoder(MsgLookupDecoder.class);
             // outgoing lookup return
@@ -96,6 +118,6 @@ public class SimonStdProtocolCodecFactory extends DemuxingProtocolCodecFactory {
         super.addMessageDecoder(MsgEqualsDecoder.class);
         // outgoing equals return
         super.addMessageEncoder(MsgEqualsReturn.class, MsgEqualsReturnEncoder.class);
-    }
+	}
 }
 

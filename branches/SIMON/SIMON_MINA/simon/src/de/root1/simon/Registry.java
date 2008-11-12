@@ -33,7 +33,7 @@ import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.base.SimonStdProtocolCodecFactory;
+import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 
@@ -59,6 +59,7 @@ public class Registry {
 	private ExecutorService threadPool;
 
 	private ExecutorService filterchainWorkerPool;
+	private SimonProtocolCodecFactory protocolFactory;
 
 	/**
 	 * Creates a registry which has it's own {@link LookupTable} instead of a global.
@@ -67,16 +68,17 @@ public class Registry {
 	 * @param threadPool a reference to an existing thread pool
 	 * @throws IOException 
 	 */
-	public Registry(InetAddress address, int port, ExecutorService threadPool) throws IOException {
+	protected Registry(InetAddress address, int port, ExecutorService threadPool, SimonProtocolCodecFactory protocolFactory) throws IOException {
 		logger.debug("begin");
 		this.lookupTableServer = new LookupTable();
 		this.address  = address;
 		this.port = port;
 		this.threadPool = threadPool;
+		this.protocolFactory = protocolFactory;
 		start();
 		logger.debug("end");
 	}
-
+	
 	/**
 	 * Starts the registry thread
 	 * @throws IOException if there's a problem getting a selector for the non-blocking network communication, or if the 
@@ -99,7 +101,8 @@ public class Registry {
 		if (logger.isTraceEnabled())
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
 		
-        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter( new SimonStdProtocolCodecFactory(true)));
+		protocolFactory.setup(true);
+		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
         
 		acceptor.setHandler(  dispatcher );
         

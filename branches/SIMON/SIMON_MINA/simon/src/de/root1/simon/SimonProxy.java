@@ -23,7 +23,6 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.net.InetAddress;
 import java.net.SocketAddress;
 
 import org.apache.mina.core.session.IoSession;
