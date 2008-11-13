@@ -57,8 +57,10 @@ public class TransferDatatypesTest extends TestCase {
 			registry.bind("server", new ServerImpl());
 			System.out.println("Server on 22222 running");
 		} catch (UnknownHostException e) {
+			e.printStackTrace();
 			new AssertionError("localhost must be present!");
 		} catch (IllegalStateException e) {
+			e.printStackTrace();
 			new AssertionError("the first time the registry is created, there should not be any IllegalStateException while creating the registry!");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -69,7 +71,7 @@ public class TransferDatatypesTest extends TestCase {
 
 	// tear down after each test
 	protected void tearDown() {
-		Simon.shutdownRegistry(registry);
+		registry.stop();
 		while (registry.isRunning()) {
 			try {
 				Thread.sleep(2000);

@@ -82,7 +82,7 @@ public class ClientToServerConnection {
 	 * @param filterchainWorkerPool 
 	 */
 	public ClientToServerConnection(String serverString,
-			Dispatcher dispatcher, IoSession session, NioSocketConnector connector, ExecutorService filterchainWorkerPool) {
+			Dispatcher dispatcher, IoSession session, IoConnector connector, ExecutorService filterchainWorkerPool) {
 		
 		this.ServerString = serverString;
 		this.dispatcher = dispatcher;

@@ -39,6 +39,7 @@ import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.future.IoFuture;
 import org.apache.mina.core.future.IoFutureListener;
+import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
@@ -56,11 +57,14 @@ import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
 /**
- * This is SIMONs core class which contains all the core functionality like setting up a SIMON server or lookup a remote object from the client side
- * 
+ * This is SIMONs core class which contains all the core functionality like
+ * setting up a SIMON server or lookup a remote object from the client side
  */
 public class Simon {
 	
+	/**
+	 * TODO document me
+	 */
 	private final static Logger logger = LoggerFactory.getLogger(Simon.class);
 	
 	/**
@@ -68,15 +72,35 @@ public class Simon {
 	 */
 	private static final HashMap<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
 	
+	/**
+	 * TODO document me
+	 */
 	private static int poolSize = -1;
 
+	/**
+	 * TODO document me
+	 */
 	private static List<SimonPublication> publishments = new ArrayList<SimonPublication>();
 
+	/**
+	 * TODO document me
+	 */
 	private static PublishService publishService;
 
+	/**
+	 * TODO document me
+	 */
 	private static PublicationSearcher publicationSearcher;
+	
+	/**
+	 * Identifies the class, that is used as SIMON's standard protocol codec factory
+	 */
+	public static final String SIMON_STD_PROTOCOL_CODEC_FACTORY = "de.root1.simon.codec.base.SimonProtocolCodecFactory";
 
-	private static String protocolFactoryClassName = "de.root1.simon.codec.base.SimonProtocolCodecFactory";
+	/**
+	 * TODO document me
+	 */
+	private static String protocolFactoryClassName = SIMON_STD_PROTOCOL_CODEC_FACTORY;
 
 	/**
 	 * Try to load 'config/simon_logging.properties'
@@ -118,25 +142,31 @@ public class Simon {
 	}
 	
 	/**
-	 * Creates a registry listening on all interfaces with the last known 
-	 * worker thread pool size set by {@link Simon#setWorkerThreadPoolSize}
+	 * Creates a registry listening on all interfaces with the last known worker
+	 * thread pool size set by {@link Simon#setWorkerThreadPoolSize}
 	 * 
-	 * @param port the port on which SIMON listens for connections
-	 * @throws UnknownHostException if no IP address for the host could be found
-	 * @throws IOException if there is a problem with the networking layer
+	 * @param port
+	 *            the port on which SIMON listens for connections
+	 * @throws UnknownHostException
+	 *             if no IP address for the host could be found
+	 * @throws IOException
+	 *             if there is a problem with the networking layer
 	 */
 	public static Registry createRegistry(int port) throws UnknownHostException, IOException{
-		
 		return createRegistry(InetAddress.getByName("0.0.0.0"),port);
-		
 	}
 	
 	/**
-	 * Stops the given registry. This clears the {@link LookupTable} and stops the {@link Dispatcher}.
-	 * After running this method, no further connection/communication is possible. You have to create
-	 * again a registry to run server mode again.
-	 *
-	 * @param registry the registry to shut down
+	 * Stops the given registry. This clears the {@link LookupTable} and stops
+	 * the {@link Dispatcher}. After running this method, no further
+	 * connection/communication is possible. You have to create again a registry
+	 * to run server mode again.
+	 * 
+	 * @param registry
+	 *            the registry to shut down
+	 * 
+	 * @deprecated You should call <code>stop()</code> on the registry to
+	 *             shutdown the registry instead of this method.
 	 */
 	public static void shutdownRegistry(Registry registry) throws IllegalStateException {
 		if (registry.isRunning()) 
@@ -162,17 +192,29 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Retrieves a remote object from the server. At least, it tries to retrieve it.
-	 * This may fail if the named object is not available or if the connection could not be established.
+	 * Retrieves a remote object from the server. At least, it tries to retrieve
+	 * it. This may fail if the named object is not available or if the
+	 * connection could not be established.<br>
+	 * <i>Note: If your are finished with the remote object, don't forget to
+	 * call {@link Simon#release(Object)} to decrease the reference count and
+	 * finally release the connection to the server</i>
 	 * 
-	 * @param host hostname where the lookup takes place
-	 * @param port port number of the simon remote registry
-	 * @param remoteObjectName name of the remote object which is bind to the remote registry 
+	 * @param host
+	 *            hostname where the lookup takes place
+	 * @param port
+	 *            port number of the simon remote registry
+	 * @param remoteObjectName
+	 *            name of the remote object which is bind to the remote registry
 	 * @return and instance of the remote object
-	 * @throws SimonRemoteException if there's a problem with the simon communication
-	 * @throws IOException if there is a problem with the communication itself
-	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
-	 * @throws LookupFailedException if there's no such object on the server
+	 * @throws SimonRemoteException
+	 *             if there's a problem with the simon communication
+	 * @throws IOException
+	 *             if there is a problem with the communication itself
+	 * @throws EstablishConnectionFailed
+	 *             if its not possible to establish a connection to the remote
+	 *             registry
+	 * @throws LookupFailedException
+	 *             if there's no such object on the server
 	 */
 	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
 		return lookup(InetAddress.getByName(host), port, remoteObjectName);
@@ -180,17 +222,29 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Retrieves a remote object from the server. At least, it tries to retrieve it.
-	 * This may fail if the named object is not available or if the connection could not be established.
+	 * Retrieves a remote object from the server. At least, it tries to retrieve
+	 * it. This may fail if the named object is not available or if the
+	 * connection could not be established.<br>
+	 * <i>Note: If your are finished with the remote object, don't forget to
+	 * call {@link Simon#release(Object)} to decrease the reference count and
+	 * finally release the connection to the server</i>
 	 * 
-	 * @param host host address where the lookup takes place
-	 * @param port port number of the simon remote registry
-	 * @param remoteObjectName name of the remote object which is bind to the remote registry 
+	 * @param host
+	 *            host address where the lookup takes place
+	 * @param port
+	 *            port number of the simon remote registry
+	 * @param remoteObjectName
+	 *            name of the remote object which is bind to the remote registry
 	 * @return and instance of the remote object
-	 * @throws SimonRemoteException if there's a problem with the simon communication
-	 * @throws IOException if there is a problem with the communication itself
-	 * @throws EstablishConnectionFailed if its not possible to establish a connection to the remote registry
-	 * @throws LookupFailedException if there's no such object on the server
+	 * @throws SimonRemoteException
+	 *             if there's a problem with the simon communication
+	 * @throws IOException
+	 *             if there is a problem with the communication itself
+	 * @throws EstablishConnectionFailed
+	 *             if its not possible to establish a connection to the remote
+	 *             registry
+	 * @throws LookupFailedException
+	 *             if there's no such object on the server
 	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		logger.debug("begin");
@@ -202,7 +256,7 @@ public class Simon {
 		
 		String serverString = createServerString(host, port);
 		
-		logger.trace("check if serverstring '{}' is already in the serverDispatcherRelation list",serverString);
+		logger.debug("check if serverstring '{}' is already in the serverDispatcherRelation list", serverString);
 		
 		synchronized (serverDispatcherRelation) {
 			
@@ -224,7 +278,9 @@ public class Simon {
 				
 				dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
 				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
-				NioSocketConnector connector = new NioSocketConnector();
+				
+				IoConnector connector = new NioSocketConnector();
+				
 				connector.setHandler(dispatcher);
 								
 				ConnectFuture future = connector.connect(new InetSocketAddress(host, port));
@@ -240,8 +296,8 @@ public class Simon {
 				try {
 					protocolFactory = Utils.getFactoryInstance(protocolFactoryClassName);
 				} catch (ClassNotFoundException e) {
-					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
 					// already proved
+					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
 				} catch (InstantiationException e) {
 					// already proved
 					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
@@ -289,10 +345,12 @@ public class Simon {
 
 	/**
 	 * 
-	 * Creates a unique string for a server by using the host and port 
+	 * Creates a unique string for a server by using the host and port
 	 * 
-	 * @param host the servers host
-	 * @param port the port the server listens on
+	 * @param host
+	 *            the servers host
+	 * @param port
+	 *            the port the server listens on
 	 * @return a server string
 	 */
 	private static String createServerString(InetAddress host, int port) {
@@ -301,9 +359,11 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Gets the InetSocketAddress used on the remote-side of the given proxy object
+	 * Gets the InetSocketAddress used on the remote-side of the given proxy
+	 * object
 	 * 
-	 * @param proxyObject the proxy object
+	 * @param proxyObject
+	 *            the proxy object
 	 * @return the InetSocketAddress on the remote-side
 	 */
 	public static InetSocketAddress getRemoteInetSocketAddress(Object proxyObject) throws IllegalArgumentException {
@@ -312,11 +372,15 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Gets the socket-inetaddress used on the remote-side of the given proxy object
+	 * Gets the socket-inetaddress used on the remote-side of the given proxy
+	 * object
 	 * 
-	 * @param proxyObject the proxy-object
+	 * @param proxyObject
+	 *            the proxy-object
 	 * @return the InetAddress on the remote-side
-	 * @deprecated use {@link Simon#getRemoteInetSocketAddress(Object).getAddress()} instead!
+	 * @deprecated use
+	 *             <code>Simon.getRemoteInetSocketAddress(Object).getAddress()</code>
+	 *             instead!
 	 */
 	public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
 		return getRemoteInetSocketAddress(proxyObject).getAddress();
@@ -326,9 +390,12 @@ public class Simon {
 	 * 
 	 * Gets the socket-port used on the remote-side of the given proxy object
 	 * 
-	 * @param proxyObject the proxy-object
+	 * @param proxyObject
+	 *            the proxy-object
 	 * @return the port on the remote-side
-	 * @deprecated use {@link Simon#getRemoteInetSocketAddress(proxyObject).getPort()} instead!
+	 * @deprecated use
+	 *             <code> Simon.getRemoteInetSocketAddress(proxyObject).getPort()</code>
+	 *             instead!
 	 */
 	public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
 		return getRemoteInetSocketAddress(proxyObject).getPort();
@@ -336,9 +403,11 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Gets the InetSocketAddress used on the local-side of the given proxy object
+	 * Gets the InetSocketAddress used on the local-side of the given proxy
+	 * object
 	 * 
-	 * @param proxyObject the proxy object
+	 * @param proxyObject
+	 *            the proxy object
 	 * @return the InetSocketAddress on the local-side
 	 */
 	public static InetSocketAddress getLocalInetSocketAddress(Object proxyObject) throws IllegalArgumentException {
@@ -347,11 +416,15 @@ public class Simon {
 	
 	/**
 	 * 
-	 * FIXME Gets the socket-port used on the local-side of the given proxy object
+	 * Gets the socket-port used on the local-side of the given proxy object
 	 * 
-	 * @param proxyObject the proxy-object
+	 * @param proxyObject
+	 *            the proxy-object
 	 * @return the port on the local-side
-	 * @deprecated use {@link Simon#getLocalInetSocketAddress(proxyObject).getPort()} instead!
+	 * @deprecated use
+	 *             <code>Simon.getLocalInetSocketAddress(proxyObject).getPort()</code>
+	 *             instead!
+	 *             
 	 */
 	public static int getLocalPort(Object proxyObject) throws IllegalArgumentException {
 		return getLocalInetSocketAddress(proxyObject).getPort();
@@ -361,9 +434,12 @@ public class Simon {
 	 * 
 	 * Retrieves {@link SimonProxy} invocation handler wrapped in a simple proxy
 	 * 
-	 * @param o the object that holds the proxy
+	 * @param o
+	 *            the object that holds the proxy
 	 * @return the extracted SimonProxy
-	 * @throws IllegalArgumentException if the object does not contain a SimonProxy invocation handler
+	 * @throws IllegalArgumentException
+	 *             if the object does not contain a SimonProxy invocation
+	 *             handler
 	 */
 	protected static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
 		if (o instanceof Proxy) {
@@ -376,6 +452,7 @@ public class Simon {
 
 	/**
 	 * Returns the reference to the worker thread pool
+	 * 
 	 * @return the threadPool
 	 */
 	protected static ExecutorService getThreadPool() {
@@ -389,16 +466,19 @@ public class Simon {
 	}
 
 	/**
-	 * Sets the size of the worker thread pool.<br>This will setting only affect new pool that have to be created in future.
-	 * If given size has value -1, a new pool will create new threads as needed, 
-	 * but will reuse previously constructed threads when they are available. This is the most common setting.
-	 * Old, for 60 seconds unused threads will be removed. These pools will 
-	 * typically improve the performance of programs that execute many short-lived 
-	 * asynchronous tasks. See documentation of {@link Executors#newCachedThreadPool()}<br>
+	 * Sets the size of the worker thread pool.<br>
+	 * This will setting only affect new pool that have to be created in future.
+	 * If given size has value -1, a new pool will create new threads as needed,
+	 * but will reuse previously constructed threads when they are available.
+	 * This is the most common setting. Old, for 60 seconds unused threads will
+	 * be removed. These pools will typically improve the performance of
+	 * programs that execute many short-lived asynchronous tasks. See
+	 * documentation of {@link Executors#newCachedThreadPool()}<br>
 	 * 
 	 * If size has value >=1, a new pool has a fixed size by the given value
 	 * 
-	 * @param size the size of the used worker thread pool
+	 * @param size
+	 *            the size of the used worker thread pool
 	 */
 	public static void setWorkerThreadPoolSize(int size) {
 		poolSize = size;
@@ -406,13 +486,15 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Releases a instance of a remote object.
-	 * If there are no more remote objects alive which are related to a specific server connection,
-	 * the connection will be closed, until a new {@link Simon#lookup(String, int, String)} is 
-	 * called on the same server.
+	 * Releases an instance of a remote object.<br>
+	 * If there are no more remote objects alive which are related to a specific
+	 * server connection, this connection will be closed, until a new
+	 * {@link Simon#lookup(String, int, String)} is called on the same server.
 	 * 
-	 * @param proxyObject the object to release
-	 * @return true if the server connection is closed, false if there's still a reference pending 
+	 * @param proxyObject
+	 *            the object to release
+	 * @return true if the server connection is closed, false if there's still a
+	 *         reference pending
 	 */
 	public static boolean release(Object proxyObject) {
 		logger.debug("begin");
@@ -435,11 +517,15 @@ public class Simon {
 
 	/**
 	 * 
-	 * Releases a reference for a {@link Dispatcher} identified by a specific server string (see: {@link Simon#createServerString}.
-	 * If there is no more server string referencing the Dispatcher, the Dispatcher will be released/shutdown.
+	 * Releases a reference for a {@link Dispatcher} identified by a specific
+	 * server string (see: {@link Simon#createServerString}. If there is no more
+	 * server string referencing the Dispatcher, the Dispatcher will be
+	 * released/shutdown.
 	 * 
-	 * @param serverString the identifier of the Dispatcher to release
-	 * @return true if the Dispatcher is shut down, false if there's still a reference pending 
+	 * @param serverString
+	 *            the identifier of the Dispatcher to release
+	 * @return true if the Dispatcher is shut down, false if there's still a
+	 *         reference pending
 	 */
 	protected static boolean releaseServerDispatcherRelation(String serverString) {
 		
@@ -484,7 +570,9 @@ public class Simon {
 	
 	/**
 	 * Sets the DGC's interval time in milliseconds
-	 * @param milliseconds time in milliseconds
+	 * 
+	 * @param milliseconds
+	 *            time in milliseconds
 	 * 
 	 * @deprecated This is now handled by MINA. Using this method is obsolete.
 	 */
@@ -492,22 +580,27 @@ public class Simon {
 	}
 	
 	/**
-	 * Gets the DGC's interval time in milliseconds
-	 * return DGC interval time in milliseconds
+	 * Gets the DGC's interval time in milliseconds return DGC interval time in
+	 * milliseconds
 	 * 
 	 * @return the current set DGC interval
 	 * 
-	 * @deprecated this is now done internally with MINA. There's no global value available...This method now always returns zero. So do not use it anymore!
+	 * @deprecated this is now done internally with MINA. There's no global
+	 *             value available...This method now always returns zero. So do
+	 *             not use it anymore!
 	 */
 	public static int getDgcInterval(){
 		return 0;
 	}
 
 	/**
-	 * Publishes a remote object. If not already done, publish service thread is started.
+	 * Publishes a remote object. If not already done, publish service thread is
+	 * started.
 	 * 
-	 * @param simonPublication the object to publish
-	 * @throws IOException if the publish service cannot be started due to IO problems
+	 * @param simonPublication
+	 *            the object to publish
+	 * @throws IOException
+	 *             if the publish service cannot be started due to IO problems
 	 */
 	protected static void publish(SimonPublication simonPublication) throws IOException {
 		if (publishments.isEmpty()){
@@ -519,10 +612,11 @@ public class Simon {
 	}
 
 	/**
-	 * Unpublishs a already published {@link SimonPublication}. If there are no more
-	 * publications available, shutdown the publish service.
+	 * Unpublishs a already published {@link SimonPublication}. If there are no
+	 * more publications available, shutdown the publish service.
 	 * 
-	 * @param simonPublication the publication to unpublish
+	 * @param simonPublication
+	 *            the publication to unpublish
 	 */
 	public static void unpublish(SimonPublication simonPublication) {
 		publishments.remove(simonPublication);
@@ -532,11 +626,17 @@ public class Simon {
 	}
 	
 	/**
-	 * Creates a background thread that searches for published remote objects on the local network
+	 * Creates a background thread that searches for published remote objects on
+	 * the local network
 	 * 
-	 * @param listener a {@link SearchProgressListener} implementation which is informed about the current search progress
-	 * @param searchTime the time the background search thread spends for searching published remote objects
-	 * @return a {@link PublicationSearcher} which is used to access the search result
+	 * @param listener
+	 *            a {@link SearchProgressListener} implementation which is
+	 *            informed about the current search progress
+	 * @param searchTime
+	 *            the time the background search thread spends for searching
+	 *            published remote objects
+	 * @return a {@link PublicationSearcher} which is used to access the search
+	 *         result
 	 */
 	public static PublicationSearcher searchRemoteObjects(SearchProgressListener listener, int searchTime){
 		if (publicationSearcher==null || !publicationSearcher.isSearching()) {
@@ -553,8 +653,11 @@ public class Simon {
 	
 	/**
 	 * Starts a search on the local network for published remote objects. <br>
-	 * <b><u>Be warned:</u> This method blocks until the search is finished or the current thread is interrupted</b>
-	 * @param searchTime the time that is spend to search for published remote objects
+	 * <b><u>Be warned:</u> This method blocks until the search is finished or
+	 * the current thread is interrupted</b>
+	 * 
+	 * @param searchTime
+	 *            the time that is spend to search for published remote objects
 	 * @return a {@link List} of {@link SimonPublication}s
 	 */
 	public static List<SimonPublication> searchRemoteObjects(int searchTime){
@@ -579,7 +682,7 @@ public class Simon {
 	 * does not affect already created registry or already established
 	 * sessions.</i>
 	 * 
-	 * @param protocolFactory
+	 * @param protocolFactoryClassName
 	 *            a class name like
 	 *            "com.mydomain.myproject.codec.mySimonProtocolCodecFactory"
 	 *            which points to a class, that extends
@@ -601,9 +704,21 @@ public class Simon {
 	 *             if the given class is no instance of
 	 *             {@link SimonProtocolCodecFactory}
 	 */
-	public static void setProtocolCodecFactory(String protocolFactory) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException{
-		Utils.getFactoryInstance(protocolFactory);
-		Simon.protocolFactoryClassName = protocolFactory;
+	public static void setProtocolCodecFactory(String protocolFactoryClassName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException{
+		// testwise try to get the factory. if the specified class' name is not useable, 
+		// exceptions will be thrown and forwarded
+		Utils.getFactoryInstance(protocolFactoryClassName);
+		// if the above worked, save the class' name
+		Simon.protocolFactoryClassName = protocolFactoryClassName;
+	}
+	
+	/**
+	 * Returns the current set class name for the protocol codec factory
+	 * 
+	 * @return the name of the protocol codec class
+	 */
+	public static String getProtocolCodecFactory(){
+		return Simon.protocolFactoryClassName;
 	}
 
 	

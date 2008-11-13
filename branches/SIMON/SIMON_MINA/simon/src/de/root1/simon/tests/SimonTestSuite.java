@@ -7,15 +7,18 @@ import junit.framework.TestFailure;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 import de.root1.simon.tests.transferDatatypes.TransferDatatypesTest;
+import de.root1.simon.utils.Utils;
 
 public class SimonTestSuite {
 	
 	// Add all tests to the suite here
 	private static void addTestsTo(TestSuite testSuite) {
-
-		  testSuite.addTestSuite(EmptyTest.class);
-		  testSuite.addTestSuite(RegistryTest.class);
-		  testSuite.addTestSuite(TransferDatatypesTest.class);
+		
+		Utils.DEBUG = true;
+		
+		testSuite.addTestSuite(EmptyTest.class);
+		testSuite.addTestSuite(RegistryTest.class);
+		testSuite.addTestSuite(TransferDatatypesTest.class);
 
 	}
 	

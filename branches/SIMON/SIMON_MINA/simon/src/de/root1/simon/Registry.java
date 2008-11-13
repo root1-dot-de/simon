@@ -39,35 +39,66 @@ import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.utils.Utils;
 
 /**
- * The SIMON server acts as a registry for remote objects. 
- * So, Registry is SIMON's internal server implementation
- *
+ * The SIMON server acts as a registry for remote objects. So, Registry is
+ * SIMON's internal server implementation
+ * 
  * @author achristian
- *
+ * 
  */
 public class Registry {
 	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+	/**
+	 * TODO document me
+	 */
+private final Logger logger = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * TODO document me
+	 */
 	private LookupTable lookupTableServer;
+
+	/**
+	 * TODO document me
+	 */
 	private InetAddress address;
+
+	/**
+	 * TODO document me
+	 */
 	private int port;
 
+	/**
+	 * TODO document me
+	 */
 	private Dispatcher dispatcher;
 	
+	/**
+	 * TODO document me
+	 */
 	private IoAcceptor acceptor;
 	
 	/** The pool in which the dispatcher, acceptor and registry lives */
 	private ExecutorService threadPool;
 
+	/**
+	 * TODO document me
+	 */
 	private ExecutorService filterchainWorkerPool;
+	
+	/**
+	 * TODO document me
+	 */
 	private String protocolFactoryClassName;
 
 	/**
-	 * Creates a registry which has it's own {@link LookupTable} instead of a global.
-	 *  
-	 * @param port the port the registry listens on for new connections
-	 * @param threadPool a reference to an existing thread pool
-	 * @throws IOException 
+	 * Creates a registry which has it's own {@link LookupTable} instead of a
+	 * global.
+	 * 
+	 * @param port
+	 *            the port the registry listens on for new connections
+	 * @param threadPool
+	 *            a reference to an existing thread pool
+	 * @throws IOException
 	 */
 	protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
 		logger.debug("begin");
@@ -82,8 +113,11 @@ public class Registry {
 	
 	/**
 	 * Starts the registry thread
-	 * @throws IOException if there's a problem getting a selector for the non-blocking network communication, or if the 
-	 *
+	 * 
+	 * @throws IOException
+	 *             if there's a problem getting a selector for the non-blocking
+	 *             network communication, or if the
+	 * 
 	 */
 	private void start() throws IOException {
 
@@ -95,13 +129,24 @@ public class Registry {
 		
 		acceptor = new NioSocketAcceptor();
 		
+		if (acceptor instanceof NioSocketAcceptor) {
+			NioSocketAcceptor nioSocketAcceptor = (NioSocketAcceptor) acceptor;
+			
+			logger.debug("setting 'TcpNoDelay' on NioSocketAcceptor");
+			nioSocketAcceptor.getSessionConfig().setTcpNoDelay(true);
+
+			logger.debug("setting 'ReuseAddress' on NioSocketAcceptor");
+			nioSocketAcceptor.setReuseAddress(true);
+		}
+		
 		filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
 		
 		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
-        
+		
+		// only add the logging filter if trace is enabled
 		if (logger.isTraceEnabled())
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
-		
+
 		SimonProtocolCodecFactory protocolFactory = null;
 		try {
 			protocolFactory = Utils.getFactoryInstance(protocolFactoryClassName);
@@ -118,43 +163,37 @@ public class Registry {
 		protocolFactory.setup(true);
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
         
-		acceptor.setHandler(  dispatcher );
-        
-//        acceptor.getSessionConfig().setReadBufferSize( 2048 );
+		acceptor.setHandler(dispatcher);
         acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
+        acceptor.bind(new InetSocketAddress(address, port));
         
-        // FIXME should be configurable ...
-        ((NioSocketAcceptor) acceptor).setReuseAddress(true);
-        
-        acceptor.bind( new InetSocketAddress(address, port) );
-        
-		
         logger.debug("acceptor thread created and started");			
-			
-		
         logger.debug("end");
 	}
 	
 	/**
-	 * Stops the registry. This clears the {@link LookupTable}, 
-	 * stops the acceptor and the {@link Dispatcher}.
-	 * After running this method, no further connection/communication is possible with this 
-	 * registry.
-	 *
+	 * Stops the registry. This clears the {@link LookupTable}, stops the
+	 * acceptor and the {@link Dispatcher}. After running this method, no
+	 * further connection/communication is possible with this registry.
+	 * 
 	 */
 	public void stop() {
 		acceptor.unbind();
+		dispatcher.shutdown();
 		filterchainWorkerPool.shutdown();
 		lookupTableServer.clear();
-		dispatcher.shutdown();
 	}
 	
 	/**
 	 * Binds a remote object to the registry's own {@link LookupTable}
 	 * 
-	 * @param name a name for object to bind
-	 * @param remoteObject the object to bind
-	 * @throws NameBindingException if there are problems binding the remoteobject to the registry
+	 * @param name
+	 *            a name for object to bind
+	 * @param remoteObject
+	 *            the object to bind
+	 * @throws NameBindingException
+	 *             if there are problems binding the remoteobject to the
+	 *             registry
 	 */
 	public void bind(String name, SimonRemote remoteObject) throws NameBindingException {
 		try {
@@ -167,13 +206,16 @@ public class Registry {
 	}
 	
 	/**
-	 * Binds the object to the {@link Registry} and publishes it to the network, 
-	 * so that they can be found with {@link Simon#searchRemoteObjects(int)} or 
+	 * Binds the object to the {@link Registry} and publishes it to the network,
+	 * so that they can be found with {@link Simon#searchRemoteObjects(int)} or
 	 * {@link Simon#searchRemoteObjects(SearchProgressListener, int)}
 	 * 
-	 * @param name a name for the object to bind and publish
-	 * @param remoteObject the object to bind and publish
-	 * @throws NameBindingException if binding fails
+	 * @param name
+	 *            a name for the object to bind and publish
+	 * @param remoteObject
+	 *            the object to bind and publish
+	 * @throws NameBindingException
+	 *             if binding fails
 	 */
 	public void bindAndPublish(String name, SimonRemote remoteObject) throws NameBindingException {
 		bind(name, remoteObject);
@@ -186,10 +228,11 @@ public class Registry {
 	}
 	
 	/**
-	 * Unbinds a remote object from the registry's own {@link LookupTable}.
-	 * If it's published, it's removed from the list of published objects
-	 *  
-	 * @param name the object to unbind (and unpublish, if published)
+	 * Unbinds a remote object from the registry's own {@link LookupTable}. If
+	 * it's published, it's removed from the list of published objects
+	 * 
+	 * @param name
+	 *            the object to unbind (and unpublish, if published)
 	 */
 	public void unbind(String name){
 		//TODO what to do with already connected users?
@@ -198,15 +241,18 @@ public class Registry {
 	}
 	
 	/**
-	 * As the name says, it re-binds a remote object.
-	 * This method shows the same behavior as the following two commands in sequence:<br>
+	 * As the name says, it re-binds a remote object. This method shows the same
+	 * behavior as the following two commands in sequence:<br>
 	 * <br>
 	 * <code>
 	 * unbind(name);<br>
 	 * bind(name, remoteObject);
 	 * </code>
-	 * @param name the name of the object to rebind
-	 * @param remoteObject the object to rebind
+	 * 
+	 * @param name
+	 *            the name of the object to rebind
+	 * @param remoteObject
+	 *            the object to rebind
 	 */
 	public void rebind(String name, SimonRemote remoteObject){
 		unbind(name);
@@ -220,6 +266,7 @@ public class Registry {
 	
 	/**
 	 * Returns whether the registry is running and active or not
+	 * 
 	 * @return boolean
 	 */
 	public boolean isRunning(){

@@ -54,7 +54,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     	if (!readSize) {
     		readSize  = true;
     		msgSize = in.getInt();
-    		logger.trace("msgSizeInBytes={}",msgSize);
+    		logger.trace("msgSizeInBytes={} position={}",msgSize, in.position());
     	}
     	
     	if (in.remaining() < msgSize) {

@@ -47,20 +47,29 @@ public class RegistryTest extends TestCase {
 	// initial for each test setup
 	protected void setUp() {
 		try {
-			registry = Simon.createRegistry(InetAddress.getLocalHost(),22222);
+			registry = Simon.createRegistry(InetAddress.getLocalHost(),2000);
 		} catch (UnknownHostException e) {
-			new AssertionError("localhost must be present!");
-		} catch (IllegalStateException e) {
-			new AssertionError("the first time the registry is created, there should not be any IllegalStateException while creating the registry!");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			System.err.println("error while RegistryTest#setUp(): localhost must be present!");
 			e.printStackTrace();
-		}
+		} catch (IllegalStateException e) {
+			System.err.println("error while RegistryTest#setUp(): the first time the registry is created, there should not be any IllegalStateException while creating the registry!");
+			e.printStackTrace();
+		} catch (BindException e){
+			System.err.println("error while RegistryTest#setUp(): Bindung to ip and port should normally work");
+			e.printStackTrace();
+		} catch (IOException e) {
+			System.err.println("error while RegistryTest#setUp(): there should be nop IOException");
+			e.printStackTrace();
+		} 
+		if (registry==null) 
+			System.exit(1);
 	}
 
 	// tear down after each test
 	protected void tearDown() {
-		Simon.shutdownRegistry(registry);
+		if (registry==null) 
+			System.err.println("Error while RegistryTest#tearDown(): registry object should not be NULL");
+		registry.stop();
 		while (registry.isRunning()) {
 			try {
 				System.out.println("waiting for registry to shutdown!");
@@ -74,6 +83,10 @@ public class RegistryTest extends TestCase {
 	// TESTS
 	// -----------------------
 
+//	public void testEmptyTest(){
+//		
+//	}
+	
 	public void testCreateIndividualRegistry2Times() {
 
 		try {
@@ -91,6 +104,7 @@ public class RegistryTest extends TestCase {
 	
 	public void testNameBindingException (){
 		try {
+			System.out.println("trying to bind to registry. registry="+registry);
 			registry.bind("myServer", serverImpl);
 		} catch (NameBindingException e) {
 			new AssertionError("bindung a remoteobject the first time, there should not be an exception");

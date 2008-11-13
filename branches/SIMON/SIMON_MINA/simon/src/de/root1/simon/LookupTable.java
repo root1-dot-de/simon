@@ -97,13 +97,13 @@ public class LookupTable {
 	public synchronized void putRemoteInstanceBinding(long sessionId, String remoteObjectName, SimonRemote remoteObject){
 		logger.debug("begin");
 		
-		logger.debug("sessionId={} remoteObjectName={} remoteObject=", new Object[]{sessionId, remoteObjectName, remoteObject});
+		logger.debug("sessionId={} remoteObjectName={} remoteObject=", new Object[]{Utils.longToHexString(sessionId), remoteObjectName, remoteObject});
 		
 		List<String> remotes;
 		
 		// if there no list present, create one
 		if (!gcRemoteInstances.containsKey(sessionId)) {
-			logger.debug("session '{}' unknown, creating new remote instance list!", sessionId);
+			logger.debug("session '{}' unknown, creating new remote instance list!", Utils.longToHexString(sessionId));
 			remotes = new ArrayList<String>();
 			gcRemoteInstances.put(sessionId, remotes);
 		} else {
@@ -114,7 +114,7 @@ public class LookupTable {
 		
 		putRemoteBinding(remoteObjectName, remoteObject);
 		
-		logger.debug("session '{}' now has {} entries.", sessionId, remotes.size());
+		logger.debug("session '{}' now has {} entries.", Utils.longToHexString(sessionId), remotes.size());
 				
 		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
 		logger.debug("end");		
@@ -250,7 +250,7 @@ public class LookupTable {
 		
 		logger.debug("begin");
 		
-		logger.debug("unreferencing session with sessionId={}", sessionId);
+		logger.debug("unreferencing session with sessionId={}", Utils.longToHexString(sessionId));
 		
 		List<String> list;
 		synchronized (gcRemoteInstances) {
