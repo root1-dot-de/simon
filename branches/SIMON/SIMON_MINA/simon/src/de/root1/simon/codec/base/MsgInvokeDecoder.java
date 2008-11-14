@@ -18,10 +18,8 @@
  */
 package de.root1.simon.codec.base;
 import java.lang.reflect.Method;
-import java.nio.BufferUnderflowException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.util.zip.CRC32;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
