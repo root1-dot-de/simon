@@ -19,6 +19,7 @@
 package de.root1.simon.codec.base;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.zip.CRC32;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -69,7 +70,8 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
 				b.putObject(message.getArguments()[i]);
 			}
 			
-			int msgSize = b.position();
+	    	int msgSize = b.position();
+			
 			b.flip();
 			logger.trace("msgSizeInBytes={}",msgSize);
 			out.putInt(msgSize);

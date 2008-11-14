@@ -28,6 +28,7 @@ import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
@@ -139,8 +140,9 @@ private final Logger logger = LoggerFactory.getLogger(getClass());
 			nioSocketAcceptor.setReuseAddress(true);
 		}
 		
-		filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
-		
+//		filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
+		filterchainWorkerPool = new OrderedThreadPoolExecutor();
+
 		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
 		
 		// only add the logging filter if trace is enabled

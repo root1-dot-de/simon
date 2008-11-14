@@ -51,7 +51,7 @@ public class TransferDatatypesTest extends TestCase {
 
 	// initial for each test setup
 	protected void setUp() {
-		Utils.DEBUG = true;
+//		Utils.DEBUG = true;
 		try {
 			registry = Simon.createRegistry(InetAddress.getLocalHost(),22222);
 			registry.bind("server", new ServerImpl());
@@ -90,8 +90,8 @@ public class TransferDatatypesTest extends TestCase {
 		
 		Hashtable<String, String> myHashtable = new Hashtable<String, String>();
 		
-		for (int i=0;i<100;i++) {
-			myHashtable.put("myKey"+i, "myValue"+i);
+		for (int i=0;i<100000;i++) {
+			myHashtable.put("MyKey"+i, "MyValue"+i);
 		}
 		
 		try {

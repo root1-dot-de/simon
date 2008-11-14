@@ -43,6 +43,7 @@ import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
@@ -277,7 +278,6 @@ public class Simon {
 				logger.debug("No ClientToServerConnection in list. Creating new one.");
 				
 				dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
-				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
 				
 				IoConnector connector = new NioSocketConnector();
 				
@@ -286,7 +286,9 @@ public class Simon {
 				ConnectFuture future = connector.connect(new InetSocketAddress(host, port));
 				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
 				session = future.getSession();
-				
+
+//				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
+				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
 				session.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
 				
 				if (logger.isTraceEnabled())

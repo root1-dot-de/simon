@@ -18,8 +18,10 @@
  */
 package de.root1.simon.codec.base;
 import java.lang.reflect.Method;
+import java.nio.BufferUnderflowException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.zip.CRC32;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -65,14 +67,17 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     	MsgInvoke msgInvoke = new MsgInvoke();
     	
         try {
+        	LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
         
         	logger.trace("start pos={} capacity={}",in.position(), in.capacity());
         	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+        	msgInvoke.setRemoteObjectName(remoteObjectName);
         	logger.trace("ron read ... pos={}",in.position());
         	
-        	msgInvoke.setRemoteObjectName(remoteObjectName);
-    		LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
-    		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), in.getLong());
+
+    		long methodHash = in.getLong();
+    		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), methodHash);
+    		logger.trace("methodHash read ... pos={}",in.position());
 	
 		
     		
@@ -82,7 +87,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			Object[] args = new Object[argsLength];
 			for (int i=0;i<argsLength;i++){
 				args[i]=in.getObject();
-				logger.trace("{} object read ... pos={}",i, in.position());
+				logger.trace("{} object read ... pos={} object={}", new Object[]{i, in.position(), args[i]});
 			}
 			
 			msgInvoke.setArguments(args);
@@ -98,6 +103,8 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		
 		logger.trace("message={}", msgInvoke);
         return msgInvoke;
     }
