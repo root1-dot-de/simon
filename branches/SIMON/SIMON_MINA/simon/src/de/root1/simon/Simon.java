@@ -722,6 +722,20 @@ public class Simon {
 	public static String getProtocolCodecFactory(){
 		return Simon.protocolFactoryClassName;
 	}
+	
+	/**
+	 * Returns a object that lets you get some network related information on
+	 * the session of the given remote object (an instance of {@link SimonProxy}
+	 * 
+	 * @param remoteObject
+	 *            the remote object that is asked for the statistics
+	 * @return an implementation of {@link SimonRemoteStatistics} that gives
+	 *         access to the statistics data
+	 */
+	public static SimonRemoteStatistics getStatistics(Object remoteObject){
+		SimonProxy simonProxy = getSimonProxy(remoteObject);
+		return new RemoteStatistics(simonProxy.getIoSession());
+	}
 
 	
 

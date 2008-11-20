@@ -274,4 +274,15 @@ private final Logger logger = LoggerFactory.getLogger(getClass());
 		return (dispatcher.isRunning() || acceptor.isActive() || !filterchainWorkerPool.isTerminated());
 	}
 	
+	/**
+	 * Returns a object that lets you get some network related information on
+	 * the session of the given remote object (an instance of {@link SimonProxy}
+	 * 
+	 * @return an implementation of {@link SimonRegistryStatistics} that gives
+	 *         access to the statistics data of this {@link Registry}
+	 */
+	public SimonRegistryStatistics getStatistics(){
+		return new RegistryStatistics(acceptor.getStatistics());
+	}
+	
 }

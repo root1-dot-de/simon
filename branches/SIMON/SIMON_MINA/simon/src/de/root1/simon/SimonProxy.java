@@ -253,5 +253,14 @@ public class SimonProxy implements InvocationHandler {
 	protected String getRemoteObjectName() {
 		return remoteObjectName;
 	}
+	
+	/**
+	 * Returns the {@link IoSession} related to this proxy
+	 * 
+	 * @return an instance of {@link IoSession}
+	 */
+	protected IoSession getIoSession(){
+		return session;
+	}
 
 }
