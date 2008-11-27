@@ -198,16 +198,16 @@ public final class Registry {
 	 * TODO document me
 	 * @param timeout
 	 */
-	public void getWriteTimeout() {
-		acceptor.getSessionConfig().getWriteTimeout();
+	public int getWriteTimeout() {
+		return acceptor.getSessionConfig().getWriteTimeout();
 	}
 
 	/**
 	 * TODO document me
 	 * @param interval
 	 */
-	public void getDgcInterval() {
-		acceptor.getSessionConfig().getIdleTime( IdleStatus.BOTH_IDLE );
+	public int getDgcInterval() {
+		return acceptor.getSessionConfig().getIdleTime( IdleStatus.BOTH_IDLE );
 	}
 	
 	/**

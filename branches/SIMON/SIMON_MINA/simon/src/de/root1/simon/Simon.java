@@ -661,7 +661,7 @@ public class Simon {
 	 * @return current set DGC interval of given remote object
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
-	public static int getDgcInterval(Object remoteObject){
+	public static int getDgcInterval(Object remoteObject) throws IllegalArgumentException {
 		return getSimonProxy(remoteObject).getIoSession().getConfig().getIdleTime(IdleStatus.BOTH_IDLE);
 	}
 	
@@ -672,7 +672,7 @@ public class Simon {
 	 *            time in seconds
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
-	public static void settWriteTimeout(Object remoteObject, int seconds){
+	public static void setWriteTimeout(Object remoteObject, int seconds) throws IllegalArgumentException {
 		getSimonProxy(remoteObject).getIoSession().getConfig().setWriteTimeout(seconds);
 	}
 	
@@ -682,7 +682,7 @@ public class Simon {
 	 * @return current set network write timeout of given remote object
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
-	public static int getWriteTimeout(Object remoteObject){
+	public static int getWriteTimeout(Object remoteObject) throws IllegalArgumentException {
 		return getSimonProxy(remoteObject).getIoSession().getConfig().getWriteTimeout();
 	}
 
