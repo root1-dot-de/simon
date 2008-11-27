@@ -53,27 +53,27 @@ public final class Registry {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	/**
-	 * TODO document me
+	 * The {@link LookupTable} used by the {@link Registry}'s {@link Dispatcher}
 	 */
 	private LookupTable lookupTableServer;
 
 	/**
-	 * TODO document me
+	 * The address in which the registry is listening
 	 */
 	private InetAddress address;
 
 	/**
-	 * TODO document me
+	 * The port on which the registry is listening
 	 */
 	private int port;
 
 	/**
-	 * TODO document me
+	 * The Distaptcher for all incoming connections
 	 */
 	private Dispatcher dispatcher;
 	
 	/**
-	 * TODO document me
+	 * the socket acceptor
 	 */
 	private IoAcceptor acceptor;
 	
@@ -81,12 +81,12 @@ public final class Registry {
 	private ExecutorService threadPool;
 
 	/**
-	 * TODO document me
+	 * A thread pool for the filterchain => more performance
 	 */
 	private ExecutorService filterchainWorkerPool;
 	
 	/**
-	 * TODO document me
+	 * Name of the protocol factory to use
 	 */
 	private String protocolFactoryClassName;
 
