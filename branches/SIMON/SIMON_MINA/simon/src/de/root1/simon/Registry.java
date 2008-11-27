@@ -45,7 +45,7 @@ import de.root1.simon.utils.Utils;
  * @author achristian
  * 
  */
-public class Registry {
+public final class Registry {
 	
 	/**
 	 * TODO document me

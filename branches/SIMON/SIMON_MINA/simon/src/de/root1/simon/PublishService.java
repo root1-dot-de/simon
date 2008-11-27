@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class PublishService extends Thread {
+public final class PublishService extends Thread {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private MulticastSocket socket;
@@ -38,7 +38,7 @@ public class PublishService extends Thread {
 	private boolean shutdown;
 	private List<SimonPublication> publishments;
 
-	public PublishService(List<SimonPublication> publishments) throws IOException {
+	protected PublishService(List<SimonPublication> publishments) throws IOException {
 		logger.debug("preparing publish service");
 		setName(Statics.PUBLISH_SERVICE_THREAD_NAME);
 		socket = new MulticastSocket(groupPort);
@@ -85,7 +85,7 @@ public class PublishService extends Thread {
 		logger.debug("publish service terminated!");
 	}
 	
-	public void shutdown(){
+	protected void shutdown(){
 		shutdown = true;
 		logger.debug("Shutting down the publish service now ...");
 	}

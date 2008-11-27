@@ -18,8 +18,19 @@
  */
 package de.root1.simon;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class holds a 3-tupel of data needed to identify a remote object on a registry.
@@ -33,21 +44,62 @@ import java.net.UnknownHostException;
  * @author achristian
  *
  */
-public class SimonPublication {
+public final class SimonPublication {
 	
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private static final String SIMON_PUBLISHMENT_HEADER = "[SIMON|";
 	private String remoteObjectName;
 	private int port;
 	private InetAddress address;
-	StringBuffer sb = new StringBuffer();
+	private StringBuffer sb = new StringBuffer();
 
 	/**
 	 * Creates a new object instance according to the given address, port and remote object name
-	 * @param address the address of a simon registry
+	 * @param address the address of a SIMON registry
 	 * @param port the port on which the registry listens
 	 * @param remoteObjectName the bind remote object name
 	 */
-	public SimonPublication(InetAddress address, int port, String remoteObjectName) {
+	protected SimonPublication(InetAddress address, int port, String remoteObjectName) {
+//		System.out.println(address.getHostAddress());
+		
+		if (address.getHostAddress().equalsIgnoreCase("0.0.0.0")){
+			
+			logger.trace("Given IP is 0.0.0.0... Searching for a better one to publish ...");
+			boolean ipFound = false;
+			Enumeration<NetworkInterface> netInter;
+			try {
+				netInter = NetworkInterface.getNetworkInterfaces();
+			
+			    int n = 0; 
+			 
+			    while ( netInter.hasMoreElements() ) 
+			    { 
+			      NetworkInterface ni = netInter.nextElement(); 
+			 
+			      logger.trace("Analyzing: NetworkInterface #{}: {}",n++, ni.getDisplayName() ); 
+			 
+			      for ( InetAddress iaddress : Collections.list(ni.getInetAddresses()) ) 
+			      { 
+			 
+			    	  if ((iaddress instanceof Inet4Address) && !iaddress.isLoopbackAddress()){
+			    		  logger.trace("choosing {} instead of 0.0.0.0",iaddress.getHostAddress());
+			    		  address = iaddress;
+			    		  ipFound = true;
+			    		  break;
+			    	  }
+			      } 
+			      if (ipFound) 
+			    	  break;
+			 
+			    } 
+			    if (!ipFound)
+			    	logger.error("no suiteable IP found. Still working with IP 0.0.0.0 which can't be used by clients!");
+			} catch (SocketException e) {
+				logger.error("Error while detecting IP address. Error was: {}",e.getMessage());
+			} 
+			logger.trace("end with search");
+		}
+		
 		this.address = address;
 		this.port = port;
 		this.remoteObjectName = remoteObjectName;
@@ -62,7 +114,7 @@ public class SimonPublication {
 	 * @throws UnknownHostException if the host in the raw string is unknown
 	 * @throws NumberFormatException if the port in the raw string has the wrong format (e.g. non numeric)
 	 */
-	public SimonPublication(String rawString) throws IllegalArgumentException, UnknownHostException, NumberFormatException {
+	protected SimonPublication(String rawString) throws IllegalArgumentException, UnknownHostException, NumberFormatException {
 		
 		if ((!rawString.substring(0, SIMON_PUBLISHMENT_HEADER.length()).equals(SIMON_PUBLISHMENT_HEADER) &&
 				!rawString.substring(SIMON_PUBLISHMENT_HEADER.length()-1,SIMON_PUBLISHMENT_HEADER.length()).equals("]"))) 
