@@ -12,8 +12,8 @@ public class ServerInterfaceImpl implements ServerInterface {
 
 	public ServerSessionInterface login(ClientCallbackInterface clientCallback) throws SimonRemoteException {
 		clientCallback.callback("login callback: Dies ist der Callback. " +
-				"Deine Adresse lautet "+Simon.getRemoteInetAddress(clientCallback)+" "+
-				"und du bist verbunden auf dem lokalen Port "+Simon.getRemotePort(clientCallback));
+				"Deine Adresse lautet "+Simon.getRemoteInetSocketAddress(clientCallback)+" "+
+				"und du bist verbunden auf dem lokalen Port "+Simon.getRemoteInetSocketAddress(clientCallback).getPort());
 		System.out.println("login callback: Hallo Welt auf dem Server: "+clientCallback);
 		return new ServerSessionImpl(clientCallback);
 	}

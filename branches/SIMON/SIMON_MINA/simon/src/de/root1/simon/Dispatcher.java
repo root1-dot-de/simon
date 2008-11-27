@@ -47,8 +47,8 @@ import de.root1.simon.codec.messages.MsgPing;
 import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
-import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 

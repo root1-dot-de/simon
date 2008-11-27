@@ -32,7 +32,8 @@ public class Statics {
 
 	protected static final int WAIT_FOR_SHUTDOWN_SLEEPTIME = 50;
 
-	protected static int DGC_INTERVAL = 30000;
+	protected static int DEFAULT_IDLE_TIME = 10;
+	protected static int DEFAULT_WRITE_TIMEOUT = 5;
 
 	/** String that is needed for answering a "find server" packet */
 	public static final String REQUEST_STRING = "[SIMON|FindServer]";

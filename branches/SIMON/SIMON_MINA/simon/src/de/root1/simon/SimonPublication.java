@@ -19,15 +19,12 @@
 package de.root1.simon;
 
 import java.net.Inet4Address;
-import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +57,6 @@ public final class SimonPublication {
 	 * @param remoteObjectName the bind remote object name
 	 */
 	protected SimonPublication(InetAddress address, int port, String remoteObjectName) {
-//		System.out.println(address.getHostAddress());
 		
 		if (address.getHostAddress().equalsIgnoreCase("0.0.0.0")){
 			

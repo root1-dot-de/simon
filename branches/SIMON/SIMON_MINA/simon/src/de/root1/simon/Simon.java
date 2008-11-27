@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 
+import org.apache.mina.core.RuntimeIoException;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.future.IoFuture;
@@ -270,7 +271,6 @@ public class Simon {
 				serverDispatcherRelation.put(serverString, ctsc);
 				dispatcher = ctsc.getDispatcher();
 				session = ctsc.getSession();
-				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
 				logger.debug("Got ClientToServerConnection from list");
 				
 				
@@ -286,9 +286,17 @@ public class Simon {
 								
 				ConnectFuture future = connector.connect(new InetSocketAddress(host, port));
 				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
-				session = future.getSession();
-				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
-				session.getConfig().setWriteTimeout(10);
+				try{
+					session = future.getSession();
+				} catch (RuntimeIoException e){
+					
+					logger.warn("Cannot connect to {} on port {}. Establish connection failed. Error was: {}",new Object[]{host, port, future.getException().getMessage()});
+					throw new EstablishConnectionFailed("Cannot connect to "+host+" on port "+port+". Establish connection failed. Error was: "+future.getException().getMessage());
+				}
+				
+				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, Statics.DEFAULT_IDLE_TIME );
+				session.getConfig().setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+				
 //				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
 				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
 				session.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
@@ -578,24 +586,104 @@ public class Simon {
 	 * 
 	 * @param milliseconds
 	 *            time in milliseconds
-	 * 
-	 * @deprecated This is now handled by MINA. Using this method is obsolete.
+	 * @deprecated	use {@link Simon#setDefaultDgcInterval(int)} instead!
 	 */
 	public static void setDgcInterval(int milliseconds){
+		Statics.DEFAULT_IDLE_TIME = milliseconds/1000;
 	}
 	
 	/**
-	 * Gets the DGC's interval time in milliseconds return DGC interval time in
-	 * milliseconds
+	 * Gets the DGC's interval time in milliseconds 
 	 * 
 	 * @return the current set DGC interval
-	 * 
-	 * @deprecated this is now done internally with MINA. There's no global
-	 *             value available...This method now always returns zero. So do
-	 *             not use it anymore!
+	 * @deprecated	use {@link Simon#getDefaultDgcInterval()} instead!
 	 */
 	public static int getDgcInterval(){
-		return 0;
+		return Statics.DEFAULT_IDLE_TIME*1000;
+	}
+	
+	/**
+	 * Sets the DGC's default interval time in seconds.
+	 * This value is used as a default value for all new connections.
+	 * 
+	 * @param seconds
+	 *            time in seconds
+	 */
+	public static void setDefaultDgcInterval(int seconds){
+		Statics.DEFAULT_IDLE_TIME = seconds;
+	}
+	
+	/**
+	 * Gets the DGC's default interval time in seconds.
+	 * This value is the used default value for all new connections. 
+	 * 
+	 * @return the current set DGC interval
+	 */
+	public static int getDefaultDgcInterval(){
+		return Statics.DEFAULT_IDLE_TIME;
+	}
+	
+	/**
+	 * Sets the default networik write timeout time in seconds.
+	 * This value is used as a default value for all new connections.
+	 * 
+	 * @param seconds
+	 *            time in seconds
+	 */
+	public static void setDefaultWriteTimeout(int seconds){
+		Statics.DEFAULT_WRITE_TIMEOUT = seconds;
+	}
+	
+	/**
+	 * Gets the default network write timeout time in seconds.
+	 * This value is the used default value for all new connections. 
+	 * 
+	 * @return the current set network write timeout
+	 */
+	public static int getDefaultWriteTimeout(){
+		return Statics.DEFAULT_IDLE_TIME;
+	}
+	
+	/**
+	 * Sets the DGC's interval time in seconds for the specified remote object
+	 * 
+	 * @param seconds
+	 *            time in seconds
+	 * @throws IllegalArgumentException if the object is not a valid remote object
+	 */
+	public static void setDgcInterval(Object remoteObject, int seconds) throws IllegalArgumentException {
+		getSimonProxy(remoteObject).getIoSession().getConfig().setIdleTime(IdleStatus.BOTH_IDLE, seconds);
+	}
+	
+	/**
+	 * Gets the DGC's interval time in seconds of the given remote object.
+	 * 
+	 * @return current set DGC interval of given remote object
+	 * @throws IllegalArgumentException if the object is not a valid remote object
+	 */
+	public static int getDgcInterval(Object remoteObject){
+		return getSimonProxy(remoteObject).getIoSession().getConfig().getIdleTime(IdleStatus.BOTH_IDLE);
+	}
+	
+	/**
+	 * Sets the network write timeout time in seconds for the specified remote object.
+	 * 
+	 * @param seconds
+	 *            time in seconds
+	 * @throws IllegalArgumentException if the object is not a valid remote object
+	 */
+	public static void settWriteTimeout(Object remoteObject, int seconds){
+		getSimonProxy(remoteObject).getIoSession().getConfig().setWriteTimeout(seconds);
+	}
+	
+	/**
+	 * Gets the network write timeout time in seconds of the given remote object.
+	 * 
+	 * @return current set network write timeout of given remote object
+	 * @throws IllegalArgumentException if the object is not a valid remote object
+	 */
+	public static int getWriteTimeout(Object remoteObject){
+		return getSimonProxy(remoteObject).getIoSession().getConfig().getWriteTimeout();
 	}
 
 	/**

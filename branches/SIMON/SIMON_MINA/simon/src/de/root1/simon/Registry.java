@@ -165,15 +165,49 @@ public final class Registry {
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
         
 		acceptor.setHandler(dispatcher);
-        acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
-        acceptor.getSessionConfig().setWriteTimeout(10);
+        setDgcInterval(Statics.DEFAULT_IDLE_TIME);
+        setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+        
         
         logger.trace("Listening on {} on port {}",address,port);
-        acceptor.bind(new InetSocketAddress(address, port));
+    	acceptor.bind(new InetSocketAddress(address, port));
+        
         
         
         logger.debug("acceptor thread created and started");			
         logger.debug("end");
+	}
+
+	/**
+	 * TODO document me
+	 * @param timeout
+	 */
+	public void setWriteTimeout(int timeout) {
+		acceptor.getSessionConfig().setWriteTimeout(timeout);
+	}
+
+	/**
+	 * TODO document me
+	 * @param interval
+	 */
+	public void setDgcInterval(int interval) {
+		acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, interval );
+	}
+	
+	/**
+	 * TODO document me
+	 * @param timeout
+	 */
+	public void getWriteTimeout() {
+		acceptor.getSessionConfig().getWriteTimeout();
+	}
+
+	/**
+	 * TODO document me
+	 * @param interval
+	 */
+	public void getDgcInterval() {
+		acceptor.getSessionConfig().getIdleTime( IdleStatus.BOTH_IDLE );
 	}
 	
 	/**

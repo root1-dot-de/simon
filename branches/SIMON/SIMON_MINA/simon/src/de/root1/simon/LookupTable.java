@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import java.lang.reflect.Method;
+import java.rmi.dgc.DGC;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;

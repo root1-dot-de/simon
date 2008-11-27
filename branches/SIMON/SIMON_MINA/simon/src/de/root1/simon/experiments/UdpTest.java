@@ -3,21 +3,15 @@ package de.root1.simon.experiments;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.transport.socket.nio.NioDatagramAcceptor;
-import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 
 import de.root1.simon.Dispatcher;
 import de.root1.simon.LookupTable;
-import de.root1.simon.NamedThreadPoolFactory;
 import de.root1.simon.Simon;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.utils.Utils;

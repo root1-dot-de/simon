@@ -17,9 +17,6 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
@@ -27,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgPing;
-import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
