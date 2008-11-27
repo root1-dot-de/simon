@@ -835,7 +835,7 @@ public class Simon {
 	 * @param channelToken
 	 * @param remoteObject
 	 */
-	public RawChannel openRawChannel(int channelToken, Object remoteObject){
+	public static RawChannel openRawChannel(int channelToken, Object remoteObject){
 		SimonProxy simonProxy = getSimonProxy(remoteObject);
 		Dispatcher dispatcher = simonProxy.getDispatcher();
 		RawChannel rawChannel = dispatcher.openRawChannel(simonProxy.getIoSession(), channelToken);
@@ -848,7 +848,7 @@ public class Simon {
 	 * @param remoteObject
 	 * @return a token for the prepared channel
 	 */
-	public int prepareRawChannel(RawChannelDataListener listener, Object remoteObject){
+	public static int prepareRawChannel(RawChannelDataListener listener, Object remoteObject){
 		SimonProxy simonProxy = getSimonProxy(remoteObject);
 		Dispatcher dispatcher = simonProxy.getDispatcher();
 		dispatcher.prepareRawChannel(listener);

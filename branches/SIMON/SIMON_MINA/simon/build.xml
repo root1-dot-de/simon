@@ -1,15 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="SIMON" default="create_package" basedir=".">
 	
-    <description>SIMON: a kind of router-friendly RMI replacement</description>
+    <description>SIMON: Simple Invocation of Methods Over Network</description>
 	
-	<property name="version" value="3.0_alpha2"/>
+	<property name="version" value="0.3_alpha3"/>
 	
 	
 	<!-- destination of compiled project -->
 	<property name="build" location="build"/>		
 	<property name="build.sources" location="${build}/src"/>
-	<property name="build.classes" location="${build}/bin"/>
 
 	<!-- destination of distribution -->
 	<property name="dist" location="dist"/>
@@ -34,12 +33,16 @@
     </path>
 	
 	<!-- T A R G E T S -->
+
+<!-- ==================================================================================== -->
 	
 	<!-- clean up -->
     <target name="clean" description="Remove the output directories">
         <delete dir="${build}"/>
     	<delete dir="${dist}"/>
 	</target>
+	
+<!-- ==================================================================================== -->
 	
 	<!-- stuff before doing anything -->
 	<target name="praeambel"  description="prepares the build timestamp and svn revision property">
@@ -61,11 +64,9 @@
 		<echo>revision=${build.revision}</echo>
 		<echo>timestamp=${build.timestamp}</echo>
 		<echo>version=${version}</echo>
-	</target>
-	
-	<!-- create all important directories and copy files -->
-	<target name="createfolders" depends="praeambel" description="Create the output directories.">
-        <mkdir dir="${build}"/>
+		
+		<!-- prepare folders -->
+		<mkdir dir="${build}"/>
         <mkdir dir="${build.classes}"/>
 		<mkdir dir="${build.sources}"/>
 
@@ -73,10 +74,42 @@
 		<mkdir dir="${dist.src}"/>
 		<mkdir dir="${dist.doc}"/>
 		<mkdir dir="${dist.lib}"/>
-    </target>
+		
+		<!-- copy files -->
+    	<copy todir="${build.sources}">
+            <fileset dir="${src}">
+                <include name="**/*"/>
+			</fileset>
+    		<!-- search&replace version info tags with information gathered in preambel target-->
+    		<filterset>
+				<filter token="SIMON_VERSION" value="${version}"/>
+				<filter token="SIMON_BUILD_TIMESTAMP" value="${build.timestamp}"/>
+				<filter token="SIMON_BUILD_REVISION" value="${build.revision}"/>
+			</filterset>
+		</copy>
+	</target>
 	
+<!-- ==================================================================================== -->	
+	
+    <!-- compile all the stuff -->
+    <target name="build" depends="praeambel" description="Compile the source.">
+
+    	<!-- compile the sources in build.sources to build.classes -->
+        <javac destdir="${build}"
+               optimize="on"
+               debug="on"
+               source="1.5"
+               target="1.5"
+               nowarn="off">
+            <src path="${build.sources}"/>
+            <classpath refid="classpath"/>   
+        </javac>
+    </target>
+<!-- ==================================================================================== -->
+		
 	<!-- compiles the javadoc -->
-	<target name="javadoc" depends="createfolders" description="creates the java doc documentation.">
+	<target name="javadoc" description="creates the java doc documentation.">
+		
 		<javadoc access="public" 
 	        		author="true" 
 	        		classpath="${classpath}" 
@@ -97,52 +130,47 @@
 			<classpath refid="classpath"/>
 		</javadoc>
 						
-	</target>
+	</target>	
 	
-    <!-- compile all the stuff -->
-    <target name="compile_src" depends="createfolders" description="Compile the source.">
-    	
-    	<!-- copy the sources to the build folder -->
-    	<copy todir="${build.sources}">
-            <fileset dir="${src}">
-                <include name="**/*"/>
-			</fileset>
-    		<!-- search&replace version info tags with information gathered in preambel target-->
-    		<filterset>
-				<filter token="SIMON_VERSION" value="${version}"/>
-				<filter token="SIMON_BUILD_TIMESTAMP" value="${build.timestamp}"/>
-				<filter token="SIMON_BUILD_REVISION" value="${build.revision}"/>
-			</filterset>
-		</copy>
-
-    	<!-- compile the sources in build.sources to build.classes -->
-        <javac destdir="${build.classes}"
-               optimize="on"
-               debug="on"
-               source="1.5"
-               target="1.5"
-               nowarn="off">
-            <src path="${build.sources}"/>
-            <classpath refid="classpath"/>   
-        </javac>
-    </target>
+<!-- ==================================================================================== -->
     
 	<!-- create the jar  -->
-	<target name="create_jar" depends="compile_src" description="Create the jar file">
+	<target name="create_jar" depends="build" description="Create the jar file">
 	
         <jar destfile="${dist}/SIMON-${version}-rev${build.revision}.jar">
-            <fileset dir="${build.classes}"/>
+            <fileset dir="${build}">
+            	<!-- exclude the source folder in the build directory -->
+        		<exclude name="**/src/**"/>
+			</fileset>
+            <manifest>				
+            </manifest>
+        </jar>
+
+	</target>
+	
+<!-- ==================================================================================== -->
+	    
+	<!-- create the jar  -->
+	<target name="create_jar_w_src" depends="build" description="Create the jar file">
+	
+        <jar destfile="${dist}/SIMON-${version}-rev${build.revision}_incl_src.jar">
+            <fileset dir="${build}"/>
             <manifest>				
             </manifest>
         </jar>
 
 	</target>  
-
+	
+<!-- ==================================================================================== -->
+	
 	<!-- create the package -->
-	<target name="create_package" depends="create_jar" description="Create a complete package">
+	<target name="create_package" depends="create_jar, create_jar_w_src, javadoc" description="Create a complete package">
 		
 		<!-- create the documentation -->
-		<antcall target="javadoc"></antcall>
+<!--		<antcall target="javadoc"></antcall> -->
+		
+		<!-- create the documentation -->
+<!-- 		<antcall target="create_jar"></antcall> -->
 		
     	<!-- copy the additional files to the dist folder -->
 		<copy todir="${dist}">
