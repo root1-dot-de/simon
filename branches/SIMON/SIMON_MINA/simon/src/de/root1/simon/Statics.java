@@ -19,42 +19,36 @@
 package de.root1.simon;
 
 /**
- * TODO document me
+ * Holds some static variables defining timeouts, thread and method names, ...
+ * 
  * @author achr
- *
  */
 public class Statics {
 	
 	protected static final String TOSTRING_METHOD_SIGNATURE = "public java.lang.String java.lang.Object.toString()";
 	protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
 	protected static final String EQUALS_METHOD_SIGNATURE 	= "public boolean java.lang.Object.equals(java.lang.Object)";
-	public static final int DEFAULT_SOCKET_TIMEOUT = 100;
 
 	protected static final int WAIT_FOR_SHUTDOWN_SLEEPTIME = 50;
 
+	// values in seconds
 	protected static int DEFAULT_IDLE_TIME = 10;
 	protected static int DEFAULT_WRITE_TIMEOUT = 5;
 
 	/** String that is needed for answering a "find server" packet */
-	public static final String REQUEST_STRING = "[SIMON|FindServer]";
+	protected static final String REQUEST_STRING = "[SIMON|FindServer]";
 
 	// some variables configured during ant build
 	/** holds the version of SIMON */
 	public static final String SIMON_VERSION = "@SIMON_VERSION@";
-	/** holds the build timestamp of SIMON */
+	/** holds the build time stamp of SIMON */
 	public static final String SIMON_BUILD_TIMESTAMP = "@SIMON_BUILD_TIMESTAMP@";
-	/** holds the versioning revision number */
+	/** holds the revision number */
 	public static final String SIMON_BUILD_REVISION = "@SIMON_BUILD_REVISION@";
 	
 	// some names for the used threads/pools
-	protected static final String CLIENT_DISPATCHER_THREAD_NAME = "Simon.Dispatcher{Client}";
-	protected static final String SERVER_DISPATCHER_THREAD_NAME = "Simon.Dispatcher{Server}";
-	protected static final String SERVER_ACCEPTOR_THREAD_NAME = "Simon.Registry.Acceptor";
-	protected static final String SIMON_DGC_THREAD_NAME = "Simon.Dispatcher.DGC";
-	protected static final String PINGWORKER_POOL_NAME = SIMON_DGC_THREAD_NAME+".PingWorkerPool";
 	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon.Dispatcher.WorkerPool";
-	protected static final String FILTERCHAIN_WORKERPOOL_NAME = "Simon.FILTERCHAIN.WorkerPool";
-	public static final String PUBLISH_SERVICE_THREAD_NAME = "Simon.PublishService";
-	public static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
+	protected static final String PUBLISH_SERVICE_THREAD_NAME = "Simon.PublishService";
+	protected static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
 	
 }
