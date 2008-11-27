@@ -252,11 +252,26 @@ public class Registry {
 	 * 
 	 * @param name
 	 *            the object to unbind (and unpublish, if published)
+	 * @return true, if unpublish succeeded, false, if object wasn't published
+	 *         and though can't be unpublished
 	 */
-	public void unbind(String name){
+	public boolean unbind(String name){
 		//TODO what to do with already connected users?
 		lookupTableServer.releaseRemoteBinding(name);
-		Simon.unpublish(new SimonPublication(address, port, name));
+		return Simon.unpublish(new SimonPublication(address, port, name));
+	}
+	
+	/**
+	 * Unpublish a already published remote object.
+	 * 
+	 * @param name
+	 *            the object to unpublish, if published
+	 * 
+	 * @return true, if unpublish succeeded, false, if object wasn't published
+	 *         and though can't be unpublished
+	 */
+	public boolean unpublish(String name){
+		return Simon.unpublish(new SimonPublication(address, port, name));
 	}
 	
 	/**

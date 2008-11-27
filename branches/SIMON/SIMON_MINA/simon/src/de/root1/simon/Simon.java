@@ -623,11 +623,12 @@ public class Simon {
 	 * @param simonPublication
 	 *            the publication to unpublish
 	 */
-	public static void unpublish(SimonPublication simonPublication) {
-		publishments.remove(simonPublication);
+	protected static boolean unpublish(SimonPublication simonPublication) {
+		boolean result = publishments.remove(simonPublication);
 		if (publishments.isEmpty() && publishService!=null && publishService.isAlive()) {
 			publishService.shutdown();
 		}
+		return result;
 	}
 	
 	/**
