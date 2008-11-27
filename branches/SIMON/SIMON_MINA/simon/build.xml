@@ -198,7 +198,6 @@
 		       basedir="${dist}"
 		       includes="**/*"
 		/>
-		<copy file="${dist}/SIMON-Package-${version}-rev${build.revision}.zip" tofile="${dist}/SIMON-Package-latest.zip"/>
 
 	</target>  
 
