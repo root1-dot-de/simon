@@ -262,5 +262,13 @@ public class SimonProxy implements InvocationHandler {
 	protected IoSession getIoSession(){
 		return session;
 	}
+	
+	/**
+	 * Retrusn the {@link Dispatcher} instance related to this proxy
+	 * @return an instance of {@link Dispatcher}
+	 */
+	protected Dispatcher getDispatcher(){
+		return dispatcher;
+	}
 
 }

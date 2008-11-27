@@ -17,6 +17,8 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -24,28 +26,27 @@ import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.messages.MsgEqualsReturn;
+import de.root1.simon.codec.messages.MsgPing;
+import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.SimonMessageConstants;
-import de.root1.simon.utils.Utils;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgEqualsReturn}.
+ * A {@link MessageEncoder} that encodes {@link MsgPing}.
  *
  * @author ACHR
  */
-public class MsgEqualsReturnEncoder<T extends MsgEqualsReturn> extends AbstractMessageEncoder<T> {
+public class MsgPingEncoder<T extends MsgPing> extends AbstractMessageEncoder<T> {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-    public MsgEqualsReturnEncoder() {
-        super(SimonMessageConstants.MSG_EQUALS_RETURN);
+    public MsgPingEncoder() {
+        super(SimonMessageConstants.MSG_PING);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	
-    	logger.trace("begin. message={}", message);
-    	out.put(Utils.booleanToByte(message.getEqualsResult()));
+    	logger.trace("begin. message="+message);
 		logger.trace("end");
     }
 

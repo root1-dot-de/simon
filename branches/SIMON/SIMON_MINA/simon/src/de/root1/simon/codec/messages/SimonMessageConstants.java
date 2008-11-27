@@ -31,20 +31,31 @@ public final class SimonMessageConstants {
     
     // ---------------------
 
-	public static final int MSG_LOOKUP 				= 0;
-	public static final int MSG_LOOKUP_RETURN 		= 1;
+	public static final byte MSG_LOOKUP = 0x00;
+	public static final byte MSG_LOOKUP_RETURN = 0x01;
 	
-	public static final int MSG_INVOKE 				= 2;
-	public static final int MSG_INVOKE_RETURN 		= 3;
+	public static final byte MSG_INVOKE = 0x02;
+	public static final byte MSG_INVOKE_RETURN = 0x03;
 
-	public static final int MSG_TOSTRING 			= 4;
-	public static final int MSG_TOSTRING_RETURN 	= 5;
+	public static final byte MSG_TOSTRING = 0x04;
+	public static final byte MSG_TOSTRING_RETURN = 0x05;
 
-	public static final int MSG_EQUALS 				= 6;
-	public static final int MSG_EQUALS_RETURN 		= 7;
+	public static final byte MSG_EQUALS = 0x06;
+	public static final byte MSG_EQUALS_RETURN = 0x07;
 	
-	public static final int MSG_HASHCODE 			= 8;
-	public static final int MSG_HASHCODE_RETURN 	= 9;
+	public static final byte MSG_HASHCODE = 0x08;
+	public static final byte MSG_HASHCODE_RETURN = 0x09;
+	
+	public static final byte MSG_OPEN_RAW_CHANNEL = 0x0A;
+	public static final byte MSG_OPEN_RAW_CHANNEL_RETURN = 0x0B;
+	
+	public static final byte MSG_CLOSE_RAW_CHANNEL = 0x0C;
+	public static final byte MSG_CLOSE_RAW_CHANNEL_RETURN = 0x0D;
+	
+	public static final byte MSG_RAW_CHANNEL_DATA = 0x0E;
+	public static final byte MSG_RAW_CHANNEL_RECV_ERROR = 0x0F;
+	
+	public static final byte MSG_PING = 0x10;
 
     private SimonMessageConstants() {
     }

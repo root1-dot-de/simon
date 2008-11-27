@@ -162,5 +162,34 @@ public class Utils {
         return id;
 	}
 	
+	/**
+	 * Converts a boolean value to a byte value.
+	 * @param bool
+	 * @return 0xFF if true, 0x00 if false
+	 */
+	public static byte booleanToByte(boolean bool){
+		return (bool==true ? (byte)0xFF : (byte)0x00 );
+	}
+	
+	/**
+	 * Converts a byte value to a boolean value.
+	 * 
+	 * @param b
+	 * @return 0xFF if true, 0x00 if false
+	 * @throws IllegalArgumentException if byte value not 0xFF or 0x00
+	 */
+	public static boolean byteToBoolean(byte b) throws IllegalArgumentException{
+		switch (b) {
+			case (byte) 0xFF:
+				return true;
+				
+			case (byte) 0x00:
+				return false;
+	
+			default:
+				throw new IllegalArgumentException("only 0xFF and 0x00 value allowed for 'byte-to-boolean' conversion!");
+		}
+	}
+	
 
 }

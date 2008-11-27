@@ -50,7 +50,7 @@ public class Registry {
 	/**
 	 * TODO document me
 	 */
-private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * TODO document me
@@ -166,7 +166,11 @@ private final Logger logger = LoggerFactory.getLogger(getClass());
         
 		acceptor.setHandler(dispatcher);
         acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
+        acceptor.getSessionConfig().setWriteTimeout(10);
+        
+        logger.trace("Listening on {} on port {}",address,port);
         acceptor.bind(new InetSocketAddress(address, port));
+        
         
         logger.debug("acceptor thread created and started");			
         logger.debug("end");
@@ -179,10 +183,24 @@ private final Logger logger = LoggerFactory.getLogger(getClass());
 	 * 
 	 */
 	public void stop() {
+		logger.trace("begin");
+		
+		logger.trace("Unbind Acceptor ...");
 		acceptor.unbind();
+		
+		logger.trace("Shutdown Dispatcher ...");
 		dispatcher.shutdown();
+		
+		logger.trace("Dispose Acceptor ...");
+		acceptor.dispose();
+		
+		logger.trace("Shutdown FilterchainWorkerPool ...");
 		filterchainWorkerPool.shutdown();
+		
+		logger.trace("Clearing LookupTable ...");
 		lookupTableServer.clear();
+		
+		logger.trace("end");
 	}
 	
 	/**

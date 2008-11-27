@@ -41,25 +41,36 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-	private int msgSize;
-	private boolean readSize = false;
+//	private int msgSize;
+//	private boolean readSize = false;
 	
     public MsgInvokeDecoder() {
         super(SimonMessageConstants.MSG_INVOKE);
     }
     
+    public class InvokeState{
+    	public boolean readSize = false;
+    	public int msgSize;
+    }
+    
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-
-    	if (!readSize) {
-    		readSize  = true;
-    		msgSize = in.getInt();
-    		logger.trace("msgSizeInBytes={} position={}",msgSize, in.position());
-    	}
+    	InvokeState is;
+    	if (session.getAttribute("invoke_seq="+getCurrentSequence())==null) {
+//    	if (!readSize) {
+    		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
+    		is = new InvokeState();
+    		is.readSize  = true;
+    		is.msgSize = in.getInt();
+    		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), is.msgSize, in.position()});
+    	} else {
     	
-    	if (in.remaining() < msgSize) {
-    		logger.trace("need more data. needed={} available={}",msgSize,in.remaining());
-    		return null;
+    		is = (InvokeState) session.getAttribute("invoke_seq="+getCurrentSequence());
+    		
+	    	if (in.remaining() < is.msgSize) {
+	    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), is.msgSize, in.position(),in.remaining()});
+	    		return null;
+	    	}
     	}
     	
     	MsgInvoke msgInvoke = new MsgInvoke();
@@ -102,6 +113,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			e.printStackTrace();
 		}
 		
+		session.removeAttribute("invoke_seq="+getCurrentSequence());
 		
 		logger.trace("message={}", msgInvoke);
         return msgInvoke;

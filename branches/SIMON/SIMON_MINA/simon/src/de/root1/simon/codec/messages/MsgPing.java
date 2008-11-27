@@ -17,52 +17,26 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.messages;
-import java.io.Serializable;
 
 /**
- * A base message for SIMON protocol messages.
+ * <code>Ping</code> message
  *
  * @author ACHR
  */
-public abstract class AbstractMessage implements Serializable {
-    
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private byte msgType = -1;
-	private int sequence = -1;
+public class MsgPing extends AbstractMessage {
 	
-    /**
-     * Creates a new message decoder
-     * @param msgType specifies a unique ID for the type of message
-     */
-    protected AbstractMessage(byte msgType) {
-        this.msgType = msgType;
-    }
-	
-	/**
-	 * TODO
-	 * @return the msgType
-	 */
-	public int getMsgType() {
-		return msgType;
-	}
+    private static final long serialVersionUID = 1L;
 
-	/**
-	 * TODO
-	 * @return the sequence
-	 */
-	public int getSequence() {
-		return sequence;
-	}
-	
-	/**
-	 * TODO
-	 * @param sequence the sequence to set
-	 */
-	public void setSequence(int sequence) {
-		this.sequence = sequence;
-	}
+    String remoteObjectName;
+    
+    public MsgPing() {
+    	super(SimonMessageConstants.MSG_PING);
+    }
+
+    @Override
+    public String toString() {
+        // it is a good practice to create toString() method on message classes.
+        return getSequence() + ":MsgPing()";
+    }
 
 }

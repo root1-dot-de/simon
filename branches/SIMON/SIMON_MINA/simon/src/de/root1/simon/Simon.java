@@ -40,6 +40,7 @@ import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.future.IoFuture;
 import org.apache.mina.core.future.IoFutureListener;
 import org.apache.mina.core.service.IoConnector;
+import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
@@ -121,7 +122,7 @@ public class Simon {
 				
 			} catch (FileNotFoundException e) {
 				
-				System.err.println("File not fount: "+f.getAbsolutePath()+".\n" +
+				System.err.println("File not found: "+f.getAbsolutePath()+".\n" +
 						"If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
 						"Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
 				
@@ -269,7 +270,7 @@ public class Simon {
 				serverDispatcherRelation.put(serverString, ctsc);
 				dispatcher = ctsc.getDispatcher();
 				session = ctsc.getSession();
-				
+				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
 				logger.debug("Got ClientToServerConnection from list");
 				
 				
@@ -286,7 +287,8 @@ public class Simon {
 				ConnectFuture future = connector.connect(new InetSocketAddress(host, port));
 				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
 				session = future.getSession();
-
+				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, 10 );
+				session.getConfig().setWriteTimeout(10);
 //				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
 				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
 				session.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
@@ -488,14 +490,15 @@ public class Simon {
 	
 	/**
 	 * 
-	 * Releases an instance of a remote object.<br>
-	 * If there are no more remote objects alive which are related to a specific
-	 * server connection, this connection will be closed, until a new
+	 * Releases an instance of a remote object. After this call, the remote
+	 * object will be destroyed and is no more usable. If there are no more
+	 * remote objects alive which are related to a specific server connection,
+	 * this connection will be closed, until a new
 	 * {@link Simon#lookup(String, int, String)} is called on the same server.
 	 * 
 	 * @param proxyObject
 	 *            the object to release
-	 * @return true if the server connection is closed, false if there's still a
+	 * @return true if the server connection is closed, false if there is still a
 	 *         reference pending
 	 */
 	public static boolean release(Object proxyObject) {
@@ -735,6 +738,32 @@ public class Simon {
 	public static SimonRemoteStatistics getStatistics(Object remoteObject){
 		SimonProxy simonProxy = getSimonProxy(remoteObject);
 		return new RemoteStatistics(simonProxy.getIoSession());
+	}
+	
+	/**
+	 * TODO document me
+	 * 
+	 * @param channelToken
+	 * @param remoteObject
+	 */
+	public RawChannel openRawChannel(int channelToken, Object remoteObject){
+		SimonProxy simonProxy = getSimonProxy(remoteObject);
+		Dispatcher dispatcher = simonProxy.getDispatcher();
+		RawChannel rawChannel = dispatcher.openRawChannel(simonProxy.getIoSession(), channelToken);
+		return rawChannel;
+	}
+	
+	/**
+	 * TODO document me
+	 * @param listener
+	 * @param remoteObject
+	 * @return a token for the prepared channel
+	 */
+	public int prepareRawChannel(RawChannelDataListener listener, Object remoteObject){
+		SimonProxy simonProxy = getSimonProxy(remoteObject);
+		Dispatcher dispatcher = simonProxy.getDispatcher();
+		dispatcher.prepareRawChannel(listener);
+		return 0;
 	}
 
 	

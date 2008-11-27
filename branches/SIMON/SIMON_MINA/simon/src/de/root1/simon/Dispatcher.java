@@ -19,6 +19,8 @@
 package de.root1.simon;
 
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 
@@ -29,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgCloseRawChannel;
+import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
 import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
@@ -37,10 +41,15 @@ import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgOpenRawChannel;
+import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
+import de.root1.simon.codec.messages.MsgPing;
+import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 
 /**
@@ -75,6 +84,12 @@ public class Dispatcher implements IoHandler{
 
 	/** an identifier string to determine to which server this dispatcher is connected to  */
 	private final String serverString;
+
+	/** TODO document me */
+	private HashMap<Byte, RawChannelDataListener> rawChannelMap = new HashMap<Byte, RawChannelDataListener>();
+
+	/** TODO document me */
+	private ArrayList<Byte> tokenList = new ArrayList<Byte>();
 	
 	/**
 	 * 
@@ -94,6 +109,11 @@ public class Dispatcher implements IoHandler{
 		this.serverString = serverString;
 		this.lookupTable = lookupTable;
 		this.messageProcessorPool = threadPool;
+		
+//		// FIXME ...
+//		if (serverString==null) {
+//			sequenceIdCounter = 1000;
+//		}
 		
 		logger.debug("end");
 	}
@@ -235,7 +255,7 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		logger.debug("begin sequenceId={} session=", sequenceId, session);
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 		
 
  		// create a monitor that waits for the request-result
@@ -285,7 +305,7 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		logger.debug("begin sequenceId={} session=", sequenceId, session);
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -334,7 +354,7 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		logger.debug("begin sequenceId={} session=", sequenceId, session);
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
  		// create a monitor that waits for the request-result
 		final Object monitor = createMonitor(sequenceId);
@@ -559,10 +579,12 @@ public class Dispatcher implements IoHandler{
 
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
-		logger.info("exception Caught. session={} cause={}", session, throwable);
-		StackTraceElement[] stackTrace = throwable.getStackTrace();
-		for (StackTraceElement stackTraceElement : stackTrace) {
-			System.err.println(stackTraceElement);
+		if (logger.isTraceEnabled()){
+			logger.trace("exception Caught. session={} cause={}", session, throwable);
+			StackTraceElement[] stackTrace = throwable.getStackTrace();
+			for (StackTraceElement stackTraceElement : stackTrace) {
+				System.err.println(stackTraceElement);
+			}
 		}
 	}
 
@@ -592,11 +614,205 @@ public class Dispatcher implements IoHandler{
 	}
 
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
-		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);		
+		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);
+		if (idleStatus == IdleStatus.WRITER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
+			logger.trace("sending ping to test session");
+			sendPing(session);
+		}
+	}
+
+	private void sendPing(IoSession session) {
+		checkForInvalidState("ping()");
+
+		final int sequenceId = generateSequenceId(); 
+		
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
+		
+		MsgPing msgInvoke = new MsgPing();
+		msgInvoke.setSequence(sequenceId);
+		
+		session.write(msgInvoke);
+		
+		logger.debug("end. data send.");
 	}
 
 	public void sessionOpened(IoSession session) throws Exception {
 		logger.debug("session opened. session={}", session);
+	}
+
+	/**
+	 * TODO document me
+	 * @return
+	 */
+	protected RawChannel openRawChannel(IoSession session, int channelToken) {
+		checkForInvalidState("openRawChannel()");
+
+		final int sequenceId = generateSequenceId(); 
+		
+		logger.debug("begin sequenceId={} session=", sequenceId, session);
+		
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(sequenceId);
+		
+		MsgOpenRawChannel msgOpenRawChannel = new MsgOpenRawChannel();
+		msgOpenRawChannel.setSequence(sequenceId);
+		msgOpenRawChannel.setChannelToken(channelToken);
+		
+		session.write(msgOpenRawChannel);
+		
+		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
+		
+
+		// wait for result
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		MsgOpenRawChannelReturn result;
+		// get result
+		synchronized (requestMonitorAndReturnMap) {
+			result = (MsgOpenRawChannelReturn) getRequestResult(sequenceId);			
+		}
+		
+		logger.debug("got answer for sequenceId={}", sequenceId);
+	
+		logger.debug("end sequenceId={}", sequenceId);
+
+		if (result.getReturnValue()==true){
+			return new RawChannel(this, session, channelToken);
+		}
+		
+		throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
+	}
+
+	/** TODO document me */
+	protected int prepareRawChannel(RawChannelDataListener listener) {
+		byte channelToken = getRawChannelToken();
+		synchronized (rawChannelMap) {
+			rawChannelMap.put(channelToken, listener);	
+		}
+		return channelToken;
+	}
+	
+	/** TODO document me */
+	protected boolean isRawChannelDataListenerRegistered(int channelToken){
+		synchronized (rawChannelMap) {
+			return rawChannelMap.containsKey(channelToken);	
+		}
+	}
+	
+	/** TODO document me */
+	protected RawChannelDataListener getRawChannelDataListener(int channelToken){
+		synchronized (rawChannelMap) {
+			return rawChannelMap.get((byte)channelToken);	
+		}
+	}
+
+	/** TODO document me */
+	private byte getRawChannelToken() {
+		synchronized (tokenList) {
+			
+			for (byte b=Byte.MIN_VALUE; b<Byte.MAX_VALUE; b++){
+				if (!tokenList.contains(b)){
+					tokenList.add(b);
+					return b;
+				}
+			}
+		}
+		throw new SimonException("no more token available");
+	}
+	
+	/** 
+	 * TODO document me 
+	 */
+	private void releaseToken(int channelToken){
+		synchronized (tokenList) {
+			tokenList.remove((byte)channelToken);
+		}
+	}
+	
+	/**
+	 * TODO document me
+	 * @param channelToken
+	 */
+	protected void unprepareRawChannel(int channelToken){
+		releaseToken(channelToken);
+		synchronized (rawChannelMap) {
+			RawChannelDataListener rawChannelDataListener = rawChannelMap.remove(channelToken);
+			rawChannelDataListener.close();
+		}
+	}
+	
+	/**
+	 * TODO document me
+	 * @param session
+	 * @param channelToken
+	 * @param byteBuffer
+	 */
+	protected void writeRawData(IoSession session, int channelToken, ByteBuffer byteBuffer){
+		checkForInvalidState("writeRawData()");
+
+		final int sequenceId = generateSequenceId(); 
+		
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
+		
+		MsgRawChannelData msgRawChannelData = new MsgRawChannelData();
+		msgRawChannelData.setSequence(sequenceId);
+		msgRawChannelData.setChannelToken(channelToken);
+		msgRawChannelData.setData(byteBuffer);
+		
+		session.write(msgRawChannelData);
+		
+		logger.debug("end. data send for sequenceId={} and channelToken={}", sequenceId, channelToken);
+	}
+
+	protected void closeRawChannel(IoSession session, int channelToken) {
+		checkForInvalidState("closeRawChannel()");
+
+		final int sequenceId = generateSequenceId(); 
+		
+		logger.debug("begin sequenceId={} session=", sequenceId, session);
+		
+
+ 		// create a monitor that waits for the request-result
+		final Object monitor = createMonitor(sequenceId);
+		
+		MsgCloseRawChannel msgCloseRawChannel = new MsgCloseRawChannel();
+		msgCloseRawChannel.setSequence(sequenceId);
+		msgCloseRawChannel.setChannelToken(channelToken);
+		
+		session.write(msgCloseRawChannel);
+		
+		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
+		
+
+		// wait for result
+		synchronized (monitor) {
+			try {
+				monitor.wait();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		MsgCloseRawChannelReturn result;
+		// get result
+		synchronized (requestMonitorAndReturnMap) {
+			result = (MsgCloseRawChannelReturn) getRequestResult(sequenceId);			
+		}
+		
+		logger.debug("got answer for sequenceId={}", sequenceId);
+	
+		logger.debug("end sequenceId={}", sequenceId);
+
+		if (result.getReturnValue()==true){
+			return;
+		}
+		
+		throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
 	}
 	
 }

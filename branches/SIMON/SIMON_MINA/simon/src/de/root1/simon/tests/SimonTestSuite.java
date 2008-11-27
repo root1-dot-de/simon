@@ -14,7 +14,7 @@ public class SimonTestSuite {
 	// Add all tests to the suite here
 	private static void addTestsTo(TestSuite testSuite) {
 		
-//		Utils.DEBUG = true;
+		Utils.DEBUG = true;
 		
 		testSuite.addTestSuite(EmptyTest.class);
 		testSuite.addTestSuite(RegistryTest.class);

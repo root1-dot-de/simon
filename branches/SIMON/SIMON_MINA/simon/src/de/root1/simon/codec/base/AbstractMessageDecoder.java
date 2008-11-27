@@ -41,7 +41,7 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
 	@SuppressWarnings("unused")
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-    private final int msgType;
+    private final byte msgType;
 
     private int sequence;
 
@@ -51,7 +51,7 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
      * Creates a new message decoder
      * @param msgType specifies a unique ID for the type of message
      */
-    protected AbstractMessageDecoder(int msgType) {
+    protected AbstractMessageDecoder(byte msgType) {
         this.msgType = msgType;
     }
 
@@ -62,7 +62,7 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
         }
 
         // Return OK if type and bodyLength matches.
-        if (msgType == in.getShort()) {
+        if (msgType == in.get()) {
             return MessageDecoderResult.OK;
         }
 
@@ -74,7 +74,7 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
     	
         // Try to skip header if not read.
         if (!readHeader) {
-            in.getShort(); // Skip 'type'.
+            in.get(); // Skip 'msgType'.
             sequence = in.getInt(); // Get 'sequence'.
             readHeader = true;
         }

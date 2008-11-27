@@ -47,6 +47,9 @@ import de.root1.simon.utils.Utils;
  */
 public class LookupTable {
 	
+	/**
+	 * TODO document me
+	 */
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	/**

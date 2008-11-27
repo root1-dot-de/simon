@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgCloseRawChannel;
+import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
 import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
@@ -17,6 +19,9 @@ import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgOpenRawChannel;
+import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
+import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
@@ -94,6 +99,31 @@ public class ProcessMessageRunnable implements Runnable {
 			case SimonMessageConstants.MSG_HASHCODE_RETURN:
 				processHashCodeReturn();
 				break;
+				
+			case SimonMessageConstants.MSG_OPEN_RAW_CHANNEL:
+				processOpenRawChannel();
+				break;
+				
+			case SimonMessageConstants.MSG_OPEN_RAW_CHANNEL_RETURN:
+				processOpenRawChannelReturn();
+				break;
+				
+			case SimonMessageConstants.MSG_CLOSE_RAW_CHANNEL:
+				processCloseRawChannel();
+				break;
+				
+			case SimonMessageConstants.MSG_CLOSE_RAW_CHANNEL_RETURN:
+				processCloseRawChannelReturn();
+				break;
+				
+			case SimonMessageConstants.MSG_RAW_CHANNEL_DATA:
+				processRawChannelData();
+				break;
+				
+			case SimonMessageConstants.MSG_PING:
+				// do nothing
+				logger.trace("Ping received");
+				break;
 
 			default:
 				// FIXME what to do here ?!
@@ -107,6 +137,68 @@ public class ProcessMessageRunnable implements Runnable {
 
 	
 
+
+	private void processOpenRawChannel() {
+		logger.debug("begin");
+		
+		logger.debug("processing MsgOpenRawChannel...");
+		MsgOpenRawChannel msg = (MsgOpenRawChannel) abstractMessage;
+		 
+		MsgOpenRawChannelReturn returnMsg = new MsgOpenRawChannelReturn();
+		returnMsg.setSequence(msg.getSequence());
+		returnMsg.setReturnValue(dispatcher.isRawChannelDataListenerRegistered(msg.getChannelToken()));
+		session.write(returnMsg);	
+		
+		logger.debug("end");
+	}
+
+	private void processOpenRawChannelReturn() {
+		logger.debug("begin");
+		logger.debug("processing MsgOpenRawChannelReturn...");
+		MsgOpenRawChannelReturn msg = (MsgOpenRawChannelReturn) abstractMessage;
+		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		logger.debug("put result to queue={}", msg);
+		logger.debug("end");
+	}
+
+	private void processCloseRawChannel() {
+		logger.debug("begin");
+		
+		logger.debug("processing MsgCloseRawChannel...");
+		MsgCloseRawChannel msg = (MsgCloseRawChannel) abstractMessage;
+		 
+		dispatcher.unprepareRawChannel(msg.getChannelToken());
+		
+		MsgCloseRawChannelReturn returnMsg = new MsgCloseRawChannelReturn();
+		returnMsg.setSequence(msg.getSequence());
+		returnMsg.setReturnValue(true);
+		session.write(returnMsg);	
+		
+		logger.debug("end");
+	}
+
+	private void processCloseRawChannelReturn() {
+		logger.debug("begin");
+		logger.debug("processing MsgCloseRawChannelReturn...");
+		MsgCloseRawChannelReturn msg = (MsgCloseRawChannelReturn) abstractMessage;
+		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		logger.debug("put result to queue={}", msg);
+		logger.debug("end");
+	}
+
+	private void processRawChannelData() {
+		logger.debug("begin");
+		
+		logger.debug("processing MsgRawChannelData...");
+		MsgRawChannelData msg = (MsgRawChannelData) abstractMessage;
+		 
+		RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
+		
+		rawChannelDataListener.write(msg.getData());
+		logger.debug("data forwarded to listener");
+				
+		logger.debug("end");
+	}
 
 	/**
 	 * 

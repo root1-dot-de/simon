@@ -37,13 +37,13 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
 	
 	@SuppressWarnings("unused")
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final int msgType;
+    private final byte msgType;
 
     /**
      * Creates a new message encoder
      * @param msgType specifies a unique ID for the type of message
      */
-    protected AbstractMessageEncoder(int msgType) {
+    protected AbstractMessageEncoder(byte msgType) {
         this.msgType = msgType;
     }
 
@@ -52,7 +52,7 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
         buf.setAutoExpand(true); // Enable auto-expand for easier encoding
 
         // Encode a header
-        buf.putShort((short) msgType);
+        buf.put(msgType);
         buf.putInt(message.getSequence());
 
         // Encode a body

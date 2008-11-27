@@ -17,6 +17,9 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -26,28 +29,43 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgEqualsReturn;
+import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.SimonMessageConstants;
-import de.root1.simon.utils.Utils;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgEqualsReturn}.
+ * A {@link MessageDecoder} that decodes {@link MsgRawChannelData}.
  *
  * @author ACHR
  */
-public class MsgEqualsReturnDecoder extends AbstractMessageDecoder {
+public class MsgRawChannelDataDecoder extends AbstractMessageDecoder {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private boolean readSize;
+	private int dataSize;
 	
-    public MsgEqualsReturnDecoder() {
-        super(SimonMessageConstants.MSG_EQUALS_RETURN);
+    public MsgRawChannelDataDecoder() {
+        super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA);
     }
     
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	MsgEqualsReturn message = new MsgEqualsReturn();
+
+    	MsgRawChannelData message = new MsgRawChannelData();
     	
-    	message.setEqualsResult(Utils.byteToBoolean(in.get()));
+    	if (!readSize) {
+    		readSize  = true;
+    		dataSize = in.getInt();
+    		logger.trace("dataSizeInBytes={} position={}",dataSize, in.position());
+    	}
+    	
+    	if (in.remaining() < dataSize) {
+    		logger.trace("need more data. needed={} available={}",dataSize,in.remaining());
+    		return null;
+    	}
+    	
+    	byte[] b = new byte[dataSize];
+    	in.get(b);
+    	message.setData(ByteBuffer.allocate(dataSize).put(b));
     	
 		logger.trace("message={}", message);
         return message;

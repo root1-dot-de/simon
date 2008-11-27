@@ -20,6 +20,8 @@ package de.root1.simon.codec.base;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.demux.DemuxingProtocolCodecFactory;
 
+import de.root1.simon.codec.messages.MsgCloseRawChannel;
+import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
 import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
@@ -28,6 +30,10 @@ import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgOpenRawChannel;
+import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
+import de.root1.simon.codec.messages.MsgPing;
+import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 
@@ -118,6 +124,54 @@ public class SimonProtocolCodecFactory extends DemuxingProtocolCodecFactory {
         super.addMessageDecoder(MsgEqualsDecoder.class);
         // outgoing equals return
         super.addMessageEncoder(MsgEqualsReturn.class, MsgEqualsReturnEncoder.class);
+
+        
+        /*
+         * open raw channel handling
+         */
+        
+        // outgoing open channel
+        super.addMessageEncoder(MsgOpenRawChannel.class, MsgOpenRawChannelEncoder.class);
+        // incoming open channel return
+        super.addMessageDecoder(MsgOpenRawChannelReturnDecoder.class);
+        
+        // incoming open channel
+        super.addMessageDecoder(MsgOpenRawChannelDecoder.class);
+        // outgoing open channel return
+        super.addMessageEncoder(MsgOpenRawChannelReturn.class, MsgOpenRawChannelReturnEncoder.class);
+        
+        /*
+         * close raw channel handling
+         */
+        
+        // outgoing close channel
+        super.addMessageEncoder(MsgCloseRawChannel.class, MsgCloseRawChannelEncoder.class);
+        // incoming close channel return
+        super.addMessageDecoder(MsgCloseRawChannelReturnDecoder.class);
+        
+        // incoming close channel
+        super.addMessageDecoder(MsgCloseRawChannelDecoder.class);
+        // outgoing close channel return
+        super.addMessageEncoder(MsgCloseRawChannelReturn.class, MsgCloseRawChannelReturnEncoder.class);
+        
+        /*
+         * raw channel data handling
+         */
+        
+        // outgoing channel data 
+        super.addMessageEncoder(MsgRawChannelData.class, MsgRawChannelDataEncoder.class);
+        // incoming channel data 
+        super.addMessageDecoder(MsgRawChannelDataDecoder.class);
+        
+        /*
+         * ping handling
+         */
+        
+        // outgoing ping
+        super.addMessageEncoder(MsgPing.class, MsgPingEncoder.class);
+        // incoming ping
+        super.addMessageDecoder(MsgPingDecoder.class);
+        
 	}
 }
 

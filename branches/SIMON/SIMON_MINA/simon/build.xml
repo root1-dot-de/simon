@@ -58,7 +58,6 @@
     	<exec dir="." executable="svnversion" outputproperty="build.revision" failifexecutionfails="false" resultproperty="svnreccode">
     	  <arg line="-n ."/>
     	</exec>
-		<echo>Creating package...</echo>
 		<echo>revision=${build.revision}</echo>
 		<echo>timestamp=${build.timestamp}</echo>
 		<echo>version=${version}</echo>

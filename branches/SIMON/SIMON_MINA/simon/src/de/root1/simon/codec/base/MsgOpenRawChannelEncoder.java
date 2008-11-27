@@ -24,28 +24,27 @@ import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.messages.MsgEqualsReturn;
+import de.root1.simon.codec.messages.MsgOpenRawChannel;
 import de.root1.simon.codec.messages.SimonMessageConstants;
-import de.root1.simon.utils.Utils;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgEqualsReturn}.
+ * A {@link MessageEncoder} that encodes {@link MsgOpenRawChannel}.
  *
  * @author ACHR
  */
-public class MsgEqualsReturnEncoder<T extends MsgEqualsReturn> extends AbstractMessageEncoder<T> {
+public class MsgOpenRawChannelEncoder<T extends MsgOpenRawChannel> extends AbstractMessageEncoder<T> {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-    public MsgEqualsReturnEncoder() {
-        super(SimonMessageConstants.MSG_EQUALS_RETURN);
+    public MsgOpenRawChannelEncoder() {
+        super(SimonMessageConstants.MSG_OPEN_RAW_CHANNEL);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	
-    	logger.trace("begin. message={}", message);
-    	out.put(Utils.booleanToByte(message.getEqualsResult()));
+    	logger.trace("begin. message="+message);
+    	out.put(message.getChannelToken()); // send the channel token
 		logger.trace("end");
     }
 
