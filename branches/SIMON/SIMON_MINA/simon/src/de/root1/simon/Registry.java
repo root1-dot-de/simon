@@ -52,10 +52,10 @@ public final class Registry {
 	 */
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
-	/**
-	 * The {@link LookupTable} used by the {@link Registry}'s {@link Dispatcher}
-	 */
-	private LookupTable lookupTableServer;
+//	/**
+//	 * The {@link LookupTable} used by the {@link Registry}'s {@link Dispatcher}
+//	 */
+//	private LookupTable lookupTableServer;
 
 	/**
 	 * The address in which the registry is listening
@@ -102,7 +102,7 @@ public final class Registry {
 	 */
 	protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
 		logger.debug("begin");
-		this.lookupTableServer = new LookupTable();
+//		this.lookupTableServer = new LookupTable();
 		this.address  = address;
 		this.port = port;
 		this.threadPool = threadPool;
@@ -122,9 +122,8 @@ public final class Registry {
 	private void start() throws IOException {
 
 		logger.debug("begin");
-		
-			
-		dispatcher = new Dispatcher(null, lookupTableServer, threadPool);
+					
+		dispatcher = new Dispatcher(null, threadPool);
 		logger.debug("dispatcher created");
 		
 		acceptor = new NioSocketAcceptor();
@@ -165,6 +164,7 @@ public final class Registry {
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
         
 		acceptor.setHandler(dispatcher);
+		logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec",Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
         setDgcInterval(Statics.DEFAULT_IDLE_TIME);
         setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
         
@@ -184,6 +184,7 @@ public final class Registry {
 	 */
 	public void setWriteTimeout(int timeout) {
 		acceptor.getSessionConfig().setWriteTimeout(timeout);
+		logger.trace("setting write timeout to {} sec.", timeout);
 	}
 
 	/**
@@ -192,6 +193,7 @@ public final class Registry {
 	 */
 	public void setDgcInterval(int interval) {
 		acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, interval );
+		logger.trace("setting dgc interval to {} sec.", interval);
 	}
 	
 	/**
@@ -229,8 +231,8 @@ public final class Registry {
 		logger.trace("Shutdown FilterchainWorkerPool ...");
 		filterchainWorkerPool.shutdown();
 		
-		logger.trace("Clearing LookupTable ...");
-		lookupTableServer.clear();
+//		logger.trace("Clearing LookupTable ...");
+//		lookupTableServer.cleanup();
 		
 		logger.trace("end");
 	}
@@ -248,12 +250,12 @@ public final class Registry {
 	 */
 	public void bind(String name, SimonRemote remoteObject) throws NameBindingException {
 		try {
-			if (lookupTableServer.getRemoteBinding(name)!=null) 
+			if (dispatcher.getLookupTable().getRemoteBinding(name)!=null) 
 				throw new NameBindingException("a remote object with the name '"+name+"' is already bound to this registry. unbind() first, or alternatively rebind().");
 		} catch (LookupFailedException e) {
 			// nothing to do
 		}
-		lookupTableServer.putRemoteBinding(name, remoteObject);
+		dispatcher.getLookupTable().putRemoteBinding(name, remoteObject);
 	}
 	
 	/**
@@ -289,7 +291,7 @@ public final class Registry {
 	 */
 	public boolean unbind(String name){
 		//TODO what to do with already connected users?
-		lookupTableServer.releaseRemoteBinding(name);
+		dispatcher.getLookupTable().releaseRemoteBinding(name);
 		return Simon.unpublish(new SimonPublication(address, port, name));
 	}
 	
@@ -348,6 +350,14 @@ public final class Registry {
 	 */
 	public SimonRegistryStatistics getStatistics(){
 		return new RegistryStatistics(acceptor.getStatistics());
+	}
+
+	/**
+	 * Returns the {@link Dispatcher} associated with this registry.
+	 * @return the related dispatcher
+	 */
+	protected Dispatcher getDispatcher() {
+		return dispatcher;
 	}
 	
 }

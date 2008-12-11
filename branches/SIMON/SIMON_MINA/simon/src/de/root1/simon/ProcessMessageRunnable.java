@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * 
+ * This file is part of SIMON.
+ *
+ *   SIMON is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   SIMON is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package de.root1.simon;
 
 import java.lang.reflect.InvocationTargetException;
@@ -193,7 +211,7 @@ public class ProcessMessageRunnable implements Runnable {
 		MsgRawChannelData msg = (MsgRawChannelData) abstractMessage;
 		 
 		RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
-		
+		logger.debug("writing data to {}.",rawChannelDataListener);
 		rawChannelDataListener.write(msg.getData());
 		logger.debug("data forwarded to listener");
 				
@@ -282,10 +300,9 @@ public class ProcessMessageRunnable implements Runnable {
 			// register "SimonCallback"-results in lookup-table
 			if (result instanceof SimonRemote){
 
-				logger.debug("Result of method {} is instance of SimonRemote: {}", method, result);
+				logger.debug("Result of method '{}' is instance of SimonRemote: {}", method, result);
 				
 				SimonRemoteInstance simonCallback = new SimonRemoteInstance(session,(SimonRemote)result);
-				simonCallback.getId();
 				
 				dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), (SimonRemote) result);
 				result = simonCallback;

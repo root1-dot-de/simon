@@ -11,7 +11,6 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.transport.socket.nio.NioDatagramAcceptor;
 
 import de.root1.simon.Dispatcher;
-import de.root1.simon.LookupTable;
 import de.root1.simon.Simon;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.utils.Utils;
@@ -21,7 +20,7 @@ public class UdpTest {
 	public static void main(String[] args) throws IOException {
 		IoAcceptor acceptor = new NioDatagramAcceptor();
 		
-		Dispatcher dispatcher = new Dispatcher("",new LookupTable(),Executors.newCachedThreadPool());
+		Dispatcher dispatcher = new Dispatcher("",Executors.newCachedThreadPool());
 		
 		SimonProtocolCodecFactory protocolFactory = null;
 		try {

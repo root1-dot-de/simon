@@ -1,5 +1,3 @@
-package de.root1.simon;
-
 /*
  * Copyright (c) 1995 - 2008 Sun Microsystems, Inc.  All rights reserved.
  *
@@ -30,8 +28,8 @@ package de.root1.simon;
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package de.root1.simon;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -40,7 +38,13 @@ import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.io.IOException;
 
+/**
+ * TODO document me
+ * @author achr
+ *
+ */
 public class PublicationSearcher extends Thread {
 	
 	private static final int groupPort = 4446;
@@ -51,8 +55,19 @@ public class PublicationSearcher extends Thread {
 	private int searchProgress = 0;
 	private List<SearchProgressListener> listeners = new ArrayList<SearchProgressListener>();
 	
-
-	public PublicationSearcher(SearchProgressListener listener, int searchTime) throws IOException {
+	/**
+	 * Creates a searcher instance that searches for published remote objects on
+	 * the local network
+	 * 
+	 * @param listener
+	 *            a {@link SearchProgressListener} implementation which is
+	 *            informed about the current search progress
+	 * @param searchTime
+	 *            the time the background search thread spends for searching
+	 *            published remote objects
+	 * @throws IOException
+	 */
+	protected PublicationSearcher(SearchProgressListener listener, int searchTime) throws IOException {
 		setName(Statics.PUBLISH_CLIENT_THREAD_NAME);
 		foundPublications = new ArrayList<SimonPublication>();
 		addSearchProgressListener(listener);
@@ -110,10 +125,26 @@ public class PublicationSearcher extends Thread {
 	}
 	
 	/**
-	 * Shutdown and interrupt a search
+	 * Signals a shutdown request to the search thread.<br>
+	 * <i><b>Note:</b>This method does not block until shutdown is finished. It returns immediately.</i>
 	 */
-	public void shutdown() {
+	public void signalShutdown() {
 		shutdown = true;
+	}
+	
+	/**
+	 * Signals a shutdown to the search thread and waits until the shutdown is processed completely.
+	 * <i><b>Note:</b>This method blocks until shutdown is finished!</i>
+	 */
+	public void shutdown(){
+		signalShutdown();
+		while (isAlive()){
+			try {
+				Thread.sleep(Statics.WAIT_FOR_SHUTDOWN_SLEEPTIME);
+			} catch (InterruptedException e) {
+				// do nothing
+			}
+		}
 	}
 	
 	/**
@@ -137,6 +168,10 @@ public class PublicationSearcher extends Thread {
 		return searchProgress;
 	}
 	
+	/**
+	 * TODO document me
+	 * @param listener
+	 */
 	private void addSearchProgressListener(SearchProgressListener listener){
 		if (listener!=null)
 			listeners.add(listener);
@@ -152,6 +187,10 @@ public class PublicationSearcher extends Thread {
 		}
 	}
 	
+	/**
+	 * Returns if thread is still busy with searching
+	 * @return true if search is in progress, false if search has finished.
+	 */
 	public boolean isSearching(){
 		return isAlive();
 	}

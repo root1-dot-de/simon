@@ -98,16 +98,16 @@ public class Dispatcher implements IoHandler{
 	 * 
 	 * @param serverString an identifier string to determine to which server this dispatcher is 
 	 * connected to. this must be set to <code>null</code> if this dispatcher is a server dispatcher.
-	 * @param lookupTable the lookup table related to THIS dispatcher
 	 * @param threadPool the pool where the {@link ProcessMessageRunnable}'s run in
 	 */
-	public Dispatcher(String serverString, LookupTable lookupTable, ExecutorService threadPool) {
+	public Dispatcher(String serverString, ExecutorService threadPool) {
 		logger.debug("begin");
 				
 		isRunning = true;
 
 		this.serverString = serverString;
-		this.lookupTable = lookupTable;
+		this.lookupTable = new LookupTable(this);
+
 		this.messageProcessorPool = threadPool;
 		
 //		// FIXME ...
@@ -488,6 +488,7 @@ public class Dispatcher implements IoHandler{
 				// nothing to do
 			}
 		}
+		lookupTable.cleanup();
 		isRunning = false;
 		logger.debug("shutdown completed");
 		logger.debug("end");
@@ -649,7 +650,7 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		logger.debug("begin sequenceId={} session=", sequenceId, session);
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 		
 
  		// create a monitor that waits for the request-result
@@ -695,20 +696,23 @@ public class Dispatcher implements IoHandler{
 		synchronized (rawChannelMap) {
 			rawChannelMap.put(channelToken, listener);	
 		}
+		logger.trace("rawChannelMap={}",rawChannelMap);
 		return channelToken;
 	}
 	
 	/** TODO document me */
-	protected boolean isRawChannelDataListenerRegistered(int channelToken){
+	protected boolean isRawChannelDataListenerRegistered(byte channelToken){
+		logger.trace("searching in map for token={} map={}",channelToken,rawChannelMap);
 		synchronized (rawChannelMap) {
 			return rawChannelMap.containsKey(channelToken);	
 		}
 	}
 	
 	/** TODO document me */
-	protected RawChannelDataListener getRawChannelDataListener(int channelToken){
+	protected RawChannelDataListener getRawChannelDataListener(byte channelToken){
+		logger.trace("getting listener token={} map={}",channelToken,rawChannelMap);
 		synchronized (rawChannelMap) {
-			return rawChannelMap.get((byte)channelToken);	
+			return rawChannelMap.get(channelToken);	
 		}
 	}
 

@@ -106,6 +106,11 @@ public class Simon {
 	private static String protocolFactoryClassName = SIMON_STD_PROTOCOL_CODEC_FACTORY;
 
 	/**
+	 * TODO document me
+	 */
+	private static List<LookupTable> lookupTableList = new ArrayList<LookupTable>();
+
+	/**
 	 * Try to load 'config/simon_logging.properties'
 	 */
 	static {
@@ -278,7 +283,7 @@ public class Simon {
 				
 				logger.debug("No ClientToServerConnection in list. Creating new one.");
 				
-				dispatcher = new Dispatcher(serverString, new LookupTable(), getThreadPool());
+				dispatcher = new Dispatcher(serverString, getThreadPool());
 				
 				IoConnector connector = new NioSocketConnector();
 				
@@ -833,10 +838,10 @@ public class Simon {
 	 * TODO document me
 	 * 
 	 * @param channelToken
-	 * @param remoteObject
+	 * @param simonRemote
 	 */
-	public static RawChannel openRawChannel(int channelToken, Object remoteObject){
-		SimonProxy simonProxy = getSimonProxy(remoteObject);
+	public static RawChannel openRawChannel(int channelToken, SimonRemote simonRemote){
+		SimonProxy simonProxy = getSimonProxy(simonRemote);
 		Dispatcher dispatcher = simonProxy.getDispatcher();
 		RawChannel rawChannel = dispatcher.openRawChannel(simonProxy.getIoSession(), channelToken);
 		return rawChannel;
@@ -848,13 +853,48 @@ public class Simon {
 	 * @param remoteObject
 	 * @return a token for the prepared channel
 	 */
-	public static int prepareRawChannel(RawChannelDataListener listener, Object remoteObject){
-		SimonProxy simonProxy = getSimonProxy(remoteObject);
-		Dispatcher dispatcher = simonProxy.getDispatcher();
-		dispatcher.prepareRawChannel(listener);
-		return 0;
+	public static int prepareRawChannel(RawChannelDataListener listener, SimonRemote simonRemote){
+		Dispatcher dispatcher = getDispatcher(simonRemote);
+		if (dispatcher!=null){
+			return dispatcher.prepareRawChannel(listener);
+		} else {
+			throw new IllegalArgumentException("Given SimonRemote is not found in any lookuptable.");
+		}
+		
 	}
 
+	/**
+	 * TODO document me
+	 * @param lookupTable
+	 */
+	protected synchronized static void registerLookupTable(LookupTable lookupTable) {
+		lookupTableList.add(lookupTable);
+		logger.trace("added {} to list of lookuptables. current size: {}",lookupTable,lookupTableList.size());
+	}
 	
+	/**
+	 * TODO document me
+	 * @param lookupTable
+	 */
+	protected synchronized static void unregisterLookupTable(LookupTable lookupTable) {
+		lookupTableList.remove(lookupTable);
+		logger.trace("removed {} from list of lookuptables. current size: {}",lookupTable,lookupTableList.size());
+	}
+
+	/**
+	 * Searches the {@link LookupTable} for the given {@link SimonRemote} and
+	 * returns {@link Dispatcher} which is attached to this {@link LookupTable}.
+	 * 
+	 * @param simonRemote 
+	 * @return the related {@link Dispatcher}
+	 */
+	private static Dispatcher getDispatcher(SimonRemote simonRemote){
+		for (LookupTable lookupTable : lookupTableList) {
+			if (lookupTable.isSimonRemoteRegistered(simonRemote)){
+				return lookupTable.getDispatcher();
+			}
+		}
+		return null;
+	}
 
 }
