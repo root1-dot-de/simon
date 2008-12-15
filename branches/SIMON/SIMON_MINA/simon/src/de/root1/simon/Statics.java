@@ -29,13 +29,15 @@ public class Statics {
 	protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
 	protected static final String EQUALS_METHOD_SIGNATURE 	= "public boolean java.lang.Object.equals(java.lang.Object)";
 
+	// values in milliseconds
 	protected static final int DEFAULT_SOCKET_TIMEOUT = 100;
-	
+	protected static final long MONITOR_WAIT_TIMEOUT = 200;
 	protected static final int WAIT_FOR_SHUTDOWN_SLEEPTIME = 50;
 
 	// values in seconds
 	protected static int DEFAULT_IDLE_TIME = 10;
 	protected static int DEFAULT_WRITE_TIMEOUT = 5;
+	
 
 	/** String that is needed for answering a "find server" packet */
 	protected static final String REQUEST_STRING = "[SIMON|FindServer]";

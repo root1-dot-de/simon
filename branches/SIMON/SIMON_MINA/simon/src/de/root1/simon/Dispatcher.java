@@ -21,7 +21,9 @@ package de.root1.simon;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.mina.core.service.IoHandler;
@@ -67,11 +69,16 @@ public class Dispatcher implements IoHandler{
 	/** a simple counter that is used for creating sequence IDs */
 	private int sequenceIdCounter = 0;
 	
-	/** The map that holds the relation between the request ID and the received result */
-	private HashMap<Integer, Object> requestMonitorAndReturnMap = new HashMap<Integer, Object>();
+	/**
+	 * The map that holds the relation between the request ID and the received
+	 * result. If a request is placed, the map contains the sequenceID and the
+	 * corresponding monitor object. If the result is present, the monitor object
+	 * is replaced with the result
+	 */
+	private Map<Integer, Object> requestMonitorAndReturnMap = Collections.synchronizedMap(new HashMap<Integer, Object>());
 	
 	/** a memory map for the client the unwrap the incoming return value after executing a method on the server */
-	private HashMap<Integer, Class<?>> requestReturnType = new HashMap<Integer, Class<?>>();
+	private Map<Integer, Class<?>> requestReturnType = Collections.synchronizedMap(new HashMap<Integer, Class<?>>());
 	
 	/** the thread-pool where the worker-threads live in */
 	private ExecutorService messageProcessorPool = null;
@@ -134,7 +141,7 @@ public class Dispatcher implements IoHandler{
 		
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(sequenceId);
+		final Monitor monitor = createMonitor(sequenceId);
 		
 		MsgLookup msgLookup = new MsgLookup();
 		msgLookup.setSequence(sequenceId);
@@ -189,7 +196,7 @@ public class Dispatcher implements IoHandler{
 		
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(sequenceId);
+		final Monitor monitor = createMonitor(sequenceId);
 		
 		// register remote instance objects in the lookup-table
 		if (args != null) {
@@ -215,22 +222,22 @@ public class Dispatcher implements IoHandler{
 		session.write(msgInvoke);
 		
 		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
-		
 
 		// wait for result
 		synchronized (monitor) {
 			try {
-				monitor.wait();
+				while(!isRequestResultPresent(sequenceId)) {
+					monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
+					logger.trace("still waiting for result for sequenceId={}",sequenceId);
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-		MsgInvokeReturn result;
-		// get result
-		synchronized (requestMonitorAndReturnMap) {
-			result = (MsgInvokeReturn) getRequestResult(sequenceId);			
-		}
 			
+		// get result
+		MsgInvokeReturn result;
+		result = (MsgInvokeReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
 	
@@ -259,7 +266,7 @@ public class Dispatcher implements IoHandler{
 		
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(sequenceId);
+		final Monitor monitor = createMonitor(sequenceId);
 		
 		MsgToString msgInvoke = new MsgToString();
 		msgInvoke.setSequence(sequenceId);
@@ -308,7 +315,7 @@ public class Dispatcher implements IoHandler{
 		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(sequenceId);
+		final Monitor monitor = createMonitor(sequenceId);
 		
 		MsgHashCode msgInvoke = new MsgHashCode();
 		msgInvoke.setSequence(sequenceId);
@@ -357,7 +364,7 @@ public class Dispatcher implements IoHandler{
 		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(sequenceId);
+		final Monitor monitor = createMonitor(sequenceId);
 		
 		MsgEquals msgEquals = new MsgEquals();
 		msgEquals.setSequence(sequenceId);
@@ -417,13 +424,13 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("sequenceId={} msg={}", sequenceId, msg);
 		
-		synchronized (requestMonitorAndReturnMap) {
+//		synchronized (requestMonitorAndReturnMap) {
 			Object monitor = requestMonitorAndReturnMap.get(sequenceId);
 			requestMonitorAndReturnMap.put(sequenceId, msg);
 			synchronized (monitor) {
 				monitor.notify();
 			}
-		}
+//		}
 		logger.debug("end");
 	}
 	
@@ -531,10 +538,10 @@ public class Dispatcher implements IoHandler{
 	 * @param sequenceId
 	 * @return the monitor used for waiting for the result
 	 */
-	private Object createMonitor(final int sequenceId) {
+	private Monitor createMonitor(final int sequenceId) {
 		logger.debug("begin");
 		
-		final Object monitor = new Object();
+		final Monitor monitor = new Monitor();
 
 		synchronized (requestMonitorAndReturnMap) {
 			requestMonitorAndReturnMap.put(sequenceId, monitor);
@@ -551,8 +558,8 @@ public class Dispatcher implements IoHandler{
 	 * Checks if the request result is an {@link SimonRemoteException}. 
 	 * If yes, the exception is thrown, if not, the result is returned
 	 * 
-	 * @param sequenceId the request-id related to the result
-	 * @return the result of the request
+	 * @param sequenceId the sequence-id related to the result
+	 * @return the result of the request. May be null if there is no result yet.
 	 */
 	private Object getRequestResult(final int sequenceId) {
 		logger.debug("getting result for sequenceId={}", sequenceId);
@@ -563,6 +570,20 @@ public class Dispatcher implements IoHandler{
 			throw ((SimonRemoteException) o);
 		}
 		return o;
+	}
+	
+	/**
+	 * Returns whether the given sequenceId already has a result present or not
+	 * @param sequenceId the sequence-id related to the result
+	 * @return true, if the result is present, false if not
+	 */
+	private boolean isRequestResultPresent(final int sequenceId){
+		boolean present = false;
+		// if the contained object is NOT an instance of Monitor, present=true
+		if (!(requestMonitorAndReturnMap.get(sequenceId) instanceof Monitor)) 
+			present = true;
+		logger.debug("Result for sequenceId={} present: {}",sequenceId, present);
+		return present;
 	}
 	
 	/**
