@@ -25,6 +25,27 @@ package de.root1.simon;
  */
 public class Monitor {
 	
+	/**
+	 * the associated sequence id
+	 */
+	private final int sequenceId;
+
+	/**
+	 * Creates a monitor object
+	 * @param sequenceId the associated sequence id
+	 */
+	public Monitor(int sequenceId) {
+		this.sequenceId = sequenceId;
+	}
+	
+	/**
+	 * Returns the associated sequence id
+	 * @return the id
+	 */
+	public int getSequenceId() {
+		return sequenceId;
+	}
+	
 	
 
 }

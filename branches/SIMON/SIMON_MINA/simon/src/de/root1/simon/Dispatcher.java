@@ -150,25 +150,11 @@ public class Dispatcher implements IoHandler{
 		session.write(msgLookup);
 		
 		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
-		
 
-		// wait for result
-		synchronized (monitor) {
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		MsgLookupReturn result;
-		// get result
-		synchronized (requestMonitorAndReturnMap) {
-			result = (MsgLookupReturn) getRequestResult(sequenceId);			
-		}
-			
+		waitForResult(monitor);
+		MsgLookupReturn result = (MsgLookupReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}",sequenceId);
-		
 		logger.trace("end sequenceId={}",sequenceId);
 		
 		return result;
@@ -223,24 +209,10 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
 
-		// wait for result
-		synchronized (monitor) {
-			try {
-				while(!isRequestResultPresent(sequenceId)) {
-					monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
-					logger.trace("still waiting for result for sequenceId={}",sequenceId);
-				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-			
-		// get result
-		MsgInvokeReturn result;
-		result = (MsgInvokeReturn) getRequestResult(sequenceId);			
+		waitForResult(monitor);
+		MsgInvokeReturn result = (MsgInvokeReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
-	
 		logger.debug("end sequenceId={}", sequenceId);
 		
 		return result.getReturnValue();
@@ -263,7 +235,6 @@ public class Dispatcher implements IoHandler{
 		final int sequenceId = generateSequenceId(); 
 		
 		logger.debug("begin sequenceId={} session={}", sequenceId, session);
-		
 
  		// create a monitor that waits for the request-result
 		final Monitor monitor = createMonitor(sequenceId);
@@ -275,24 +246,11 @@ public class Dispatcher implements IoHandler{
 		session.write(msgInvoke);
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
-		
 
-		// wait for result
-		synchronized (monitor) {
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		MsgToStringReturn result;
-		// get result
-		synchronized (requestMonitorAndReturnMap) {
-			result = (MsgToStringReturn) getRequestResult(sequenceId);			
-		}
+		waitForResult(monitor);
+		MsgToStringReturn result = (MsgToStringReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
-	
 		logger.debug("end sequenceId={}", sequenceId);
 		
 		return result.getReturnValue();
@@ -325,22 +283,10 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-		// wait for result
-		synchronized (monitor) {
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		MsgHashCodeReturn result;
-		// get result
-		synchronized (requestMonitorAndReturnMap) {
-			result = (MsgHashCodeReturn) getRequestResult(sequenceId);			
-		}
+		waitForResult(monitor);
+		MsgHashCodeReturn result = (MsgHashCodeReturn) getRequestResult(sequenceId);			
 			
 		logger.debug("got answer for sequenceId={}", sequenceId);
-	
 		logger.debug("end sequenceId={}", sequenceId);
 		
 		return result.getReturnValue();
@@ -375,25 +321,33 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
+		waitForResult(monitor);
+		MsgEqualsReturn result = (MsgEqualsReturn) getRequestResult(sequenceId);			
+			
+		logger.debug("got answer for sequenceId={}", +sequenceId);
+		logger.debug("end sequenceId={}", sequenceId);
+		
+		return result.getEqualsResult();
+	}
+
+	/**
+	 * Waits until the result for a request described by the monitor is present
+	 * @param monitor the monitor related to the request
+	 */
+	private void waitForResult(final Monitor monitor) {
+
+		int sequenceId = monitor.getSequenceId();
 		// wait for result
 		synchronized (monitor) {
 			try {
-				monitor.wait();
+				while(!isRequestResultPresent(sequenceId)) {
+					monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
+					logger.trace("still waiting for result for sequenceId={}",sequenceId);
+				}
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-		MsgEqualsReturn result;
-		// get result
-		synchronized (requestMonitorAndReturnMap) {
-			result = (MsgEqualsReturn) getRequestResult(sequenceId);			
-		}
-			
-		logger.debug("got answer for sequenceId={}", +sequenceId);
-	
-		logger.debug("end sequenceId={}", sequenceId);
-		
-		return result.getEqualsResult();
 	}
 
 
@@ -541,7 +495,7 @@ public class Dispatcher implements IoHandler{
 	private Monitor createMonitor(final int sequenceId) {
 		logger.debug("begin");
 		
-		final Monitor monitor = new Monitor();
+		final Monitor monitor = new Monitor(sequenceId);
 
 		synchronized (requestMonitorAndReturnMap) {
 			requestMonitorAndReturnMap.put(sequenceId, monitor);
@@ -599,6 +553,10 @@ public class Dispatcher implements IoHandler{
 		return (++sequenceIdCounter == Integer.MAX_VALUE ? 0 : sequenceIdCounter);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.apache.mina.core.service.IoHandler#exceptionCaught(org.apache.mina.core.session.IoSession, java.lang.Throwable)
+	 */
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
 		if (logger.isTraceEnabled()){
@@ -610,6 +568,10 @@ public class Dispatcher implements IoHandler{
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.apache.mina.core.service.IoHandler#messageReceived(org.apache.mina.core.session.IoSession, java.lang.Object)
+	 */
 	public void messageReceived(IoSession session, Object message) throws Exception {
 		logger.debug("Received message from {}", session.getRemoteAddress());
 		
@@ -619,10 +581,18 @@ public class Dispatcher implements IoHandler{
 		messageProcessorPool.execute(new ProcessMessageRunnable(this, session, abstractMessage));
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.apache.mina.core.service.IoHandler#messageSent(org.apache.mina.core.session.IoSession, java.lang.Object)
+	 */
 	public void messageSent(IoSession session, Object msg) throws Exception {
 		logger.debug("message sent. session={} msg={}", session, msg);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.apache.mina.core.service.IoHandler#sessionClosed(org.apache.mina.core.session.IoSession)
+	 */
 	public void sessionClosed(IoSession session) throws Exception {
 		logger.debug("################################################");
 		logger.debug("######## session closed. session={}",session);
@@ -630,11 +600,19 @@ public class Dispatcher implements IoHandler{
 		lookupTable.unreference(session.getId());
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.apache.mina.core.service.IoHandler#sessionCreated(org.apache.mina.core.session.IoSession)
+	 */
 	public void sessionCreated(IoSession session) throws Exception {
 		logger.debug("session created. session={}", session);
 		session.setAttribute("LookupTable", lookupTable); // attach the lookup table to the session
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.apache.mina.core.service.IoHandler#sessionIdle(org.apache.mina.core.session.IoSession, org.apache.mina.core.session.IdleStatus)
+	 */
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
 		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);
 		if (idleStatus == IdleStatus.WRITER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
@@ -658,6 +636,10 @@ public class Dispatcher implements IoHandler{
 		logger.debug("end. data send.");
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.apache.mina.core.service.IoHandler#sessionOpened(org.apache.mina.core.session.IoSession)
+	 */
 	public void sessionOpened(IoSession session) throws Exception {
 		logger.debug("session opened. session={}", session);
 	}
