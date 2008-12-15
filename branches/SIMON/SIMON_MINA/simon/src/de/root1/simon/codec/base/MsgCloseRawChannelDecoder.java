@@ -46,7 +46,7 @@ public class MsgCloseRawChannelDecoder extends AbstractMessageDecoder {
 
     	MsgCloseRawChannel message = new MsgCloseRawChannel();
     	
-    	message.setChannelToken(in.get());
+    	message.setChannelToken(in.getInt());
 
     	logger.trace("message={}", message);
         return message;

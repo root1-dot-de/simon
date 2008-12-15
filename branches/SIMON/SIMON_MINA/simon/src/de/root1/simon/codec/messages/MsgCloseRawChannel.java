@@ -29,18 +29,18 @@ public class MsgCloseRawChannel extends AbstractMessage {
 	
     private static final long serialVersionUID = 1L;
 
-    private byte channelToken;
+    private int channelToken;
     
     public MsgCloseRawChannel() {
     	super(SimonMessageConstants.MSG_CLOSE_RAW_CHANNEL);
     }
 
-    public byte getChannelToken() {
+    public int getChannelToken() {
         return channelToken;
     }
 
     public void setChannelToken(int channelToken) {
-        this.channelToken = (byte) channelToken;
+        this.channelToken = channelToken;
     }
 
     @Override

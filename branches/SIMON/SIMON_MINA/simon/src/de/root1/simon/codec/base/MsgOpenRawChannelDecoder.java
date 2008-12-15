@@ -46,7 +46,7 @@ public class MsgOpenRawChannelDecoder extends AbstractMessageDecoder {
 
     	MsgOpenRawChannel message = new MsgOpenRawChannel();
     	
-    	message.setChannelToken(in.get());
+    	message.setChannelToken(in.getInt());
 
     	logger.trace("message={}", message);
         return message;

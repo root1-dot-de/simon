@@ -44,7 +44,7 @@ public class MsgCloseRawChannelEncoder<T extends MsgCloseRawChannel> extends Abs
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	
     	logger.trace("begin. message="+message);
-    	out.put(message.getChannelToken()); // send the channel token
+    	out.putInt(message.getChannelToken()); // send the channel token
 		logger.trace("end");
     }
 

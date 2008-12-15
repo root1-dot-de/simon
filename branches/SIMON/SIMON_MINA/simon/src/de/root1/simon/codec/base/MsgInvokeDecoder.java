@@ -41,14 +41,12 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-//	private int msgSize;
-//	private boolean readSize = false;
 	
     public MsgInvokeDecoder() {
         super(SimonMessageConstants.MSG_INVOKE);
     }
     
-    public class InvokeState{
+    protected class InvokeState{
     	public boolean readSize = false;
     	public int msgSize;
     }
@@ -72,7 +70,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 	    		return null;
 	    	}
     	}
-    	
+    	logger.trace("all data ready!");
     	MsgInvoke msgInvoke = new MsgInvoke();
     	
         try {

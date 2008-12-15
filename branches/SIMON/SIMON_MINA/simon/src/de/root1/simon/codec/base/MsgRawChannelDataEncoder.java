@@ -43,8 +43,9 @@ public class MsgRawChannelDataEncoder<T extends MsgRawChannelData> extends Abstr
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	
-    	logger.trace("begin. message="+message);
-    	out.putInt(message.getData().capacity());
+    	logger.trace("begin. message={} data capacity={}",message, message.getData().compact());
+    	out.putInt(message.getData().capacity()+4); // plus 4 bytes for integer channel token
+    	out.putInt(message.getChannelToken());
     	out.put(message.getData());
 		logger.trace("end");
     }

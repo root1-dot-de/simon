@@ -93,10 +93,10 @@ public class Dispatcher implements IoHandler{
 	private final String serverString;
 
 	/** TODO document me */
-	private HashMap<Byte, RawChannelDataListener> rawChannelMap = new HashMap<Byte, RawChannelDataListener>();
+	private HashMap<Integer, RawChannelDataListener> rawChannelMap = new HashMap<Integer, RawChannelDataListener>();
 
 	/** TODO document me */
-	private ArrayList<Byte> tokenList = new ArrayList<Byte>();
+	private ArrayList<Integer> tokenList = new ArrayList<Integer>();
 	
 	/**
 	 * 
@@ -653,11 +653,11 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		logger.debug("begin sequenceId={} session={}", sequenceId, session);
+		logger.debug("begin sequenceId={} session={} token={}", new Object[]{sequenceId, session, channelToken});
 		
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(sequenceId);
+		final Monitor monitor = createMonitor(sequenceId);
 		
 		MsgOpenRawChannel msgOpenRawChannel = new MsgOpenRawChannel();
 		msgOpenRawChannel.setSequence(sequenceId);
@@ -666,27 +666,15 @@ public class Dispatcher implements IoHandler{
 		session.write(msgOpenRawChannel);
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
-		
 
-		// wait for result
-		synchronized (monitor) {
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		MsgOpenRawChannelReturn result;
-		// get result
-		synchronized (requestMonitorAndReturnMap) {
-			result = (MsgOpenRawChannelReturn) getRequestResult(sequenceId);			
-		}
+		waitForResult(monitor);
+		MsgOpenRawChannelReturn result = (MsgOpenRawChannelReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
-	
 		logger.debug("end sequenceId={}", sequenceId);
 
 		if (result.getReturnValue()==true){
+			logger.debug("Creating RawChannel object with token={}", channelToken);
 			return new RawChannel(this, session, channelToken);
 		}
 		
@@ -695,7 +683,7 @@ public class Dispatcher implements IoHandler{
 
 	/** TODO document me */
 	protected int prepareRawChannel(RawChannelDataListener listener) {
-		byte channelToken = getRawChannelToken();
+		int channelToken = getRawChannelToken();
 		synchronized (rawChannelMap) {
 			rawChannelMap.put(channelToken, listener);	
 		}
@@ -704,7 +692,7 @@ public class Dispatcher implements IoHandler{
 	}
 	
 	/** TODO document me */
-	protected boolean isRawChannelDataListenerRegistered(byte channelToken){
+	protected boolean isRawChannelDataListenerRegistered(int channelToken){
 		logger.trace("searching in map for token={} map={}",channelToken,rawChannelMap);
 		synchronized (rawChannelMap) {
 			return rawChannelMap.containsKey(channelToken);	
@@ -712,7 +700,7 @@ public class Dispatcher implements IoHandler{
 	}
 	
 	/** TODO document me */
-	protected RawChannelDataListener getRawChannelDataListener(byte channelToken){
+	protected RawChannelDataListener getRawChannelDataListener(int channelToken){
 		logger.trace("getting listener token={} map={}",channelToken,rawChannelMap);
 		synchronized (rawChannelMap) {
 			return rawChannelMap.get(channelToken);	
@@ -720,13 +708,13 @@ public class Dispatcher implements IoHandler{
 	}
 
 	/** TODO document me */
-	private byte getRawChannelToken() {
+	private int getRawChannelToken() {
 		synchronized (tokenList) {
 			
-			for (byte b=Byte.MIN_VALUE; b<Byte.MAX_VALUE; b++){
-				if (!tokenList.contains(b)){
-					tokenList.add(b);
-					return b;
+			for (int i=Integer.MIN_VALUE; i<Integer.MAX_VALUE; i++){
+				if (!tokenList.contains(i)){
+					tokenList.add(i);
+					return i;
 				}
 			}
 		}
@@ -738,7 +726,7 @@ public class Dispatcher implements IoHandler{
 	 */
 	private void releaseToken(int channelToken){
 		synchronized (tokenList) {
-			tokenList.remove((byte)channelToken);
+			tokenList.remove((Object)channelToken);
 		}
 	}
 	
@@ -747,6 +735,7 @@ public class Dispatcher implements IoHandler{
 	 * @param channelToken
 	 */
 	protected void unprepareRawChannel(int channelToken){
+		logger.debug("token={}",channelToken);
 		releaseToken(channelToken);
 		synchronized (rawChannelMap) {
 			RawChannelDataListener rawChannelDataListener = rawChannelMap.remove(channelToken);
@@ -782,11 +771,11 @@ public class Dispatcher implements IoHandler{
 
 		final int sequenceId = generateSequenceId(); 
 		
-		logger.debug("begin sequenceId={} session=", sequenceId, session);
+		logger.debug("begin sequenceId={} session={} token={}", new Object[]{sequenceId, session, channelToken});
 		
 
  		// create a monitor that waits for the request-result
-		final Object monitor = createMonitor(sequenceId);
+		final Monitor monitor = createMonitor(sequenceId);
 		
 		MsgCloseRawChannel msgCloseRawChannel = new MsgCloseRawChannel();
 		msgCloseRawChannel.setSequence(sequenceId);
@@ -795,24 +784,11 @@ public class Dispatcher implements IoHandler{
 		session.write(msgCloseRawChannel);
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
-		
 
-		// wait for result
-		synchronized (monitor) {
-			try {
-				monitor.wait();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-		MsgCloseRawChannelReturn result;
-		// get result
-		synchronized (requestMonitorAndReturnMap) {
-			result = (MsgCloseRawChannelReturn) getRequestResult(sequenceId);			
-		}
+		waitForResult(monitor);
+		MsgCloseRawChannelReturn result  = (MsgCloseRawChannelReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
-	
 		logger.debug("end sequenceId={}", sequenceId);
 
 		if (result.getReturnValue()==true){

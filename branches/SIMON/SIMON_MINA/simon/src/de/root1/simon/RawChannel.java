@@ -21,6 +21,8 @@ package de.root1.simon;
 import java.nio.ByteBuffer;
 
 import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author achr
@@ -28,11 +30,13 @@ import org.apache.mina.core.session.IoSession;
  */
 public class RawChannel {
 
+	private final Logger logger = LoggerFactory.getLogger(getClass());
 	private Dispatcher dispatcher;
 	private IoSession session;
 	private int channelToken;
 
-	public RawChannel(Dispatcher dispatcher, IoSession session, int channelToken) {
+	protected RawChannel(Dispatcher dispatcher, IoSession session, int channelToken) {
+		logger.debug("token={}",channelToken);
 		this.dispatcher = dispatcher;
 		this.session = session;
 		this.channelToken = channelToken;
