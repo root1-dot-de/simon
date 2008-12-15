@@ -34,7 +34,7 @@ public class Monitor {
 	 * Creates a monitor object
 	 * @param sequenceId the associated sequence id
 	 */
-	public Monitor(int sequenceId) {
+	protected Monitor(int sequenceId) {
 		this.sequenceId = sequenceId;
 	}
 	
@@ -42,7 +42,7 @@ public class Monitor {
 	 * Returns the associated sequence id
 	 * @return the id
 	 */
-	public int getSequenceId() {
+	protected int getSequenceId() {
 		return sequenceId;
 	}
 	

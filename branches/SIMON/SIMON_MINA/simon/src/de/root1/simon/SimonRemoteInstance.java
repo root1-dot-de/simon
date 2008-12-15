@@ -54,7 +54,7 @@ public class SimonRemoteInstance implements Serializable {
 	 * @param session the {@link IoSession} to which the remote object is related to
 	 * @param remoteObject the remote object for which we generate this transport object for
 	 */
-	public SimonRemoteInstance(IoSession session, SimonRemote remoteObject) {
+	protected SimonRemoteInstance(IoSession session, SimonRemote remoteObject) {
 		logger.debug("begin");
 		
 		try {
@@ -128,7 +128,7 @@ public class SimonRemoteInstance implements Serializable {
 	 * 
 	 * @return the remote object's interface
 	 */
-	public String getInterfaceName() {
+	protected String getInterfaceName() {
 		return interfaceName;
 	}
 	

@@ -61,7 +61,7 @@ public class SimonProxy implements InvocationHandler {
 	 * @param session a reference to the {@link IoSession} of the corresponding network connection
 	 * @param remoteObjectName name of the remote object
 	 */
-	public SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName) {
+	protected SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName) {
 		this.dispatcher = dispatcher;
 		this.session = session;
 
@@ -230,7 +230,7 @@ public class SimonProxy implements InvocationHandler {
 	 *
 	 * @return the {@link Dispatcher} related to this proxy.
 	 */
-	public Dispatcher release() {
+	protected Dispatcher release() {
 		remoteObjectName=null;
 		return dispatcher;
 	}
@@ -240,7 +240,7 @@ public class SimonProxy implements InvocationHandler {
 		return remoteToString();
 	}
 	
-	public String getDetailString() {
+	protected String getDetailString() {
 		return "[Proxy="+remoteObjectName+
 			"|invocationHandler="+super.toString()+
 			"|session="+session+"]";

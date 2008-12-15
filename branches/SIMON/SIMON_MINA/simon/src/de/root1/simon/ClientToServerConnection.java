@@ -60,7 +60,7 @@ public class ClientToServerConnection {
 	 * Returns the {@link IoConnector} related to the connection
 	 * @return the related {@link IoConnector}
 	 */
-	public IoConnector getConnector() {
+	protected IoConnector getConnector() {
 		return connector;
 	}
 
@@ -68,7 +68,7 @@ public class ClientToServerConnection {
 	 * TODO document me
 	 * @param connector
 	 */
-	public void setConnector(NioSocketConnector connector) {
+	protected void setConnector(NioSocketConnector connector) {
 		this.connector = connector;
 	}
 
@@ -81,7 +81,7 @@ public class ClientToServerConnection {
 	 * @param connector 
 	 * @param filterchainWorkerPool 
 	 */
-	public ClientToServerConnection(String serverString,
+	protected ClientToServerConnection(String serverString,
 			Dispatcher dispatcher, IoSession session, IoConnector connector, ExecutorService filterchainWorkerPool) {
 		
 		this.ServerString = serverString;
@@ -91,11 +91,11 @@ public class ClientToServerConnection {
 		this.filterchainWorkerPool = filterchainWorkerPool;
 	}
 	
-	public ExecutorService getFilterchainWorkerPool() {
+	protected ExecutorService getFilterchainWorkerPool() {
 		return filterchainWorkerPool;
 	}
 
-	public void setFilterchainWorkerPool(ExecutorService filterchainWorkerPool) {
+	protected void setFilterchainWorkerPool(ExecutorService filterchainWorkerPool) {
 		this.filterchainWorkerPool = filterchainWorkerPool;
 	}
 
@@ -105,7 +105,7 @@ public class ClientToServerConnection {
 	 * 
 	 * @return the new reference count
 	 */
-	public synchronized int addRef() {
+	protected synchronized int addRef() {
 		return ++referenceCount;
 	}
 	
@@ -114,7 +114,7 @@ public class ClientToServerConnection {
 	 * 
 	 * @return the new reference count
 	 */
-	public synchronized int delRef(){
+	protected synchronized int delRef(){
 		return --referenceCount;
 	}
 	
@@ -122,7 +122,7 @@ public class ClientToServerConnection {
 	 * Returns the current valid reference count
 	 * @return the current reference count
 	 */
-	public int getRefCount(){
+	protected int getRefCount(){
 		return referenceCount;
 	}
 
@@ -130,7 +130,7 @@ public class ClientToServerConnection {
 	 * Gets the {@link Dispatcher} the client uses to communicate with the network
 	 * @return the stored dispatcher
 	 */
-	public Dispatcher getDispatcher() {
+	protected Dispatcher getDispatcher() {
 		return dispatcher;
 	}
 	
@@ -138,7 +138,7 @@ public class ClientToServerConnection {
 	 * Sets the {@link Dispatcher} the client uses to communicate with the network
 	 * @param dispatcher the dispatcher to store
 	 */
-	public void setDispatcher(Dispatcher dispatcher) {
+	protected void setDispatcher(Dispatcher dispatcher) {
 		this.dispatcher = dispatcher;
 	}
 	
@@ -146,7 +146,7 @@ public class ClientToServerConnection {
 	 * Gets the session which is used by the client to communicate with the server via {@link Dispatcher}
 	 * @return the stored session
 	 */
-	public IoSession getSession() {
+	protected IoSession getSession() {
 		return session;
 	}
 	
@@ -154,7 +154,7 @@ public class ClientToServerConnection {
 	 * Sets the session which is used by the client to communicate with the server via {@link Dispatcher}
 	 * @param session the session to store
 	 */
-	public void setSession(IoSession session) {
+	protected void setSession(IoSession session) {
 		this.session = session;
 	}
 	
@@ -162,7 +162,7 @@ public class ClientToServerConnection {
 	 * Gets the server string
 	 * @return the stored server string
 	 */
-	public String getServerString() {
+	protected String getServerString() {
 		return ServerString;
 	}
 	
@@ -170,7 +170,7 @@ public class ClientToServerConnection {
 	 * Sets the server string
 	 * @param serverString the server string to store
 	 */
-	public void setServerString(String serverString) {
+	protected void setServerString(String serverString) {
 		ServerString = serverString;
 	}
 

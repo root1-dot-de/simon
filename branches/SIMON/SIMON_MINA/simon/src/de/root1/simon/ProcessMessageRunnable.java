@@ -54,7 +54,7 @@ public class ProcessMessageRunnable implements Runnable {
 	private IoSession session;
 	private Dispatcher dispatcher;
 
-	public ProcessMessageRunnable(Dispatcher dispatcher, IoSession session, AbstractMessage abstractMessage) {
+	protected ProcessMessageRunnable(Dispatcher dispatcher, IoSession session, AbstractMessage abstractMessage) {
 		this.dispatcher = dispatcher;
 		this.session = session;
 		this.abstractMessage = abstractMessage;

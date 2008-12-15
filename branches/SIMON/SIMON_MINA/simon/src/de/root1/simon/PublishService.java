@@ -28,7 +28,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
+/**
+ * TODO document me
+ * @author achr
+ *
+ */
 public final class PublishService extends Thread {
 
 	private final Logger logger = LoggerFactory.getLogger(getClass());

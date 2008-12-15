@@ -356,7 +356,7 @@ public class LookupTable {
 	 * @param simonRemote
 	 * @return
 	 */
-	public boolean isSimonRemoteRegistered(SimonRemote simonRemote) {
+	protected boolean isSimonRemoteRegistered(SimonRemote simonRemote) {
 		if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) 
 			return true;
 		return false;

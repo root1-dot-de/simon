@@ -44,11 +44,11 @@ public class Statics {
 
 	// some variables configured during ant build
 	/** holds the version of SIMON */
-	public static final String SIMON_VERSION = "@SIMON_VERSION@";
+	protected static final String SIMON_VERSION = "@SIMON_VERSION@";
 	/** holds the build time stamp of SIMON */
-	public static final String SIMON_BUILD_TIMESTAMP = "@SIMON_BUILD_TIMESTAMP@";
+	protected static final String SIMON_BUILD_TIMESTAMP = "@SIMON_BUILD_TIMESTAMP@";
 	/** holds the revision number */
-	public static final String SIMON_BUILD_REVISION = "@SIMON_BUILD_REVISION@";
+	protected static final String SIMON_BUILD_REVISION = "@SIMON_BUILD_REVISION@";
 	
 	// some names for the used threads/pools
 	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon.Dispatcher.WorkerPool";

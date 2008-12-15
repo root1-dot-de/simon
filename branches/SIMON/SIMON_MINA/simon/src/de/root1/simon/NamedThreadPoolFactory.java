@@ -40,7 +40,7 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 	 * 
 	 * @param baseName the basename for the created threads
 	 */
-	public NamedThreadPoolFactory(String baseName) {
+	protected NamedThreadPoolFactory(String baseName) {
 		this.baseName = baseName;
 	}
 	
