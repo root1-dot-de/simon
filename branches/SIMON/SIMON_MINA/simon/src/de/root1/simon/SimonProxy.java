@@ -264,7 +264,7 @@ public class SimonProxy implements InvocationHandler {
 	}
 	
 	/**
-	 * Retrusn the {@link Dispatcher} instance related to this proxy
+	 * Returns the {@link Dispatcher} instance related to this proxy
 	 * @return an instance of {@link Dispatcher}
 	 */
 	protected Dispatcher getDispatcher(){

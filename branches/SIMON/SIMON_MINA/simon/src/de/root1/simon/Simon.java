@@ -835,10 +835,19 @@ public class Simon {
 	}
 	
 	/**
-	 * TODO document me
+	 * Opens a raw channel to transfer data from the current station to the
+	 * remote station described by the given <code>simonRemote</code>
 	 * 
 	 * @param channelToken
+	 *            a token that identifies the already prepared raw channel from
+	 *            the remote station. Those token can only be created on the
+	 *            remote station. Thus a remote call which does the
+	 *            {@link Simon#prepareRawChannel(RawChannelDataListener, SimonRemote)}
+	 *            is needed in advance.
 	 * @param simonRemote
+	 *            the remote object which lives on the remote station which has
+	 *            a prepared raw data channel, related to the
+	 *            <code>channelToken</code>. Note: This <b>has to be</b> a remote object stub.
 	 */
 	public static RawChannel openRawChannel(int channelToken, SimonRemote simonRemote){
 		SimonProxy simonProxy = getSimonProxy(simonRemote);
@@ -848,10 +857,23 @@ public class Simon {
 	}
 	
 	/**
-	 * TODO document me
+	 * Prepare <code>simonRemote</code>'s the internal message dispatcher for
+	 * receiving raw data.<br/> The result of this method is a token, which
+	 * identifies the channel on both sides:
+	 * <ul>
+	 * <li>on the <i>receiving side</i> with the registered
+	 * {@link RawChannelDataListener},</li>
+	 * <li>and on the <i>sending side</i> for opening the {@link RawChannel} by
+	 * calling {@link Simon#openRawChannel(int, SimonRemote)}.</li>
+	 * </ul>
+	 * 
 	 * @param listener
+	 *            the listener which gets all the received data related to this
+	 *            channel
 	 * @param remoteObject
-	 * @return a token for the prepared channel
+	 *            a reference to the remote object whos {@link Dispatcher} is
+	 *            prepared to receive raw data.
+	 * @return a token that identifies the prepared channel
 	 */
 	public static int prepareRawChannel(RawChannelDataListener listener, SimonRemote simonRemote){
 		Dispatcher dispatcher = getDispatcher(simonRemote);

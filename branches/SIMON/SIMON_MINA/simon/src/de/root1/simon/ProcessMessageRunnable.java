@@ -145,16 +145,12 @@ public class ProcessMessageRunnable implements Runnable {
 
 			default:
 				// FIXME what to do here ?!
-				System.err.println("ProcessMessageRunnable: msgType="+msgType+" not supported!");
+				logger.error("ProcessMessageRunnable: msgType={} not supported! terminating...",msgType);
 				System.exit(1);
 				break;
 		}
 		
-		
 	}
-
-	
-
 
 	private void processOpenRawChannel() {
 		logger.debug("begin");
@@ -209,11 +205,15 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		logger.debug("processing MsgRawChannelData...");
 		MsgRawChannelData msg = (MsgRawChannelData) abstractMessage;
-		 
+		
 		RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
-		logger.debug("writing data to {}.",rawChannelDataListener);
-		rawChannelDataListener.write(msg.getData());
-		logger.debug("data forwarded to listener");
+		if (rawChannelDataListener!=null){
+			logger.debug("writing data to {}.",rawChannelDataListener);
+			rawChannelDataListener.write(msg.getData());
+			logger.debug("data forwarded to listener");
+		} else {
+			logger.error("trying to forward data to a not registered or already closed listener: token={} data={}",msg.getChannelToken(),msg.getData());
+		}
 				
 		logger.debug("end");
 	}

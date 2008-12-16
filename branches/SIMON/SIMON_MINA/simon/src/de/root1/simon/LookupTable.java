@@ -23,6 +23,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -77,6 +78,8 @@ public class LookupTable {
 	private HashMap<Integer, SimonRemote> remoteobjectHashMap = new HashMap<Integer, SimonRemote>();
 
 	private Dispatcher dispatcher;
+
+	private boolean cleanupDone = false;
 	
 	protected LookupTable(Dispatcher dispatcher) {
 		this.dispatcher=dispatcher;
@@ -199,6 +202,7 @@ public class LookupTable {
 	 */
 	private void removeRemoteObjectFromHashMap(SimonRemote simonRemote) {
 		int hashCode=simonRemote.hashCode();
+		logger.debug("simonRemote={} hash={} map={}", new Object[]{simonRemote, hashCode, remoteobjectHashMap});
 		remoteobjectHashMap.remove(hashCode);
 		logger.trace("Removing SimonRemote with hash={}", hashCode);
 	}
@@ -281,8 +285,15 @@ public class LookupTable {
 	 */
 	protected void cleanup() {
 		Simon.unregisterLookupTable(this);
+		
+		Iterator<Long> iterator = gcRemoteInstances.keySet().iterator();
+		while (iterator.hasNext()){
+			unreference(iterator.next());
+		}
+		
 		bindings.clear();
 		simonRemote_to_hashToMethod_Map.clear();
+		cleanupDone=true;
 	}
 
 	/**
@@ -294,7 +305,7 @@ public class LookupTable {
 	 */
 	protected void unreference(long sessionId) {
 		
-		logger.debug("begin");
+		logger.debug("begin. cleanupDone={}",cleanupDone);
 		
 		logger.debug("unreferencing session with sessionId={}", Utils.longToHexString(sessionId));
 		
@@ -316,6 +327,8 @@ public class LookupTable {
 				synchronized (bindings) {
 					
 					SimonRemote remoteInstanceBindingToRemove = bindings.remove(remoteObjectName);
+					
+					logger.debug("SimonRemote to unreference: {}",remoteInstanceBindingToRemove);
 					
 					removeRemoteObjectFromHashMap(remoteInstanceBindingToRemove);
 					

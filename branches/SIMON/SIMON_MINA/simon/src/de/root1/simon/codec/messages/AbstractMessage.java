@@ -42,7 +42,7 @@ public abstract class AbstractMessage implements Serializable {
     }
 	
 	/**
-	 * TODO
+	 * Returns the message type as described by {@link SimonMessageConstants}
 	 * @return the msgType
 	 */
 	public int getMsgType() {
@@ -50,7 +50,7 @@ public abstract class AbstractMessage implements Serializable {
 	}
 
 	/**
-	 * TODO
+	 * Returns, guess what, the sequence id of the message
 	 * @return the sequence
 	 */
 	public int getSequence() {
@@ -58,7 +58,7 @@ public abstract class AbstractMessage implements Serializable {
 	}
 	
 	/**
-	 * TODO
+	 * Stores the sequence id in the message
 	 * @param sequence the sequence to set
 	 */
 	public void setSequence(int sequence) {
