@@ -47,29 +47,24 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     }
     
     protected class InvokeState{
-    	public boolean readSize = false;
     	public int msgSize;
     }
     
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	InvokeState is;
-    	if (session.getAttribute("invoke_seq="+getCurrentSequence())==null) {
-//    	if (!readSize) {
+    	InvokeState is = (InvokeState) session.getAttribute("invoke_seq="+getCurrentSequence());
+    	if (is==null) {
     		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
     		is = new InvokeState();
-    		is.readSize  = true;
     		is.msgSize = in.getInt();
     		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), is.msgSize, in.position()});
-    	} else {
-    	
-    		is = (InvokeState) session.getAttribute("invoke_seq="+getCurrentSequence());
-    		
-	    	if (in.remaining() < is.msgSize) {
-	    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), is.msgSize, in.position(),in.remaining()});
-	    		return null;
-	    	}
+    		session.setAttribute("invoke_seq="+getCurrentSequence(),is);
+    	} 
+    	if (in.remaining() < is.msgSize){
+    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), is.msgSize, in.position(),in.remaining()});
+    		return null;
     	}
+    	
     	logger.trace("all data ready!");
     	MsgInvoke msgInvoke = new MsgInvoke();
     	
@@ -80,13 +75,10 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
         	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
         	msgInvoke.setRemoteObjectName(remoteObjectName);
         	logger.trace("ron read ... pos={}",in.position());
-        	
 
     		long methodHash = in.getLong();
     		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), methodHash);
     		logger.trace("methodHash read ... pos={}",in.position());
-	
-		
     		
 			int argsLength = in.getInt();
 			logger.trace("args len read read ... pos={}",in.position());
