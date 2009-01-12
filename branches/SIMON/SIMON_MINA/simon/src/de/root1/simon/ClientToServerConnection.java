@@ -81,8 +81,11 @@ public class ClientToServerConnection {
 	 * @param connector 
 	 * @param filterchainWorkerPool 
 	 */
-	protected ClientToServerConnection(String serverString,
-			Dispatcher dispatcher, IoSession session, IoConnector connector, ExecutorService filterchainWorkerPool) {
+	protected ClientToServerConnection( String serverString,	
+										Dispatcher dispatcher, 
+										IoSession session, 
+										IoConnector connector, 
+										ExecutorService filterchainWorkerPool) {
 		
 		this.ServerString = serverString;
 		this.dispatcher = dispatcher;

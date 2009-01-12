@@ -311,7 +311,7 @@ public class Simon {
 				
 				SimonProtocolCodecFactory protocolFactory = null;
 				try {
-					protocolFactory = Utils.getFactoryInstance(protocolFactoryClassName);
+					protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
 				} catch (ClassNotFoundException e) {
 					// already proved
 					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
@@ -461,7 +461,9 @@ public class Simon {
 	protected static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
 		if (o instanceof Proxy) {
 			InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
+			logger.trace("Got invocation handler ...");
 			if (invocationHandler instanceof SimonProxy){
+				logger.trace("Yeeha. It's a SimonProxy ...");
 				return (SimonProxy) invocationHandler;
 			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy");
 		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy");
@@ -521,6 +523,7 @@ public class Simon {
 		SimonProxy proxy = getSimonProxy(proxyObject);
 		
 		logger.debug("releasing proxy {}",proxy.getDetailString());
+//		logger.debug("releasing proxy...");
 		
 		// release the proxy and get the related dispatcher
 		Dispatcher dispatcher = proxy.release();
@@ -806,7 +809,7 @@ public class Simon {
 	public static void setProtocolCodecFactory(String protocolFactoryClassName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException{
 		// testwise try to get the factory. if the specified class' name is not useable, 
 		// exceptions will be thrown and forwarded
-		Utils.getFactoryInstance(protocolFactoryClassName);
+		Utils.getProtocolFactoryInstance(protocolFactoryClassName);
 		// if the above worked, save the class' name
 		Simon.protocolFactoryClassName = protocolFactoryClassName;
 	}

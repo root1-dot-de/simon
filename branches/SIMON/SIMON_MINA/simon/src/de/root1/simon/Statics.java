@@ -54,5 +54,6 @@ public class Statics {
 	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon.Dispatcher.WorkerPool";
 	protected static final String PUBLISH_SERVICE_THREAD_NAME = "Simon.PublishService";
 	protected static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
+	public static final boolean USE_SSL = true;
 	
 }

@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
+import de.root1.simon.utils.Utils;
 
 /**
  * The InvocationHandler which redirects each method call over the network to the related dispatcher
@@ -231,6 +232,7 @@ public class SimonProxy implements InvocationHandler {
 	 * @return the {@link Dispatcher} related to this proxy.
 	 */
 	protected Dispatcher release() {
+		logger.debug("setting remoteobjectname to null and return dispatcher");
 		remoteObjectName=null;
 		return dispatcher;
 	}
@@ -241,9 +243,12 @@ public class SimonProxy implements InvocationHandler {
 	}
 	
 	protected String getDetailString() {
-		return "[Proxy="+remoteObjectName+
-			"|invocationHandler="+super.toString()+
-			"|session="+session+"]";
+		logger.debug("Getting detail string ...");
+		String detail = "[Proxy="+remoteObjectName+
+		"|invocationHandler="+super.toString()+
+		"|sessionId="+Utils.longToHexString(session.getId())+"]";
+		logger.debug("Detail string is: {}", detail);		
+		return detail;
 	}
 	
 	/**

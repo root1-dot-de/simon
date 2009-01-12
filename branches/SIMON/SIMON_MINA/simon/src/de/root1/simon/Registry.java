@@ -21,7 +21,10 @@ package de.root1.simon;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.security.GeneralSecurityException;
 import java.util.concurrent.ExecutorService;
+
+import javax.net.ssl.SSLContext;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
@@ -29,6 +32,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
+import org.apache.mina.filter.ssl.SslFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +55,6 @@ public final class Registry {
 	 * TODO document me
 	 */
 	private final Logger logger = LoggerFactory.getLogger(getClass());
-
-//	/**
-//	 * The {@link LookupTable} used by the {@link Registry}'s {@link Dispatcher}
-//	 */
-//	private LookupTable lookupTableServer;
 
 	/**
 	 * The address in which the registry is listening
@@ -102,7 +101,6 @@ public final class Registry {
 	 */
 	protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
 		logger.debug("begin");
-//		this.lookupTableServer = new LookupTable();
 		this.address  = address;
 		this.port = port;
 		this.threadPool = threadPool;
@@ -138,7 +136,6 @@ public final class Registry {
 			nioSocketAcceptor.setReuseAddress(true);
 		}
 		
-//		filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
 		filterchainWorkerPool = new OrderedThreadPoolExecutor();
 
 		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
@@ -146,10 +143,24 @@ public final class Registry {
 		// only add the logging filter if trace is enabled
 		if (logger.isTraceEnabled())
         	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
+		
+//		try {
+//	        if (Statics.USE_SSL) {
+//	        	SSLContext context;
+//					context = BogusSslContextFactory.createBougusServerSslContext();
+//	        		
+//	        	SslFilter sslFilter = new SslFilter(context);
+//	        	acceptor.getFilterChain().addLast("sslFilter", sslFilter);
+//	            System.out.println("SSL ON");
+//	        }
+//		} catch (GeneralSecurityException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 
 		SimonProtocolCodecFactory protocolFactory = null;
 		try {
-			protocolFactory = Utils.getFactoryInstance(protocolFactoryClassName);
+			protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
 		} catch (ClassNotFoundException e) {
 			logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
 			// already proved
@@ -163,6 +174,9 @@ public final class Registry {
 		protocolFactory.setup(true);
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
         
+		
+		
+		
 		acceptor.setHandler(dispatcher);
 		logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec",Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
         setDgcInterval(Statics.DEFAULT_IDLE_TIME);

@@ -24,7 +24,7 @@ public class UdpTest {
 		
 		SimonProtocolCodecFactory protocolFactory = null;
 		try {
-			protocolFactory = Utils.getFactoryInstance(Simon.SIMON_STD_PROTOCOL_CODEC_FACTORY);
+			protocolFactory = Utils.getProtocolFactoryInstance(Simon.SIMON_STD_PROTOCOL_CODEC_FACTORY);
 		} catch (ClassNotFoundException e) {
 			// already proved
 		} catch (InstantiationException e) {

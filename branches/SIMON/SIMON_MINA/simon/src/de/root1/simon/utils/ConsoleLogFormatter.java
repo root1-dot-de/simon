@@ -66,11 +66,15 @@ public class ConsoleLogFormatter extends Formatter
 		output.append(df3.format(calendar.get(GregorianCalendar.MILLISECOND)));
 		output.append(" [");
 		output.append(record.getLevel().getName());
-		output.append("\t] ");
+		
+		if (record.getLevel().getName().length()<7)
+			output.append("\t");
+		
+		output.append("] ");
 		output.append("t_id=");
 		output.append(record.getThreadID());
 		output.append(" ");
-		output.append(record.getLoggerName());
+		output.append(record.getSourceClassName());
 		output.append(".");
 		output.append(record.getSourceMethodName());
 		output.append(" -> ");

@@ -127,7 +127,7 @@ public class Utils {
 	 *             if the given class is no instance of
 	 *             {@link SimonProtocolCodecFactory}
 	 */
-	public static SimonProtocolCodecFactory getFactoryInstance(String protocolFactory)
+	public static SimonProtocolCodecFactory getProtocolFactoryInstance(String protocolFactory)
 			throws ClassNotFoundException, InstantiationException,
 			IllegalAccessException {
 		Class<?> clazz = Class.forName(protocolFactory);
