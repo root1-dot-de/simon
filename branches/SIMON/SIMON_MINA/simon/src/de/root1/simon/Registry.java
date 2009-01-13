@@ -40,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
-import de.root1.simon.experiments.TestUtils;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.Utils;
 

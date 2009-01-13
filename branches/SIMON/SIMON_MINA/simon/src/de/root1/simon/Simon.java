@@ -59,7 +59,6 @@ import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.experiments.TestUtils;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
@@ -365,7 +364,7 @@ public class Simon {
 				if (sslContextFactory!=null) {
 					try {
 
-						SSLContext sslContext = TestUtils.createMySslContext(true);
+						SSLContext sslContext = sslContextFactory.createClientContext();
 
 						SslFilter sslFilter = new SslFilter(sslContext);
 						sslFilter.setUseClientMode(true); // only on client side needed

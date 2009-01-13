@@ -42,7 +42,7 @@ public class SslContextFactory {
 		return sslContext;
 	}
 	
-	public static SSLContext createClientContext() throws NoSuchAlgorithmException, FileNotFoundException, KeyStoreException, CertificateException, IOException, UnrecoverableKeyException, KeyManagementException{
+	public SSLContext createClientContext() throws NoSuchAlgorithmException, FileNotFoundException, KeyStoreException, CertificateException, IOException, UnrecoverableKeyException, KeyManagementException{
 		
 		String pathToKeyStore;
 		String keyStorePwd;
