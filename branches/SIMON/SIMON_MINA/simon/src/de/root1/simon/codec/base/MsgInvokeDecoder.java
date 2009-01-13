@@ -52,6 +52,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
+
     	InvokeState is = (InvokeState) session.getAttribute("invoke_seq="+getCurrentSequence());
     	if (is==null) {
     		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
@@ -74,7 +75,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
         	logger.trace("start pos={} capacity={}",in.position(), in.capacity());
         	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
         	msgInvoke.setRemoteObjectName(remoteObjectName);
-        	logger.trace("ron read ... pos={}",in.position());
+        	logger.trace("remote object name read ... remoteObjectName={} pos={}",remoteObjectName, in.position());
 
     		long methodHash = in.getLong();
     		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), methodHash);

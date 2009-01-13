@@ -18,6 +18,7 @@
  */
 package de.root1.simon.codec.base;
 
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
@@ -44,9 +45,23 @@ public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractM
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	logger.trace("begin. message={}", message);
-    	out.putObject(message.getReturnValue());
-    	logger.trace("end.");
-    }
+
+    	// first put all into a autoexpanding buffer
+		IoBuffer b = IoBuffer.allocate(4096);
+		b.setAutoExpand(true);
+		b.putObject(message.getReturnValue());
+		
+		// then check the size of the data that has to be sent
+    	int msgSize = b.position();
+		b.flip();
+		logger.trace("msgSizeInBytes={}",msgSize);
+		
+		// send the size of the data before sending the data
+		out.putInt(msgSize);
+		out.put(b);
+
+		logger.trace("end");    
+	}
 
     public void dispose() throws Exception {
     }

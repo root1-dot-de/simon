@@ -1,15 +1,15 @@
 Anleitung von: http://portal.uni-freiburg.de/rz/dienste/pki/docu/s-req/keytool
 
 
-1) Schlüsselpaar erzeugen:
+1) Schlï¿½sselpaar erzeugen:
 
 C:\Documents and Settings\achr\Desktop\key>keytool -genkey -alias mykey -keyalg RSA -keysize 2048 -validity 1825 -keystore .keystore -dname "CN=root1.de,OU=achr,O=Neckarbischofsheim,C=de"
 Geben Sie das Keystore-Passwort ein:
 Keystore-Passwort zu kurz - muss mindestens 6 Zeichen lang sein.
 Geben Sie das Keystore-Passwort ein:
 Geben Sie das Passwort erneut ein:
-Geben Sie das Passwort f³r <mykey> ein.
-        (EINGABETASTE, wenn Passwort dasselbe wie f³r Keystore):
+Geben Sie das Passwort fï¿½r <mykey> ein.
+        (EINGABETASTE, wenn Passwort dasselbe wie fï¿½r Keystore):
 		
 2) Zertifizierungsantrag generieren
 C:\Documents and Settings\achr\Desktop\key>keytool -certreq -alias mykey -keyalg RSA -file root1.csr -keystore .keystore
@@ -17,16 +17,16 @@ Geben Sie das Keystore-Passwort ein:
 
 Dann auf cacert.org ein neues Serverzertifikat anfordern. Hierzu den Inhalt von "root1.csr" angeben.
 
-3) Zertifikat und privaten Schlüssel installieren:
+3) Zertifikat und privaten SchlÃ¼ssel installieren:
 
-Von cacert.org das Class 1 PKI Key Root Certificate im PEM Format runterladen und als "Wurzel" in die Vertrauenskette einfügen: 
+Von cacert.org das Class 1 PKI Key Root Certificate im PEM Format runterladen und als "Wurzel" in die Vertrauenskette einfÃ¼gen: 
 
 C:\Documents and Settings\achr\Desktop\key>keytool -import -file root.crt -alias root -keystore .keystore
 Geben Sie das Keystore-Passwort ein:
 Eigner: EMAILADDRESS=support@cacert.org, CN=CA Cert Signing Authority, OU=http://www.cacert.org, O=Root CA
 Aussteller: EMAILADDRESS=support@cacert.org, CN=CA Cert Signing Authority, OU=http://www.cacert.org, O=Root CA
 Seriennummer: 0
-G³ltig von: Sun Mar 30 14:29:49 CEST 2003 bis: Tue Mar 29 14:29:49 CEST 2033
+Gï¿½ltig von: Sun Mar 30 14:29:49 CEST 2003 bis: Tue Mar 29 14:29:49 CEST 2033
 Digitaler Fingerabdruck des Zertifikats:
          MD5:  A6:1B:37:5E:39:0D:9C:36:54:EE:BD:20:31:46:1F:6B
          SHA1: 13:5C:EC:36:F4:9C:B8:E9:3B:1A:B2:70:CD:80:88:46:76:CE:8F:33
@@ -73,9 +73,9 @@ SerialNumber: [    00]
 #7: ObjectId: 2.16.840.1.113730.1.13 Criticality=false
 
 Diesem Zertifikat vertrauen? [Nein]:  ja
-Zertifikat wurde zu Keystore hinzugef³gt.
+Zertifikat wurde zu Keystore hinzugefï¿½gt.
 
-Dann das eigene Zertifikat runterladen und als root1.crt speichern, und mit folgendem Kommando einfügen:
+Dann das eigene Zertifikat runterladen und als root1.crt speichern, und mit folgendem Kommando einfï¿½gen:
 
 C:\Documents and Settings\achr\Desktop\key>keytool -import -file root1.crt -alias mykey -keystore .keystore
 Geben Sie das Keystore-Passwort ein:
@@ -89,7 +89,7 @@ Geben Sie das Passwort erneut ein:
 Eigner: CN=root1.de
 Aussteller: EMAILADDRESS=support@cacert.org, CN=CA Cert Signing Authority, OU=http://www.cacert.org, O=Root CA
 Seriennummer: 62ba4
-G³ltig von: Wed Dec 17 09:52:45 CET 2008 bis: Mon Jun 15 10:52:45 CEST 2009
+Gï¿½ltig von: Wed Dec 17 09:52:45 CET 2008 bis: Mon Jun 15 10:52:45 CEST 2009
 Digitaler Fingerabdruck des Zertifikats:
          MD5:  2B:E5:DC:8E:1C:0C:CE:AD:7D:76:D5:6F:9C:9D:2B:C6
          SHA1: 94:49:BA:E8:7F:DB:90:A2:EB:F0:8B:7B:A6:F2:AB:C5:62:66:85:7D
@@ -131,6 +131,6 @@ SubjectAlternativeName [
 ]
 
 Diesem Zertifikat vertrauen? [Nein]:  ja
-Zertifikat wurde zu Keystore hinzugef³gt.
+Zertifikat wurde zu Keystore hinzugefï¿½gt.
 [.keystoreclient wird gesichert.]
 

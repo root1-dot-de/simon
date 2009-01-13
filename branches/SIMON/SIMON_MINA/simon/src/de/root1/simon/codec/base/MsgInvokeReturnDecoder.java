@@ -44,10 +44,27 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
     public MsgInvokeReturnDecoder() {
         super(SimonMessageConstants.MSG_INVOKE_RETURN);
     }
+    
+    protected class InvokeReturnState{
+    	public int msgSize;
+    }
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-
+    	InvokeReturnState irs = (InvokeReturnState) session.getAttribute("invoke_return_seq="+getCurrentSequence());
+    	if (irs==null) {
+    		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
+    		irs = new InvokeReturnState();
+    		irs.msgSize = in.getInt();
+    		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), irs.msgSize, in.position()});
+    		session.setAttribute("invoke_return_seq="+getCurrentSequence(),irs);
+    	} 
+    	if (in.remaining() < irs.msgSize){
+    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), irs.msgSize, in.position(),in.remaining()});
+    		return null;
+    	}
+    	
+    	logger.trace("all data ready!");
         MsgInvokeReturn m = new MsgInvokeReturn();
     	try {
 			Object returnValue = in.getObject(SimonClassLoader.getClassLoader(SimonRemote.class));
@@ -57,6 +74,7 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 			e.printStackTrace();
 		} 
 		logger.trace("message={}", m);
+		session.removeAttribute("invoke_return_seq="+getCurrentSequence());
         return m;
     }
 
