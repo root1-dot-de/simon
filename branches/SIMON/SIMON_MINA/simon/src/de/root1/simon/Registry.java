@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
+import de.root1.simon.experiments.TestUtils;
+import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -89,6 +91,8 @@ public final class Registry {
 	 */
 	private String protocolFactoryClassName;
 
+	private SslContextFactory sslContextFactory;
+
 	/**
 	 * Creates a registry which has it's own {@link LookupTable} instead of a
 	 * global.
@@ -109,6 +113,17 @@ public final class Registry {
 		logger.debug("end");
 	}
 	
+	protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName, SslContextFactory sslContextFactory) throws IOException {
+		logger.debug("begin");
+		this.address  = address;
+		this.port = port;
+		this.threadPool = threadPool;
+		this.protocolFactoryClassName = protocolFactoryClassName;
+		this.sslContextFactory = sslContextFactory;
+		start();
+		logger.debug("end");
+	}
+
 	/**
 	 * Starts the registry thread
 	 * 
@@ -136,27 +151,29 @@ public final class Registry {
 			nioSocketAcceptor.setReuseAddress(true);
 		}
 		
-		filterchainWorkerPool = new OrderedThreadPoolExecutor();
-
-		acceptor.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
-		
 		// only add the logging filter if trace is enabled
 		if (logger.isTraceEnabled())
-        	acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
+			acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
+
 		
-//		try {
-//	        if (Statics.USE_SSL) {
-//	        	SSLContext context;
-//					context = BogusSslContextFactory.createBougusServerSslContext();
-//	        		
-//	        	SslFilter sslFilter = new SslFilter(context);
-//	        	acceptor.getFilterChain().addLast("sslFilter", sslFilter);
-//	            System.out.println("SSL ON");
-//	        }
-//		} catch (GeneralSecurityException e) {
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
+		if (sslContextFactory!=null) {
+			try {
+				SSLContext context = sslContextFactory.createServerContext();
+				
+				SslFilter sslFilter = new SslFilter(context);
+				acceptor.getFilterChain().addLast("sslFilter", sslFilter);
+				logger.debug("SSL ON");
+			} catch (GeneralSecurityException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.err.println("Exiting ...");
+				System.exit(1);
+			}
+		}
+
+		filterchainWorkerPool = new OrderedThreadPoolExecutor();
+		acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
+		
 
 		SimonProtocolCodecFactory protocolFactory = null;
 		try {
@@ -173,8 +190,6 @@ public final class Registry {
 		}
 		protocolFactory.setup(true);
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
-        
-		
 		
 		
 		acceptor.setHandler(dispatcher);
@@ -185,7 +200,6 @@ public final class Registry {
         
         logger.trace("Listening on {} on port {}",address,port);
     	acceptor.bind(new InetSocketAddress(address, port));
-        
         
         
         logger.debug("acceptor thread created and started");			

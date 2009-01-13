@@ -35,6 +35,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.LogManager;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.mina.core.RuntimeIoException;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.future.ConnectFuture;
@@ -47,6 +49,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
+import org.apache.mina.filter.ssl.SslFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +59,8 @@ import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.experiments.TestUtils;
+import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
@@ -106,7 +111,7 @@ public class Simon {
 	private static String protocolFactoryClassName = SIMON_STD_PROTOCOL_CODEC_FACTORY;
 
 	/**
-	 * TODO document me
+	 * A list with all active/still alive LookupTables ever created
 	 */
 	private static List<LookupTable> lookupTableList = new ArrayList<LookupTable>();
 
@@ -199,6 +204,25 @@ public class Simon {
 	}
 	
 	/**
+	 * Creates a registry listening on a specific network interface, 
+	 * identified by the given {@link InetAddress} with the last known 
+	 * worker thread pool size set by {@link Simon#setWorkerThreadPoolSize}. 
+	 * The communication is done via SSL encryption provided by the given
+	 * SslContextFactory 
+	 *  
+	 * @param address the {@link InetAddress} the registry is bind to
+	 * @param port the port the registry is bind to
+	 * @return the created registry
+	 * @throws IOException if there is a problem with the networking layer
+	 */
+	public static Registry createSslRegistry(SslContextFactory sslContextFactory, InetAddress address, int port) throws IOException {
+		logger.debug("begin");
+		Registry registry = new Registry(address, port, getThreadPool(), protocolFactoryClassName, sslContextFactory);
+		logger.debug("end");
+		return registry;
+	}
+	
+	/**
 	 * 
 	 * Retrieves a remote object from the server. At least, it tries to retrieve
 	 * it. This may fail if the named object is not available or if the
@@ -255,6 +279,39 @@ public class Simon {
 	 *             if there's no such object on the server
 	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+		return sslLookup(null, host, port, remoteObjectName);
+	}
+	
+	/**
+	 * 
+	 * Retrieves a remote object from the server. At least, it tries to retrieve
+	 * it. This may fail if the named object is not available or if the
+	 * connection could not be established.<br>
+	 * <i>Note: If your are finished with the remote object, don't forget to
+	 * call {@link Simon#release(Object)} to decrease the reference count and
+	 * finally release the connection to the server</i>
+	 * 
+	 * @param sslContextFactory
+	 *            the factory for creating the ssl context. <b>No SSL is used if
+	 *            <code>null</code> is given!</b>
+	 * @param host
+	 *            host address where the lookup takes place
+	 * @param port
+	 *            port number of the simon remote registry
+	 * @param remoteObjectName
+	 *            name of the remote object which is bind to the remote registry
+	 * @return and instance of the remote object
+	 * @throws SimonRemoteException
+	 *             if there's a problem with the simon communication
+	 * @throws IOException
+	 *             if there is a problem with the communication itself
+	 * @throws EstablishConnectionFailed
+	 *             if its not possible to establish a connection to the remote
+	 *             registry
+	 * @throws LookupFailedException
+	 *             if there's no such object on the server
+	 */
+	public static SimonRemote sslLookup(SslContextFactory sslContextFactory, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		logger.debug("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
@@ -302,12 +359,28 @@ public class Simon {
 				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, Statics.DEFAULT_IDLE_TIME );
 				session.getConfig().setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
 				
-//				ExecutorService filterchainWorkerPool = Executors.newCachedThreadPool(new NamedThreadPoolFactory(Statics.FILTERCHAIN_WORKERPOOL_NAME));
-				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
-				session.getFilterChain().addFirst("executor", new ExecutorFilter(filterchainWorkerPool));
-				
 				if (logger.isTraceEnabled())
 					session.getFilterChain().addLast( "logger", new LoggingFilter() );
+
+				if (sslContextFactory!=null) {
+					try {
+
+						SSLContext sslContext = TestUtils.createMySslContext(true);
+
+						SslFilter sslFilter = new SslFilter(sslContext);
+						sslFilter.setUseClientMode(true); // only on client side needed
+
+						session.getFilterChain().addLast("sslFilter", sslFilter);
+						logger.debug("SSL ON");
+					} catch (Exception exception) {
+						// TODO Auto-generated catch block
+						exception.printStackTrace();
+					}
+				}
+				
+				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
+				session.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
+				
 				
 				SimonProtocolCodecFactory protocolFactory = null;
 				try {
@@ -921,5 +994,5 @@ public class Simon {
 		}
 		return null;
 	}
-
+	
 }
