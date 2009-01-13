@@ -18,6 +18,8 @@
  */
 package de.root1.simon.codec.base;
 
+import java.nio.ByteBuffer;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
@@ -42,11 +44,13 @@ public class MsgRawChannelDataEncoder<T extends MsgRawChannelData> extends Abstr
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message={} data capacity={}",message, message.getData().compact());
-    	out.putInt(message.getData().capacity()+4); // plus 4 bytes for integer channel token
-    	out.putInt(message.getChannelToken());
-    	out.put(message.getData());
+    	ByteBuffer bb = message.getData();
+    	bb.flip();
+    	int dataSize=bb.capacity();
+    	logger.trace("begin. message={} dataSize={}",message, dataSize);
+    	out.putInt(dataSize+4); // size = capacity + 4 bytes for integer channel token
+    	out.putInt(message.getChannelToken()); // integer(4byte) -> token value
+    	out.put(bb); // raw data
 		logger.trace("end");
     }
 

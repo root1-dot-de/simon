@@ -40,7 +40,6 @@ public class MsgRawChannelDataDecoder extends AbstractMessageDecoder {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
 	public class RawChannelState{
-    	public boolean readSize = false;
     	public int msgSize;
     }
 	
@@ -51,31 +50,27 @@ public class MsgRawChannelDataDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
     	
-    	RawChannelState rcs;
-    	if (session.getAttribute("raw_channel_data_seq="+getCurrentSequence())==null) {
-//    	if (!readSize) {
+    	RawChannelState rcs = (RawChannelState) session.getAttribute("raw_channel_data_seq="+getCurrentSequence());
+    	if (rcs==null) {
     		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
     		rcs = new RawChannelState();
-    		rcs.readSize  = true;
     		rcs.msgSize = in.getInt();
     		logger.trace("seqId={}, msgSizeInBytes={} position={}", new Object[]{getCurrentSequence(), rcs.msgSize, in.position()});
-    	} else {
-    	
-    		rcs = (RawChannelState) session.getAttribute("raw_channel_data_seq="+getCurrentSequence());
-    		
-	    	if (in.remaining() < rcs.msgSize) {
-	    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), rcs.msgSize, in.position(),in.remaining()});
-	    		return null;
-	    	}
+    		session.setAttribute("raw_channel_data_seq="+getCurrentSequence(),rcs);
     	}
-    	int dataSize = rcs.msgSize-4; // not counting the 4 bytes from the channel token
+    	if (in.remaining() < rcs.msgSize) {
+    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), rcs.msgSize, in.position(),in.remaining()});
+    		return null;
+    	}
+    	logger.trace("all data ready!");
     	MsgRawChannelData message = new MsgRawChannelData();
     	
-    	logger.trace("all data ready!");
+    	int dataSize = rcs.msgSize-4; // not counting the 4 bytes from the channel token
+    	logger.trace("datasize={}",dataSize);
     	
     	int channelToken = in.getInt();
+    	logger.trace("channelToken={}",channelToken);
     	message.setChannelToken(channelToken);
-    	logger.trace("datasize={}",dataSize);
     	
     	byte[] b = new byte[dataSize];
     	in.get(b);
