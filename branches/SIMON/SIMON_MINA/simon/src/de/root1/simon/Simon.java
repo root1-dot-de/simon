@@ -362,18 +362,14 @@ public class Simon {
 					session.getFilterChain().addLast( "logger", new LoggingFilter() );
 
 				if (sslContextFactory!=null) {
-					try {
-
-						SSLContext sslContext = sslContextFactory.createClientContext();
-
-						SslFilter sslFilter = new SslFilter(sslContext);
-						sslFilter.setUseClientMode(true); // only on client side needed
-
+					SSLContext context = sslContextFactory.getClientContext();
+					
+					if (context!=null) {
+						SslFilter sslFilter = new SslFilter(context);
 						session.getFilterChain().addLast("sslFilter", sslFilter);
 						logger.debug("SSL ON");
-					} catch (Exception exception) {
-						// TODO Auto-generated catch block
-						exception.printStackTrace();
+					} else {
+						logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
 					}
 				}
 				

@@ -1,86 +1,51 @@
+/*
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * 
+ * This file is part of SIMON.
+ *
+ *   SIMON is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   SIMON is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package de.root1.simon.ssl;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
-public class SslContextFactory {
-	
-	private static String _KEYSTORE_TYPE_ = KeyStore.getDefaultType();
+import de.root1.simon.Registry;
 
-	public SSLContext createServerContext() throws NoSuchAlgorithmException, FileNotFoundException, KeyStoreException, CertificateException, IOException, UnrecoverableKeyException, KeyManagementException {
-		String pathToKeyStore;
-		String keyStorePwd;
-		
-		pathToKeyStore = "keys/.keystore";
-		keyStorePwd = "planet";
-		
-		SSLContext sslContext = SSLContext.getInstance("TLS");
+/**
+ * This class is used by SIMON to get a {@link SSLContext} for the client and
+ * server side, which is required by SSL powered communication.
+ * 
+ * @author Alexander Christian
+ * @version 200901141248
+ * 
+ */
+public interface SslContextFactory {
 
-		System.out.println("load key store");
-		KeyStore keyStore = getKeyStore(pathToKeyStore, keyStorePwd);
+	/**
+	 * Gets the {@link SSLContext} which is used by SIMON to create a SSL
+	 * powered {@link Registry}
+	 * 
+	 * @return a ssl context object
+	 */
+	public abstract SSLContext getServerContext();
 
-		KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-		keyManagerFactory.init(keyStore, keyStorePwd.toCharArray());
-
-		// initialize trust manager factory
-		TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-		trustManagerFactory.init(keyStore);
-
-		sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
-		
-		return sslContext;
-	}
-	
-	public SSLContext createClientContext() throws NoSuchAlgorithmException, FileNotFoundException, KeyStoreException, CertificateException, IOException, UnrecoverableKeyException, KeyManagementException{
-		
-		String pathToKeyStore;
-		String keyStorePwd;
-		
-		pathToKeyStore = "keys/.keystore";
-		keyStorePwd = "planet";
-		
-		SSLContext sslContext = SSLContext.getInstance("TLS");
-
-		System.out.println("load key store");
-		KeyStore keyStore = getKeyStore(pathToKeyStore, keyStorePwd);
-
-		KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-		keyManagerFactory.init(keyStore, keyStorePwd.toCharArray());
-
-		// initialize trust manager factory
-		TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-		trustManagerFactory.init(keyStore);
-
-		sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
-		
-		return sslContext;
-	}
-	
-	private static KeyStore getKeyStore(String aPath, String aPassword)
-			throws FileNotFoundException, KeyStoreException, IOException,
-			NoSuchAlgorithmException, CertificateException {
-		KeyStore store;
-		FileInputStream fin = null;
-		try {
-			fin = new FileInputStream(aPath);
-			store = KeyStore.getInstance(_KEYSTORE_TYPE_);
-			store.load(fin, aPassword != null ? aPassword.toCharArray() : null);
-
-		} finally {
-			fin.close();
-		}
-		return store;
-	}
+	/**
+	 * Gets the {@link SSLContext} which is used by SIMON for looking up a SSL
+	 * powered SIMON remote object
+	 * 
+	 * @return a ssl context object
+	 */
+	public abstract SSLContext getClientContext();
 
 }

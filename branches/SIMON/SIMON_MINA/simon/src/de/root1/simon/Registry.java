@@ -21,7 +21,6 @@ package de.root1.simon;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.security.GeneralSecurityException;
 import java.util.concurrent.ExecutorService;
 
 import javax.net.ssl.SSLContext;
@@ -93,14 +92,13 @@ public final class Registry {
 	private SslContextFactory sslContextFactory;
 
 	/**
-	 * Creates a registry which has it's own {@link LookupTable} instead of a
-	 * global.
+	 * Creates a registry 
 	 * 
-	 * @param port
-	 *            the port the registry listens on for new connections
-	 * @param threadPool
-	 *            a reference to an existing thread pool
-	 * @throws IOException
+	 * @param address the interface address on which the socketserver listens on
+	 * @param port the port on which the socketserver listens on
+	 * @param threadPool the thread pool implementation which is forwarded to the dispatcher
+	 * @param protocolFactoryClassName the full classname of the class that describes to network protocol
+	 * @throws IOException if there are problems with creating the mina socketserver
 	 */
 	protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
 		logger.debug("begin");
@@ -112,6 +110,16 @@ public final class Registry {
 		logger.debug("end");
 	}
 	
+	/**
+	 * Creates a SSL powered registry
+	 * 
+	 * @param address the interface address on which the socketserver listens on
+	 * @param port the port on which the socketserver listens on
+	 * @param threadPool the thread pool implementation which is forwarded to the dispatcher
+	 * @param protocolFactoryClassName the full classname of the class that describes to network protocol
+	 * @param sslContextFactory the factory which is used to get the server ssl context
+	 * @throws IOException if there are problems with creating the mina socketserver
+	 */
 	protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName, SslContextFactory sslContextFactory) throws IOException {
 		logger.debug("begin");
 		this.address  = address;
@@ -156,18 +164,15 @@ public final class Registry {
 
 		
 		if (sslContextFactory!=null) {
-			try {
-				SSLContext context = sslContextFactory.createServerContext();
+				SSLContext context = sslContextFactory.getServerContext();
 				
-				SslFilter sslFilter = new SslFilter(context);
-				acceptor.getFilterChain().addLast("sslFilter", sslFilter);
-				logger.debug("SSL ON");
-			} catch (GeneralSecurityException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				System.err.println("Exiting ...");
-				System.exit(1);
-			}
+				if (context!=null) {
+					SslFilter sslFilter = new SslFilter(context);
+					acceptor.getFilterChain().addLast("sslFilter", sslFilter);
+					logger.debug("SSL ON");
+				} else {
+					logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
+				}
 		}
 
 		filterchainWorkerPool = new OrderedThreadPoolExecutor();
@@ -257,7 +262,8 @@ public final class Registry {
 		
 		logger.trace("Shutdown FilterchainWorkerPool ...");
 		filterchainWorkerPool.shutdown();
-		
+
+// FIXME what was the intentionm to disable this?		
 //		logger.trace("Clearing LookupTable ...");
 //		lookupTableServer.cleanup();
 		
