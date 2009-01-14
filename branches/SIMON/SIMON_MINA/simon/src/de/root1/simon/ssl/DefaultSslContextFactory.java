@@ -46,6 +46,34 @@ public class DefaultSslContextFactory implements SslContextFactory {
 	private String clientKeystorePass;
 	private String pathToServerKeystore;
 	private String serverKeystorePass;
+	
+	/**
+	 * 
+	 */
+	public DefaultSslContextFactory() {
+		// TODO Auto-generated constructor stub
+	}
+	
+	/**
+	 * Sets the needed information for creating the {@link SSLContext}s for client and server
+	 * @param pathToServerKeystore
+	 *            the path to the keystore file for the server
+	 * @param serverKeystorePass
+	 *            the password needed to access the keystore
+	 * @param pathToClientKeystore
+	 *            the path to the keystore file for the client
+	 * @param clientKeystorePass
+	 *            the password needed to access the keystore
+	 */
+	public DefaultSslContextFactory(String pathToServerKeystore,
+			String serverKeystorePass, String pathToClientKeystore,
+			String clientKeystorePass) {
+	
+		this.pathToServerKeystore = pathToServerKeystore;
+		this.serverKeystorePass = serverKeystorePass;
+		this.pathToClientKeystore = pathToClientKeystore;
+		this.clientKeystorePass = clientKeystorePass;
+	}
 
 	/*
 	 * (non-Javadoc)
