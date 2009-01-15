@@ -47,6 +47,7 @@ public class MsgLookupReturnEncoder<T extends MsgLookupReturn> extends AbstractM
     	logger.trace("sending interfaces ...");
     	Class<?>[] interfaces = message.getInterfaces();
     	out.putInt(interfaces.length);
+    	logger.trace("interfaces to send: {}",interfaces.length);
     	for (Class<?> class1 : interfaces) {
 			try {
 				logger.trace("interface={}", class1.getCanonicalName());
@@ -55,6 +56,13 @@ public class MsgLookupReturnEncoder<T extends MsgLookupReturn> extends AbstractM
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+		}
+    	try {
+    		logger.trace("sending erorMsg: '{}'", message.getError());
+			out.putPrefixedString(message.getError(), Charset.forName("UTF-8").newEncoder());
+		} catch (CharacterCodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
     	logger.trace("finished");
     }

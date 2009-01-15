@@ -46,6 +46,12 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.SimonClassLoader;
 
+/**
+ * TODO document me
+ * 
+ * @author achr
+ *
+ */
 public class ProcessMessageRunnable implements Runnable {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -69,12 +75,7 @@ public class ProcessMessageRunnable implements Runnable {
 		switch (msgType) {
 		
 			case SimonMessageConstants.MSG_LOOKUP:
-				try {
-					processLookup();
-				} catch (LookupFailedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				processLookup();
 				break;
 				
 			case SimonMessageConstants.MSG_LOOKUP_RETURN:
@@ -223,7 +224,7 @@ public class ProcessMessageRunnable implements Runnable {
 	 * processes a lookup
 	 * @throws LookupFailedException 
 	 */
-	private void processLookup() throws LookupFailedException {
+	private void processLookup() {
 		logger.debug("begin");
 
 		logger.debug("processing MsgLookup...");
@@ -234,7 +235,14 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		MsgLookupReturn ret = new MsgLookupReturn();
 		ret.setSequence(msg.getSequence());
-		ret.setInterfaces(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces());
+		Class<?>[] interfaces = null;
+		try {
+			interfaces = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces();
+			ret.setInterfaces(interfaces);
+		} catch (LookupFailedException e) {
+			logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
+			ret.setError(e.getMessage());
+		}
 		session.write(ret);
 		
 		logger.debug("end");
@@ -245,13 +253,10 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		logger.debug("processing MsgLookupReturn...");	
 		MsgLookupReturn msg = (MsgLookupReturn)abstractMessage;
-		Class<?>[] interfaces = msg.getInterfaces();
 		
 		logger.debug("Forward result to waiting monitor");
-		
-		logger.debug("remoteObjectName={}", interfaces);
-		
 		dispatcher.putResultToQueue(msg.getSequence(), msg);
+			
 		logger.debug("end");
 	}
 	

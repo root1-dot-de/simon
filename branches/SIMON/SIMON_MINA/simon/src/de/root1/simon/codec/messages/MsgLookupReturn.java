@@ -18,6 +18,9 @@
  */
 package de.root1.simon.codec.messages;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * Lookup return message
@@ -25,13 +28,21 @@ package de.root1.simon.codec.messages;
  * @author ACHR
  */
 public class MsgLookupReturn extends AbstractMessage {
-	
-    private static final long serialVersionUID = 1L;
+    
+	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private static final long serialVersionUID = 1L;
 
     private Class<?>[] interfaces;
 
+	private String errorMsg;
+
     public MsgLookupReturn() {
     	super(SimonMessageConstants.MSG_LOOKUP_RETURN);
+    	 
+    	// dummy init so that on case of an error no "null" has top be transferred
+    	interfaces = new Class<?>[1];
+    	interfaces[0] = Object.class;
+    	logger.trace("interfaces.length={}",interfaces.length);
     }
 
     public Class<?>[] getInterfaces() {
@@ -41,9 +52,17 @@ public class MsgLookupReturn extends AbstractMessage {
     public void setInterfaces(Class<?>[] interfaces) {
         this.interfaces = interfaces;
     }
+    
+    public void setError(String errorMsg) {
+    	this.errorMsg = errorMsg;
+    }
+    
+    public String getError(){
+    	return errorMsg;
+    }
 
     @Override
     public String toString() {
-        return getSequence() + ":MsgLookupReturn(" + interfaces + ')';
+        return getSequence() + ":MsgLookupReturn(interface=" + interfaces + "|errorMsg="+errorMsg+")";
     }
 }

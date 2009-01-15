@@ -58,8 +58,7 @@ public class MsgLookupReturnDecoder extends AbstractMessageDecoder {
     			interfaces[i] = Class.forName(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
     			logger.trace("got interface={}", interfaces[i].getCanonicalName());
     		}
-    		
-//    		Class<?>[] interfaces = (Class<?>[])in.getObject();
+    		m.setError(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
 			m.setInterfaces( interfaces);
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block

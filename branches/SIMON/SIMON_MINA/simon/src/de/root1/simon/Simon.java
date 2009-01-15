@@ -411,21 +411,32 @@ public class Simon {
 		 * this request blocks!
 		 */
 		MsgLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
-		Class<?>[] listenerInterfaces = msg.getInterfaces();
-
-		/*
-		 * Creates proxy for method-call-forwarding to server 
-		 */
-		SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
-		logger.trace("proxy created");
 		
-		 /* 
-	     * Create the proxy-object with the needed interfaces
-	     */
-	    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
+		if (msg.getError()!=null){
+			
+			logger.trace("Lookup failed. Releasing dispatcher.");
+			releaseDispatcher(dispatcher);
+			throw new LookupFailedException(msg.getError());
+			
+		} else {
 		
-		logger.debug("end");
-		return proxy;
+			Class<?>[] listenerInterfaces = msg.getInterfaces();
+	
+			/*
+			 * Creates proxy for method-call-forwarding to server 
+			 */
+			SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
+			logger.trace("proxy created");
+			
+			 /* 
+		     * Create the proxy-object with the needed interfaces
+		     */
+		    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
+			
+			logger.debug("end");
+			return proxy;
+			
+		}
 	}
 
 	/**
@@ -596,11 +607,21 @@ public class Simon {
 		// release the proxy and get the related dispatcher
 		Dispatcher dispatcher = proxy.release();
 		
+		boolean result = releaseDispatcher(dispatcher);
+		
+		logger.debug("end");
+		return result;
+	}
+
+	/**
+	 * TODO document me
+	 * @param dispatcher
+	 * @return
+	 */
+	private static boolean releaseDispatcher(Dispatcher dispatcher) {
 		// get the serverstring the dispatcher is connected to
 		String serverString = dispatcher.getServerString();
 		boolean result = releaseServerDispatcherRelation(serverString);
-		
-		logger.debug("end");
 		return result;
 	}
 
