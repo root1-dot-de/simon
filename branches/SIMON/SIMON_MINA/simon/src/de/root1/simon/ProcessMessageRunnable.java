@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
@@ -297,8 +298,11 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
 		Object result = null;
+//		try {
 		try {
-			SimonRemote simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
+			
+			SimonRemote simonRemote;
+			simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
 			result = method.invoke(simonRemote, arguments);
 			
 			
@@ -314,6 +318,14 @@ public class ProcessMessageRunnable implements Runnable {
 				
 			}
 			
+		} catch (LookupFailedException e) {
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+		} catch (IllegalArgumentException e) {
+			result = e;
+		} catch (IllegalAccessException e) {
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+		} catch (InvocationTargetException e) {
+			result = e.getTargetException();
 		} catch (Exception e) {
 			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
 		}

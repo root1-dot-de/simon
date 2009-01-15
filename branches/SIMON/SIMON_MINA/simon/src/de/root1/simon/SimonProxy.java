@@ -147,9 +147,14 @@ public class SimonProxy implements InvocationHandler {
 		
 		// Check for exceptions ...
 		if (result instanceof Throwable){
-			logger.error("Error while invoking '{}#{}'. Shutting down server connection.",remoteObjectName,method);
-			Simon.releaseDispatcher(dispatcher);
-			dispatcher = null;
+			logger.debug("return value: {}"+result);
+			if (result instanceof SimonRemoteException) {
+				logger.error("Problematic error while invoking '{}#{}'. Shutting down server connection.",remoteObjectName,method);
+				Simon.releaseDispatcher(dispatcher);
+				dispatcher = null;
+			} else {
+				logger.debug("Forwarding exception to application: {}",((Throwable)result).getMessage());
+			}
 			throw (Throwable)result;
 		}
 		
