@@ -48,9 +48,10 @@ public class MsgToStringReturnEncoder<T extends MsgToStringReturn> extends Abstr
     	logger.trace("begin. message={}", message);
         try {
         	out.putPrefixedString(message.getReturnValue(),Charset.forName("UTF-8").newEncoder());
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			// if an error occurs, close the connection immediately
+    		logger.error("Error while sending MsgToStringReturn. Error: {}", e.getMessage());
+    		session.close(true);
 		}
 		logger.trace("end");
     }

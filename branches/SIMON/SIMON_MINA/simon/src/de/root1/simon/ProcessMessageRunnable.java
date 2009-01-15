@@ -265,7 +265,27 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("begin");
 		
 		logger.debug("processing MsgInvoke...");
+		
+		Object result = null;
+		
 		MsgInvoke msg = (MsgInvoke) abstractMessage;
+		
+		// if received msg has an error
+		if (msg.hasError()){
+			result = new SimonRemoteException("Received MsgInvoke had errors. Cannot process invocation. error msg: "+msg.getErrorMsg());
+		
+			MsgInvokeReturn returnMsg = new MsgInvokeReturn();
+			returnMsg.setSequence(msg.getSequence());
+			
+			returnMsg.setReturnValue(result);
+			
+			logger.debug("Sending result={}", returnMsg);
+			
+			session.write(returnMsg);
+			logger.debug("end");
+		}
+		
+		
 		Method method = msg.getMethod();
 		Object[] arguments = msg.getArguments();
 		// ------------
@@ -297,14 +317,13 @@ public class ProcessMessageRunnable implements Runnable {
 		String remoteObjectName = msg.getRemoteObjectName();
 		
 		logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
-		Object result = null;
-//		try {
+		
+		
 		try {
 			
 			SimonRemote simonRemote;
 			simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
 			result = method.invoke(simonRemote, arguments);
-			
 			
 			// register "SimonCallback"-results in lookup-table
 			if (result instanceof SimonRemote){
@@ -443,16 +462,17 @@ public class ProcessMessageRunnable implements Runnable {
 		MsgHashCode msg = (MsgHashCode) abstractMessage;
 		 
 		String remoteObjectName = msg.getRemoteObjectName();
+		
+		MsgHashCodeReturn returnMsg = new MsgHashCodeReturn();
+		returnMsg.setSequence(msg.getSequence());
+
 		int returnValue = -1;
 		try {
 			returnValue = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();
 		} catch (LookupFailedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			returnMsg.setErrorMsg("Failed looking up the remote object for getting the hash code. Error: "+e.getMessage());
 		}
 		
-		MsgHashCodeReturn returnMsg = new MsgHashCodeReturn();
-		returnMsg.setSequence(msg.getSequence());
 		returnMsg.setReturnValue(returnValue);
 		session.write(returnMsg);
 		logger.debug("end");

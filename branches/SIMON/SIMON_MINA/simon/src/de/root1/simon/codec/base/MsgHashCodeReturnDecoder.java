@@ -18,6 +18,9 @@
  */
 package de.root1.simon.codec.base;
 
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
@@ -45,8 +48,16 @@ public class MsgHashCodeReturnDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
     	MsgHashCodeReturn message = new MsgHashCodeReturn();
-    	int returnValue = in.getInt();
-    	message.setReturnValue(returnValue);
+    	try {
+    		message.setReturnValue(in.getInt());
+			message.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
+			
+//			// FIXME hardcore testing only
+//			if (1>0) throw new Exception("huhu");
+			
+		} catch (Exception e) {
+			message.setErrorMsg("Error while reading MsgHashCodeReturn. Error: "+e.getMessage());
+		}
 		logger.trace("message={}", message);
         return message;
     }

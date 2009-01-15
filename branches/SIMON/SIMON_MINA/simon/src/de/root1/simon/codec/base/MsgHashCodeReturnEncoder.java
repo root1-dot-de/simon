@@ -18,6 +18,8 @@
  */
 package de.root1.simon.codec.base;
 
+import java.nio.charset.Charset;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
@@ -44,7 +46,14 @@ public class MsgHashCodeReturnEncoder<T extends MsgHashCodeReturn> extends Abstr
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	
     	logger.trace("begin. message={}", message);
-    	out.putInt(message.getReturnValue());
+    	try {
+    		out.putInt(message.getReturnValue());
+			out.putPrefixedString(message.getErrorMsg(),Charset.forName("UTF-8").newEncoder());
+		} catch (Exception e) {
+			// if an error occurs, close the connection immediately
+    		logger.error("Error while sending MsgHashCodeReturn. Error: {}", e.getMessage());
+    		session.close(true);
+		}
 		logger.trace("end");
     }
 

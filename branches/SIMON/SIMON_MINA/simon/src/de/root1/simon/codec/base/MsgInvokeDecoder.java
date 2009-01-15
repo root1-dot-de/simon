@@ -55,23 +55,26 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	InvokeState is = (InvokeState) session.getAttribute(INVOKESTATE_ATTRIBUTE_KEY);
-    	if (is==null) {
-    		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
-    		is = new InvokeState();
-    		is.msgSize = in.getInt();
-    		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), is.msgSize, in.position()});
-    		session.setAttribute(INVOKESTATE_ATTRIBUTE_KEY,is);
-    	} 
-    	if (in.remaining() < is.msgSize){
-    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), is.msgSize, in.position(),in.remaining()});
-    		return null;
-    	}
-    	
-    	logger.trace("all data ready!");
     	MsgInvoke msgInvoke = new MsgInvoke();
     	
-        try {
+    	try {
+    		
+	    	InvokeState is = (InvokeState) session.getAttribute(INVOKESTATE_ATTRIBUTE_KEY);
+	    	if (is==null) {
+	    		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
+	    		is = new InvokeState();
+	    		is.msgSize = in.getInt();
+	    		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), is.msgSize, in.position()});
+	    		session.setAttribute(INVOKESTATE_ATTRIBUTE_KEY,is);
+	    	} 
+	    	if (in.remaining() < is.msgSize){
+	    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), is.msgSize, in.position(),in.remaining()});
+	    		return null;
+	    	}
+	    	
+	    	logger.trace("all data ready!");
+	    	
+    	
         	LookupTable lookupTable = (LookupTable) session.getAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
         
         	logger.trace("start pos={} capacity={}",in.position(), in.capacity());
@@ -96,13 +99,10 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			msgInvoke.setArguments(args);
 			msgInvoke.setRemoteObjectName(remoteObjectName);
 			msgInvoke.setMethod(method);
-		} catch (CharacterCodingException e) {
+			
+		} catch (Exception e) {
 			msgInvoke.setErrorMsg(e.getMessage());
-		} catch (IllegalArgumentException e) {
-			msgInvoke.setErrorMsg(e.getMessage());
-		} catch (ClassNotFoundException e) {
-			msgInvoke.setErrorMsg(e.getMessage());
-		}
+		} 
 		
 		session.removeAttribute(INVOKESTATE_ATTRIBUTE_KEY);
 		

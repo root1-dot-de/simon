@@ -124,7 +124,12 @@ public class SimonProxy implements InvocationHandler {
 				}
 				else
 				if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)){
-					return remoteHashCode();
+					try {
+						return remoteHashCode();
+					} catch (SimonRemoteException e){
+						shutdownServerConnection(method);
+						throw new SimonRemoteException(e.getMessage());
+					}
 				}
 				else
 				if (method.toString().equalsIgnoreCase(Statics.TOSTRING_METHOD_SIGNATURE)){
@@ -147,11 +152,9 @@ public class SimonProxy implements InvocationHandler {
 		
 		// Check for exceptions ...
 		if (result instanceof Throwable){
-			logger.debug("return value: {}"+result);
+			logger.debug("return value: {}",result);
 			if (result instanceof SimonRemoteException) {
-				logger.error("Problematic error while invoking '{}#{}'. Shutting down server connection.",remoteObjectName,method);
-				Simon.releaseDispatcher(dispatcher);
-				dispatcher = null;
+				shutdownServerConnection(method);
 			} else {
 				logger.debug("Forwarding exception to application: {}",((Throwable)result).getMessage());
 			}
@@ -174,6 +177,12 @@ public class SimonProxy implements InvocationHandler {
 		}
 		logger.debug("end");
 		return  result;
+	}
+
+	private void shutdownServerConnection(Method method) {
+		logger.error("Problematic error while invoking '{}#{}'. Shutting down server connection.",remoteObjectName,method);
+		Simon.releaseDispatcher(dispatcher);
+		dispatcher = null;
 	}
 	
 	
@@ -223,7 +232,7 @@ public class SimonProxy implements InvocationHandler {
 	 * @return the result of the remote hashCode() call
 	 * @throws IOException
 	 */
-	private int remoteHashCode() throws IOException {
+	private int remoteHashCode() throws SimonRemoteException {
 		return dispatcher.invokeHashCode(session, remoteObjectName);
 	}
 	

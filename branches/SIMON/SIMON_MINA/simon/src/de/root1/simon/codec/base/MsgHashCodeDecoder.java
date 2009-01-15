@@ -50,13 +50,10 @@ public class MsgHashCodeDecoder extends AbstractMessageDecoder {
     	MsgHashCode message = new MsgHashCode();
     	
         try {
-        	
-	        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-	        	
-	        	message.setRemoteObjectName(remoteObjectName);
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+        	message.setRemoteObjectName(remoteObjectName);
+		} catch (Exception e) {
+			message.setErrorMsg(e.getMessage());
 		} 
 		logger.trace("message={}", message);
         return message;

@@ -253,7 +253,10 @@ public class Dispatcher implements IoHandler{
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
 		waitForResult(monitor);
-		MsgToStringReturn result = (MsgToStringReturn) getRequestResult(sequenceId);			
+		MsgToStringReturn result = (MsgToStringReturn) getRequestResult(sequenceId);		
+		
+		if (result.hasError())
+			throw new SimonRemoteException(result.getErrorMsg());
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
 		logger.debug("end sequenceId={}", sequenceId);
@@ -269,7 +272,7 @@ public class Dispatcher implements IoHandler{
 	 * @param remoteObjectName the 
 	 * @return
 	 */
-	protected int invokeHashCode(IoSession session, String remoteObjectName) {
+	protected int invokeHashCode(IoSession session, String remoteObjectName) throws SimonRemoteException {
 		
 		checkForInvalidState("hashCode()");
 
@@ -291,6 +294,9 @@ public class Dispatcher implements IoHandler{
 		waitForResult(monitor);
 		MsgHashCodeReturn result = (MsgHashCodeReturn) getRequestResult(sequenceId);			
 			
+		if (result.hasError())
+			throw new SimonRemoteException(result.getErrorMsg());
+		
 		logger.debug("got answer for sequenceId={}", sequenceId);
 		logger.debug("end sequenceId={}", sequenceId);
 		
@@ -327,7 +333,10 @@ public class Dispatcher implements IoHandler{
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
 		waitForResult(monitor);
-		MsgEqualsReturn result = (MsgEqualsReturn) getRequestResult(sequenceId);			
+		MsgEqualsReturn result = (MsgEqualsReturn) getRequestResult(sequenceId);		
+		
+		if (result.hasError())
+			throw new SimonRemoteException(result.getErrorMsg());
 			
 		logger.debug("got answer for sequenceId={}", +sequenceId);
 		logger.debug("end sequenceId={}", sequenceId);
