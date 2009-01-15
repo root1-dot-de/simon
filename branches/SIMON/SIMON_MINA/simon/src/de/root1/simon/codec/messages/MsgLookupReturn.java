@@ -21,6 +21,8 @@ package de.root1.simon.codec.messages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.root1.simon.Statics;
+
 
 /**
  * Lookup return message
@@ -34,7 +36,7 @@ public class MsgLookupReturn extends AbstractMessage {
 
     private Class<?>[] interfaces;
 
-	private String errorMsg;
+	private String errorMsg = Statics.NO_ERROR;
 
     public MsgLookupReturn() {
     	super(SimonMessageConstants.MSG_LOOKUP_RETURN);
@@ -53,14 +55,6 @@ public class MsgLookupReturn extends AbstractMessage {
         this.interfaces = interfaces;
     }
     
-    public void setError(String errorMsg) {
-    	this.errorMsg = errorMsg;
-    }
-    
-    public String getError(){
-    	return errorMsg;
-    }
-
     @Override
     public String toString() {
         return getSequence() + ":MsgLookupReturn(interface=" + interfaces + "|errorMsg="+errorMsg+")";

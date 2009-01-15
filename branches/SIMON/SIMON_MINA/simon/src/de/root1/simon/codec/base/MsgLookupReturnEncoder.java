@@ -58,8 +58,8 @@ public class MsgLookupReturnEncoder<T extends MsgLookupReturn> extends AbstractM
 			}
 		}
     	try {
-    		logger.trace("sending erorMsg: '{}'", message.getError());
-			out.putPrefixedString(message.getError(), Charset.forName("UTF-8").newEncoder());
+    		logger.trace("sending erorMsg: '{}'", message.getErrorMsg());
+			out.putPrefixedString(message.getErrorMsg(), Charset.forName("UTF-8").newEncoder());
 		} catch (CharacterCodingException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

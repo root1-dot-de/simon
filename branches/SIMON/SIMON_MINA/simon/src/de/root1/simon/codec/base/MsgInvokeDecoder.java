@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.LookupTable;
+import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.SimonMessageConstants;
@@ -41,6 +42,7 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
 public class MsgInvokeDecoder extends AbstractMessageDecoder {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final String INVOKESTATE_ATTRIBUTE_KEY = Statics.SESSION_ATTRIBUTE_INVOKESTATE+getCurrentSequence();
 	
     public MsgInvokeDecoder() {
         super(SimonMessageConstants.MSG_INVOKE);
@@ -53,13 +55,13 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	InvokeState is = (InvokeState) session.getAttribute("invoke_seq="+getCurrentSequence());
+    	InvokeState is = (InvokeState) session.getAttribute(INVOKESTATE_ATTRIBUTE_KEY);
     	if (is==null) {
     		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
     		is = new InvokeState();
     		is.msgSize = in.getInt();
     		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), is.msgSize, in.position()});
-    		session.setAttribute("invoke_seq="+getCurrentSequence(),is);
+    		session.setAttribute(INVOKESTATE_ATTRIBUTE_KEY,is);
     	} 
     	if (in.remaining() < is.msgSize){
     		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), is.msgSize, in.position(),in.remaining()});
@@ -70,7 +72,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     	MsgInvoke msgInvoke = new MsgInvoke();
     	
         try {
-        	LookupTable lookupTable = (LookupTable) session.getAttribute("LookupTable");
+        	LookupTable lookupTable = (LookupTable) session.getAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
         
         	logger.trace("start pos={} capacity={}",in.position(), in.capacity());
         	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
@@ -78,8 +80,9 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
         	logger.trace("remote object name read ... remoteObjectName={} pos={}",remoteObjectName, in.position());
 
     		long methodHash = in.getLong();
+    		logger.trace("got method hash {}",methodHash);
     		Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), methodHash);
-    		logger.trace("methodHash read ... pos={}",in.position());
+    		logger.trace("method looked up ... pos={}",in.position());
     		
 			int argsLength = in.getInt();
 			logger.trace("args len read read ... pos={}",in.position());
@@ -94,17 +97,14 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
 			msgInvoke.setRemoteObjectName(remoteObjectName);
 			msgInvoke.setMethod(method);
 		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			msgInvoke.setErrorMsg(e.getMessage());
 		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			msgInvoke.setErrorMsg(e.getMessage());
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			msgInvoke.setErrorMsg(e.getMessage());
 		}
 		
-		session.removeAttribute("invoke_seq="+getCurrentSequence());
+		session.removeAttribute(INVOKESTATE_ATTRIBUTE_KEY);
 		
 		logger.trace("message={}", msgInvoke);
         return msgInvoke;

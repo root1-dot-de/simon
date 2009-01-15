@@ -211,10 +211,15 @@ public class Dispatcher implements IoHandler{
 
 		waitForResult(monitor);
 		MsgInvokeReturn result = (MsgInvokeReturn) getRequestResult(sequenceId);			
-		
 		logger.debug("got answer for sequenceId={}", sequenceId);
-		logger.debug("end sequenceId={}", sequenceId);
+
+//		if (result.hasError()) {
+//			logger.debug("An error occured. Returning SimonRemoteException. Error: {}",result.getErrorMsg());
+//			logger.debug("end sequenceId={}", sequenceId);
+//			return new SimonRemoteException(result.getErrorMsg());
+//		}
 		
+		logger.debug("end sequenceId={}", sequenceId);
 		return result.getReturnValue();
  		
 	}
@@ -373,7 +378,7 @@ public class Dispatcher implements IoHandler{
 	 * @param sequenceId the sequence id that is waiting for the result
 	 * @param msg the result itself
 	 */
-	protected void putResultToQueue(int sequenceId, AbstractMessage msg){
+	public void putResultToQueue(int sequenceId, AbstractMessage msg){
 		logger.debug("begin");
 		
 		logger.debug("sequenceId={} msg={}", sequenceId, msg);
@@ -596,8 +601,17 @@ public class Dispatcher implements IoHandler{
 	public void sessionClosed(IoSession session) throws Exception {
 		logger.debug("################################################");
 		logger.debug("######## session closed. session={}",session);
-		logger.debug("################################################");
 		lookupTable.unreference(session.getId());
+		// remove attached references
+		logger.debug("######## Removing session attributes ...");
+		
+		logger.debug("########  -> {}",Statics.SESSION_ATTRIBUTE_DISPATCHER);
+		session.removeAttribute(Statics.SESSION_ATTRIBUTE_DISPATCHER);
+		
+		logger.debug("########  -> {}",Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
+		session.removeAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
+		
+		logger.debug("################################################");
 	}
 
 	/*
@@ -606,7 +620,8 @@ public class Dispatcher implements IoHandler{
 	 */
 	public void sessionCreated(IoSession session) throws Exception {
 		logger.debug("session created. session={}", session);
-		session.setAttribute("LookupTable", lookupTable); // attach the lookup table to the session
+		session.setAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE, lookupTable); // attach the lookup table to the session
+		session.setAttribute(Statics.SESSION_ATTRIBUTE_DISPATCHER, this); // attach a reference to the dispatcher.
 	}
 
 	/*

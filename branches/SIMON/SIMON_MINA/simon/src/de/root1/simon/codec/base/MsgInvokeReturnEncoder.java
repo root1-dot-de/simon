@@ -18,7 +18,6 @@
  */
 package de.root1.simon.codec.base;
 
-
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
@@ -46,19 +45,33 @@ public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractM
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
     	logger.trace("begin. message={}", message);
 
-    	// first put all into a autoexpanding buffer
-		IoBuffer b = IoBuffer.allocate(4096);
-		b.setAutoExpand(true);
-		b.putObject(message.getReturnValue());
-		
-		// then check the size of the data that has to be sent
-    	int msgSize = b.position();
-		b.flip();
-		logger.trace("msgSizeInBytes={}",msgSize);
-		
-		// send the size of the data before sending the data
-		out.putInt(msgSize);
-		out.put(b);
+    	try {
+    		
+	    	// first put all into a autoexpanding buffer
+			IoBuffer b = IoBuffer.allocate(4096);
+			b.setAutoExpand(true);
+			b.putObject(message.getReturnValue());
+			
+			/*
+			 * There is no need to write the message.getErrorMsg() string back to the client
+			 * If an error occurs while invoking the method, the exception is "transported" as 
+			 * method the result back to the client where it is thrown in SimonProxy
+			 */
+			
+			// then check the size of the data that has to be sent
+	    	int msgSize = b.position();
+			b.flip();
+			logger.trace("msgSizeInBytes={}",msgSize);
+			
+			// send the size of the data before sending the data
+			out.putInt(msgSize);
+			out.put(b);
+			
+    	} catch (Exception e) {
+    		// if an error occurs, close the connection immediately
+    		logger.error("Error while sending MsgInvokeReturnMsg. Error: {}", e.getMessage());
+    		session.close(true);
+    	}
 
 		logger.trace("end");    
 	}

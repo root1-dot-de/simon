@@ -19,6 +19,8 @@
 package de.root1.simon.codec.messages;
 import java.io.Serializable;
 
+import de.root1.simon.Statics;
+
 /**
  * A base message for SIMON protocol messages.
  *
@@ -32,8 +34,33 @@ public abstract class AbstractMessage implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private byte msgType = -1;
 	private int sequence = -1;
+	private String errorMsg = Statics.NO_ERROR;
 	
     /**
+     * Returns the error message. Contains {@link Statics#NO_ERROR} if no error is present.
+	 * @return the errorMsg
+	 */
+	public String getErrorMsg() {
+		return errorMsg;
+	}
+
+	/**
+	 * Sets the error message related to this message
+	 * @param errorMsg the errorMsg to set
+	 */
+	public void setErrorMsg(String errorMsg) {
+		this.errorMsg = errorMsg;
+	}
+	
+	/**
+	 * Returns whether this message has an error or not
+	 * @return true, if error is present, false if not
+	 */
+	public boolean hasError(){
+		return (!errorMsg.equals(Statics.NO_ERROR));
+	}
+
+	/**
      * Creates a new message decoder
      * @param msgType specifies a unique ID for the type of message
      */

@@ -20,7 +20,6 @@ package de.root1.simon.codec.messages;
 
 import java.lang.reflect.Method;
 
-
 /**
  * <code>INVOKE</code> message
  *
@@ -30,9 +29,9 @@ public class MsgInvoke extends AbstractMessage {
 	
     private static final long serialVersionUID = 1L;
 
-    String remoteObjectName;
-    Method method;
-    Object[] args;
+    private String remoteObjectName;
+    private Method method;
+    private Object[] args;
     
     public MsgInvoke() {
     	super(SimonMessageConstants.MSG_INVOKE);
@@ -49,7 +48,7 @@ public class MsgInvoke extends AbstractMessage {
     public void setArguments(Object[] args){
     	this.args=args;
     }
-
+    
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.

@@ -18,7 +18,6 @@
  */
 package de.root1.simon;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
@@ -44,6 +43,7 @@ import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 
 /**
@@ -235,13 +235,13 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		MsgLookupReturn ret = new MsgLookupReturn();
 		ret.setSequence(msg.getSequence());
-		Class<?>[] interfaces = null;
 		try {
+			Class<?>[] interfaces = null;
 			interfaces = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces();
 			ret.setInterfaces(interfaces);
 		} catch (LookupFailedException e) {
 			logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
-			ret.setError(e.getMessage());
+			ret.setErrorMsg(e.getMessage());
 		}
 		session.write(ret);
 		
@@ -296,10 +296,10 @@ public class ProcessMessageRunnable implements Runnable {
 		String remoteObjectName = msg.getRemoteObjectName();
 		
 		logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
-		
+		Object result = null;
 		try {
 			SimonRemote simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
-			Object result = method.invoke(simonRemote, arguments);
+			result = method.invoke(simonRemote, arguments);
 			
 			
 			// register "SimonCallback"-results in lookup-table
@@ -314,28 +314,18 @@ public class ProcessMessageRunnable implements Runnable {
 				
 			}
 			
-			MsgInvokeReturn returnMsg = new MsgInvokeReturn();
-			returnMsg.setSequence(msg.getSequence());
-			
-			returnMsg.setReturnValue(result);
-			
-			logger.debug("Sending result={}", returnMsg);
-			
-			session.write(returnMsg);
-			
-		} catch (LookupFailedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
 		}
+		
+		MsgInvokeReturn returnMsg = new MsgInvokeReturn();
+		returnMsg.setSequence(msg.getSequence());
+		
+		returnMsg.setReturnValue(result);
+		
+		logger.debug("Sending result={}", returnMsg);
+		
+		session.write(returnMsg);
 		logger.debug("end");
 	}
 

@@ -412,11 +412,11 @@ public class Simon {
 		 */
 		MsgLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
 		
-		if (msg.getError()!=null){
+		if (msg.hasError()){
 			
 			logger.trace("Lookup failed. Releasing dispatcher.");
 			releaseDispatcher(dispatcher);
-			throw new LookupFailedException(msg.getError());
+			throw new LookupFailedException(msg.getErrorMsg());
 			
 		} else {
 		
@@ -618,7 +618,7 @@ public class Simon {
 	 * @param dispatcher
 	 * @return
 	 */
-	private static boolean releaseDispatcher(Dispatcher dispatcher) {
+	protected static boolean releaseDispatcher(Dispatcher dispatcher) {
 		// get the serverstring the dispatcher is connected to
 		String serverString = dispatcher.getServerString();
 		boolean result = releaseServerDispatcherRelation(serverString);

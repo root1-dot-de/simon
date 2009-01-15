@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.SimonRemote;
+import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgLookup;
@@ -40,6 +41,7 @@ import de.root1.simon.utils.SimonClassLoader;
 public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
+	private final String INVOKERETURNSTATE_ATTRIBUTE_KEY = Statics.SESSION_ATTRIBUTE_INVOKERETURNSTATE+getCurrentSequence();
 	
     public MsgInvokeReturnDecoder() {
         super(SimonMessageConstants.MSG_INVOKE_RETURN);
@@ -51,13 +53,13 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	InvokeReturnState irs = (InvokeReturnState) session.getAttribute("invoke_return_seq="+getCurrentSequence());
+    	InvokeReturnState irs = (InvokeReturnState) session.getAttribute(INVOKERETURNSTATE_ATTRIBUTE_KEY);
     	if (irs==null) {
     		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
     		irs = new InvokeReturnState();
     		irs.msgSize = in.getInt();
     		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), irs.msgSize, in.position()});
-    		session.setAttribute("invoke_return_seq="+getCurrentSequence(),irs);
+    		session.setAttribute(INVOKERETURNSTATE_ATTRIBUTE_KEY,irs);
     	} 
     	if (in.remaining() < irs.msgSize){
     		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), irs.msgSize, in.position(),in.remaining()});
@@ -74,7 +76,7 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 			e.printStackTrace();
 		} 
 		logger.trace("message={}", m);
-		session.removeAttribute("invoke_return_seq="+getCurrentSequence());
+		session.removeAttribute(INVOKERETURNSTATE_ATTRIBUTE_KEY);
         return m;
     }
 

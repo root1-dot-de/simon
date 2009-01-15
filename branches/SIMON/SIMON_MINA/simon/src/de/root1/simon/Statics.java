@@ -18,6 +18,9 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.codec.base.MsgInvokeDecoder;
+import de.root1.simon.codec.base.MsgInvokeReturnDecoder;
+
 /**
  * Holds some static variables defining timeouts, thread and method names, ...
  * 
@@ -29,6 +32,11 @@ public class Statics {
 	protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
 	protected static final String EQUALS_METHOD_SIGNATURE 	= "public boolean java.lang.Object.equals(java.lang.Object)";
 
+	public static final String SESSION_ATTRIBUTE_DISPATCHER = Dispatcher.class.getName();
+	public static final String SESSION_ATTRIBUTE_LOOKUPTABLE = LookupTable.class.getName();
+	public static final String SESSION_ATTRIBUTE_INVOKESTATE = MsgInvokeDecoder.class.getName()+".InvokeState";
+	public static final String SESSION_ATTRIBUTE_INVOKERETURNSTATE = MsgInvokeReturnDecoder.class.getName()+".InvokeReturnState";
+	
 	// values in milliseconds
 	protected static final int DEFAULT_SOCKET_TIMEOUT = 100;
 	protected static final long MONITOR_WAIT_TIMEOUT = 200;
@@ -54,5 +62,6 @@ public class Statics {
 	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon.Dispatcher.WorkerPool";
 	protected static final String PUBLISH_SERVICE_THREAD_NAME = "Simon.PublishService";
 	protected static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
+	public static final String NO_ERROR = "{#}";
 	
 }

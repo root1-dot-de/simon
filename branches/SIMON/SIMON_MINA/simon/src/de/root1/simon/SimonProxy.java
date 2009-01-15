@@ -76,6 +76,12 @@ public class SimonProxy implements InvocationHandler {
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		logger.debug("begin");
 		
+		if (dispatcher==null){
+			logger.debug("Hey, you cannot use a already closed connection ... s&h§/&*$$");
+			logger.debug("end");
+			throw new SimonRemoteException("Cannot invoke method "+method.getName()+". Connection to server is already closed.");
+		}
+		
 		// trace all the given arguments
 		if (logger.isTraceEnabled()) {
 			logger.trace("method={} argsLength={}", method.getName(), (args==null ? 0 : args.length));
@@ -141,6 +147,9 @@ public class SimonProxy implements InvocationHandler {
 		
 		// Check for exceptions ...
 		if (result instanceof Throwable){
+			logger.error("Error while invoking '{}#{}'. Shutting down server connection.",remoteObjectName,method);
+			Simon.releaseDispatcher(dispatcher);
+			dispatcher = null;
 			throw (Throwable)result;
 		}
 		
