@@ -19,22 +19,22 @@
 package de.root1.simon.codec.messages;
 
 /**
- * <code>Ping</code> message
+ * <code>Pong</code> message
  *
  * @author ACHR
  */
-public class MsgPing extends AbstractMessage {
+public class MsgPong extends AbstractMessage {
 	
     private static final long serialVersionUID = 1L;
 
-    public MsgPing() {
-    	super(SimonMessageConstants.MSG_PING);
+    public MsgPong() {
+    	super(SimonMessageConstants.MSG_PONG);
     }
 
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgPing()";
+        return getSequence() + ":MsgPong()";
     }
 
 }

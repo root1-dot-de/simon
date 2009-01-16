@@ -26,11 +26,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
+import org.apache.mina.core.future.WriteFuture;
 import org.apache.mina.core.service.IoHandler;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.sun.corba.se.impl.ior.WireObjectKeyTemplate;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgCloseRawChannel;
@@ -46,6 +49,7 @@ import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.codec.messages.MsgOpenRawChannel;
 import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
 import de.root1.simon.codec.messages.MsgPing;
+import de.root1.simon.codec.messages.MsgPong;
 import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
@@ -97,7 +101,29 @@ public class Dispatcher implements IoHandler{
 
 	/** TODO document me */
 	private ArrayList<Integer> tokenList = new ArrayList<Integer>();
+
+	/** TODO document me */
+	private PingWatchdog pingWatchdog;
+
+	/** TODO document me */
+	private int pingTimeOut = Statics.DEFAULT_WRITE_TIMEOUT;
 	
+	/**
+	 * TODO document me
+	 * @return the pingTimeOut
+	 */
+	protected int getPingTimeOut() {
+		return pingTimeOut;
+	}
+
+	/**
+	 * TODO document me
+	 * @param pingTimeOut the pingTimeOut to set
+	 */
+	protected void setPingTimeOut(int pingTimeOut) {
+		this.pingTimeOut = pingTimeOut;
+	}
+
 	/**
 	 * 
 	 * Creates a packet dispatcher which delegates 
@@ -116,6 +142,8 @@ public class Dispatcher implements IoHandler{
 		this.lookupTable = new LookupTable(this);
 
 		this.messageProcessorPool = threadPool;
+		
+		this.pingWatchdog = new PingWatchdog(this);
 		
 //		// FIXME ...
 //		if (serverString==null) {
@@ -482,6 +510,14 @@ public class Dispatcher implements IoHandler{
 	}
 	
 	/**
+	 * Returns whether this is an server dispatcher or not 
+	 * @return true if server dispatcher, false if not
+	 */
+	protected boolean isServerDispatcher(){
+		return (serverString==null ? true : false);
+	}
+	
+	/**
 	 * Returns whether the dispatcher is still in run() or not
 	 * @return boolean
 	 */
@@ -639,23 +675,41 @@ public class Dispatcher implements IoHandler{
 	 */
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
 		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);
-		if (idleStatus == IdleStatus.WRITER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
-			logger.trace("sending ping to test session");
-			sendPing(session);
-		}
+		
+		if (isServerDispatcher())
+			if (idleStatus == IdleStatus.WRITER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
+				logger.trace("sending ping to test session");
+				sendPing(session);
+			}
 	}
 
 	private void sendPing(IoSession session) {
 		checkForInvalidState("ping()");
+		pingWatchdog.waitForPong(session);
 
 		final int sequenceId = generateSequenceId(); 
 		
 		logger.debug("begin sequenceId={} session={}", sequenceId, session);
 		
-		MsgPing msgInvoke = new MsgPing();
-		msgInvoke.setSequence(sequenceId);
+		MsgPing msgPing = new MsgPing();
+		msgPing.setSequence(sequenceId);
 		
-		session.write(msgInvoke);
+		session.write(msgPing);
+		
+		logger.debug("end. data send.");
+	}
+	
+	public void sendPong(IoSession session) {
+		checkForInvalidState("pong()");
+
+		final int sequenceId = generateSequenceId(); 
+		
+		logger.debug("begin sequenceId={} session={}", sequenceId, session);
+		
+		MsgPong msgPong = new MsgPong();
+		msgPong.setSequence(sequenceId);
+		
+		session.write(msgPong);
 		
 		logger.debug("end. data send.");
 	}
@@ -820,6 +874,14 @@ public class Dispatcher implements IoHandler{
 		}
 		
 		throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
+	}
+	
+	/**
+	 * TODO document me
+	 * @return
+	 */
+	protected PingWatchdog getPingWatchdog(){
+		return pingWatchdog;
 	}
 	
 }

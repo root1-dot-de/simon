@@ -707,6 +707,7 @@ public class Simon {
 	 *            time in seconds
 	 */
 	public static void setDefaultDgcInterval(int seconds){
+		logger.debug("setting default dgc interval to {} sec.", seconds);
 		Statics.DEFAULT_IDLE_TIME = seconds;
 	}
 	
@@ -728,6 +729,7 @@ public class Simon {
 	 *            time in seconds
 	 */
 	public static void setDefaultWriteTimeout(int seconds){
+		logger.debug("setting default write timeout to {} sec.", seconds);
 		Statics.DEFAULT_WRITE_TIMEOUT = seconds;
 	}
 	
@@ -749,6 +751,7 @@ public class Simon {
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
 	public static void setDgcInterval(Object remoteObject, int seconds) throws IllegalArgumentException {
+		logger.debug("setting dgc interval on {} to {} sec.", remoteObject, seconds);
 		getSimonProxy(remoteObject).getIoSession().getConfig().setIdleTime(IdleStatus.BOTH_IDLE, seconds);
 	}
 	
@@ -770,6 +773,7 @@ public class Simon {
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
 	public static void setWriteTimeout(Object remoteObject, int seconds) throws IllegalArgumentException {
+		logger.debug("setting write timeout on {} to {} sec.", remoteObject, seconds);
 		getSimonProxy(remoteObject).getIoSession().getConfig().setWriteTimeout(seconds);
 	}
 	

@@ -36,6 +36,7 @@ public class Statics {
 	public static final String SESSION_ATTRIBUTE_LOOKUPTABLE = LookupTable.class.getName();
 	public static final String SESSION_ATTRIBUTE_INVOKESTATE = MsgInvokeDecoder.class.getName()+".InvokeState";
 	public static final String SESSION_ATTRIBUTE_INVOKERETURNSTATE = MsgInvokeReturnDecoder.class.getName()+".InvokeReturnState";
+	public static final String SESSION_ATTRIBUTE_PINGTIMEOUT = PingWatchdog.class.getName()+".PingTimeOut";
 	
 	// values in milliseconds
 	protected static final int DEFAULT_SOCKET_TIMEOUT = 100;
@@ -60,6 +61,7 @@ public class Statics {
 	
 	// some names for the used threads/pools
 	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon.Dispatcher.WorkerPool";
+	protected static final String PINGWATCHDOG_WORKERPOOL_NAME = "Simon.Dispatcher.PingWatchdogPool";
 	protected static final String PUBLISH_SERVICE_THREAD_NAME = "Simon.PublishService";
 	protected static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
 	public static final String NO_ERROR = "{#}";

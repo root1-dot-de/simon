@@ -19,34 +19,43 @@
 package de.root1.simon.codec.base;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.demux.MessageEncoder;
+import org.apache.mina.filter.codec.ProtocolDecoderOutput;
+import org.apache.mina.filter.codec.demux.MessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgPing;
+import de.root1.simon.codec.messages.MsgPong;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.Utils;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgPing}.
+ * A {@link MessageDecoder} that decodes {@link MsgPong}.
  *
  * @author ACHR
  */
-public class MsgPingEncoder<T extends MsgPing> extends AbstractMessageEncoder<T> {
+public class MsgPongDecoder extends AbstractMessageDecoder {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-    public MsgPingEncoder() {
-        super(SimonMessageConstants.MSG_PING);
+    public MsgPongDecoder() {
+        super(SimonMessageConstants.MSG_PONG);
     }
-
+    
     @Override
-    protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message="+message);
-    	out.put((byte)0xff);
+    protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
+    	logger.trace("begin");
+    	byte x = in.get();
+    	logger.trace("got {}", Utils.longToHexString(x));
+		MsgPong pong = new MsgPong();
+		pong.setSequence(getCurrentSequence());
 		logger.trace("end");
+    	return pong;
     }
-
-    public void dispose() throws Exception {
+    
+    public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
+    
+   
 }

@@ -216,7 +216,8 @@ public final class Registry {
 	 */
 	public void setWriteTimeout(int timeout) {
 		acceptor.getSessionConfig().setWriteTimeout(timeout);
-		logger.trace("setting write timeout to {} sec.", timeout);
+		dispatcher.setPingTimeOut(timeout);
+		logger.debug("setting write timeout to {} sec.", timeout);
 	}
 
 	/**
@@ -225,7 +226,7 @@ public final class Registry {
 	 */
 	public void setDgcInterval(int interval) {
 		acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, interval );
-		logger.trace("setting dgc interval to {} sec.", interval);
+		logger.debug("setting dgc interval to {} sec.", interval);
 	}
 	
 	/**

@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgPing;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.Utils;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgPing}.
@@ -45,8 +46,12 @@ public class MsgPingDecoder extends AbstractMessageDecoder {
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
     	logger.trace("begin");
+    	byte x = in.get();
+    	logger.trace("got {}", Utils.longToHexString(x));
+		MsgPing ping = new MsgPing();
+		ping.setSequence(getCurrentSequence());
 		logger.trace("end");
-    	return new MsgPing();
+    	return ping;
     }
     
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {

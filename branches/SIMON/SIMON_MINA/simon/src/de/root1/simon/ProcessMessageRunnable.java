@@ -84,12 +84,7 @@ public class ProcessMessageRunnable implements Runnable {
 				break;
 				
 			case SimonMessageConstants.MSG_INVOKE:
-				try {
-					processInvoke();
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				processInvoke();
 				break;
 				
 			case SimonMessageConstants.MSG_INVOKE_RETURN:
@@ -141,8 +136,11 @@ public class ProcessMessageRunnable implements Runnable {
 				break;
 				
 			case SimonMessageConstants.MSG_PING:
-				// do nothing
-				logger.trace("Ping received");
+				processPing();
+				break;
+				
+			case SimonMessageConstants.MSG_PONG:
+				processPong();
 				break;
 
 			default:
@@ -152,6 +150,24 @@ public class ProcessMessageRunnable implements Runnable {
 				break;
 		}
 		
+	}
+
+	private void processPing() {
+		logger.debug("begin");
+		logger.debug("processing MsgPing...");
+
+		logger.debug("replying pong");
+		dispatcher.sendPong(session);
+		
+		logger.debug("end");
+	}
+	
+	private void processPong() {
+		logger.debug("begin");
+		logger.debug("processing MsgPong...");
+
+		dispatcher.getPingWatchdog().notifyPongReceived(session);
+		logger.debug("end");
 	}
 
 	private void processOpenRawChannel() {
@@ -261,7 +277,7 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("end");
 	}
 	
-	private void processInvoke() throws ClassNotFoundException {
+	private void processInvoke() {
 		logger.debug("begin");
 		
 		logger.debug("processing MsgInvoke...");
@@ -284,42 +300,38 @@ public class ProcessMessageRunnable implements Runnable {
 			session.write(returnMsg);
 			logger.debug("end");
 		}
-		
-		
+
 		Method method = msg.getMethod();
 		Object[] arguments = msg.getArguments();
-		// ------------
-		// replace existing SimonRemote objects with proxy object
-		if (arguments != null) {
-			
-			for (int i = 0; i < arguments.length; i++) {
-				
-				// search the arguments for remote instances 
-				if (arguments[i] instanceof SimonRemoteInstance) {
-					
-					final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
-					
-					logger.debug("SimonCallback in args found. id={}", simonCallback.getId());					
-					
-					Class<?>[] listenerInterfaces = new Class<?>[1];
-					listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
-					
-					// reimplant the proxy object
-					arguments[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
-					logger.debug("proxy object for SimonCallback injected");
-				} 
-			} 
-		} 
-		// ------------
-		
-		
-		
 		String remoteObjectName = msg.getRemoteObjectName();
 		
-		logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
-		
-		
 		try {
+			
+			// ------------
+			// replace existing SimonRemote objects with proxy object
+			if (arguments != null) {
+				
+				for (int i = 0; i < arguments.length; i++) {
+					
+					// search the arguments for remote instances 
+					if (arguments[i] instanceof SimonRemoteInstance) {
+						
+						final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
+						
+						logger.debug("SimonCallback in args found. id={}", simonCallback.getId());					
+						
+						Class<?>[] listenerInterfaces = new Class<?>[1];
+						listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
+						
+						// reimplant the proxy object
+						arguments[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
+						logger.debug("proxy object for SimonCallback injected");
+					} 
+				} 
+			} 
+			// ------------
+			
+			logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
 			
 			SimonRemote simonRemote;
 			simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
