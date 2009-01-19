@@ -18,7 +18,6 @@
  */
 package de.root1.simon;
 
-import java.sql.Time;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,20 +44,18 @@ public class PingWatchdog {
 	class WaitRunnable implements Runnable {
 
 		private final Logger logger = LoggerFactory.getLogger(getClass());
-		private Dispatcher dispatcher;
 		private IoSession session;
 		private int timeout;
 		private Object monitor = new Object();
-		private boolean echoReceived = true;
+		private boolean echoReceived = false;
 
-		public WaitRunnable(Dispatcher dispatcher, IoSession session) {
-			this.dispatcher = dispatcher;
+		public WaitRunnable(IoSession session) {
 			this.session = session;
 			this.timeout = dispatcher.getPingTimeOut()*1000;
 		}
 
 		public void run() {
-			logger.debug("begin. sleeping {} ms before timout will occur.", timeout);
+			logger.debug("this={} begin. sleeping {} ms before timout will occur.", this, timeout);
 
 			long start = System.currentTimeMillis();
 			synchronized (monitor) {
@@ -69,27 +66,36 @@ public class PingWatchdog {
 			}
 			long end = System.currentTimeMillis();
 
-			logger.trace("sleep finished. duration: {} ms",(end-start));
+			logger.trace("this={} sleep finished. duration: {} ms",this,(end-start));
 			
-			if (end-start < timeout) 
-				logger.trace("Huuray. Pong received! remaining={} rtt={}", (timeout-(end-start)), (end-start));
+			boolean withinTime = end-start < timeout;
+			long remaining = timeout-(end-start);
+			long sleepTime = end-start;
+			
+			if (echoReceived) {
 				
-			
-			if (!echoReceived) {
-				logger.debug("Ping timed out for session {}. Closing it immediately.", Utils.longToHexString(session.getId()));
-				try {
-					dispatcher.sessionClosed(session);
-				} catch (Exception e) {
-					logger.warn("Failed to close the session of ping-timeout client. Error: {}", e.getMessage());
+				if (withinTime) {
+					logger.trace("this={} Pong for session {} received within time! remaining={} rtt={}", new Object[]{this, Utils.longToHexString(session.getId()), remaining, sleepTime});
+				} else {
+					logger.warn("this={} Pong for session {} received, but NOT WITHIN TIME! remaining={} rtt={}", new Object[]{this, Utils.longToHexString(session.getId()), remaining, sleepTime});
+					closeSession();
 				}
+				
 			} else {
-				logger.debug("Ping-Pong for session {} ---> OKAY", Utils.longToHexString(session.getId()));
+				logger.trace("this={} Pong for session {} not received", this, Utils.longToHexString(session.getId()));
+				closeSession();
 			}
-			logger.debug("end.");
+	
+			logger.debug("this={} end.", this);
 		}
 		
+		private void closeSession() {
+			logger.debug("this={} PingPong failure for session session {}. Closing it immediately.", this, Utils.longToHexString(session.getId()));
+			session.close(true);
+		}
+
 		public void echoReceived(){
-			logger.debug("Pong received for session: {}. Notify monitor.", Utils.longToHexString(session.getId()));
+			logger.debug("this={} Pong received for session: {}. Notify monitor.", this, Utils.longToHexString(session.getId()));
 			echoReceived = true;
 			synchronized (monitor) {
 				monitor.notifyAll();
@@ -106,9 +112,10 @@ public class PingWatchdog {
 		this.dispatcher=dispatcher;		
 	}
 	
+
 	public void waitForPong(IoSession session){
 		logger.debug("Waiting for pong for session: {}",Utils.longToHexString(session.getId()));
-		WaitRunnable runnable = new WaitRunnable(dispatcher, session);
+		WaitRunnable runnable = new WaitRunnable(session);
 		sessionWaitrunnableMap.put(session, runnable);
 		pingWatchdogPool.execute(runnable);
 	}

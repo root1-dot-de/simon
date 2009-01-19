@@ -26,14 +26,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
-import org.apache.mina.core.future.WriteFuture;
 import org.apache.mina.core.service.IoHandler;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.sun.corba.se.impl.ior.WireObjectKeyTemplate;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgCloseRawChannel;
@@ -677,9 +674,12 @@ public class Dispatcher implements IoHandler{
 		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);
 		
 //		if (isServerDispatcher())
-		if (idleStatus == IdleStatus.WRITER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
-			logger.trace("sending ping to test session");
-			sendPing(session);
+		
+		if (!session.isClosing()) {
+			if (idleStatus == IdleStatus.READER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
+				logger.trace("sending ping to test session {}", session);
+				sendPing(session);
+			}
 		}
 	}
 

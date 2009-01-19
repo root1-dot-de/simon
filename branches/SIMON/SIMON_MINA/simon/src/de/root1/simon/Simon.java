@@ -209,12 +209,13 @@ public class Simon {
 	 * The communication is done via SSL encryption provided by the given
 	 * SslContextFactory 
 	 *  
+	 * @param sslContextFactory the factory that provides the ssl context for the SSL powered registry 
 	 * @param address the {@link InetAddress} the registry is bind to
 	 * @param port the port the registry is bind to
 	 * @return the created registry
 	 * @throws IOException if there is a problem with the networking layer
 	 */
-	public static Registry createSslRegistry(SslContextFactory sslContextFactory, InetAddress address, int port) throws IOException {
+	public static Registry createRegistry(SslContextFactory sslContextFactory, InetAddress address, int port) throws IOException {
 		logger.debug("begin");
 		Registry registry = new Registry(address, port, getThreadPool(), protocolFactoryClassName, sslContextFactory);
 		logger.debug("end");
@@ -278,7 +279,7 @@ public class Simon {
 	 *             if there's no such object on the server
 	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-		return sslLookup(null, host, port, remoteObjectName);
+		return lookup(null, host, port, remoteObjectName);
 	}
 	
 	/**
@@ -310,7 +311,7 @@ public class Simon {
 	 * @throws LookupFailedException
 	 *             if there's no such object on the server
 	 */
-	public static SimonRemote sslLookup(SslContextFactory sslContextFactory, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+	public static SimonRemote lookup(SslContextFactory sslContextFactory, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		logger.debug("begin");
 		
 		// check if there is already an dispatcher and key for THIS server

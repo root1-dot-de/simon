@@ -30,6 +30,7 @@
  */
 package de.root1.simon;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -37,8 +38,6 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
-
-import java.io.IOException;
 
 /**
  * TODO document me

@@ -25,7 +25,6 @@ import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import de.root1.simon.Dispatcher;
 import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.MsgInvoke;
