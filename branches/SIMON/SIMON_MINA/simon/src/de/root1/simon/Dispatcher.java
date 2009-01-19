@@ -676,11 +676,11 @@ public class Dispatcher implements IoHandler{
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
 		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);
 		
-		if (isServerDispatcher())
-			if (idleStatus == IdleStatus.WRITER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
-				logger.trace("sending ping to test session");
-				sendPing(session);
-			}
+//		if (isServerDispatcher())
+		if (idleStatus == IdleStatus.WRITER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
+			logger.trace("sending ping to test session");
+			sendPing(session);
+		}
 	}
 
 	private void sendPing(IoSession session) {
