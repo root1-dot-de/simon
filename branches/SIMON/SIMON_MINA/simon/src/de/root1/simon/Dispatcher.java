@@ -54,6 +54,7 @@ import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.utils.Utils;
 
 /**
  * TODO documentation
@@ -607,7 +608,7 @@ public class Dispatcher implements IoHandler{
 	public void exceptionCaught(IoSession session, Throwable throwable)
 			throws Exception {
 		if (logger.isTraceEnabled()){
-			logger.trace("exception Caught. session={} cause={}", session, throwable);
+			logger.trace("exception Caught. session={} cause={}", Utils.longToHexString(session.getId()), throwable);
 			StackTraceElement[] stackTrace = throwable.getStackTrace();
 			for (StackTraceElement stackTraceElement : stackTrace) {
 				System.err.println(stackTraceElement);
@@ -620,11 +621,8 @@ public class Dispatcher implements IoHandler{
 	 * @see org.apache.mina.core.service.IoHandler#messageReceived(org.apache.mina.core.session.IoSession, java.lang.Object)
 	 */
 	public void messageReceived(IoSession session, Object message) throws Exception {
-		logger.debug("Received message from {}", session.getRemoteAddress());
-		
+		logger.debug("Received message from session {}", Utils.longToHexString(session.getId()));
 		AbstractMessage abstractMessage = (AbstractMessage) message;
-		
-		logger.debug("Put message into message processor pool");
 		messageProcessorPool.execute(new ProcessMessageRunnable(this, session, abstractMessage));
 	}
 
@@ -633,7 +631,7 @@ public class Dispatcher implements IoHandler{
 	 * @see org.apache.mina.core.service.IoHandler#messageSent(org.apache.mina.core.session.IoSession, java.lang.Object)
 	 */
 	public void messageSent(IoSession session, Object msg) throws Exception {
-		logger.debug("message sent. session={} msg={}", session, msg);
+		logger.debug("Message sent to session session={} msg={}", Utils.longToHexString(session.getId()), msg);
 	}
 
 	/*
@@ -642,7 +640,7 @@ public class Dispatcher implements IoHandler{
 	 */
 	public void sessionClosed(IoSession session) throws Exception {
 		logger.debug("################################################");
-		logger.debug("######## session closed. session={}",session);
+		logger.debug("######## session closed. session={}",Utils.longToHexString(session.getId()));
 		lookupTable.unreference(session.getId());
 		// remove attached references
 		logger.debug("######## Removing session attributes ...");
@@ -671,13 +669,13 @@ public class Dispatcher implements IoHandler{
 	 * @see org.apache.mina.core.service.IoHandler#sessionIdle(org.apache.mina.core.session.IoSession, org.apache.mina.core.session.IdleStatus)
 	 */
 	public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
-		logger.debug("session idle. session={} idleStatus={}", session, idleStatus);
+		logger.debug("session idle. session={} idleStatus={}", Utils.longToHexString(session.getId()), idleStatus);
 		
 //		if (isServerDispatcher())
 		
 		if (!session.isClosing()) {
 			if (idleStatus == IdleStatus.READER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
-				logger.trace("sending ping to test session {}", session);
+				logger.trace("sending ping to test session {}", Utils.longToHexString(session.getId()));
 				sendPing(session);
 			}
 		}

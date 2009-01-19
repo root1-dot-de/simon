@@ -47,7 +47,7 @@ public class PingWatchdog {
 		private IoSession session;
 		private int timeout;
 		private Object monitor = new Object();
-		private boolean echoReceived = false;
+		private boolean pongReceived = false;
 
 		public WaitRunnable(IoSession session) {
 			this.session = session;
@@ -55,7 +55,7 @@ public class PingWatchdog {
 		}
 
 		public void run() {
-			logger.debug("this={} begin. sleeping {} ms before timout will occur.", this, timeout);
+			logger.debug("begin. sleeping {} ms before timout will occur.", timeout);
 
 			long start = System.currentTimeMillis();
 			synchronized (monitor) {
@@ -66,37 +66,35 @@ public class PingWatchdog {
 			}
 			long end = System.currentTimeMillis();
 
-			logger.trace("this={} sleep finished. duration: {} ms",this,(end-start));
-			
 			boolean withinTime = end-start < timeout;
 			long remaining = timeout-(end-start);
 			long sleepTime = end-start;
 			
-			if (echoReceived) {
+			if (pongReceived) {
 				
 				if (withinTime) {
-					logger.trace("this={} Pong for session {} received within time! remaining={} rtt={}", new Object[]{this, Utils.longToHexString(session.getId()), remaining, sleepTime});
+					logger.trace("Pong for session {} received within time! remaining={} rtt={}", new Object[]{Utils.longToHexString(session.getId()), remaining, sleepTime});
 				} else {
-					logger.warn("this={} Pong for session {} received, but NOT WITHIN TIME! remaining={} rtt={}", new Object[]{this, Utils.longToHexString(session.getId()), remaining, sleepTime});
+					logger.warn("Pong for session {} received, but NOT WITHIN TIME! remaining={} rtt={}", new Object[]{Utils.longToHexString(session.getId()), remaining, sleepTime});
 					closeSession();
 				}
 				
 			} else {
-				logger.trace("this={} Pong for session {} not received", this, Utils.longToHexString(session.getId()));
+				logger.trace("Pong for session {} not received", Utils.longToHexString(session.getId()));
 				closeSession();
 			}
 	
-			logger.debug("this={} end.", this);
+			logger.debug("end.");
 		}
 		
 		private void closeSession() {
-			logger.debug("this={} PingPong failure for session session {}. Closing it immediately.", this, Utils.longToHexString(session.getId()));
+			logger.debug("PingPong failure for session session {}. Closing it immediately.", Utils.longToHexString(session.getId()));
 			session.close(true);
 		}
 
 		public void echoReceived(){
-			logger.debug("this={} Pong received for session: {}. Notify monitor.", this, Utils.longToHexString(session.getId()));
-			echoReceived = true;
+			logger.debug("Pong received for session: {}. Notify monitor.", Utils.longToHexString(session.getId()));
+			pongReceived = true;
 			synchronized (monitor) {
 				monitor.notifyAll();
 			}
