@@ -51,7 +51,7 @@ public class PingWatchdog {
 
 		public WaitRunnable(IoSession session) {
 			this.session = session;
-			this.timeout = dispatcher.getPingTimeOut()*1000;
+			this.timeout = dispatcher.getWriteTimeout()*1000;
 		}
 
 		public void run() {

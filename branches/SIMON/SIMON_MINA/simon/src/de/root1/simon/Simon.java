@@ -363,10 +363,11 @@ public class Simon {
 					session.getFilterChain().addLast( "logger", new LoggingFilter() );
 
 				if (sslContextFactory!=null) {
-					SSLContext context = sslContextFactory.getClientContext();
+					SSLContext context = sslContextFactory.getSslContext();
 					
 					if (context!=null) {
 						SslFilter sslFilter = new SslFilter(context);
+						sslFilter.setUseClientMode(true); // only on client side needed
 						session.getFilterChain().addLast("sslFilter", sslFilter);
 						logger.debug("SSL ON");
 					} else {
@@ -967,7 +968,7 @@ public class Simon {
 	 * @param listener
 	 *            the listener which gets all the received data related to this
 	 *            channel
-	 * @param remoteObject
+	 * @param simonRemote
 	 *            a reference to the remote object whos {@link Dispatcher} is
 	 *            prepared to receive raw data.
 	 * @return a token that identifies the prepared channel

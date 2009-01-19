@@ -104,14 +104,14 @@ public class Dispatcher implements IoHandler{
 	private PingWatchdog pingWatchdog;
 
 	/** TODO document me */
-	private int pingTimeOut = Statics.DEFAULT_WRITE_TIMEOUT;
+	private int writeTimeout = Statics.DEFAULT_WRITE_TIMEOUT;
 	
 	/**
 	 * TODO document me
 	 * @return the pingTimeOut
 	 */
-	protected int getPingTimeOut() {
-		return pingTimeOut;
+	protected int getWriteTimeout() {
+		return writeTimeout;
 	}
 
 	/**
@@ -119,7 +119,7 @@ public class Dispatcher implements IoHandler{
 	 * @param pingTimeOut the pingTimeOut to set
 	 */
 	protected void setPingTimeOut(int pingTimeOut) {
-		this.pingTimeOut = pingTimeOut;
+		this.writeTimeout = pingTimeOut;
 	}
 
 	/**
@@ -382,6 +382,7 @@ public class Dispatcher implements IoHandler{
 			try {
 				while(!isRequestResultPresent(sequenceId)) {
 					monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
+					
 					logger.trace("still waiting for result for sequenceId={}",sequenceId);
 				}
 			} catch (InterruptedException e) {

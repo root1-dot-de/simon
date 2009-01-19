@@ -20,8 +20,6 @@ package de.root1.simon.ssl;
 
 import javax.net.ssl.SSLContext;
 
-import de.root1.simon.Registry;
-
 /**
  * This class is used by SIMON to get a {@link SSLContext} for the client and
  * server side, which is required by SSL powered communication.
@@ -34,18 +32,11 @@ public interface SslContextFactory {
 
 	/**
 	 * Gets the {@link SSLContext} which is used by SIMON to create a SSL
-	 * powered {@link Registry}
+	 * powered link
 	 * 
 	 * @return a ssl context object
 	 */
-	public abstract SSLContext getServerContext();
+	public abstract SSLContext getSslContext();
 
-	/**
-	 * Gets the {@link SSLContext} which is used by SIMON for looking up a SSL
-	 * powered SIMON remote object
-	 * 
-	 * @return a ssl context object
-	 */
-	public abstract SSLContext getClientContext();
 
 }

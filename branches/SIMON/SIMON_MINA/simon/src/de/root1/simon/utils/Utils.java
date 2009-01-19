@@ -144,9 +144,10 @@ public class Utils {
 	}
 	
 	/**
-	 * TODO document me
+	 * Converts a long value to a hex string, i.e. 0xF923
+	 * 
 	 * @param l
-	 * @return 
+	 * @return return a string showing the hex value of parameter l
 	 */
 	public static String longToHexString(long l){
 		

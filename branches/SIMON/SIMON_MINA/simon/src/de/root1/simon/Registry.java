@@ -164,7 +164,7 @@ public final class Registry {
 
 		
 		if (sslContextFactory!=null) {
-				SSLContext context = sslContextFactory.getServerContext();
+				SSLContext context = sslContextFactory.getSslContext();
 				
 				if (context!=null) {
 					SslFilter sslFilter = new SslFilter(context);
