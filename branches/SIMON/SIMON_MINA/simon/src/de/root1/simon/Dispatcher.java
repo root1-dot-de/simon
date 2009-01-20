@@ -105,7 +105,7 @@ public class Dispatcher implements IoHandler{
 
 	/** TODO document me */
 	private int writeTimeout = Statics.DEFAULT_WRITE_TIMEOUT;
-	
+
 	/**
 	 * TODO document me
 	 * @return the pingTimeOut
@@ -663,6 +663,7 @@ public class Dispatcher implements IoHandler{
 		logger.debug("session created. session={}", session);
 		session.setAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE, lookupTable); // attach the lookup table to the session
 		session.setAttribute(Statics.SESSION_ATTRIBUTE_DISPATCHER, this); // attach a reference to the dispatcher.
+
 	}
 
 	/*

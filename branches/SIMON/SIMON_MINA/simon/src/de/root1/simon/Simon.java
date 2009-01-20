@@ -38,6 +38,7 @@ import java.util.logging.LogManager;
 import javax.net.ssl.SSLContext;
 
 import org.apache.mina.core.RuntimeIoException;
+import org.apache.mina.core.filterchain.DefaultIoFilterChainBuilder;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.future.IoFuture;
@@ -54,6 +55,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.root1.simon.codec.SimonProxyFilter;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
@@ -279,8 +281,9 @@ public class Simon {
 	 *             if there's no such object on the server
 	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-		return lookup(null, host, port, remoteObjectName);
+		return lookup(null, null, host, port, remoteObjectName);
 	}
+	
 	
 	/**
 	 * 
@@ -293,6 +296,8 @@ public class Simon {
 	 * 
 	 * @param sslContextFactory
 	 *            the factory for creating the ssl context. <b>No SSL is used if
+	 *            <code>null</code> is given!</b>
+	 * @param proxyConfig configuration details for connecting via proxy. <b>No proxy is used if
 	 *            <code>null</code> is given!</b>
 	 * @param host
 	 *            host address where the lookup takes place
@@ -311,7 +316,7 @@ public class Simon {
 	 * @throws LookupFailedException
 	 *             if there's no such object on the server
 	 */
-	public static SimonRemote lookup(SslContextFactory sslContextFactory, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+	public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		logger.debug("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
@@ -343,42 +348,39 @@ public class Simon {
 				dispatcher = new Dispatcher(serverString, getThreadPool());
 				
 				IoConnector connector = new NioSocketConnector();
-				
 				connector.setHandler(dispatcher);
-								
-				ConnectFuture future = connector.connect(new InetSocketAddress(host, port));
-				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
-				try{
-					session = future.getSession();
-				} catch (RuntimeIoException e){
-					
-					logger.warn("Cannot connect to {} on port {}. Establish connection failed. Error was: {}",new Object[]{host, port, future.getException().getMessage()});
-					throw new EstablishConnectionFailed("Cannot connect to "+host+" on port "+port+". Establish connection failed. Error was: "+future.getException().getMessage());
-				}
 				
-				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, Statics.DEFAULT_IDLE_TIME );
-				session.getConfig().setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+				/* ******************************************
+				 * Setup filterchain before connecting to get all events like session created
+				 * and session opened within the filters  
+				 */				
+				DefaultIoFilterChainBuilder filterChain = connector.getFilterChain();
 				
 				if (logger.isTraceEnabled())
-					session.getFilterChain().addLast( "logger", new LoggingFilter() );
+					filterChain.addLast( "logger", new LoggingFilter() );
 
+				if (proxyConfig!=null)
+					filterChain.addLast( "simonproxyfilter", new SimonProxyFilter(host.getHostName(),port,proxyConfig.isAuthRequired(), proxyConfig.getUsername(), proxyConfig.getPassword()) );
+
+				// check for SSL
 				if (sslContextFactory!=null) {
 					SSLContext context = sslContextFactory.getSslContext();
 					
 					if (context!=null) {
 						SslFilter sslFilter = new SslFilter(context);
 						sslFilter.setUseClientMode(true); // only on client side needed
-						session.getFilterChain().addLast("sslFilter", sslFilter);
+						filterChain.addLast("sslFilter", sslFilter);
 						logger.debug("SSL ON");
 					} else {
 						logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
 					}
 				}
 				
+				// add an executor service to handle the message reading in a threadpool
 				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
-				session.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
+				filterChain.addLast("executor", new ExecutorFilter(filterchainWorkerPool));
 				
-				
+				// add the simon protocol
 				SimonProtocolCodecFactory protocolFactory = null;
 				try {
 					protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
@@ -393,24 +395,40 @@ public class Simon {
 					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
 				}
 				protocolFactory.setup(false);
+				filterChain.addLast("codec", new ProtocolCodecFilter(protocolFactory));
 				
-				session.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
+				// now we can connect ...
+				ConnectFuture future;
+				if (proxyConfig==null)
+					future = connector.connect(new InetSocketAddress(host, port));
+				else 
+					future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
 				
-				logger.trace("connected with server: host={} port={} remoteObjectName={}", new Object[]{host, port, remoteObjectName});
+				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
+				try{
+					session = future.getSession();
+					logger.trace("connected with server: host={} port={} remoteObjectName={}", new Object[]{host, port, remoteObjectName});
+				} catch (RuntimeIoException e){
+					
+					logger.warn("Cannot connect to {} on port {}. Establish connection failed. Error was: {}",new Object[]{host, port, future.getException().getMessage()});
+					throw new EstablishConnectionFailed("Cannot connect to "+host+" on port "+port+". Establish connection failed. Error was: "+future.getException().getMessage());
+				}
+				
+				// configure the session
+				session.getConfig().setIdleTime( IdleStatus.BOTH_IDLE, Statics.DEFAULT_IDLE_TIME );
+				session.getConfig().setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
 				
 				// store this connection for later re-use
 				ClientToServerConnection ctsc = new ClientToServerConnection(serverString,dispatcher,session, connector, filterchainWorkerPool);
 				ctsc.addRef();
 				serverDispatcherRelation.put(serverString, ctsc);
-				
 			}
-			
 		}
 			
 		/*
 		 * Create array with interfaces the proxy should have
 		 * first contact server for lookup of interfaces
-		 * this request blocks!
+		 * --> this request blocks!
 		 */
 		MsgLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
 		
