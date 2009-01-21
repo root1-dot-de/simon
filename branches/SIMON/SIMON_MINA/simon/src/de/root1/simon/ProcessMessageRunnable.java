@@ -188,7 +188,7 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("begin");
 		logger.debug("processing MsgOpenRawChannelReturn...");
 		MsgOpenRawChannelReturn msg = (MsgOpenRawChannelReturn) abstractMessage;
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 		logger.debug("put result to queue={}", msg);
 		logger.debug("end");
 	}
@@ -213,7 +213,7 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("begin");
 		logger.debug("processing MsgCloseRawChannelReturn...");
 		MsgCloseRawChannelReturn msg = (MsgCloseRawChannelReturn) abstractMessage;
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 		logger.debug("put result to queue={}", msg);
 		logger.debug("end");
 	}
@@ -272,7 +272,7 @@ public class ProcessMessageRunnable implements Runnable {
 		MsgLookupReturn msg = (MsgLookupReturn)abstractMessage;
 		
 		logger.debug("Forward result to waiting monitor");
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 			
 		logger.debug("end");
 	}
@@ -377,7 +377,7 @@ public class ProcessMessageRunnable implements Runnable {
 
 		logger.debug("processing MsgInvokeReturn...");
 		MsgInvokeReturn msg = (MsgInvokeReturn) abstractMessage;
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 		
 		logger.debug("put result to queue={}", msg);
 		
@@ -411,7 +411,7 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("begin");
 		logger.debug("processing MsgToStringReturn...");
 		MsgToStringReturn msg = (MsgToStringReturn) abstractMessage;
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 		 
 		logger.debug("put result to queue={}", msg);
 		 
@@ -460,7 +460,7 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("begin");
 		logger.debug("processing MsgEqualsReturn...");
 		MsgEqualsReturn msg = (MsgEqualsReturn) abstractMessage;
-		dispatcher.putResultToQueue(msg.getSequence(), msg);
+		dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 		 
 		logger.debug("put result to queue={}", msg);
 		 
@@ -494,7 +494,7 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("begin");
 		logger.debug("processing MsgHashCodeReturn...");
 		 MsgHashCodeReturn msg = (MsgHashCodeReturn) abstractMessage;
-		 dispatcher.putResultToQueue(msg.getSequence(), msg);
+		 dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 		 
 		 logger.debug("put result to queue={}", msg);
 		 
