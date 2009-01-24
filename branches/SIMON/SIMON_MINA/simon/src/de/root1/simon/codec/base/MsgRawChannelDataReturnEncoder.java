@@ -18,43 +18,32 @@
  */
 package de.root1.simon.codec.base;
 
-import java.nio.ByteBuffer;
-
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.messages.MsgRawChannelData;
+import de.root1.simon.codec.messages.MsgRawChannelDataReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgRawChannelData}.
+ * A {@link MessageEncoder} that encodes {@link MsgRawChannelDataReturn}.
  *
  * @author ACHR
  */
-public class MsgRawChannelDataEncoder<T extends MsgRawChannelData> extends AbstractMessageEncoder<T> {
+public class MsgRawChannelDataReturnEncoder<T extends MsgRawChannelDataReturn> extends AbstractMessageEncoder<T> {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
-    public MsgRawChannelDataEncoder() {
-        super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA);
+    public MsgRawChannelDataReturnEncoder() {
+        super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA_RETURN);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	ByteBuffer bb = message.getData();
-    	
-    	// if a flip is needed
-    	if (bb.position()>0)
-    		bb.flip();
-    	
-    	int dataSize=bb.limit();
-    	logger.trace("begin. message={} dataSize={}",message, dataSize);
-    	out.putInt(dataSize+4); // size = capacity + 4 bytes for integer channel token
-    	out.putInt(message.getChannelToken()); // integer(4byte) -> token value
-    	out.put(bb); // raw data
+    	logger.trace("begin. message="+message);
+    	out.put((byte)0xff);
 		logger.trace("end");
     }
 

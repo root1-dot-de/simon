@@ -198,8 +198,8 @@ public final class Registry {
 		
 		acceptor.setHandler(dispatcher);
 		logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec",Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
-        setDgcInterval(Statics.DEFAULT_IDLE_TIME);
-        setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+        setKeepAliveInterval(Statics.DEFAULT_IDLE_TIME);
+        setKeepAliveTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
         
         
         logger.trace("Listening on {} on port {}",address,port);
@@ -214,32 +214,32 @@ public final class Registry {
 	 * TODO document me
 	 * @param timeout
 	 */
-	public void setWriteTimeout(int timeout) {
+	public void setKeepAliveTimeout(int timeout) {
 		acceptor.getSessionConfig().setWriteTimeout(timeout);
 		dispatcher.setPingTimeOut(timeout);
-		logger.debug("setting write timeout to {} sec.", timeout);
+		logger.debug("setting KeepAlive timeout to {} sec.", timeout);
 	}
 
 	/**
 	 * TODO document me
 	 * @param interval
 	 */
-	public void setDgcInterval(int interval) {
+	public void setKeepAliveInterval(int interval) {
 		acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, interval );
-		logger.debug("setting dgc interval to {} sec.", interval);
+		logger.debug("setting KeepAlive interval to {} sec.", interval);
 	}
 	
 	/**
 	 * TODO document me
 	 */
-	public int getWriteTimeout() {
+	public int getKeepAliveTimeout() {
 		return acceptor.getSessionConfig().getWriteTimeout();
 	}
 
 	/**
 	 * TODO document me
 	 */
-	public int getDgcInterval() {
+	public int getKeepAliveInterval() {
 		return acceptor.getSessionConfig().getIdleTime( IdleStatus.BOTH_IDLE );
 	}
 	

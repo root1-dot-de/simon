@@ -89,11 +89,12 @@ public class RawChannel {
 	}
 	
 	/**
-	 * Writes the given buffer to the server. This method can be called several
+	 * Writes the given buffer (position 0 up to current position) to the server. This method can be called several
 	 * times. The system ensures that the data receives in the order it was
-	 * sent. <i><b>Note:</b> Each buffer has to be wrapped by the simon protocol. The
+	 * sent. <i><b>Note:</b> Each buffer has to be wrapped by the SIMON protocol. The
 	 * overhead is about 9 byte per write() call. So you should not send too
-	 * small packets, otherwise you have some bandwidth loss!</i>
+	 * small packets, otherwise you have some bandwidth loss!</i><br>
+	 * <b>Note:</b> Calling this method will block until the server received the data!
 	 * 
 	 * @param byteBuffer
 	 *            the buffer who's content is written to the server

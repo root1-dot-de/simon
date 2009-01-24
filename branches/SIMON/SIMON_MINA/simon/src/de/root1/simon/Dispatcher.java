@@ -897,6 +897,9 @@ public class Dispatcher implements IoHandler{
 		final int sequenceId = generateSequenceId(); 
 		
 		logger.debug("begin sequenceId={} session={}", sequenceId, session);
+
+		// create a monitor that waits for the request-result
+		final Monitor monitor = createMonitor(session, sequenceId);
 		
 		MsgRawChannelData msgRawChannelData = new MsgRawChannelData();
 		msgRawChannelData.setSequence(sequenceId);
@@ -905,7 +908,13 @@ public class Dispatcher implements IoHandler{
 		
 		session.write(msgRawChannelData);
 		
-		logger.debug("end. data send for sequenceId={} and channelToken={}", sequenceId, channelToken);
+		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
+
+		waitForResult(monitor);
+//		MsgRawChannelDataReturn result = (MsgRawChannelDataReturn) getRequestResult(sequenceId);			
+		getRequestResult(sequenceId); //retrieve the return msg to remove the monitor etc.
+		
+		logger.debug("end. got ack for data send for sequenceId={} and channelToken={}", sequenceId, channelToken);
 	}
 
 	protected void closeRawChannel(IoSession session, int channelToken) {

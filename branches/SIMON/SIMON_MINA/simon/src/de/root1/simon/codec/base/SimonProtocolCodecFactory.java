@@ -35,6 +35,7 @@ import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
 import de.root1.simon.codec.messages.MsgPing;
 import de.root1.simon.codec.messages.MsgPong;
 import de.root1.simon.codec.messages.MsgRawChannelData;
+import de.root1.simon.codec.messages.MsgRawChannelDataReturn;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 
@@ -163,6 +164,11 @@ public class SimonProtocolCodecFactory extends DemuxingProtocolCodecFactory {
         super.addMessageEncoder(MsgRawChannelData.class, MsgRawChannelDataEncoder.class);
         // incoming channel data 
         super.addMessageDecoder(MsgRawChannelDataDecoder.class);
+        
+        // outgoing channel data return
+        super.addMessageEncoder(MsgRawChannelDataReturn.class, MsgRawChannelDataReturnEncoder.class);
+        // incoming channel data return 
+        super.addMessageDecoder(MsgRawChannelDataReturnDecoder.class);
         
         /*
          * ping/pong handling

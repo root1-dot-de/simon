@@ -53,11 +53,11 @@ public final class SimonMessageConstants {
 	public static final byte MSG_CLOSE_RAW_CHANNEL_RETURN = 0x0D;
 	
 	public static final byte MSG_RAW_CHANNEL_DATA = 0x0E;
-	public static final byte MSG_RAW_CHANNEL_RECV_ERROR = 0x0F;
+	public static final byte MSG_RAW_CHANNEL_DATA_RETURN = 0x0F;
 	
 	public static final byte MSG_PING = 0x10;
 	public static final byte MSG_PONG = 0x11;
-
+	
     private SimonMessageConstants() {
     }
 }

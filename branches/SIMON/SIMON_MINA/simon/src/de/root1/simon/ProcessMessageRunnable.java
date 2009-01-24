@@ -40,6 +40,7 @@ import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.codec.messages.MsgOpenRawChannel;
 import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
 import de.root1.simon.codec.messages.MsgRawChannelData;
+import de.root1.simon.codec.messages.MsgRawChannelDataReturn;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
@@ -135,6 +136,10 @@ public class ProcessMessageRunnable implements Runnable {
 				processRawChannelData();
 				break;
 				
+			case SimonMessageConstants.MSG_RAW_CHANNEL_DATA_RETURN:
+				processRawChannelDataReturn();
+				break;
+				
 			case SimonMessageConstants.MSG_PING:
 				processPing();
 				break;
@@ -150,6 +155,18 @@ public class ProcessMessageRunnable implements Runnable {
 				break;
 		}
 		
+	}
+
+	private void processRawChannelDataReturn() {
+		logger.debug("begin");
+
+		logger.debug("processing MsgRawChannelDataReturn...");
+		MsgRawChannelDataReturn msg = (MsgRawChannelDataReturn) abstractMessage;
+		dispatcher.putResultToQueue(session, msg.getSequence(), msg);
+		
+		logger.debug("put result to queue={}", msg);
+		
+		logger.debug("end");
 	}
 
 	private void processPing() {
@@ -226,9 +243,12 @@ public class ProcessMessageRunnable implements Runnable {
 		
 		RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
 		if (rawChannelDataListener!=null){
-			logger.debug("writing data to {}.",rawChannelDataListener);
+			logger.debug("writing data to {} for token {}.",rawChannelDataListener, msg.getChannelToken());
 			rawChannelDataListener.write(msg.getData());
-			logger.debug("data forwarded to listener");
+			logger.debug("data forwarded to listener for token {}", msg.getChannelToken());
+			MsgRawChannelDataReturn returnMsg = new MsgRawChannelDataReturn();
+			returnMsg.setSequence(msg.getSequence());
+			session.write(returnMsg);
 		} else {
 			logger.error("trying to forward data to a not registered or already closed listener: token={} data={}",msg.getChannelToken(),msg.getData());
 		}

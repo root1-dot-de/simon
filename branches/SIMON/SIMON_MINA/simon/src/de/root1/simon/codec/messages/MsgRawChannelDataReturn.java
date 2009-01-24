@@ -18,49 +18,24 @@
  */
 package de.root1.simon.codec.messages;
 
-import java.nio.ByteBuffer;
 
 /**
- * <code>RawChannelData</code> message
+ * <code>RawChannelDataReturn</code> message
  *
  * @author ACHR
  */
-public class MsgRawChannelData extends AbstractMessage {
+public class MsgRawChannelDataReturn extends AbstractMessage {
 	
     private static final long serialVersionUID = 1L;
 
-    /*
-     * Just for debugging: Channeltokes are spread over the whole size of integer.
-     * So, at beginning, the initial value is 1. But the token generator will take 
-     * Integer.MIN_VALUE. So you can see if there's a token problem if at beginning the token size is positive instead of negative.
-     */
-    private int channelToken = 1;
-    private ByteBuffer data;
-    
-    public MsgRawChannelData() {
-    	super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA);
-    }
-
-    public int getChannelToken() {
-        return channelToken;
-    }
-
-    public void setChannelToken(int channelToken) {
-        this.channelToken = channelToken;
-    }
-    
-    public void setData(ByteBuffer byteBuffer){
-    	this.data = byteBuffer;
-    }
-    
-    public ByteBuffer getData(){
-    	return data;
+    public MsgRawChannelDataReturn() {
+    	super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA_RETURN);
     }
 
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgRawChannelData(channelToken=" + channelToken + "|data="+data+")";
+        return getSequence() + ":MsgRawChannelDataReturn()";
     }
 
 }

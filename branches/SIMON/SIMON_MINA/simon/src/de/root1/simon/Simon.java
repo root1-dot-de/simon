@@ -703,7 +703,7 @@ public class Simon {
 	 * 
 	 * @param milliseconds
 	 *            time in milliseconds
-	 * @deprecated	use {@link Simon#setDefaultDgcInterval(int)} instead!
+	 * @deprecated	use {@link Simon#setDefaultKeepAliveInterval(int)} instead!
 	 */
 	public static void setDgcInterval(int milliseconds){
 		Statics.DEFAULT_IDLE_TIME = milliseconds/1000;
@@ -713,43 +713,43 @@ public class Simon {
 	 * Gets the DGC's interval time in milliseconds 
 	 * 
 	 * @return the current set DGC interval
-	 * @deprecated	use {@link Simon#getDefaultDgcInterval()} instead!
+	 * @deprecated	use {@link Simon#getKeepAliveInterval()} instead!
 	 */
 	public static int getDgcInterval(){
 		return Statics.DEFAULT_IDLE_TIME*1000;
 	}
 	
 	/**
-	 * Sets the DGC's default interval time in seconds.
+	 * Sets the keep alive default interval time in seconds.
 	 * This value is used as a default value for all new connections.
 	 * 
 	 * @param seconds
 	 *            time in seconds
 	 */
-	public static void setDefaultDgcInterval(int seconds){
-		logger.debug("setting default dgc interval to {} sec.", seconds);
+	public static void setDefaultKeepAliveInterval(int seconds){
+		logger.debug("setting default keep alive interval to {} sec.", seconds);
 		Statics.DEFAULT_IDLE_TIME = seconds;
 	}
 	
 	/**
-	 * Gets the DGC's default interval time in seconds.
+	 * Gets the default keep-alive interval time in seconds.
 	 * This value is the used default value for all new connections. 
 	 * 
-	 * @return the current set DGC interval
+	 * @return the current set keep alive interval
 	 */
-	public static int getDefaultDgcInterval(){
+	public static int getKeepAliveInterval(){
 		return Statics.DEFAULT_IDLE_TIME;
 	}
 	
 	/**
-	 * Sets the default networik write timeout time in seconds.
+	 * Sets the default keep alive timeout time in seconds.
 	 * This value is used as a default value for all new connections.
 	 * 
 	 * @param seconds
 	 *            time in seconds
 	 */
-	public static void setDefaultWriteTimeout(int seconds){
-		logger.debug("setting default write timeout to {} sec.", seconds);
+	public static void setDefaultKeepAliveTimeout(int seconds){
+		logger.debug("setting default keep alive timeout to {} sec.", seconds);
 		Statics.DEFAULT_WRITE_TIMEOUT = seconds;
 	}
 	
@@ -759,41 +759,41 @@ public class Simon {
 	 * 
 	 * @return the current set network write timeout
 	 */
-	public static int getDefaultWriteTimeout(){
-		return Statics.DEFAULT_IDLE_TIME;
+	public static int getDefaultKeepAliveTimeout(){
+		return Statics.DEFAULT_WRITE_TIMEOUT;
 	}
 	
 	/**
-	 * Sets the DGC's interval time in seconds for the specified remote object
+	 * Sets the keep alive interval time in seconds for the specified remote object
 	 * 
 	 * @param seconds
 	 *            time in seconds
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
-	public static void setDgcInterval(Object remoteObject, int seconds) throws IllegalArgumentException {
-		logger.debug("setting dgc interval on {} to {} sec.", remoteObject, seconds);
+	public static void setKeepAliveInterval(Object remoteObject, int seconds) throws IllegalArgumentException {
+		logger.debug("setting keep alive interval on {} to {} sec.", remoteObject, seconds);
 		getSimonProxy(remoteObject).getIoSession().getConfig().setIdleTime(IdleStatus.BOTH_IDLE, seconds);
 	}
 	
 	/**
-	 * Gets the DGC's interval time in seconds of the given remote object.
+	 * Gets the keep alive interval time in seconds of the given remote object.
 	 * 
-	 * @return current set DGC interval of given remote object
+	 * @return current set keep alive interval of given remote object
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
-	public static int getDgcInterval(Object remoteObject) throws IllegalArgumentException {
+	public static int getKeepAliveInterval(Object remoteObject) throws IllegalArgumentException {
 		return getSimonProxy(remoteObject).getIoSession().getConfig().getIdleTime(IdleStatus.BOTH_IDLE);
 	}
 	
 	/**
-	 * Sets the network write timeout time in seconds for the specified remote object.
+	 * Sets the keep alive timeout time in seconds for the specified remote object.
 	 * 
 	 * @param seconds
 	 *            time in seconds
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
-	public static void setWriteTimeout(Object remoteObject, int seconds) throws IllegalArgumentException {
-		logger.debug("setting write timeout on {} to {} sec.", remoteObject, seconds);
+	public static void setKeepAliveTimeout(Object remoteObject, int seconds) throws IllegalArgumentException {
+		logger.debug("setting keep alive timeout on {} to {} sec.", remoteObject, seconds);
 		getSimonProxy(remoteObject).getIoSession().getConfig().setWriteTimeout(seconds);
 	}
 	
