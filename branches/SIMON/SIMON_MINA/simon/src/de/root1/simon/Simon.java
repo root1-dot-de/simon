@@ -992,6 +992,7 @@ public class Simon {
 	 * @return a token that identifies the prepared channel
 	 */
 	public static int prepareRawChannel(RawChannelDataListener listener, SimonRemote simonRemote){
+		logger.debug("preparing raw channel f listener {}", listener);
 		Dispatcher dispatcher = getDispatcher(simonRemote);
 		if (dispatcher!=null){
 			return dispatcher.prepareRawChannel(listener);
@@ -1028,6 +1029,7 @@ public class Simon {
 	 */
 	private static Dispatcher getDispatcher(SimonRemote simonRemote){
 		for (LookupTable lookupTable : lookupTableList) {
+			logger.debug("searching in LookupTable {} for simonRemote {}", lookupTable, simonRemote);
 			if (lookupTable.isSimonRemoteRegistered(simonRemote)){
 				return lookupTable.getDispatcher();
 			}

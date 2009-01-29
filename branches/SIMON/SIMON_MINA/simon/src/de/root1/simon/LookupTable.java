@@ -370,6 +370,7 @@ public class LookupTable {
 	 * @return
 	 */
 	protected boolean isSimonRemoteRegistered(SimonRemote simonRemote) {
+		logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectHashMap);
 		if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) 
 			return true;
 		return false;
