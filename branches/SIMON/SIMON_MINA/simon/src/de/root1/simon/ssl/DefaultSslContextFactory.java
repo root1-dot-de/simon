@@ -18,6 +18,7 @@
  */
 package de.root1.simon.ssl;
 
+import java.io.EOFException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -80,6 +81,9 @@ public class DefaultSslContextFactory implements SslContextFactory {
 	public DefaultSslContextFactory(String pathToKeystore,
 			String keystorePass) throws NoSuchAlgorithmException, FileNotFoundException, KeyStoreException, CertificateException, IOException, UnrecoverableKeyException, KeyManagementException {
 	
+		if (pathToKeystore==null) throw new IllegalArgumentException("path to keystore cannot be null");
+		if (keystorePass==null) throw new IllegalArgumentException("keystorepass cannot be null. Maybe \"\", but not null.");
+		
 		sslContext = null;
 
 		sslContext = SSLContext.getInstance("TLS");
@@ -142,7 +146,7 @@ public class DefaultSslContextFactory implements SslContextFactory {
 			throws FileNotFoundException, KeyStoreException, IOException,
 			NoSuchAlgorithmException, CertificateException {
 		
-		KeyStore store;
+		KeyStore store = null;
 		FileInputStream fin = null;
 		
 		try {
@@ -150,8 +154,13 @@ public class DefaultSslContextFactory implements SslContextFactory {
 			store = KeyStore.getInstance(_KEYSTORE_TYPE_);
 			store.load(fin, aPassword != null ? aPassword.toCharArray() : null);
 
+		} catch (FileNotFoundException e){
+			throw new FileNotFoundException("the keystorefile specified by the path '"+aPath+"' was not found.");
+		} catch (EOFException e) {
+			throw new KeyStoreException("An error occured while loading the keystore file. Error was: "+e);
 		} finally {
-			fin.close();
+			if (fin!=null) 
+				fin.close();
 		}
 		return store;
 	}
