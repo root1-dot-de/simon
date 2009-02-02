@@ -404,10 +404,15 @@ public class Simon {
 				else 
 					future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
 				
+				
 				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
 				try{
 					session = future.getSession();
-					logger.trace("connected with server: host={} port={} remoteObjectName={}", new Object[]{host, port, remoteObjectName});
+					if (session!=null) {
+						logger.trace("connected with server: host={} port={} remoteObjectName={}", new Object[]{host, port, remoteObjectName});
+					} else {
+						throw new EstablishConnectionFailed("could not establish session to "+host+" on port "+port+". Maybe host is down?");
+					}
 				} catch (RuntimeIoException e){
 					
 					logger.warn("Cannot connect to {} on port {}. Establish connection failed. Error was: {}",new Object[]{host, port, future.getException().getMessage()});
@@ -564,8 +569,8 @@ public class Simon {
 			if (invocationHandler instanceof SimonProxy){
 				logger.trace("Yeeha. It's a SimonProxy ...");
 				return (SimonProxy) invocationHandler;
-			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy");
-		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy");
+			} else throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy. Object was: "+o);
+		} else throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy. Object was: "+o);
 	}
 
 	/**
@@ -966,9 +971,14 @@ public class Simon {
 	 *            <code>channelToken</code>. Note: This <b>has to be</b> a remote object stub.
 	 */
 	public static RawChannel openRawChannel(int channelToken, SimonRemote simonRemote){
+		logger.debug("begin. token={}", channelToken);
 		SimonProxy simonProxy = getSimonProxy(simonRemote);
+		logger.trace("simon proxy detail string for given simonRemote: {}",simonProxy.getDetailString());
 		Dispatcher dispatcher = simonProxy.getDispatcher();
+		logger.trace("dispatcher for given simonRemote: {}",dispatcher);
 		RawChannel rawChannel = dispatcher.openRawChannel(simonProxy.getIoSession(), channelToken);
+		logger.debug("raw channel for token {} is {}",channelToken, rawChannel);
+		logger.debug("end.");
 		return rawChannel;
 	}
 	
@@ -992,7 +1002,7 @@ public class Simon {
 	 * @return a token that identifies the prepared channel
 	 */
 	public static int prepareRawChannel(RawChannelDataListener listener, SimonRemote simonRemote){
-		logger.debug("preparing raw channel f listener {}", listener);
+		logger.debug("preparing raw channel for listener {}", listener);
 		Dispatcher dispatcher = getDispatcher(simonRemote);
 		if (dispatcher!=null){
 			return dispatcher.prepareRawChannel(listener);

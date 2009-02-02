@@ -111,7 +111,7 @@ public class LookupTable {
 	private void addRemoteObjectToHashMap(SimonRemote remoteObject) {
 		int hashCode=remoteObject.hashCode();
 		remoteobjectHashMap.put(hashCode, remoteObject);
-		logger.trace("Adding SimonRemote with hash={}", hashCode);
+		logger.trace("Adding SimonRemote {} with hash={}", remoteObject, hashCode);
 	}
 	
 	/**

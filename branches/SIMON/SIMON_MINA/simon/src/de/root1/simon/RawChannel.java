@@ -102,8 +102,11 @@ public class RawChannel {
 	 * @throws IllegalStateException if the channel is already closed.            
 	 */
 	public void write(ByteBuffer byteBuffer) throws IllegalStateException {
-		if (channelOpen)
+		if (channelOpen) {
+			logger.trace("token={}. channel open. forwarding to dispatcher ...", channelToken);
 			dispatcher.writeRawData(session, channelToken, byteBuffer);
+			logger.trace("token={}. data forwarded", channelToken);
+		}
 		else
 			throw new IllegalStateException("Instance of RawChannel already closed!");
 	}
