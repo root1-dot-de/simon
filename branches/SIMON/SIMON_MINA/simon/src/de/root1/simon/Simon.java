@@ -414,8 +414,14 @@ public class Simon {
 						throw new EstablishConnectionFailed("could not establish session to "+host+" on port "+port+". Maybe host is down?");
 					}
 				} catch (RuntimeIoException e){
-					
 					logger.warn("Cannot connect to {} on port {}. Establish connection failed. Error was: {}",new Object[]{host, port, future.getException().getMessage()});
+					if (session!=null) {
+						logger.trace("session != null. closing it...");
+						session.close(true);
+					}
+					connector.dispose();
+					dispatcher.shutdown();
+					filterchainWorkerPool.shutdown();
 					throw new EstablishConnectionFailed("Cannot connect to "+host+" on port "+port+". Establish connection failed. Error was: "+future.getException().getMessage());
 				}
 				
