@@ -72,7 +72,7 @@ import de.root1.simon.utils.Utils;
 public class Simon {
 	
 	/**
-	 * TODO document me
+	 * The logger used for this class
 	 */
 	private final static Logger logger = LoggerFactory.getLogger(Simon.class);
 	
@@ -82,17 +82,17 @@ public class Simon {
 	private static final HashMap<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
 	
 	/**
-	 * TODO document me
+	 * The size of the used thread pool. -1 indicates a cached thread pool.
 	 */
 	private static int poolSize = -1;
 
 	/**
-	 * TODO document me
+	 * A list of publishments. This is used by the publish service server.
 	 */
 	private static List<SimonPublication> publishments = new ArrayList<SimonPublication>();
 
 	/**
-	 * TODO document me
+	 * the publish service server that is used when remote objects are published
 	 */
 	private static PublishService publishService;
 
@@ -104,10 +104,10 @@ public class Simon {
 	/**
 	 * Identifies the class, that is used as SIMON's standard protocol codec factory
 	 */
-	public static final String SIMON_STD_PROTOCOL_CODEC_FACTORY = "de.root1.simon.codec.base.SimonProtocolCodecFactory";
+	protected static final String SIMON_STD_PROTOCOL_CODEC_FACTORY = "de.root1.simon.codec.base.SimonProtocolCodecFactory";
 
 	/**
-	 * TODO document me
+	 * The current set name of the protocol factory class
 	 */
 	private static String protocolFactoryClassName = SIMON_STD_PROTOCOL_CODEC_FACTORY;
 
@@ -180,7 +180,7 @@ public class Simon {
 	 *            the registry to shut down
 	 * 
 	 * @deprecated You should call <code>stop()</code> on the registry to
-	 *             shutdown the registry instead of this method.
+	 *             shutdown the registry instead of using this method.
 	 */
 	public static void shutdownRegistry(Registry registry) throws IllegalStateException {
 		if (registry.isRunning()) 
@@ -809,12 +809,12 @@ public class Simon {
 	}
 	
 	/**
-	 * Gets the network write timeout time in seconds of the given remote object.
+	 * Gets the keep alive timeout time in seconds of the given remote object.
 	 * 
-	 * @return current set network write timeout of given remote object
+	 * @return current set keep alive timeout of given remote object
 	 * @throws IllegalArgumentException if the object is not a valid remote object
 	 */
-	public static int getWriteTimeout(Object remoteObject) throws IllegalArgumentException {
+	public static int getKeepAliveTimeout(Object remoteObject) throws IllegalArgumentException {
 		return getSimonProxy(remoteObject).getIoSession().getConfig().getWriteTimeout();
 	}
 

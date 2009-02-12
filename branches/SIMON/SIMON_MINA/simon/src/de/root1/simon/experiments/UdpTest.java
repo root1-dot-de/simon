@@ -23,15 +23,15 @@ public class UdpTest {
 		Dispatcher dispatcher = new Dispatcher("",Executors.newCachedThreadPool());
 		
 		SimonProtocolCodecFactory protocolFactory = null;
-		try {
-			protocolFactory = Utils.getProtocolFactoryInstance(Simon.SIMON_STD_PROTOCOL_CODEC_FACTORY);
-		} catch (ClassNotFoundException e) {
-			// already proved
-		} catch (InstantiationException e) {
-			// already proved
-		} catch (IllegalAccessException e) {
-			// already proved
-		}
+//		try {
+//			//protocolFactory = Utils.getProtocolFactoryInstance(Simon.SIMON_STD_PROTOCOL_CODEC_FACTORY);
+//		} catch (ClassNotFoundException e) {
+//			// already proved
+//		} catch (InstantiationException e) {
+//			// already proved
+//		} catch (IllegalAccessException e) {
+//			// already proved
+//		}
 		protocolFactory.setup(true);
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
         

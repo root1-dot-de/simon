@@ -150,11 +150,6 @@ public class Dispatcher implements IoHandler{
 		
 		this.pingWatchdog = new PingWatchdog(this);
 		
-//		// FIXME ...
-//		if (serverString==null) {
-//			sequenceIdCounter = 1000;
-//		}
-		
 		logger.debug("end");
 	}
 	
@@ -396,21 +391,6 @@ public class Dispatcher implements IoHandler{
 				e.printStackTrace();
 			}
 		}
-	}
-
-
-	/**
-	 * Wake the process with the related sequenceId
-	 * 
-	 * @param sequenceId the process to wake  
-	 */
-	protected void wakeWaitingProcess(int sequenceId) {
-		
-		logger.debug("begin. wakeing sequenceId={}", sequenceId);
-		
-		// FIXME how to wake and present error?
-		
-		logger.trace("end. wakeing sequenceId={}", sequenceId);
 	}
 
 	/**

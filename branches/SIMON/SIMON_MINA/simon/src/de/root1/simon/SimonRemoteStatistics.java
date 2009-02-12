@@ -94,12 +94,14 @@ public interface SimonRemoteStatistics {
 	public abstract double getWrittenMessagesThroughput();
 	
 	/**
-	 * TODO document me
+	 * Returns the number of bytes that are scheduled for sending 
+	 * @return number of bytes scheduled
 	 */
 	public abstract long getScheduledWriteBytes();
 
 	/**
-	 * TODO document me
+	 * Returns the number of messages that are scheduled for sending
+	 * @return number of messages scheduled
 	 */
 	public abstract long getScheduledWriteMessages();
 

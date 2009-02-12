@@ -19,88 +19,133 @@
 package de.root1.simon;
 
 /**
- * TODO document me
+ * A pojo class that holds information about the proxy configuration 
+ * needed to establish a SIMON connection via a proxy server
+ * 
  * @author Alexander Christian
  * @version 200901201553
  *
  */
 public class SimonProxyConfig {
+
+	/**
+	 * Constructor for the proxy config class. Let's one set all needed
+	 * information at once. if authRequired==null, username and password can be null
+	 * 
+	 * @param proxyHost the proxy's host
+	 * @param proxyPort the proxy's port
+	 * @param authRequired does the proxy require an authentication?
+	 * @param username username, if authentication is required
+	 * @param password password, if authentication is required
+	 */
+	public SimonProxyConfig(String proxyHost, int proxyPort,
+			boolean authRequired, String username, String password) {
+		this.proxyHost = proxyHost;
+		this.proxyPort = proxyPort;
+		this.authRequired = authRequired;
+		this.username = username;
+		this.password = password;
+	}
 	
 	/**
 	 * The host of the proxy server
 	 */
 	private String proxyHost;
+	
 	/**
 	 * The port on which the proxy server listens
 	 */
 	private int proxyPort;
+	
 	/**
 	 * Does the proxy require authentication?
 	 */
 	private boolean authRequired = false;
+	
 	/**
 	 * username if authentication is required
 	 */
 	private String username;
+	
 	/**
 	 * Password if authentication is required
 	 */
 	private String password;
+	
 	/**
-	 * @return the proxyHost
+	 * Returns the current set proxy host
+	 * @return the proxy's host
 	 */
 	public String getProxyHost() {
 		return proxyHost;
 	}
+	
 	/**
-	 * @param proxyHost the proxyHost to set
+	 * Sets the proxy host to connect to
+	 * @param proxyHost the proxyHost to connect to
 	 */
 	public void setProxyHost(String proxyHost) {
 		this.proxyHost = proxyHost;
 	}
+	
 	/**
+	 * Returns the current set port on which the proxy listens for incoming connections
 	 * @return the proxyPort
 	 */
 	public int getProxyPort() {
 		return proxyPort;
 	}
+	
 	/**
-	 * @param proxyPort the proxyPort to set
+	 * Sets the port on which the proxy listens for incoming connections
+	 * @param proxyPort the proxy's port
 	 */
 	public void setProxyPort(int proxyPort) {
 		this.proxyPort = proxyPort;
 	}
+	
 	/**
-	 * @return the authRequired
+	 * Returns the current set "authentication required?" flag
+	 * @return true, if flag is set, false if not
 	 */
 	public boolean isAuthRequired() {
 		return authRequired;
 	}
+	
 	/**
-	 * @param authRequired the authRequired to set
+	 * Sets whether the proxy needs authentication or not
+	 * @param authRequired true, if auth. is required, false if not
 	 */
 	public void setAuthRequired(boolean authRequired) {
 		this.authRequired = authRequired;
 	}
+	
 	/**
+	 * Gets the username that was set for proxy authentication
 	 * @return the username
 	 */
 	public String getUsername() {
 		return username;
 	}
+	
 	/**
+	 * Sets the username that is needed for proxy authentication
 	 * @param username the username to set
 	 */
 	public void setUsername(String username) {
 		this.username = username;
 	}
+	
 	/**
+	 * Gets the password that was set for proxy authentication
 	 * @return the password
 	 */
 	public String getPassword() {
 		return password;
 	}
+	
 	/**
+	 * Sets the password that is needed for proxy authentication
 	 * @param password the password to set
 	 */
 	public void setPassword(String password) {

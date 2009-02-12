@@ -168,8 +168,9 @@ public class PublicationSearcher extends Thread {
 	}
 	
 	/**
-	 * TODO document me
-	 * @param listener
+	 * Adds a {@link SearchProgressListener} to this publication searcher. 
+	 * Each listener is notified about the current search progress.
+	 * @param listener the listener to add
 	 */
 	private void addSearchProgressListener(SearchProgressListener listener){
 		if (listener!=null)

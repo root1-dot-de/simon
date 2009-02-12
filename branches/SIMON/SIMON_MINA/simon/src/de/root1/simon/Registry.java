@@ -211,40 +211,48 @@ public final class Registry {
 	}
 
 	/**
-	 * TODO document me
-	 * @param timeout
+	 * Sets the keep alive timeout time in seconds for this registry.
+	 * 
+	 * @param seconds
+	 *            time in seconds
 	 */
-	public void setKeepAliveTimeout(int timeout) {
-		acceptor.getSessionConfig().setWriteTimeout(timeout);
-		dispatcher.setPingTimeOut(timeout);
-		logger.debug("setting KeepAlive timeout to {} sec.", timeout);
+	public void setKeepAliveTimeout(int seconds) {
+		acceptor.getSessionConfig().setWriteTimeout(seconds);
+		dispatcher.setPingTimeOut(seconds);
+		logger.debug("setting KeepAlive timeout to {} sec.", seconds);
 	}
 
 	/**
-	 * TODO document me
-	 * @param interval
+	 * Sets the keep alive interval time in seconds for this registry
+	 * 
+	 * @param seconds
+	 *            time in seconds
 	 */
-	public void setKeepAliveInterval(int interval) {
-		acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, interval );
-		logger.debug("setting KeepAlive interval to {} sec.", interval);
+	public void setKeepAliveInterval(int seconds) {
+		acceptor.getSessionConfig().setIdleTime( IdleStatus.BOTH_IDLE, seconds );
+		logger.debug("setting KeepAlive interval to {} sec.", seconds);
 	}
 	
 	/**
-	 * TODO document me
+	 * Gets the keep alive timeout time in seconds of this registry.
+	 * 
+	 * @return current set keep alive timeout
 	 */
 	public int getKeepAliveTimeout() {
 		return acceptor.getSessionConfig().getWriteTimeout();
 	}
 
 	/**
-	 * TODO document me
+	 * Gets the keep alive interval time in seconds of this registry.
+	 * 
+	 * @return current set keep alive interval
 	 */
 	public int getKeepAliveInterval() {
 		return acceptor.getSessionConfig().getIdleTime( IdleStatus.BOTH_IDLE );
 	}
 	
 	/**
-	 * Stops the registry. This clears the {@link LookupTable}, stops the
+	 * Stops the registry. This clears the {@link LookupTable} in the dispatcher, stops the
 	 * acceptor and the {@link Dispatcher}. After running this method, no
 	 * further connection/communication is possible with this registry.
 	 * 
@@ -264,10 +272,6 @@ public final class Registry {
 		logger.trace("Shutdown FilterchainWorkerPool ...");
 		filterchainWorkerPool.shutdown();
 
-// FIXME what was the intentionm to disable this?		
-//		logger.trace("Clearing LookupTable ...");
-//		lookupTableServer.cleanup();
-		
 		logger.trace("end");
 	}
 	
