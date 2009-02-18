@@ -48,6 +48,12 @@ public class SimonProxyConfig {
 	}
 	
 	/**
+	 * Default "empty" constructor. Please use the setter to define the proxy.
+	 */
+	public SimonProxyConfig() {
+	}
+
+	/**
 	 * The host of the proxy server
 	 */
 	private String proxyHost;

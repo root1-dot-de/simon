@@ -62,6 +62,7 @@ import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
+import de.root1.simon.utils.FilterEntry;
 import de.root1.simon.utils.SimonClassLoader;
 import de.root1.simon.utils.Utils;
 
@@ -347,6 +348,9 @@ public class Simon {
 				
 				dispatcher = new Dispatcher(serverString, getThreadPool());
 				
+				// an executor service for handling the message reading in a threadpool
+				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
+				
 				IoConnector connector = new NioSocketConnector();
 				connector.setHandler(dispatcher);
 				
@@ -356,12 +360,10 @@ public class Simon {
 				 */				
 				DefaultIoFilterChainBuilder filterChain = connector.getFilterChain();
 				
-				if (logger.isTraceEnabled())
-					filterChain.addLast( "logger", new LoggingFilter() );
-
-				if (proxyConfig!=null)
-					filterChain.addLast( "simonproxyfilter", new SimonProxyFilter(host.getHostName(),port,proxyConfig.isAuthRequired(), proxyConfig.getUsername(), proxyConfig.getPassword()) );
-
+				// create a list of used filters				
+				List<FilterEntry> filters = new ArrayList<FilterEntry>();
+				
+				
 				// check for SSL
 				if (sslContextFactory!=null) {
 					SSLContext context = sslContextFactory.getSslContext();
@@ -369,16 +371,18 @@ public class Simon {
 					if (context!=null) {
 						SslFilter sslFilter = new SslFilter(context);
 						sslFilter.setUseClientMode(true); // only on client side needed
-						filterChain.addLast("sslFilter", sslFilter);
+						filters.add(new FilterEntry(sslFilter.getClass().getName(), sslFilter));
+						
 						logger.debug("SSL ON");
 					} else {
 						logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
 					}
 				}
 				
-				// add an executor service to handle the message reading in a threadpool
-				ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
-				filterChain.addLast("executor", new ExecutorFilter(filterchainWorkerPool));
+				if (logger.isTraceEnabled())
+					filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
+				
+				filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
 				
 				// add the simon protocol
 				SimonProtocolCodecFactory protocolFactory = null;
@@ -395,10 +399,28 @@ public class Simon {
 					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
 				}
 				protocolFactory.setup(false);
-				filterChain.addLast("codec", new ProtocolCodecFilter(protocolFactory));
+				filters.add(new FilterEntry(protocolFactory.getClass().getName(), new ProtocolCodecFilter(protocolFactory)));
 				
+				// setup for proxy connection
+				if (proxyConfig!=null) {
+					
+					// create the proxy filter with reference to the filter list
+					// proxy filter will later on replace all proxy filters etc. with the ones from filter list
+					filterChain.addLast(SimonProxyFilter.class.getName(), new SimonProxyFilter(host.getHostName(),port,proxyConfig, filters));
+					logger.trace("prepared for proxy connection. chain is now: {}",filterChain);
+					
+				} else {
+					
+					// add the filters from the list to the filter chain
+					for (FilterEntry relation : filters) {
+						filterChain.addLast(relation.name, relation.filter);
+					}
+				}
+								
 				// now we can connect ...
 				ConnectFuture future;
+				
+				// decide whether the connection goes via proxy or not
 				if (proxyConfig==null)
 					future = connector.connect(new InetSocketAddress(host, port));
 				else 
@@ -468,6 +490,27 @@ public class Simon {
 			return proxy;
 			
 		}
+	}
+
+	/**
+	 * TODO document me
+	 * @param sslContextFactory
+	 * @param filterchainWorkerPool
+	 * @param filterChain
+	 */
+	public static void setupFilterChain(SslContextFactory sslContextFactory,
+			ExecutorService filterchainWorkerPool,
+			DefaultIoFilterChainBuilder filterChain) {
+		
+		// make sure the filterchain is empty
+		try {
+			filterChain.clear();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		
 	}
 
 	/**

@@ -675,7 +675,7 @@ public class Dispatcher implements IoHandler{
 	 * @see org.apache.mina.core.service.IoHandler#messageSent(org.apache.mina.core.session.IoSession, java.lang.Object)
 	 */
 	public void messageSent(IoSession session, Object msg) throws Exception {
-		logger.debug("Message sent to session session={} msg={}", Utils.longToHexString(session.getId()), msg);
+		logger.debug("Message sent to session session={} msg='{}'", Utils.longToHexString(session.getId()), msg);
 	}
 
 	/*

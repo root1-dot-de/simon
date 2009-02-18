@@ -158,9 +158,6 @@ public final class Registry {
 			nioSocketAcceptor.setReuseAddress(true);
 		}
 		
-		// only add the logging filter if trace is enabled
-		if (logger.isTraceEnabled())
-			acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
 
 		
 		if (sslContextFactory!=null) {
@@ -174,6 +171,10 @@ public final class Registry {
 					logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
 				}
 		}
+
+		// only add the logging filter if trace is enabled
+		if (logger.isTraceEnabled())
+			acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
 
 		filterchainWorkerPool = new OrderedThreadPoolExecutor();
 		acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
