@@ -1,9 +1,0 @@
-folder-info.txt
-===============
-
-folder					description
--------------------------------------------------------------------------
-simon					the SIMON library eclipse project
-simon_testserver		a simple testserver implementation
-simon_testclient		a simple testclient implementation
-simon_testshared		interfaces both, the testserver and client, needs
