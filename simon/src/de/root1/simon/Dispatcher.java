@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.mina.core.service.IoHandler;
 import org.apache.mina.core.session.IdleStatus;
@@ -70,7 +71,7 @@ public class Dispatcher implements IoHandler{
 	private LookupTable lookupTable;
 	
 	/** a simple counter that is used for creating sequence IDs */
-	private int sequenceIdCounter = 0;
+	private AtomicInteger sequenceIdCounter = new AtomicInteger(0);
 	
 	/**
 	 * The map that holds the relation between the sequenceID and the received
@@ -179,7 +180,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 		MsgLookupReturn result = (MsgLookupReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}",sequenceId);
@@ -237,7 +238,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 		MsgInvokeReturn result = (MsgInvokeReturn) getRequestResult(sequenceId);			
 		logger.debug("got answer for sequenceId={}", sequenceId);
 
@@ -280,7 +281,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 		MsgToStringReturn result = (MsgToStringReturn) getRequestResult(sequenceId);		
 		
 		if (result.hasError())
@@ -319,7 +320,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 		MsgHashCodeReturn result = (MsgHashCodeReturn) getRequestResult(sequenceId);			
 			
 		if (result.hasError())
@@ -360,7 +361,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 		MsgEqualsReturn result = (MsgEqualsReturn) getRequestResult(sequenceId);		
 		
 		if (result.hasError())
@@ -373,16 +374,30 @@ public class Dispatcher implements IoHandler{
 	}
 
 	/**
-	 * Waits until the result for a request described by the monitor is present
+	 * Waits at most one hour for the result of request described by the monitor.
+	 * If result is not present within this time, a SimonRemoteException will be placed as the result.
+	 * This is to ensure that the client cannot wait forever for a result.
+	 *  
+	 * @param session the session on which the request was placed
 	 * @param monitor the monitor related to the request
 	 */
-	private void waitForResult(final Monitor monitor) {
+	private void waitForResult(IoSession session, final Monitor monitor) {
 
 		int sequenceId = monitor.getSequenceId();
+		int counter = 0;
+		
 		// wait for result
 		synchronized (monitor) {
 			try {
 				while(!isRequestResultPresent(sequenceId)) {
+					
+					// just make sure that the while-loop cannot wait forever for the result 
+					// 60min: 60min * 60sec * 1000ms = 3600000ms
+					// 3600000ms / 200ms = 18000 loops with 200ms wait time
+					if (counter++ == 18000) {
+						putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
+					}
+					
 					monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
 					
 					logger.trace("still waiting for result for sequenceId={}",sequenceId);
@@ -558,7 +573,7 @@ public class Dispatcher implements IoHandler{
 		final Monitor monitor = new Monitor(sequenceId);
 
 		synchronized (sessionHasRequestPlaced) {
-			// check if there is allready a list with requests for this session
+			// check if there is already a list with requests for this session
 			if (!sessionHasRequestPlaced.containsKey(session)){
 				List<Integer> requestListForSession = new ArrayList<Integer>();
 				requestListForSession.add(sequenceId);
@@ -618,15 +633,18 @@ public class Dispatcher implements IoHandler{
 	
 	/**
 	 * 
-	 * Generates a request ID<br>
+	 * Generates a sequence ID<br>
 	 * IDs have a unique value from 0..Integer.MAX_VALUE<br>
 	 * The range should be big enough so that there should 
 	 * not be two oder more identical IDs
 	 * 
+	 * TODO make 100.00% sure that the CANNOT be two identical ids alive
+	 * 
 	 * @return a request ID
 	 */
-	private synchronized Integer generateSequenceId() {
-		return (++sequenceIdCounter == Integer.MAX_VALUE ? 0 : sequenceIdCounter);
+	private Integer generateSequenceId() {
+		// if maximum reached, get maximum and set back to zero. otherwise just return the incremented value
+		return (sequenceIdCounter.incrementAndGet() == Integer.MAX_VALUE ? sequenceIdCounter.getAndSet(0) : sequenceIdCounter.intValue());
 	}
 	
 	/**
@@ -789,7 +807,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 		MsgOpenRawChannelReturn result = (MsgOpenRawChannelReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
@@ -848,6 +866,10 @@ public class Dispatcher implements IoHandler{
 	 */
 	private void releaseToken(int channelToken){
 		synchronized (tokenList) {
+			// if not cast to object, the entry at 
+			// index "channelToken" is removed, 
+			// instead of the channelToken itself.
+			// means: wrong remove() method would be used
 			tokenList.remove((Object)channelToken);
 		}
 	}
@@ -890,7 +912,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}",sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 //		MsgRawChannelDataReturn result = (MsgRawChannelDataReturn) getRequestResult(sequenceId);			
 		getRequestResult(sequenceId); //retrieve the return msg to remove the monitor etc.
 		
@@ -916,7 +938,7 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-		waitForResult(monitor);
+		waitForResult(session, monitor);
 		MsgCloseRawChannelReturn result  = (MsgCloseRawChannelReturn) getRequestResult(sequenceId);			
 		
 		logger.debug("got answer for sequenceId={}", sequenceId);
