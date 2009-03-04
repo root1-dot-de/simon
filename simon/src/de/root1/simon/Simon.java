@@ -814,7 +814,7 @@ public class Simon {
 				}
 				
 			} else {
-				logger.debug("no serverdispatcherlreation found for {}. Maybe remote object is already released?", serverString);
+				logger.debug("no ServerDispatcherRelation found for {}. Maybe remote object is already released?", serverString);
 			}
 		
 		}
