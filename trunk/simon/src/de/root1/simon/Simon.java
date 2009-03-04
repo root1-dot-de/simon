@@ -282,9 +282,8 @@ public class Simon {
 	 *             if there's no such object on the server
 	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-		return lookup(null, null, host, port, remoteObjectName);
+		return lookup(null, null, host, port, remoteObjectName, null);
 	}
-	
 	
 	/**
 	 * 
@@ -298,8 +297,9 @@ public class Simon {
 	 * @param sslContextFactory
 	 *            the factory for creating the ssl context. <b>No SSL is used if
 	 *            <code>null</code> is given!</b>
-	 * @param proxyConfig configuration details for connecting via proxy. <b>No proxy is used if
-	 *            <code>null</code> is given!</b>
+	 * @param proxyConfig
+	 *            configuration details for connecting via proxy. <b>No proxy is
+	 *            used if <code>null</code> is given!</b>
 	 * @param host
 	 *            host address where the lookup takes place
 	 * @param port
@@ -318,6 +318,46 @@ public class Simon {
 	 *             if there's no such object on the server
 	 */
 	public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+		return lookup(sslContextFactory, proxyConfig, host, port, remoteObjectName, null);
+	}
+	
+	/**
+	 * 
+	 * Retrieves a remote object from the server. At least, it tries to retrieve
+	 * it. This may fail if the named object is not available or if the
+	 * connection could not be established.<br>
+	 * <i>Note: If your are finished with the remote object, don't forget to
+	 * call {@link Simon#release(Object)} to decrease the reference count and
+	 * finally release the connection to the server</i>
+	 * 
+	 * @param sslContextFactory
+	 *            the factory for creating the ssl context. <b>No SSL is used if
+	 *            <code>null</code> is given!</b>
+	 * @param proxyConfig
+	 *            configuration details for connecting via proxy. <b>No proxy is
+	 *            used if <code>null</code> is given!</b>
+	 * @param host
+	 *            host address where the lookup takes place
+	 * @param port
+	 *            port number of the simon remote registry
+	 * @param remoteObjectName
+	 *            name of the remote object which is bind to the remote registry
+	 * @param listener
+	 *            a listener that get's notified if the remote object's
+	 *            connection is closed/released. <b>No listener is
+	 *            used if <code>null</code> is given!</b>
+	 * @return and instance of the remote object
+	 * @throws SimonRemoteException
+	 *             if there's a problem with the simon communication
+	 * @throws IOException
+	 *             if there is a problem with the communication itself
+	 * @throws EstablishConnectionFailed
+	 *             if its not possible to establish a connection to the remote
+	 *             registry
+	 * @throws LookupFailedException
+	 *             if there's no such object on the server
+	 */
+	public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		logger.debug("begin");
 		
 		// check if there is already an dispatcher and key for THIS server
@@ -486,31 +526,14 @@ public class Simon {
 		     */
 		    proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
 			
+		    // store closed listener
+		    if (listener!=null)
+		    	addClosedListener(listener, proxy);
+		    
 			logger.debug("end");
 			return proxy;
 			
 		}
-	}
-
-	/**
-	 * TODO document me
-	 * @param sslContextFactory
-	 * @param filterchainWorkerPool
-	 * @param filterChain
-	 */
-	public static void setupFilterChain(SslContextFactory sslContextFactory,
-			ExecutorService filterchainWorkerPool,
-			DefaultIoFilterChainBuilder filterChain) {
-		
-		// make sure the filterchain is empty
-		try {
-			filterChain.clear();
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		
-		
 	}
 
 	/**
@@ -677,14 +700,55 @@ public class Simon {
 		
 		logger.debug("releasing proxy {}",proxy.getDetailString());
 //		logger.debug("releasing proxy...");
+
 		
 		// release the proxy and get the related dispatcher
-		Dispatcher dispatcher = proxy.release();
+		Dispatcher dispatcher = proxy.getDispatcher();
+
+		// get the list with listeners that have to be notified about the release and the followed close-event
+		List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
+		
+		proxy.release();
+		
+		// forward the release event to all listeners
+		for (ClosedListener closedListener : removeClosedListenerList) {
+			closedListener.closed();
+		}
+		removeClosedListenerList.clear();
+		removeClosedListenerList = null;
 		
 		boolean result = releaseDispatcher(dispatcher);
 		
 		logger.debug("end");
 		return result;
+	}
+	
+	/**
+	 * Attaches a closed listener to the specified remote object
+	 * @param listener the listener to add
+	 * @param proxyObject the remote object to which the listener is attached to
+	 */
+	public static void addClosedListener(ClosedListener listener, Object proxyObject){
+		// retrieve the proxy object 
+		SimonProxy proxy = getSimonProxy(proxyObject);
+		
+		
+		Dispatcher dispatcher = proxy.getDispatcher();
+		dispatcher.addClosedListener(listener, proxy.getRemoteObjectName());
+	}
+	
+	/**
+	 * Removes an already attached closed listener from the specified remote object
+	 * @param listener the listener to remove
+	 * @param proxyObject the remote object from which the listener has to be removed
+	 * @return true, if listener was removed, false if there is no listener to remove
+	 */
+	public static boolean removeClosedListener(ClosedListener listener, Object proxyObject){
+		// retrieve the proxy object 
+		SimonProxy proxy = getSimonProxy(proxyObject);
+		
+		Dispatcher dispatcher = proxy.getDispatcher();
+		return dispatcher.removeClosedListener(listener, proxy.getRemoteObjectName());
 	}
 
 	/**
@@ -730,6 +794,7 @@ public class Simon {
 					// .. and shutdown the dispatcher if there's no further reference
 					logger.debug("refCount reached 0. shutting down session and all related stuff.");
 					ctsc.getDispatcher().shutdown();
+					
 					CloseFuture closeFuture = ctsc.getSession().close(false);
 					
 					closeFuture.addListener(new IoFutureListener<IoFuture>(){

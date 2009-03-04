@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -115,6 +116,11 @@ public class Dispatcher implements IoHandler{
 	private int writeTimeout = Statics.DEFAULT_WRITE_TIMEOUT;
 
 	/**
+	 * A map containing remote object names and a related list with closed listeners
+	 */
+	private Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
+	
+	/**
 	 * TODO document me
 	 * @return the pingTimeOut
 	 */
@@ -129,6 +135,52 @@ public class Dispatcher implements IoHandler{
 	protected void setPingTimeOut(int pingTimeOut) {
 		this.writeTimeout = pingTimeOut;
 	}
+	
+	/**
+	 * TODO document me
+	 * @param remoteObjectName
+	 * @return
+	 */
+	protected List<ClosedListener> removeClosedListenerList(String remoteObjectName){
+		return remoteObjectClosedListenersList.remove(remoteObjectName);
+	}
+	
+	/**
+	 * TODO document me
+	 * @param listener
+	 * @param remoteObjectName
+	 */
+	protected void addClosedListener(ClosedListener listener, String remoteObjectName){
+		if (!remoteObjectClosedListenersList.containsKey(remoteObjectName)){
+			List<ClosedListener> closedListeners = Collections.synchronizedList(new ArrayList<ClosedListener>());
+			closedListeners.add(listener);
+			remoteObjectClosedListenersList.put(remoteObjectName, closedListeners);
+		}  else {
+			remoteObjectClosedListenersList.get(remoteObjectName).add(listener);
+		}
+	}
+
+	/**
+	 * TODO document me
+	 * @param listener
+	 * @param remoteObjectName
+	 */
+	protected boolean removeClosedListener(ClosedListener listener, String remoteObjectName){
+		if (remoteObjectClosedListenersList.containsKey(remoteObjectName)){
+			
+			// remove the listener from the list
+			boolean result=remoteObjectClosedListenersList.get(remoteObjectName).remove(listener);
+			
+			// if the list is now empty, remove the liste from the map
+			if (remoteObjectClosedListenersList.get(remoteObjectName).size()==0){
+				remoteObjectClosedListenersList.remove(remoteObjectName);
+			}
+			// return the result of the removal
+			return result;
+			
+		} else return false;
+	}
+
 
 	/**
 	 * 
@@ -705,6 +757,7 @@ public class Dispatcher implements IoHandler{
 		logger.debug("######## session closed. session={}",Utils.longToHexString(session.getId()));
 		lookupTable.unreference(session.getId());
 		interruptWaitingRequests(session);
+		
 		// remove attached references
 		logger.debug("######## Removing session attributes ...");
 		
@@ -713,6 +766,17 @@ public class Dispatcher implements IoHandler{
 		
 		logger.debug("########  -> {}",Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
 		session.removeAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
+		
+		// notify all still attached closed listeners that the one and only session to the server is closed.
+		Iterator<String> iterator = remoteObjectClosedListenersList.keySet().iterator();
+		while (iterator.hasNext()){
+			String ron = iterator.next();
+			List<ClosedListener> list = remoteObjectClosedListenersList.remove(ron);
+			for (ClosedListener closedListener : list) {
+				closedListener.closed();
+			}
+			list.clear();
+		}
 		
 		logger.debug("################################################");
 	}
