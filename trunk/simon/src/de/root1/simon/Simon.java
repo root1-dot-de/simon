@@ -710,12 +710,14 @@ public class Simon {
 		
 		proxy.release();
 		
-		// forward the release event to all listeners
-		for (ClosedListener closedListener : removeClosedListenerList) {
-			closedListener.closed();
+		if (removeClosedListenerList!=null) {
+			// forward the release event to all listeners
+			for (ClosedListener closedListener : removeClosedListenerList) {
+				closedListener.closed();
+			}
+			removeClosedListenerList.clear();
+			removeClosedListenerList = null;
 		}
-		removeClosedListenerList.clear();
-		removeClosedListenerList = null;
 		
 		boolean result = releaseDispatcher(dispatcher);
 		
@@ -811,6 +813,8 @@ public class Simon {
 					serverDispatcherRelation.put(serverString, ctsc);
 				}
 				
+			} else {
+				logger.debug("no serverdispatcherlreation found for {}. Maybe remote object is already released?", serverString);
 			}
 		
 		}
