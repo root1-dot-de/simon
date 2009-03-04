@@ -78,9 +78,6 @@ public class SimonProxyFilter extends IoFilterAdapter {
 	 * @param targetPort
 	 * @param proxyConfig
 	 * @param backupChain 
-	 * @param filterchainWorkerPool 
-	 * @param sslContextFactory 
-	 * @param filterChain 
 	 */
 	public SimonProxyFilter(String targetHost, int targetPort, SimonProxyConfig proxyConfig, List<FilterEntry> backupChain) {
 		this.targetHost = targetHost;
