@@ -3,7 +3,7 @@
 	
     <description>SIMON: Simple Invocation of Methods Over Network</description>
 	
-	<property name="version" value="0.3_beta5"/>
+	<property name="version" value="0.3_beta6"/>
 	
 	
 	<!-- destination of compiled project -->
