@@ -59,46 +59,42 @@ public class Utils {
 	 * the complete method signature.
 	 */
 	public static long computeMethodHash(Method m) {
-		
-		if (methodHashs.containsKey(m)) {
-
-			synchronized (methodHashs) {
-				logger.trace("Got hash from map. map contains {} entries.", methodHashs.size());
-				return methodHashs.get(m);
-			}
-			
-		} else {
-		
-			long result = 0;
-			ByteArrayOutputStream byteArray = new ByteArrayOutputStream(127);
-			
-			try {
-				MessageDigest md = MessageDigest.getInstance("SHA");
+		synchronized (methodHashs) {
+			if (methodHashs.containsKey(m)) {
+					logger.trace("Got hash from map. map contains {} entries.", methodHashs.size());
+					return methodHashs.get(m);
 				
-				DigestOutputStream out = new DigestOutputStream(byteArray, md);
-	
-				// use the complete method signature to generate the sha-digest
-				out.write(m.toGenericString().getBytes());
-	
-				// use only the first 64 bits of the digest for the hash
-				out.flush();
-				byte hasharray[] = md.digest();
-				for (int i = 0; i < Math.min(8, hasharray.length); i++) {
-					result += ((long) (hasharray[i] & 0xFF)) << (i * 8);
+			} else {
+			
+				long result = 0;
+				ByteArrayOutputStream byteArray = new ByteArrayOutputStream(127);
+				
+				try {
+					MessageDigest md = MessageDigest.getInstance("SHA");
+					
+					DigestOutputStream out = new DigestOutputStream(byteArray, md);
+		
+					// use the complete method signature to generate the sha-digest
+					out.write(m.toGenericString().getBytes());
+		
+					// use only the first 64 bits of the digest for the hash
+					out.flush();
+					byte hasharray[] = md.digest();
+					for (int i = 0; i < Math.min(8, hasharray.length); i++) {
+						result += ((long) (hasharray[i] & 0xFF)) << (i * 8);
+					}
+				} catch (IOException ignore) {
+					// can't really happen
+					result = -1;
+				} catch (NoSuchAlgorithmException complain) {
+					throw new SecurityException(complain.getMessage());
 				}
-			} catch (IOException ignore) {
-				// can't really happen
-				result = -1;
-			} catch (NoSuchAlgorithmException complain) {
-				throw new SecurityException(complain.getMessage());
-			}
-
-			synchronized (methodHashs) {
+	
 				methodHashs.put(m, result);
 				logger.trace("computed new hash. map now contains {} entries.", methodHashs.size());
+				
+				return result;
 			}
-			
-			return result;
 		}
 	}
 	
