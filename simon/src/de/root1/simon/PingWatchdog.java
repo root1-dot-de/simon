@@ -124,7 +124,11 @@ public class PingWatchdog {
 	public void notifyPongReceived(IoSession session){
 		logger.debug("Pong received for session: {}",Utils.longToHexString(session.getId()));
 		WaitRunnable waitRunnable = sessionWaitrunnableMap.remove(session);
-		waitRunnable.pingReceived();
+		if (waitRunnable!=null) {
+			waitRunnable.pingReceived();
+		} else {
+			logger.debug("waitRunnable for {} isn't present anymore.", Utils.longToHexString(session.getId()));
+		}
 	}
 		
 

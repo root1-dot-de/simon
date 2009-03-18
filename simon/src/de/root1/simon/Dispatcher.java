@@ -778,6 +778,9 @@ public class Dispatcher implements IoHandler{
 			list.clear();
 		}
 		
+		// FIXME possible fix for issue #57
+		Simon.releaseDispatcher(this);
+		
 		logger.debug("################################################");
 	}
 
