@@ -40,6 +40,11 @@ import de.root1.simon.utils.Utils;
 public class PingWatchdog {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Time ins ms that notifyPongReceived waits for the waitRunnable to be present
+	 */
+	private static final int WAIT_FOR_WAITRUNNABLE_TIMEOUT = 10000;
 	
 	class WaitRunnable implements Runnable {
 
@@ -95,7 +100,7 @@ public class PingWatchdog {
 			session.close(true);
 		}
 
-		public void pingReceived(){
+		public void pongReceived(){
 			logger.debug("Pong received for session {}. Notify monitor {}", Utils.longToHexString(session.getId()), monitor);
 			pongReceived = true;
 			synchronized (monitor) {
@@ -124,10 +129,36 @@ public class PingWatchdog {
 	public void notifyPongReceived(IoSession session){
 		logger.debug("Pong received for session: {}",Utils.longToHexString(session.getId()));
 		WaitRunnable waitRunnable = sessionWaitrunnableMap.remove(session);
+		
 		if (waitRunnable!=null) {
-			waitRunnable.pingReceived();
+			
+			waitRunnable.pongReceived();
+			
 		} else {
-			logger.debug("waitRunnable for {} isn't present anymore.", Utils.longToHexString(session.getId()));
+			
+			// wait for WaitRunnable ..
+			logger.warn("waitRunnable for session {} not present. Waiting for it ...", Utils.longToHexString(session.getId()));
+			long totallyWaited = 0;
+			while (!sessionWaitrunnableMap.containsKey(session) || (totallyWaited)<WAIT_FOR_WAITRUNNABLE_TIMEOUT) {
+
+				try {
+					long start=System.currentTimeMillis();
+					Thread.sleep(Statics.MONITOR_WAIT_TIMEOUT);
+					totallyWaited+=System.currentTimeMillis()-start;
+				} catch (InterruptedException e) {
+					logger.debug("sleeping interrupted! exiting wait loop.");
+					totallyWaited = WAIT_FOR_WAITRUNNABLE_TIMEOUT;
+				}
+			}
+			
+			// check again if WaitRunnable is there
+			if (sessionWaitrunnableMap.containsKey(session)) {
+				logger.debug("now WaitRunnable for session {} is present. notify pong received again.");
+				notifyPongReceived(session);
+			} else {
+				logger.error("waitRunnable for session {} after {} ms still not present. aborting pong notify.", Utils.longToHexString(session.getId()), WAIT_FOR_WAITRUNNABLE_TIMEOUT);
+			}
+			
 		}
 	}
 		
