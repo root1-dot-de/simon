@@ -370,15 +370,17 @@ public class ProcessMessageRunnable implements Runnable {
 			}
 			
 		} catch (LookupFailedException e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to LookupFailedException: "+e.getMessage());
 		} catch (IllegalArgumentException e) {
 			result = e;
 		} catch (IllegalAccessException e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to IllegalAccessException: "+e.getMessage());
+		} catch (ClassNotFoundException e) {
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to ClassNotFoundException: "+e.getMessage());
 		} catch (InvocationTargetException e) {
 			result = e.getTargetException();
 		} catch (Exception e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to "+e.getClass()+": "+e.getMessage());
 		}
 		
 		MsgInvokeReturn returnMsg = new MsgInvokeReturn();
