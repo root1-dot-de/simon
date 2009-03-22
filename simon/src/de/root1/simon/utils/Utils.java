@@ -50,7 +50,7 @@ public class Utils {
 	 * If memory is getting short, some entries are gc'ed so that more memory is available. There is no need to
 	 * clear the map ourselves.
 	 */
-	private static WeakHashMap<Method, Long> methodHashs = new WeakHashMap<Method, Long>();
+	private static WeakHashMap<Method, Long> methodHashes = new WeakHashMap<Method, Long>();
 
 
 	/**
@@ -59,42 +59,48 @@ public class Utils {
 	 * the complete method signature.
 	 */
 	public static long computeMethodHash(Method m) {
-		synchronized (methodHashs) {
-			if (methodHashs.containsKey(m)) {
-					logger.trace("Got hash from map. map contains {} entries.", methodHashs.size());
-					return methodHashs.get(m);
-				
-			} else {
+		
+		Long hash = null;
+		synchronized (methodHashes) {
+			hash= methodHashes.get(m);
+		}
+		if (hash!=null) {
+
+				logger.trace("Got hash from map. map contains {} entries.", methodHashes.size());
+				return hash.longValue();
 			
-				long result = 0;
-				ByteArrayOutputStream byteArray = new ByteArrayOutputStream(127);
+		} else {
+		
+			long result = 0;
+			ByteArrayOutputStream byteArray = new ByteArrayOutputStream(127);
+			
+			try {
+				MessageDigest md = MessageDigest.getInstance("SHA");
 				
-				try {
-					MessageDigest md = MessageDigest.getInstance("SHA");
-					
-					DigestOutputStream out = new DigestOutputStream(byteArray, md);
-		
-					// use the complete method signature to generate the sha-digest
-					out.write(m.toGenericString().getBytes());
-		
-					// use only the first 64 bits of the digest for the hash
-					out.flush();
-					byte hasharray[] = md.digest();
-					for (int i = 0; i < Math.min(8, hasharray.length); i++) {
-						result += ((long) (hasharray[i] & 0xFF)) << (i * 8);
-					}
-				} catch (IOException ignore) {
-					// can't really happen
-					result = -1;
-				} catch (NoSuchAlgorithmException complain) {
-					throw new SecurityException(complain.getMessage());
-				}
+				DigestOutputStream out = new DigestOutputStream(byteArray, md);
 	
-				methodHashs.put(m, result);
-				logger.trace("computed new hash. map now contains {} entries.", methodHashs.size());
-				
-				return result;
+				// use the complete method signature to generate the sha-digest
+				out.write(m.toGenericString().getBytes());
+	
+				// use only the first 64 bits of the digest for the hash
+				out.flush();
+				byte hasharray[] = md.digest();
+				for (int i = 0; i < Math.min(8, hasharray.length); i++) {
+					result += ((long) (hasharray[i] & 0xFF)) << (i * 8);
+				}
+			} catch (IOException ignore) {
+				// can't really happen
+				result = -1;
+			} catch (NoSuchAlgorithmException complain) {
+				throw new SecurityException(complain.getMessage());
 			}
+
+			synchronized (methodHashes) {
+				methodHashes.put(m, result);
+				logger.trace("computed new hash. map now contains {} entries.", methodHashes.size());
+			}
+			
+			return result;
 		}
 	}
 	
