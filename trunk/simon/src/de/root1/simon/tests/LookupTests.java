@@ -103,10 +103,10 @@ public class LookupTests extends TestCase {
 			System.out.println("Doing lookup ...");
 			Simon.lookup(InetAddress.getLocalHost(), 2000, "test");
 			System.out.println("Lookup done ...");
-		} catch (SimonRemoteException e) {
+		} catch (EstablishConnectionFailed e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} catch (EstablishConnectionFailed e) {
+		} catch (SimonRemoteException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (UnknownHostException e) {

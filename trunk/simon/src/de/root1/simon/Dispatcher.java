@@ -314,8 +314,9 @@ public class Dispatcher implements IoHandler{
 	 * @param key the key associated with the network connection
 	 * @param remoteObjectName the remote object on which the call has to be made
 	 * @return the result of the remote "toString()" call.
+	 * @throws SimonRemoteException 
 	 */
-	protected String invokeToString(IoSession session, String remoteObjectName) {
+	protected String invokeToString(IoSession session, String remoteObjectName) throws SimonRemoteException {
 		checkForInvalidState(session, "toString()");
 
 		final int sequenceId = generateSequenceId(); 
@@ -393,8 +394,9 @@ public class Dispatcher implements IoHandler{
 	 * @param remoteObjectName the name of the remote object that has to be compared
 	 * @param objectToCompareWith the object to which the remote object is compared with
 	 * @return the result of the comparison
+	 * @throws SimonRemoteException 
 	 */
-	protected boolean invokeEquals(IoSession session, String remoteObjectName, Object objectToCompareWith) {
+	protected boolean invokeEquals(IoSession session, String remoteObjectName, Object objectToCompareWith) throws SimonRemoteException {
 		checkForInvalidState(session, "equals()");
 
 		final int sequenceId = generateSequenceId(); 
@@ -605,8 +607,9 @@ public class Dispatcher implements IoHandler{
 	/**
 	 * TODO document me
 	 * @param method
+	 * @throws SessionException 
 	 */
-	private void checkForInvalidState(IoSession session, String method) {
+	private void checkForInvalidState(IoSession session, String method) throws SessionException {
 		if (shutdownInProgress) throw new SessionException("Cannot handle method call \""+method+"\" while shutdown.");
 		if (!isRunning || session.isClosing()) throw new SessionException("Cannot handle method call \""+method+"\" on already closed session.");
 	}
@@ -654,8 +657,9 @@ public class Dispatcher implements IoHandler{
 	 * 
 	 * @param sequenceId the sequence-id related to the result
 	 * @return the result of the request. May be null if there is no result yet.
+	 * @throws SimonRemoteException 
 	 */
-	private Object getRequestResult(final int sequenceId) {
+	private Object getRequestResult(final int sequenceId) throws SimonRemoteException {
 		logger.debug("getting result for sequenceId={}", sequenceId);
 		
 		Object o = requestMonitorAndResultMap.remove(sequenceId);
@@ -812,7 +816,7 @@ public class Dispatcher implements IoHandler{
 		}
 	}
 
-	private void sendPing(IoSession session) {
+	private void sendPing(IoSession session) throws SessionException {
 		checkForInvalidState(session, "ping()");
 		pingWatchdog.waitForPong(session);
 
@@ -828,7 +832,7 @@ public class Dispatcher implements IoHandler{
 		logger.debug("end. data send.");
 	}
 	
-	public void sendPong(IoSession session) {
+	public void sendPong(IoSession session) throws SessionException {
 		checkForInvalidState(session, "pong()");
 
 		final int sequenceId = generateSequenceId(); 
@@ -854,8 +858,9 @@ public class Dispatcher implements IoHandler{
 	/**
 	 * TODO document me
 	 * @return
+	 * @throws SimonRemoteException 
 	 */
-	protected RawChannel openRawChannel(IoSession session, int channelToken) {
+	protected RawChannel openRawChannel(IoSession session, int channelToken) throws SimonRemoteException {
 		checkForInvalidState(session, "openRawChannel()");
 
 		final int sequenceId = generateSequenceId(); 
@@ -888,8 +893,9 @@ public class Dispatcher implements IoHandler{
 		throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
 	}
 
-	/** TODO document me */
-	protected int prepareRawChannel(RawChannelDataListener listener) {
+	/** TODO document me 
+	 * @throws SimonException */
+	protected int prepareRawChannel(RawChannelDataListener listener) throws SimonException {
 		int channelToken = getRawChannelToken();
 		synchronized (rawChannelMap) {
 			rawChannelMap.put(channelToken, listener);	
@@ -914,8 +920,9 @@ public class Dispatcher implements IoHandler{
 		}
 	}
 
-	/** TODO document me */
-	private int getRawChannelToken() {
+	/** TODO document me 
+	 * @throws SimonException */
+	private int getRawChannelToken() throws SimonException {
 		synchronized (tokenList) {
 			
 			for (int i=Integer.MIN_VALUE; i<Integer.MAX_VALUE; i++){
@@ -959,8 +966,9 @@ public class Dispatcher implements IoHandler{
 	 * @param session
 	 * @param channelToken
 	 * @param byteBuffer
+	 * @throws SimonRemoteException 
 	 */
-	protected void writeRawData(IoSession session, int channelToken, ByteBuffer byteBuffer){
+	protected void writeRawData(IoSession session, int channelToken, ByteBuffer byteBuffer) throws SimonRemoteException{
 		checkForInvalidState(session, "writeRawData()");
 
 		final int sequenceId = generateSequenceId(); 
@@ -986,7 +994,7 @@ public class Dispatcher implements IoHandler{
 		logger.debug("end. got ack for data send for sequenceId={} and channelToken={}", sequenceId, channelToken);
 	}
 
-	protected void closeRawChannel(IoSession session, int channelToken) {
+	protected void closeRawChannel(IoSession session, int channelToken) throws SimonRemoteException {
 		checkForInvalidState(session, "closeRawChannel()");
 
 		final int sequenceId = generateSequenceId(); 

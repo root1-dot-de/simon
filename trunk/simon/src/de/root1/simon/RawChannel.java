@@ -24,6 +24,8 @@ import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.root1.simon.exceptions.SimonRemoteException;
+
 /**
  * This class enables one to send raw data from one station to a remote station.<br>
  * A simple example on how to transfer a file from a client to the server:<br>
@@ -100,8 +102,9 @@ public class RawChannel {
 	 *            the buffer who's content is written to the server
 	 *            
 	 * @throws IllegalStateException if the channel is already closed.            
+	 * @throws SimonRemoteException 
 	 */
-	public void write(ByteBuffer byteBuffer) throws IllegalStateException {
+	public void write(ByteBuffer byteBuffer) throws IllegalStateException, SimonRemoteException {
 		if (channelOpen) {
 			logger.trace("token={}. channel open. forwarding to dispatcher ...", channelToken);
 			dispatcher.writeRawData(session, channelToken, byteBuffer);
@@ -115,8 +118,9 @@ public class RawChannel {
 	 * Signals on the remote station that the transmission has finished. This
 	 * also closes the raw channel. So after calling this method, each write()
 	 * call fails!
+	 * @throws SimonRemoteException 
 	 */
-	public void close(){
+	public void close() throws SimonRemoteException{
 		dispatcher.closeRawChannel(session, channelToken);
 		channelOpen=false;
 	}

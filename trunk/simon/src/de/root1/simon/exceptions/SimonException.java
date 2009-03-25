@@ -18,13 +18,15 @@
  */
 package de.root1.simon.exceptions;
 
+import java.io.IOException;
+
 /**
  * TODO Documentation to be done
  *
  * @author achristian
  *
  */
-public class SimonException extends RuntimeException {
+public class SimonException extends SimonRemoteException {
 	
 	private static final long serialVersionUID = 1L;
 

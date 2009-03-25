@@ -45,6 +45,7 @@ import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
 
@@ -174,7 +175,11 @@ public class ProcessMessageRunnable implements Runnable {
 		logger.debug("processing MsgPing...");
 
 		logger.debug("replying pong");
-		dispatcher.sendPong(session);
+		try {
+			dispatcher.sendPong(session);
+		} catch (SessionException e) {
+			logger.warn("could not reply pong for seqId {}. Error was: {}",abstractMessage.getSequence(), e.getMessage());
+		}
 		
 		logger.debug("end");
 	}
@@ -370,17 +375,15 @@ public class ProcessMessageRunnable implements Runnable {
 			}
 			
 		} catch (LookupFailedException e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to LookupFailedException: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
 		} catch (IllegalArgumentException e) {
 			result = e;
 		} catch (IllegalAccessException e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to IllegalAccessException: "+e.getMessage());
-		} catch (ClassNotFoundException e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to ClassNotFoundException: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
 		} catch (InvocationTargetException e) {
 			result = e.getTargetException();
 		} catch (Exception e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to "+e.getClass()+": "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
 		}
 		
 		MsgInvokeReturn returnMsg = new MsgInvokeReturn();
