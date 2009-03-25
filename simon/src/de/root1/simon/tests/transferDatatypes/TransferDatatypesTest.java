@@ -102,9 +102,9 @@ public class TransferDatatypesTest extends TestCase {
 			
 			Simon.release(server);
 			
-		} catch (SimonRemoteException e) {
-			e.printStackTrace();
 		} catch (EstablishConnectionFailed e) {
+			e.printStackTrace();
+		} catch (SimonRemoteException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();

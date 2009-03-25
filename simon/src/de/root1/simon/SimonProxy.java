@@ -216,9 +216,10 @@ public class SimonProxy implements InvocationHandler {
 	 * </pre>
 	 * 
 	 * @return the result of the remote "toString()" call
+	 * @throws SimonRemoteException 
 	 * @throws SimonRemoteException
 	 */
-	private String remoteToString() {
+	private String remoteToString() throws SimonRemoteException {
 		return "[Proxy="+remoteObjectName+
 					"|invocationHandler="+super.toString()+
 					"|remote="+dispatcher.invokeToString(session, remoteObjectName)+
@@ -262,7 +263,11 @@ public class SimonProxy implements InvocationHandler {
 	
 	@Override
 	public String toString() {
-		return remoteToString();
+		try {
+			return remoteToString();
+		} catch (SimonRemoteException e){
+			return "Error occured while invoking "+remoteObjectName+"#toString(). Error was: "+e.getMessage();
+		}
 	}
 	
 	protected String getDetailString() {

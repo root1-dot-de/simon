@@ -18,13 +18,15 @@
  */
 package de.root1.simon.exceptions;
 
+import java.io.IOException;
+
 /**
  * 
  * General exception used by SIMON. All other "not from SUN" exceptions should extend this class.
  * 
  * @author ACHR
  */
-public class SimonRemoteException extends SimonException {
+public class SimonRemoteException extends IOException {
 	
 	private static final long serialVersionUID = -4586636119330576150L;
 

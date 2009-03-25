@@ -60,6 +60,7 @@ import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.codec.messages.MsgLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.FilterEntry;
@@ -1087,8 +1088,9 @@ public class Simon {
 	 *            the remote object which lives on the remote station which has
 	 *            a prepared raw data channel, related to the
 	 *            <code>channelToken</code>. Note: This <b>has to be</b> a remote object stub.
+	 * @throws SimonRemoteException 
 	 */
-	public static RawChannel openRawChannel(int channelToken, SimonRemote simonRemote){
+	public static RawChannel openRawChannel(int channelToken, SimonRemote simonRemote) throws SimonRemoteException{
 		logger.debug("begin. token={}", channelToken);
 		SimonProxy simonProxy = getSimonProxy(simonRemote);
 		logger.trace("simon proxy detail string for given simonRemote: {}",simonProxy.getDetailString());
@@ -1118,8 +1120,9 @@ public class Simon {
 	 *            a reference to the remote object whos {@link Dispatcher} is
 	 *            prepared to receive raw data.
 	 * @return a token that identifies the prepared channel
+	 * @throws SimonException 
 	 */
-	public static int prepareRawChannel(RawChannelDataListener listener, SimonRemote simonRemote){
+	public static int prepareRawChannel(RawChannelDataListener listener, SimonRemote simonRemote) throws SimonException{
 		logger.debug("preparing raw channel for listener {}", listener);
 		Dispatcher dispatcher = getDispatcher(simonRemote);
 		if (dispatcher!=null){
