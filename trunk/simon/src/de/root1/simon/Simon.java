@@ -28,6 +28,7 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.nio.channels.UnresolvedAddressException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -460,12 +461,20 @@ public class Simon {
 								
 				// now we can connect ...
 				ConnectFuture future;
-				
-				// decide whether the connection goes via proxy or not
-				if (proxyConfig==null)
-					future = connector.connect(new InetSocketAddress(host, port));
-				else 
-					future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
+				try {
+					
+					// decide whether the connection goes via proxy or not
+					if (proxyConfig==null)
+						future = connector.connect(new InetSocketAddress(host, port));
+					else 
+						future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
+					
+				} catch (UnresolvedAddressException e){
+					if (proxyConfig==null)
+						throw new EstablishConnectionFailed("Can't connect due to unresolved socket address. host="+host+" port="+port+" error: "+e.getMessage());
+					else 
+						throw new EstablishConnectionFailed("Can't connect via proxy due to unresolved socket address. host="+proxyConfig.getProxyHost()+" port="+proxyConfig.getProxyPort()+" error: "+e.getMessage());
+				}
 				
 				
 				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
