@@ -60,7 +60,7 @@ public final class SimonPublication {
 		
 		if (address.getHostAddress().equalsIgnoreCase("0.0.0.0")){
 			
-			logger.trace("Given IP is 0.0.0.0... Searching for a better one to publish ...");
+			logger.trace("Given IP is 0.0.0.0... Searching for a better one to ...");
 			boolean ipFound = false;
 			Enumeration<NetworkInterface> netInter;
 			try {
