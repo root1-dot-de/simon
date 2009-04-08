@@ -18,6 +18,8 @@
  */
 package de.root1.simon;
 
+import java.io.NotSerializableException;
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -324,6 +326,7 @@ public class ProcessMessageRunnable implements Runnable {
 			
 			session.write(returnMsg);
 			logger.debug("end");
+			return;
 		}
 
 		Method method = msg.getMethod();
@@ -348,7 +351,7 @@ public class ProcessMessageRunnable implements Runnable {
 						Class<?>[] listenerInterfaces = new Class<?>[1];
 						listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 						
-						// reimplant the proxy object
+						// re-implant the proxy object
 						arguments[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
 						logger.debug("proxy object for SimonCallback injected");
 					} 
@@ -373,6 +376,10 @@ public class ProcessMessageRunnable implements Runnable {
 				result = simonCallback;
 				
 			}
+			if (!(result instanceof Serializable)){
+				throw new Exception("NotSerializableException: result '"+result.getClass().getCanonicalName()+"' must implement 'java.io.Serializable'");
+			}
+			
 			
 		} catch (LookupFailedException e) {
 			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
@@ -385,6 +392,22 @@ public class ProcessMessageRunnable implements Runnable {
 		} catch (Exception e) {
 			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
 		}
+		
+		// test result for serialization
+		System.out.println("result class: "+result.getClass());
+		Class<?>[] interfaces = result.getClass().getInterfaces();
+		System.out.println("no of interfaces: "+interfaces.length);
+		for (Class<?> class1 : interfaces) {
+			System.out.println("result has interface: "+class1.getName());
+		}
+		
+		if (result instanceof Serializable) {
+			System.out.println("result IS serializable!");
+		} else {
+			System.out.println("result IS NOT serializable");
+		}
+		
+		// ----
 		
 		MsgInvokeReturn returnMsg = new MsgInvokeReturn();
 		returnMsg.setSequence(msg.getSequence());

@@ -18,6 +18,9 @@
  */
 package de.root1.simon.codec.base;
 
+import java.io.NotSerializableException;
+
+import org.apache.mina.core.buffer.BufferDataException;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
@@ -50,12 +53,13 @@ public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractM
 	    	// first put all into a autoexpanding buffer
 			IoBuffer b = IoBuffer.allocate(4096);
 			b.setAutoExpand(true);
+			
 			b.putObject(message.getReturnValue());
 			
 			/*
 			 * There is no need to write the message.getErrorMsg() string back to the client
 			 * If an error occurs while invoking the method, the exception is "transported" as 
-			 * method the result back to the client where it is thrown in SimonProxy
+			 * the method-result back to the client where it is thrown in SimonProxy
 			 */
 			
 			// then check the size of the data that has to be sent
@@ -68,6 +72,7 @@ public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractM
 			out.put(b);
 			
     	} catch (Exception e) {
+    		e.printStackTrace();
     		// if an error occurs, close the connection immediately
     		logger.error("Error while sending MsgInvokeReturnMsg. Error: {}", e.getMessage());
     		session.close(true);
