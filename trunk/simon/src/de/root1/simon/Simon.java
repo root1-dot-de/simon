@@ -48,7 +48,6 @@ import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.filter.ssl.SslFilter;
@@ -424,7 +423,8 @@ public class Simon {
 				if (logger.isTraceEnabled())
 					filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
 				
-				filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
+				// don't use a threading model on filter level
+				//filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
 				
 				// add the simon protocol
 				SimonProtocolCodecFactory protocolFactory = null;
@@ -1137,7 +1137,7 @@ public class Simon {
 		if (dispatcher!=null){
 			return dispatcher.prepareRawChannel(listener);
 		} else {
-			throw new IllegalArgumentException("Given SimonRemote is not found in any lookuptable.");
+			throw new IllegalArgumentException("Given SimonRemote is not found in any lookuptable: "+simonRemote.getClass());
 		}
 		
 	}

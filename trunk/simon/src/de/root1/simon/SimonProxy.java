@@ -176,6 +176,15 @@ public class SimonProxy implements InvocationHandler {
 			
 		}
 		logger.debug("end");
+		
+		// see: http://www.webreference.com/internet/reflection/4.html
+		// quote:
+		// "If the called method has declared the return type void, 
+		// the value returned by invoke does not matter. 
+		// Returning null is the simplest option."
+		if (result instanceof SimonVoid) 
+			return null;
+		
 		return  result;
 	}
 

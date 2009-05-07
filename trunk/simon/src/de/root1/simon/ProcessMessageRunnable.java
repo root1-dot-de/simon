@@ -18,7 +18,6 @@
  */
 package de.root1.simon;
 
-import java.io.NotSerializableException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -365,6 +364,9 @@ public class ProcessMessageRunnable implements Runnable {
 			simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
 			result = method.invoke(simonRemote, arguments);
 			
+			if (method.getReturnType() == void.class)
+				result = new SimonVoid();
+			
 			// register "SimonCallback"-results in lookup-table
 			if (result instanceof SimonRemote){
 
@@ -376,36 +378,37 @@ public class ProcessMessageRunnable implements Runnable {
 				result = simonCallback;
 				
 			}
-			if (!(result instanceof Serializable)){
-				throw new Exception("NotSerializableException: result '"+result.getClass().getCanonicalName()+"' must implement 'java.io.Serializable'");
-			}
-			
 			
 		} catch (LookupFailedException e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to LookupFailedException: "+e.getMessage()+" / "+e.getCause());
 		} catch (IllegalArgumentException e) {
 			result = e;
 		} catch (IllegalAccessException e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to IllegalAccessException: "+e.getMessage()+" / "+e.getCause());
 		} catch (InvocationTargetException e) {
 			result = e.getTargetException();
 		} catch (Exception e) {
-			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to exception: "+e.getMessage());
+			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to Exception: "+e.getMessage()+" / "+e.getCause());
+		}
+		
+		if (!(result instanceof Serializable)){
+			logger.warn("Result '{}' is not Serializable",result);
+			result = new SimonRemoteException("result of method '"+method+"' must be serializable and therefore implement 'java.io.Serializable' or 'de.root1.simon.SimonRemote'");
 		}
 		
 		// test result for serialization
-		System.out.println("result class: "+result.getClass());
-		Class<?>[] interfaces = result.getClass().getInterfaces();
-		System.out.println("no of interfaces: "+interfaces.length);
-		for (Class<?> class1 : interfaces) {
-			System.out.println("result has interface: "+class1.getName());
-		}
-		
-		if (result instanceof Serializable) {
-			System.out.println("result IS serializable!");
-		} else {
-			System.out.println("result IS NOT serializable");
-		}
+//		System.out.println("result class: "+result.getClass());
+//		Class<?>[] interfaces = result.getClass().getInterfaces();
+//		System.out.println("no of interfaces: "+interfaces.length);
+//		for (Class<?> class1 : interfaces) {
+//			System.out.println("result has interface: "+class1.getName());
+//		}
+//		
+//		if (result instanceof Serializable) {
+//			System.out.println("result IS serializable!");
+//		} else {
+//			System.out.println("result IS NOT serializable");
+//		}
 		
 		// ----
 		

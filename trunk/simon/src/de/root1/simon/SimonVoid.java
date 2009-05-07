@@ -16,24 +16,21 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon.exceptions;
+package de.root1.simon;
 
+import java.io.Serializable;
 
 /**
- * TODO Documentation to be done
- *
- * @author achristian
+ * This class is a marker class used to transfer "void" return types.
+ * 
+ * @author ACHR
  *
  */
-public class SimonException extends SimonRemoteException {
-	
-	private static final long serialVersionUID = 1L;
+public class SimonVoid implements Serializable{
 
 	/**
-	 * TODO Documentation to be done
+	 * 
 	 */
-	public SimonException(String msg) {
-		super(msg);
-	}
+	private static final long serialVersionUID = 1L;
 
 }
