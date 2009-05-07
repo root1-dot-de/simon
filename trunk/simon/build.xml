@@ -176,6 +176,12 @@
 	        <fileset dir=".">
 	        	<include name="*.txt"/>
 			</fileset>
+			<!-- search&replace version info tags with information gathered in preambel target-->
+    		<filterset>
+				<filter token="SIMON_VERSION" value="${version}"/>
+				<filter token="SIMON_BUILD_TIMESTAMP" value="${build.timestamp}"/>
+				<filter token="SIMON_BUILD_REVISION" value="${build.revision}"/>
+			</filterset>
 		</copy>
 		
     	<!-- copy the sources to the dist folder -->
