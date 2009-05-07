@@ -28,7 +28,6 @@ import javax.net.ssl.SSLContext;
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.filter.ssl.SslFilter;
@@ -177,7 +176,8 @@ public final class Registry {
 			acceptor.getFilterChain().addLast( "logger", new LoggingFilter() );
 
 		filterchainWorkerPool = new OrderedThreadPoolExecutor();
-		acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
+		// don't use a threading model on filter level
+		//acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
 		
 
 		SimonProtocolCodecFactory protocolFactory = null;

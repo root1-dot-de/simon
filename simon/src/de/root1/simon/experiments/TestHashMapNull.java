@@ -1,8 +1,6 @@
 package de.root1.simon.experiments;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.WeakHashMap;
 
 public class TestHashMapNull {
 	
