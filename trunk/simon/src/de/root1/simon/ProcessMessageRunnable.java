@@ -391,7 +391,8 @@ public class ProcessMessageRunnable implements Runnable {
 			result = new SimonRemoteException("Errow while invoking '"+remoteObjectName+"#"+method+"' due to Exception: "+e.getMessage()+" / "+e.getCause());
 		}
 		
-		if (!(result instanceof Serializable)){
+		// a return value can be "null" ... this has to be serialized to the client
+		if (result!=null && !(result instanceof Serializable)){
 			logger.warn("Result '{}' is not Serializable",result);
 			result = new SimonRemoteException("result of method '"+method+"' must be serializable and therefore implement 'java.io.Serializable' or 'de.root1.simon.SimonRemote'");
 		}
