@@ -443,50 +443,41 @@ public class Simon {
 				protocolFactory.setup(false);
 				filters.add(new FilterEntry(protocolFactory.getClass().getName(), new ProtocolCodecFilter(protocolFactory)));
 				
-				// setup for proxy connection
+				// setup for proxy connection if necessary
+				String connectionTarget;
 				if (proxyConfig!=null) {
 					
 					// create the proxy filter with reference to the filter list
 					// proxy filter will later on replace all proxy filters etc. with the ones from filter list
+					connectionTarget = proxyConfig.toString();
 					filterChain.addLast(SimonProxyFilter.class.getName(), new SimonProxyFilter(host.getHostName(),port,proxyConfig, filters));
 					logger.trace("prepared for proxy connection. chain is now: {}",filterChain);
 					
 				} else {
 					
 					// add the filters from the list to the filter chain
+					connectionTarget = "Connection["+host+":"+port+"]";
 					for (FilterEntry relation : filters) {
 						filterChain.addLast(relation.name, relation.filter);
 					}
 				}
-								
-				// now we can connect ...
-				ConnectFuture future;
+				logger.debug("Using: {}",connectionTarget);
+				
+				// now we can try to connect ...
+				ConnectFuture future = null;
 				try {
 					
 					// decide whether the connection goes via proxy or not
 					if (proxyConfig==null)
 						future = connector.connect(new InetSocketAddress(host, port));
-					else 
+					else {
 						future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
-					
-				} catch (UnresolvedAddressException e){
-					if (proxyConfig==null)
-						throw new EstablishConnectionFailed("Can't connect due to unresolved socket address. host="+host+" port="+port+" error: "+e.getMessage());
-					else 
-						throw new EstablishConnectionFailed("Can't connect via proxy due to unresolved socket address. host="+proxyConfig.getProxyHost()+" port="+proxyConfig.getProxyPort()+" error: "+e.getMessage());
-				}
-				
-				
-				future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
-				try{
-					session = future.getSession();
-					if (session!=null) {
-						logger.trace("connected with server: host={} port={} remoteObjectName={}", new Object[]{host, port, remoteObjectName});
-					} else {
-						throw new EstablishConnectionFailed("could not establish session to "+host+" on port "+port+". Maybe host is down?");
 					}
-				} catch (RuntimeIoException e){
-					logger.warn("Cannot connect to {} on port {}. Establish connection failed. Error was: {}",new Object[]{host, port, future.getException().getMessage()});
+					future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
+
+					
+				} catch (Exception e){
+					
 					if (session!=null) {
 						logger.trace("session != null. closing it...");
 						session.close(true);
@@ -494,7 +485,20 @@ public class Simon {
 					connector.dispose();
 					dispatcher.shutdown();
 					filterchainWorkerPool.shutdown();
-					throw new EstablishConnectionFailed("Cannot connect to "+host+" on port "+port+". Establish connection failed. Error was: "+future.getException().getMessage());
+
+					throw new EstablishConnectionFailed("Exception occured while connection/getting session for "+connectionTarget+". Error was: "+e+": "+e.getMessage());
+				}
+				
+				if (future.isConnected()) { // check if the connection succeeded
+					
+					session = future.getSession(); // this cannot return null, because we waited uninterruptibly for the connect-process
+					logger.trace("connected with {}. remoteObjectName={}", connectionTarget, remoteObjectName);
+					
+				} else {
+					connector.dispose();
+					dispatcher.shutdown();
+					filterchainWorkerPool.shutdown();
+					throw new EstablishConnectionFailed("Could not establish connection to "+connectionTarget+". Maybe host or network is down?");
 				}
 				
 				// configure the session

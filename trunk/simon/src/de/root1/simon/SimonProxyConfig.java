@@ -157,5 +157,18 @@ public class SimonProxyConfig {
 	public void setPassword(String password) {
 		this.password = password;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("Proxy[authRequired=").append(isAuthRequired()).
+		append("|proxyHost=").append(getProxyHost()).
+		append("|proxyPort=").append(getProxyPort()).
+		append("|username=").append(getUsername()).
+		append("|password=").append(getPassword()).
+		append("]");
+		
+		return sb.toString();
+	}
 
 }
