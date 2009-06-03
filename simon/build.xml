@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="SIMON" default="create_package" basedir=".">
+	
+    <description>SIMON: Simple Invocation of Methods Over Network</description>
+	
+	<property name="version" value="0.3_rc1"/>
+	
+	
+	<!-- destination of compiled project -->
+	<property name="build" location="build"/>		
+	<property name="build.sources" location="${build}/src"/>
+
+	<!-- destination of distribution -->
+	<property name="dist" location="dist"/>
+	<property name="dist.doc" location="${dist}/doc"/>
+	<property name="dist.src" location="${dist}/src"/>
+	<property name="dist.lib" location="${dist}/lib"/>
+	
+	<!-- location of additional libraries -->
+	<property name="lib" location="lib"/>		
+	
+	<!-- location of source code -->
+	<property name="src" location="src"/>
+	
+	<!-- the classpath -->
+	<path id="classpath">
+		<fileset dir="${lib}">
+			<include name="**/*"/>
+		</fileset>
+		<fileset dir="${build.sources}">
+			<include name="**/*"/>
+		</fileset>
+    </path>
+	
+	<!-- T A R G E T S -->
+
+<!-- ==================================================================================== -->
+	
+	<!-- clean up -->
+    <target name="clean" description="Remove the output directories">
+        <delete dir="${build}"/>
+    	<delete dir="${dist}"/>
+	</target>
+	
+<!-- ==================================================================================== -->
+	
+	<!-- stuff before doing anything -->
+	<target name="praeambel"  description="prepares the build timestamp and svn revision property">
+   	
+		<!-- memory timestamp -->
+   		<tstamp>
+			<format property="build.timestamp" pattern="yyyyMMddHHmm"/>
+	   	</tstamp>
+   		
+   		<!-- Optional: 
+   			This command get's the revision numer from the subversion system
+   			This requires the SVN commandline-package 
+   			For Windows System, it can be downloaded here: 
+   			http://subversion.tigris.org/files/documents/15/32856/svn-1.3.2-setup.exe
+   			If the commandline tool is not available, no revision number will be extracted -->
+    	<exec dir="." executable="svnversion" outputproperty="build.revision" failifexecutionfails="false" resultproperty="svnreccode">
+    	  <arg line="-n ."/>
+    	</exec>
+		<echo>revision=${build.revision}</echo>
+		<echo>timestamp=${build.timestamp}</echo>
+		<echo>version=${version}</echo>
+		
+		<!-- prepare folders -->
+		<mkdir dir="${build}"/>
+		<mkdir dir="${build.sources}"/>
+
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${dist.src}"/>
+		<mkdir dir="${dist.doc}"/>
+		<mkdir dir="${dist.lib}"/>
+		
+		<!-- copy files -->
+    	<copy todir="${build.sources}">
+            <fileset dir="${src}">
+                <include name="**/*"/>
+			</fileset>
+    		<!-- search&replace version info tags with information gathered in preambel target-->
+    		<filterset>
+				<filter token="SIMON_VERSION" value="${version}"/>
+				<filter token="SIMON_BUILD_TIMESTAMP" value="${build.timestamp}"/>
+				<filter token="SIMON_BUILD_REVISION" value="${build.revision}"/>
+			</filterset>
+		</copy>
+	</target>
+	
+<!-- ==================================================================================== -->	
+	
+    <!-- compile all the stuff -->
+    <target name="build" depends="praeambel" description="Compile the source.">
+
+    	<!-- compile the sources in build.sources to build.classes -->
+        <javac destdir="${build}"
+               optimize="on"
+               debug="on"
+               source="1.5"
+               target="1.5"
+               nowarn="off">
+            <src path="${build.sources}"/>
+            <classpath refid="classpath"/>   
+        </javac>
+    </target>
+<!-- ==================================================================================== -->
+		
+	<!-- compiles the javadoc -->
+	<target name="javadoc" description="creates the java doc documentation.">
+		
+		<javadoc access="public" 
+	        		author="true" 
+	        		classpath="${classpath}" 
+	        		destdir="${dist}/doc" 
+	        		doctitle="SIMON ${version} API Documentation" 
+	        		nodeprecated="false" 
+	        		nodeprecatedlist="false" 
+	        		noindex="false" 
+	        		nonavbar="false" 
+	        		notree="false" 
+	        		packagenames="de.root1.simon.*" 
+	        		source="1.5" 
+	        		sourcepath="${src}" 
+	        		splitindex="true" 
+	        		use="true" 
+	        		overview="${src}/overview-core.html"
+	        		version="true">
+			<classpath refid="classpath"/>
+		</javadoc>
+						
+	</target>	
+	
+<!-- ==================================================================================== -->
+    
+	<!-- create the jar  -->
+	<target name="create_jar" depends="build" description="Create the jar file">
+	
+        <jar destfile="${dist}/SIMON-${version}-rev${build.revision}.jar">
+            <fileset dir="${build}">
+            	<!-- exclude the source folder in the build directory -->
+        		<exclude name="**/src/**"/>
+			</fileset>
+            <manifest>				
+            </manifest>
+        </jar>
+
+	</target>
+	
+<!-- ==================================================================================== -->
+	    
+	<!-- create the jar  -->
+	<target name="create_jar_w_src" depends="build" description="Create the jar file">
+	
+        <jar destfile="${dist}/SIMON-${version}-rev${build.revision}_incl_src.jar">
+            <fileset dir="${build}"/>
+            <manifest>				
+            </manifest>
+        </jar>
+
+	</target>  
+	
+<!-- ==================================================================================== -->
+	
+	<!-- create the package -->
+	<target name="create_package" depends="create_jar, create_jar_w_src, javadoc" description="Create a complete package">
+		
+		<!-- create the documentation -->
+<!--		<antcall target="javadoc"></antcall> -->
+		
+		<!-- create the documentation -->
+<!-- 		<antcall target="create_jar"></antcall> -->
+		
+    	<!-- copy the additional files to the dist folder -->
+		<copy todir="${dist}">
+	        <fileset dir=".">
+	        	<include name="*.txt"/>
+			</fileset>
+			<!-- search&replace version info tags with information gathered in preambel target-->
+    		<filterset>
+				<filter token="SIMON_VERSION" value="${version}"/>
+				<filter token="SIMON_BUILD_TIMESTAMP" value="${build.timestamp}"/>
+				<filter token="SIMON_BUILD_REVISION" value="${build.revision}"/>
+			</filterset>
+		</copy>
+		
+    	<!-- copy the sources to the dist folder -->
+		<copy todir="${dist.src}">
+	        <fileset dir="${build.sources}">
+	        	<include name="**/*"/>
+			</fileset>
+		</copy>
+		
+		<!-- copy the libraries used by SIMON to the dist folder -->
+		<copy todir="${dist.lib}">
+	        <fileset dir="${lib}">
+	        	<include name="**/*"/>
+			</fileset>
+		</copy>
+
+		<!-- zip all together -->
+		<zip destfile="${dist}/SIMON-Package-${version}-rev${build.revision}.zip"
+		       basedir="${dist}"
+		       includes="**/*"
+		/>
+
+	</target>  
+
+</project>

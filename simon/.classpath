@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/junit-4.5.jar"/>
+	<classpathentry kind="lib" path="lib/mina/slf4j-api-1.5.3.jar" sourcepath="C:/Documents and Settings/achr/Desktop/slf4j-1.5.3/slf4j-1.5.3/slf4j-api-1.5.3-sources.jar"/>
+	<classpathentry kind="lib" path="lib/mina/slf4j-jdk14-1.5.3.jar"/>
+	<classpathentry kind="lib" path="lib/mina/mina-core-2.0.0-M4.jar" sourcepath="C:/Documents and Settings/achr/Desktop/mina-2.0.0-M4.zip"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
