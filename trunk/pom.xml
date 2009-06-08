@@ -38,7 +38,7 @@
 
 	<developers>
 		<developer>
-			<id>alex</id>
+			<id>achristian</id>
 			<name>Alexander Christian</name>
 			<email>info_NOSPAM_@root1.de</email>
 			<roles>
@@ -49,8 +49,44 @@
 			<timezone>+1</timezone>
 		</developer>         
 	</developers>
-
-
+	
+	<licenses>
+		<license>
+			<name>GNU GENERAL PUBLIC LICENSE, Version 3.0</name>
+			<url>license.txt</url>
+		</license>
+		<license>
+			<name>root1.de Commercial License, Version 1.0</name>
+			<url>root1-license.txt</url>
+		</license>
+	</licenses>
+	
+	<scm>
+		<connection>scm:svn:http://svn.root1.de/svn/simon/trunk</connection>
+		<url>http://svn.root1.de/svn/simon</url>
+	</scm>
+      
+	<reporting>
+      		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-project-info-reports-plugin</artifactId>
+				<reportSets>
+					<reportSet>
+                                               	<reports>
+                                               		<report>index</report>
+                                        		<report>dependencies</report>
+		                                	<report>project-team</report>
+		                                	<report>issue-tracking</report>
+		                                	<report>license</report>
+		                                	<report>scm</report>
+                                                </reports>
+					</reportSet>
+				</reportSets>
+			</plugin>
+		</plugins>
+	</reporting>
+                                                                        
 	<!-- additional maven repositories to search in -->
 <!--	<repositories>
 		<repository>
@@ -77,6 +113,10 @@
 			<name>internal snapshots</name>
 			<url>http://nexus.root1.de/content/repositories/snapshots/</url>
 		</snapshotRepository>
+		<site>
+			<id>simon.root1.de</id>
+			<url>scp://simon.root1.de/var/www/virtual/simon.root1.de/htdocs/</url>
+		</site>          
 	</distributionManagement>
 
 	<build>
