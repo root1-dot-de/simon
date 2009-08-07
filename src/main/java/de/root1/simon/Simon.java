@@ -28,7 +28,6 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.channels.UnresolvedAddressException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +37,6 @@ import java.util.logging.LogManager;
 
 import javax.net.ssl.SSLContext;
 
-import org.apache.mina.core.RuntimeIoException;
 import org.apache.mina.core.filterchain.DefaultIoFilterChainBuilder;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.future.ConnectFuture;
@@ -153,7 +151,7 @@ public class Simon {
 			}
 			
 		}
-		logger.debug("Simon lib loaded [version={}|rev={}|timestamp={}]", new Object[]{Statics.SIMON_VERSION, Statics.SIMON_BUILD_REVISION, Statics.SIMON_BUILD_TIMESTAMP});
+		logger.debug("Simon lib loaded ...");
 		
 	}
 	

@@ -51,14 +51,6 @@ public class Statics {
 	/** String that is needed for answering a "find server" packet */
 	protected static final String REQUEST_STRING = "[SIMON|FindServer]";
 
-	// some variables configured during ant build
-	/** holds the version of SIMON */
-	protected static final String SIMON_VERSION = "@SIMON_VERSION@";
-	/** holds the build time stamp of SIMON */
-	protected static final String SIMON_BUILD_TIMESTAMP = "@SIMON_BUILD_TIMESTAMP@";
-	/** holds the revision number */
-	protected static final String SIMON_BUILD_REVISION = "@SIMON_BUILD_REVISION@";
-	
 	// some names for the used threads/pools
 	protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon.Dispatcher.WorkerPool";
 	protected static final String PINGWATCHDOG_WORKERPOOL_NAME = "Simon.Dispatcher.PingWatchdogPool";
