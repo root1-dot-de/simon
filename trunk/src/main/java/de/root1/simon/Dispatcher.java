@@ -664,8 +664,6 @@ public class Dispatcher implements IoHandler{
 		
 		Object o = requestMonitorAndResultMap.remove(sequenceId);
 		
-		assert (o instanceof Monitor); // if the result is an instance of "Monitor", something went wrong
-		
 		if (o instanceof SimonRemoteException) {
 			logger.debug("result is an exception, throwing it ...");
 			throw ((SimonRemoteException) o);
