@@ -1114,7 +1114,7 @@ public class Simon {
 	}
 	
 	/**
-	 * Prepare <code>simonRemote</code>'s the internal message dispatcher for
+	 * Prepare <code>simonRemote</code>'s internal message dispatcher for
 	 * receiving raw data.<br/> The result of this method is a token, which
 	 * identifies the channel on both sides:
 	 * <ul>
@@ -1123,6 +1123,8 @@ public class Simon {
 	 * <li>and on the <i>sending side</i> for opening the {@link RawChannel} by
 	 * calling {@link Simon#openRawChannel(int, SimonRemote)}.</li>
 	 * </ul>
+         * <br>
+         * This method has to be called on the receiving side.
 	 * 
 	 * @param listener
 	 *            the listener which gets all the received data related to this
