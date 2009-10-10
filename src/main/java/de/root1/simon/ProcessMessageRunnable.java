@@ -49,6 +49,7 @@ import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
+import java.nio.ByteBuffer;
 
 /**
  * TODO document me
@@ -250,7 +251,9 @@ public class ProcessMessageRunnable implements Runnable {
 		RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
 		if (rawChannelDataListener!=null){
 			logger.debug("writing data to {} for token {}.",rawChannelDataListener, msg.getChannelToken());
-			rawChannelDataListener.write(msg.getData());
+                        ByteBuffer data = msg.getData();
+                        data.flip();
+			rawChannelDataListener.write(data);
 			logger.debug("data forwarded to listener for token {}", msg.getChannelToken());
 			MsgRawChannelDataReturn returnMsg = new MsgRawChannelDataReturn();
 			returnMsg.setSequence(msg.getSequence());
