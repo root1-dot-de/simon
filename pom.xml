@@ -4,10 +4,7 @@
 	<artifactId>simon</artifactId>
 	<name>SIMON (Simple Invocation of Methods Over Network)</name>
 	<version>1.0.0-RC1-SNAPSHOT</version>
-	<description>
-		SIMON is a kind of RMI replacement which solves the most common problems many people complain about. 
-		It's fast, it's scalable, it's small and finally, easy to use.
-	</description>
+	<description>SIMON is a kind of RMI replacement which solves the most common problems many people complain about. It's fast, it's scalable, it's small and finally, easy to use.</description>
 	<url>http://www.root1.de/project_simon</url>
 
 	<properties>
@@ -21,13 +18,13 @@
 			<artifactId>slf4j-api</artifactId>
 			<version>1.5.8</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-jdk14</artifactId>
 			<version>1.5.8</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.apache.mina</groupId>
 			<artifactId>mina-core</artifactId>
@@ -42,10 +39,10 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	
+
 	<issueManagement>
-		<system>Mantis</system>
-		<url>http://www.root1.de/mantis</url>
+		<system>Redmine on dev.root1.de</system>
+		<url>http://dev.root1.de/projects/simon/issues</url>
 	</issueManagement>
 
 	<developers>
@@ -59,9 +56,9 @@
 			</roles>
 			<organization>root1.de</organization>
 			<timezone>+1</timezone>
-		</developer>         
+		</developer>
 	</developers>
-	
+
 	<licenses>
 		<license>
 			<name>GNU GENERAL PUBLIC LICENSE, Version 3.0</name>
@@ -72,12 +69,12 @@
 			<url>root1-license.txt</url>
 		</license>
 	</licenses>
-	
+
 	<scm>
 		<connection>scm:svn:http://svn.root1.de/svn/simon/trunk</connection>
 		<url>http://svn.root1.de/svn/simon</url>
 	</scm>
-      
+
 	<reporting>
       		<plugins>
 			<plugin>
@@ -103,7 +100,7 @@
 			</plugin>
 		</plugins>
 	</reporting>
-                                                                        
+
 	<!-- additional maven repositories to search in -->
 <!--	<repositories>
 		<repository>
@@ -132,8 +129,8 @@
 		</snapshotRepository>
 		<site>
 			<id>simon.root1.de</id>
-			<url>scp://simon.root1.de/var/www/virtual/simon.root1.de/htdocs/</url>
-		</site>          
+			<url>scp://root1.de:33/var/www/virtual/dev.root1.de/htdocs/project-sites/simon</url>
+		</site>
 	</distributionManagement>
 
 	<build>
@@ -150,7 +147,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
@@ -164,8 +161,8 @@
 				</execution>
 				</executions>
 			</plugin>
-                                                                  			
-			
+
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -176,7 +173,7 @@
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -199,7 +196,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			
+
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>changelog-maven-plugin</artifactId>
