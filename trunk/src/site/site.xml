@@ -11,7 +11,7 @@
   <body>
       
   <menu name="SIMON">
-      <item name="Project Management Webinterface" href="http://dev.root1.de/projects/show/simon" />
+      <item name="Project Management" href="http://dev.root1.de/projects/show/simon" />
       <!--<item name="Description" href="description.html" />-->
 
       <!-- <item name="Introduction" href="index.html"/> -->
