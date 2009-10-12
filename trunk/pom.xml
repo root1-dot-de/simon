@@ -5,7 +5,7 @@
 	<name>SIMON (Simple Invocation of Methods Over Network)</name>
 	<version>1.0.0-RC1-SNAPSHOT</version>
 	<description>SIMON is a kind of RMI replacement which solves the most common problems many people complain about. It's fast, it's scalable, it's small and finally, easy to use.</description>
-	<url>http://www.root1.de/project_simon</url>
+	<url>http://dev.root1.de/project-sites/simon/</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
