@@ -766,9 +766,14 @@ public class Simon {
 	}
 
 	/**
-	 * TODO document me
+	 *  Releases a {@link Dispatcher}. If there is no more
+	 * server string referencing the Dispatcher, the Dispatcher will be
+	 * released/shutdown.
+	 *
 	 * @param dispatcher
-	 * @return
+	 *            the iDispatcher to release
+	 * @return true if the Dispatcher is shut down, false if there's still a
+	 *         reference pending
 	 */
 	protected static boolean releaseDispatcher(Dispatcher dispatcher) {
 		// get the serverstring the dispatcher is connected to

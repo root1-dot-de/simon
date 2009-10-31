@@ -49,6 +49,7 @@ import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoader;
+import de.root1.simon.utils.Utils;
 import java.nio.ByteBuffer;
 
 /**
@@ -283,7 +284,10 @@ public class ProcessMessageRunnable implements Runnable {
 		ret.setSequence(msg.getSequence());
 		try {
 			Class<?>[] interfaces = null;
-			interfaces = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces();
+
+                        //interfaces = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces();
+                        interfaces = Utils.findAllInterfaces(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass());
+
 			ret.setInterfaces(interfaces);
 		} catch (LookupFailedException e) {
 			logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
