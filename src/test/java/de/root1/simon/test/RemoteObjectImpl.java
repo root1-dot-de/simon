@@ -17,4 +17,8 @@ public class RemoteObjectImpl implements RemoteObject {
         System.out.println("Hello World");
     }
 
+    public void helloWorldArg(String s) throws SimonRemoteException {
+        System.out.println("Hello WorldArg ["+s+"]");
+    }
+
 }

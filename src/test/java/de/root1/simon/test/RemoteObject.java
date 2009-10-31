@@ -15,5 +15,6 @@ import de.root1.simon.exceptions.SimonRemoteException;
 public interface RemoteObject extends SimonRemote {
 
     public void helloWorld() throws SimonRemoteException;
+    public void helloWorldArg(String s) throws SimonRemoteException;
 
 }
