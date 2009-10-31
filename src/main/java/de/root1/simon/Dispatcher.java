@@ -86,7 +86,7 @@ public class Dispatcher implements IoHandler{
 	 * This map contains pairs of sessions and list of open requests
 	 * This is needed to do a clean shutdown of a session
 	 */
-	private Map<IoSession, List<Integer>> sessionHasRequestPlaced = Collections.synchronizedMap(new HashMap<IoSession, List<Integer>>());
+	private final Map<IoSession, List<Integer>> sessionHasRequestPlaced = Collections.synchronizedMap(new HashMap<IoSession, List<Integer>>());
 	
 //	/** a memory map for the client the unwrap the incoming return value after executing a method on the server */
 //	private Map<Integer, Class<?>> requestReturnType = Collections.synchronizedMap(new HashMap<Integer, Class<?>>());
@@ -104,10 +104,10 @@ public class Dispatcher implements IoHandler{
 	private final String serverString;
 
 	/** TODO document me */
-	private HashMap<Integer, RawChannelDataListener> rawChannelMap = new HashMap<Integer, RawChannelDataListener>();
+	private final HashMap<Integer, RawChannelDataListener> rawChannelMap = new HashMap<Integer, RawChannelDataListener>();
 
 	/** TODO document me */
-	private ArrayList<Integer> tokenList = new ArrayList<Integer>();
+	private final ArrayList<Integer> tokenList = new ArrayList<Integer>();
 
 	/** TODO document me */
 	private PingWatchdog pingWatchdog;
@@ -210,7 +210,8 @@ public class Dispatcher implements IoHandler{
 	 * 
 	 * Sends a remote object lookup to the server
 	 * 
-	 * @param remoteObjectName
+	 * @@param session the related session over which the invoke request comes
+	 * @param remoteObjectName the remote object to lookup
 	 * @return the object we made the lookup for
 	 * @throws SimonRemoteException 
 	 */
@@ -244,15 +245,17 @@ public class Dispatcher implements IoHandler{
 
 	
 	
-	/**
-	 * sends a requested invocation to the server
-	 * 
-	 * @param remoteObjectName
-	 * @param method
-	 * @param args
-	 * @return the method's result
-	 * @throws SimonRemoteException if there's a problem with the communication
-	 */	 
+	/*
+         
+         * Sends a method invocation request to the remote host.
+	 *
+	 * @param session the related session over which the invoke request comes
+	 * @param remoteObjectName the remote object
+         * @param method the method ti invoke on the remote
+         * @param args the arguments for the method
+	 * @return the result of the invoked method
+	 * @throws SimonRemoteException
+         */
  	protected Object invokeMethod(IoSession session, String remoteObjectName, Method method, Object[] args) throws SimonRemoteException {
  		
  		checkForInvalidState(session, method.toString());
@@ -311,9 +314,9 @@ public class Dispatcher implements IoHandler{
 	 * 
 	 * Sends a "toString()" request to the remote host.
 	 * 
-	 * @param key the key associated with the network connection
-	 * @param remoteObjectName the remote object on which the call has to be made
-	 * @return the result of the remote "toString()" call.
+	 * @param session the related session over which the invoke request comes
+	 * @param remoteObjectName the remote object
+	 * @return the result of the remote "toString()" call
 	 * @throws SimonRemoteException 
 	 */
 	protected String invokeToString(IoSession session, String remoteObjectName) throws SimonRemoteException {
@@ -349,10 +352,12 @@ public class Dispatcher implements IoHandler{
 	
 	/**
 	 * 
-	 * @TODO document me ...
+	 * Invokes the hashCode() method on the remote object
 	 * 
-	 * @param remoteObjectName the 
-	 * @return
+         * @param session the related session over which the invoke request comes
+	 * @param remoteObjectName the remote object
+	 * @return the result of the remote "hashCode()" call
+         * @throws SimonRemoteException
 	 */
 	protected int invokeHashCode(IoSession session, String remoteObjectName) throws SimonRemoteException {
 		
@@ -854,9 +859,9 @@ public class Dispatcher implements IoHandler{
 	}
 
 	/**
-	 * TODO document me
-	 * @return
-	 * @throws SimonRemoteException 
+	 * Opens the a raw channel on the given session with the specified token
+	 * @return the opened RawChannel
+	 * @throws SimonRemoteException if a problem occured while opening the raw channel
 	 */
 	protected RawChannel openRawChannel(IoSession session, int channelToken) throws SimonRemoteException {
 		checkForInvalidState(session, "openRawChannel()");
@@ -938,11 +943,11 @@ public class Dispatcher implements IoHandler{
 	 */
 	private void releaseToken(int channelToken){
 		synchronized (tokenList) {
-			// if not cast to object, the entry at 
+			// if not cast to integer object, the entry at
 			// index "channelToken" is removed, 
 			// instead of the channelToken itself.
 			// means: wrong remove() method would be used
-			tokenList.remove((Object)channelToken);
+			tokenList.remove((Integer)channelToken);
 		}
 	}
 	
@@ -1025,8 +1030,8 @@ public class Dispatcher implements IoHandler{
 	}
 	
 	/**
-	 * TODO document me
-	 * @return
+	 * Returns the PingWatchdog that checks the session connectivity
+	 * @return the current instance of PingWatchdog
 	 */
 	protected PingWatchdog getPingWatchdog(){
 		return pingWatchdog;
