@@ -189,9 +189,17 @@ public class LookupTable {
 
 		logger.debug("name={}",name);
 
-		SimonRemote simonRemote = bindings.remove(name);
-		removeRemoteObjectFromHashMap(simonRemote);
-		simonRemote_to_hashToMethod_Map.remove(name);
+		SimonRemote simonRemote = bindings.remove(name); 
+
+                // simonRemote may be null in case of multithreaded access
+                // to Simon#unbind() and thus releaseRemoteBinding()
+                if (simonRemote!=null) {
+                    logger.debug("cleaning up [{}]");    
+                    removeRemoteObjectFromHashMap(simonRemote);
+                    simonRemote_to_hashToMethod_Map.remove(name);
+                } else {
+                    logger.debug("[{}] already removed or not available. nothing to do.");    
+                }
 		
 		logger.debug("end");
 	}
