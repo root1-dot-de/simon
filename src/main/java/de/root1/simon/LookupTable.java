@@ -56,7 +56,7 @@ public class LookupTable {
 	/**
 	 * Maps the remote object name to the remote object
 	 */
-	private HashMap<String, SimonRemote> bindings = new HashMap<String, SimonRemote>();
+	private final HashMap<String, SimonRemote> bindings = new HashMap<String, SimonRemote>();
 	
 	
 	/**
@@ -65,17 +65,17 @@ public class LookupTable {
 	 * 
 	 * <session-ID, List<remoteObjectName>>
 	 */
-	private Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
+	private final Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
 	
 	/**
 	 * Maps the remote object to the map with the hash-mapped methods.
 	 */
-	private Map<SimonRemote, Map<Long, Method>> simonRemote_to_hashToMethod_Map = new HashMap<SimonRemote, Map<Long, Method>>();
+	private final Map<SimonRemote, Map<Long, Method>> simonRemote_to_hashToMethod_Map = new HashMap<SimonRemote, Map<Long, Method>>();
 
 	/**
 	 * TODO document me
 	 */
-	private HashMap<Integer, SimonRemote> remoteobjectHashMap = new HashMap<Integer, SimonRemote>();
+	private final HashMap<Integer, SimonRemote> remoteobjectHashMap = new HashMap<Integer, SimonRemote>();
 
 	private Dispatcher dispatcher;
 

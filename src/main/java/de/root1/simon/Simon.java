@@ -89,7 +89,7 @@ public class Simon {
 	/**
 	 * A list of publishments. This is used by the publish service server.
 	 */
-	private static List<SimonPublication> publishments = new ArrayList<SimonPublication>();
+	private static final List<SimonPublication> publishments = new ArrayList<SimonPublication>();
 
 	/**
 	 * the publish service server that is used when remote objects are published
@@ -114,7 +114,7 @@ public class Simon {
 	/**
 	 * A list with all active/still alive LookupTables ever created
 	 */
-	private static List<LookupTable> lookupTableList = new ArrayList<LookupTable>();
+	private static final List<LookupTable> lookupTableList = new ArrayList<LookupTable>();
 
 	/**
 	 * Try to load 'config/simon_logging.properties'
