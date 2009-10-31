@@ -196,7 +196,7 @@ public class LookupTable {
                 if (simonRemote!=null) {
                     logger.debug("cleaning up [{}]");    
                     removeRemoteObjectFromHashMap(simonRemote);
-                    simonRemote_to_hashToMethod_Map.remove(name);
+                    simonRemote_to_hashToMethod_Map.remove(simonRemote);
                 } else {
                     logger.debug("[{}] already removed or not available. nothing to do.");    
                 }
