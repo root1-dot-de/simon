@@ -196,8 +196,9 @@ public class Simon {
 	 * @param port the port the registry is bind to
 	 * @return the created registry
 	 * @throws IOException if there is a problem with the networking layer
+         * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
 	 */
-	public static Registry createRegistry(InetAddress address, int port) throws IOException {
+	public static Registry createRegistry(InetAddress address, int port) throws IOException, IllegalArgumentException {
 		logger.debug("begin");
 		Registry registry = new Registry(address, port, getThreadPool(), protocolFactoryClassName);
 		logger.debug("end");
@@ -216,8 +217,9 @@ public class Simon {
 	 * @param port the port the registry is bind to
 	 * @return the created registry
 	 * @throws IOException if there is a problem with the networking layer
+         * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
 	 */
-	public static Registry createRegistry(SslContextFactory sslContextFactory, InetAddress address, int port) throws IOException {
+	public static Registry createRegistry(SslContextFactory sslContextFactory, InetAddress address, int port) throws IOException, IllegalArgumentException {
 		logger.debug("begin");
 		Registry registry = new Registry(address, port, getThreadPool(), protocolFactoryClassName, sslContextFactory);
 		logger.debug("end");
@@ -249,6 +251,7 @@ public class Simon {
 	 *             registry
 	 * @throws LookupFailedException
 	 *             if there's no such object on the server
+         * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
 	 */
 	public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
 		return lookup(InetAddress.getByName(host), port, remoteObjectName);
@@ -279,6 +282,8 @@ public class Simon {
 	 *             registry
 	 * @throws LookupFailedException
 	 *             if there's no such object on the server
+         * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+         *
 	 */
 	public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		return lookup(null, null, host, port, remoteObjectName, null);
@@ -315,6 +320,7 @@ public class Simon {
 	 *             registry
 	 * @throws LookupFailedException
 	 *             if there's no such object on the server
+         * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used         *
 	 */
 	public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		return lookup(sslContextFactory, proxyConfig, host, port, remoteObjectName, null);
@@ -355,6 +361,7 @@ public class Simon {
 	 *             registry
 	 * @throws LookupFailedException
 	 *             if there's no such object on the server
+         * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
 	 */
 	public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
 		logger.debug("begin");
@@ -427,17 +434,20 @@ public class Simon {
 				// add the simon protocol
 				SimonProtocolCodecFactory protocolFactory = null;
 				try {
-					protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
-				} catch (ClassNotFoundException e) {
-					// already proved
-					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
-				} catch (InstantiationException e) {
-					// already proved
-					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
-				} catch (IllegalAccessException e) {
-					// already proved
-					logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
-				}
+
+                                   protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
+
+                		} catch (ClassNotFoundException e) {
+                                    logger.error("ClassNotFoundException while preparing ProtocolFactory: {}", e.getMessage());
+                                    throw new IllegalArgumentException(e);
+                                } catch (InstantiationException e) {
+                                    logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
+                                    throw new IllegalArgumentException(e);
+                                } catch (IllegalAccessException e) {
+                                    logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
+                                    throw new IllegalArgumentException(e);
+                                }
+                                
 				protocolFactory.setup(false);
 				filters.add(new FilterEntry(protocolFactory.getClass().getName(), new ProtocolCodecFilter(protocolFactory)));
 				

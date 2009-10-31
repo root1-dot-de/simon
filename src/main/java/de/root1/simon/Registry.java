@@ -136,7 +136,7 @@ public final class Registry {
 	 * @throws IOException
 	 *             if there's a problem getting a selector for the non-blocking
 	 *             network communication, or if the
-	 * 
+	 * @throws IllegalArgumentException if specified protocol codec cannot be used
 	 */
 	private void start() throws IOException {
 
@@ -182,17 +182,20 @@ public final class Registry {
 
 		SimonProtocolCodecFactory protocolFactory = null;
 		try {
-			protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
+
+                    protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
+
 		} catch (ClassNotFoundException e) {
-			logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
-			// already proved
+                    logger.error("ClassNotFoundException while preparing ProtocolFactory: {}", e.getMessage());
+                    throw new IllegalArgumentException(e);
 		} catch (InstantiationException e) {
-			// already proved
-			logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+                    logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
+                    throw new IllegalArgumentException(e);
 		} catch (IllegalAccessException e) {
-			// already proved
-			logger.warn("this should never happen. Please contact author. -> {}", e.getMessage());
+                    logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
+                    throw new IllegalArgumentException(e);
 		}
+
 		protocolFactory.setup(true);
 		acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
 		
