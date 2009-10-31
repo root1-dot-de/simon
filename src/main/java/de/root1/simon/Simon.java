@@ -971,6 +971,7 @@ public class Simon {
 	 * 
 	 * @param simonPublication
 	 *            the publication to unpublish
+         * @return true, if elemet was present and is now removed, false if not
 	 */
 	protected static boolean unpublish(SimonPublication simonPublication) {
 		boolean result = publishments.remove(simonPublication);
