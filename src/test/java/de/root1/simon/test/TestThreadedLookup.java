@@ -50,6 +50,7 @@ public class TestThreadedLookup {
         }
 
         public void run() {
+
             try {
                 RemoteObject roiRemote = (RemoteObject) Simon.lookup("localhost", 22222, "roi");
                 roiRemote.helloWorldArg(String.valueOf(Thread.currentThread().getId()));
@@ -60,6 +61,7 @@ public class TestThreadedLookup {
                 System.out.println("Releasing one semaphore aquire");
                 semaphore.release();
             }
+            
         }
     }
 }
