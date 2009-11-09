@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -37,29 +38,25 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgLookupDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
-	private MsgLookup m = new MsgLookup();
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgLookupDecoder() {
         super(SimonMessageConstants.MSG_LOOKUP);
     }
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
+        MsgLookup m = new MsgLookup();
 
-    	
-        
         try {
-        	String remoteObjectName = in.getString(Charset.forName("UTF-8").newDecoder());
-			m.setRemoteObjectName(remoteObjectName);
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		logger.trace("message={}", m);
+            String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            m.setRemoteObjectName(remoteObjectName);
+        } catch (CharacterCodingException e) {
+            e.printStackTrace();
+        }
+
+        logger.trace("message={}", m);
         return m;
     }
 
