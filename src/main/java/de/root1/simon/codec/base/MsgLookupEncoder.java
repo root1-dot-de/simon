@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -35,22 +36,21 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgLookupEncoder<T extends MsgLookup> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgLookupEncoder() {
         super(SimonMessageConstants.MSG_LOOKUP);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	logger.trace("message={}", message);
+        logger.trace("message={}", message);
         try {
-			out.putString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+            out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
+        } catch (CharacterCodingException e) {
+            e.printStackTrace();
+        }
     }
 
     public void dispose() throws Exception {

@@ -69,10 +69,10 @@ public class Dispatcher implements IoHandler{
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 
 	/** The table that holds all the registered/bind remote objects */
-	private LookupTable lookupTable;
+	private final LookupTable lookupTable;
 	
 	/** a simple counter that is used for creating sequence IDs */
-	private AtomicInteger sequenceIdCounter = new AtomicInteger(0);
+	private final AtomicInteger sequenceIdCounter = new AtomicInteger(0);
 	
 	/**
 	 * The map that holds the relation between the sequenceID and the received
@@ -80,7 +80,7 @@ public class Dispatcher implements IoHandler{
 	 * corresponding monitor object. If the result is present, the monitor object
 	 * is replaced with the result
 	 */
-	private Map<Integer, Object> requestMonitorAndResultMap = Collections.synchronizedMap(new HashMap<Integer, Object>());
+	private final Map<Integer, Object> requestMonitorAndResultMap = Collections.synchronizedMap(new HashMap<Integer, Object>());
 
 	/**
 	 * This map contains pairs of sessions and list of open requests
@@ -110,7 +110,7 @@ public class Dispatcher implements IoHandler{
 	private final ArrayList<Integer> tokenList = new ArrayList<Integer>();
 
 	/** TODO document me */
-	private PingWatchdog pingWatchdog;
+	private final PingWatchdog pingWatchdog;
 
 	/** TODO document me */
 	private int writeTimeout = Statics.DEFAULT_WRITE_TIMEOUT;
@@ -118,7 +118,7 @@ public class Dispatcher implements IoHandler{
 	/**
 	 * A map containing remote object names and a related list with closed listeners
 	 */
-	private Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
+	private final Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
 	
 	/**
 	 * TODO document me
@@ -697,11 +697,9 @@ public class Dispatcher implements IoHandler{
 	 * The range should be big enough so that there should 
 	 * not be two oder more identical IDs
 	 * 
-	 * TODO make 100.00% sure that the CANNOT be two identical ids alive
-	 * 
 	 * @return a request ID
 	 */
-	private Integer generateSequenceId() {
+	private synchronized Integer generateSequenceId() {
 		// if maximum reached, get maximum and set back to zero. otherwise just return the incremented value
 		return (sequenceIdCounter.incrementAndGet() == Integer.MAX_VALUE ? sequenceIdCounter.getAndSet(0) : sequenceIdCounter.intValue());
 	}
