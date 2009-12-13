@@ -45,12 +45,17 @@ public class MsgLookupEncoder<T extends MsgLookup> extends AbstractMessageEncode
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-        logger.trace("message={}", message);
+
+        logger.trace("begin. message={}", message);
+        logger.trace("position before: {}",out.position());
         try {
             out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
         } catch (CharacterCodingException e) {
             e.printStackTrace();
+            logger.error(e.getMessage());
         }
+        logger.trace("position after: {}",out.position());
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

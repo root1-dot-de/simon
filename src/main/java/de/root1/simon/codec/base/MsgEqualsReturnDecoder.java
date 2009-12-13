@@ -36,25 +36,23 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgEqualsReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgEqualsReturnDecoder() {
         super(SimonMessageConstants.MSG_EQUALS_RETURN);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	MsgEqualsReturn message = new MsgEqualsReturn();
-    	
-    	message.setEqualsResult(Utils.byteToBoolean(in.get()));
-    	
-		logger.trace("message={}", message);
+        MsgEqualsReturn message = new MsgEqualsReturn();
+
+        message.setEqualsResult(Utils.byteToBoolean(in.get()));
+
+        logger.trace("message={}", message);
         return message;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

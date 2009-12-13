@@ -28,102 +28,101 @@ import org.apache.mina.core.session.IoSession;
  */
 public class RemoteStatistics implements SimonRemoteStatistics {
 
-	private IoSession ioSession;
-	
-	public RemoteStatistics(IoSession ioSession) {
-		this.ioSession = ioSession;
-	}
+    private IoSession ioSession;
+
+    protected RemoteStatistics(IoSession ioSession) {
+        this.ioSession = ioSession;
+    }
 
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getLastIoTime()
-	 */
-	public long getLastIoTime() {
-		return ioSession.getLastIoTime();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getLastIoTime()
+     */
+    public long getLastIoTime() {
+        return ioSession.getLastIoTime();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getLastReadTime()
-	 */
-	public long getLastReadTime() {
-		return ioSession.getLastReadTime();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getLastReadTime()
+     */
+    public long getLastReadTime() {
+        return ioSession.getLastReadTime();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getLastWriteTime()
-	 */
-	public long getLastWriteTime() {
-		return ioSession.getLastWriteTime();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getLastWriteTime()
+     */
+    public long getLastWriteTime() {
+        return ioSession.getLastWriteTime();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getReadBytes()
-	 */
-	public long getReadBytes() {
-		return ioSession.getReadBytes();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getReadBytes()
+     */
+    public long getReadBytes() {
+        return ioSession.getReadBytes();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getReadBytesThroughput()
-	 */
-	public double getReadBytesThroughput() {
-		return ioSession.getReadBytesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getReadBytesThroughput()
+     */
+    public double getReadBytesThroughput() {
+        return ioSession.getReadBytesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getReadMessages()
-	 */
-	public long getReadMessages() {
-		return ioSession.getReadMessages();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getReadMessages()
+     */
+    public long getReadMessages() {
+        return ioSession.getReadMessages();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getReadMessagesThroughput()
-	 */
-	public double getReadMessagesThroughput() {
-		return ioSession.getReadMessagesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getReadMessagesThroughput()
+     */
+    public double getReadMessagesThroughput() {
+        return ioSession.getReadMessagesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getScheduledWriteBytes()
-	 */
-	public long getScheduledWriteBytes() {
-		return ioSession.getScheduledWriteBytes();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getScheduledWriteBytes()
+     */
+    public long getScheduledWriteBytes() {
+        return ioSession.getScheduledWriteBytes();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getScheduledWriteMessages()
-	 */
-	public long getScheduledWriteMessages() {
-		return ioSession.getScheduledWriteMessages();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getScheduledWriteMessages()
+     */
+    public long getScheduledWriteMessages() {
+        return ioSession.getScheduledWriteMessages();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getWrittenBytes()
-	 */
-	public long getWrittenBytes() {
-		return ioSession.getWrittenBytes();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getWrittenBytes()
+     */
+    public long getWrittenBytes() {
+        return ioSession.getWrittenBytes();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getWrittenBytesThroughput()
-	 */
-	public double getWrittenBytesThroughput() {
-		return ioSession.getWrittenBytesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getWrittenBytesThroughput()
+     */
+    public double getWrittenBytesThroughput() {
+        return ioSession.getWrittenBytesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getWrittenMessages()
-	 */
-	public long getWrittenMessages() {
-		return ioSession.getWrittenMessages();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getWrittenMessages()
+     */
+    public long getWrittenMessages() {
+        return ioSession.getWrittenMessages();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonRemoteStatistics#getWrittenMessagesThroughput()
-	 */
-	public double getWrittenMessagesThroughput() {
-		return ioSession.getWrittenMessagesThroughput();
-	}
-
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonRemoteStatistics#getWrittenMessagesThroughput()
+     */
+    public double getWrittenMessagesThroughput() {
+        return ioSession.getWrittenMessagesThroughput();
+    }
 }

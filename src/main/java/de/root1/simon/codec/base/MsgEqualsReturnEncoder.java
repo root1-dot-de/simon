@@ -34,19 +34,19 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgEqualsReturnEncoder<T extends MsgEqualsReturn> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgEqualsReturnEncoder() {
         super(SimonMessageConstants.MSG_EQUALS_RETURN);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message={}", message);
-    	out.put(Utils.booleanToByte(message.getEqualsResult()));
-		logger.trace("end");
+
+        logger.trace("begin. message={}", message);
+        out.put(Utils.booleanToByte(message.getEqualsResult()));
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

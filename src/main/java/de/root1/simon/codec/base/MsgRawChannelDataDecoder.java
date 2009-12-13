@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.ByteBuffer;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import java.nio.BufferUnderflowException;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgRawChannelData}.
@@ -36,52 +38,38 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgRawChannelDataDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
-	public class RawChannelState{
-    	public int msgSize;
-    }
-	
-	public MsgRawChannelDataDecoder() {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    public MsgRawChannelDataDecoder() {
         super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	
-    	RawChannelState rcs = (RawChannelState) session.getAttribute("raw_channel_data_seq="+getCurrentSequence());
-    	if (rcs==null) {
-    		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
-    		rcs = new RawChannelState();
-    		rcs.msgSize = in.getInt();
-    		logger.trace("seqId={}, msgSizeInBytes={} position={}", new Object[]{getCurrentSequence(), rcs.msgSize, in.position()});
-    		session.setAttribute("raw_channel_data_seq="+getCurrentSequence(),rcs);
-    	}
-    	if (in.remaining() < rcs.msgSize) {
-    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), rcs.msgSize, in.position(),in.remaining()});
-    		return null;
-    	}
-    	logger.trace("all data ready!");
-    	MsgRawChannelData message = new MsgRawChannelData();
-    	message.setSequence(getCurrentSequence());
-    	
-    	int dataSize = rcs.msgSize-4; // not counting the 4 bytes from the channel token
-    	logger.trace("datasize={}",dataSize);
-    	
-    	int channelToken = in.getInt();
-    	logger.trace("channelToken={}",channelToken);
-    	message.setChannelToken(channelToken);
-    	
-    	byte[] b = new byte[dataSize];
-    	in.get(b);
-    	message.setData(ByteBuffer.allocate(dataSize).put(b));
-		logger.trace("message={}", message);
+        MsgRawChannelData message = new MsgRawChannelData();
+        try {
+        
+            message.setSequence(getCurrentSequence());
+
+            int dataSize = getBodySize()-4; // not counting the 4 bytes from the channel token
+            logger.trace("datasize={}", dataSize);
+
+            int channelToken = in.getInt();
+            logger.trace("channelToken={}", channelToken);
+            message.setChannelToken(channelToken);
+
+            byte[] b = new byte[dataSize];
+            in.get(b);
+            message.setData(ByteBuffer.allocate(dataSize).put(b));
+            logger.trace("message={}", message);
+            
+        } catch (BufferUnderflowException e) {
+            e.printStackTrace();
+        }
         return message;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

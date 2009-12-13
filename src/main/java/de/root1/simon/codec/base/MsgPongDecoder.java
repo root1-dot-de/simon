@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
@@ -35,26 +36,25 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgPongDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgPongDecoder() {
         super(SimonMessageConstants.MSG_PONG);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	logger.trace("begin");
-    	byte x = in.get();
-    	logger.trace("got {}", Utils.longToHexString(x));
-		MsgPong pong = new MsgPong();
-		pong.setSequence(getCurrentSequence());
-		logger.trace("end");
-    	return pong;
+        logger.trace("begin");
+        byte x = in.get();
+        if (logger.isTraceEnabled())
+            logger.trace("got {}", Utils.longToHexString(x));
+        MsgPong pong = new MsgPong();
+        pong.setSequence(getCurrentSequence());
+        logger.trace("end");
+        return pong;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

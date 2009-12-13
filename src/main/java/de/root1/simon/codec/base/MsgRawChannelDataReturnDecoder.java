@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
@@ -36,32 +37,32 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgRawChannelDataReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
-	public class RawChannelState{
-    	public int msgSize;
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    public class RawChannelState {
+
+        public int msgSize;
     }
-	
-	public MsgRawChannelDataReturnDecoder() {
+
+    public MsgRawChannelDataReturnDecoder() {
         super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA_RETURN);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	
-    	logger.trace("begin");
-    	byte x = in.get();
-    	if (logger.isTraceEnabled()) 
-    		logger.trace("got {}", Utils.longToHexString(x));
-		MsgRawChannelDataReturn msg = new MsgRawChannelDataReturn();
-		msg.setSequence(getCurrentSequence());
-		logger.trace("end");
-    	return msg;
+
+        logger.trace("begin");
+        byte x = in.get();
+        if (logger.isTraceEnabled()) {
+            logger.trace("got {}", Utils.longToHexString(x));
+        }
+        MsgRawChannelDataReturn msg = new MsgRawChannelDataReturn();
+        msg.setSequence(getCurrentSequence());
+        logger.trace("end");
+        return msg;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

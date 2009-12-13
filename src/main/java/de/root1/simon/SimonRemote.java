@@ -21,7 +21,7 @@ package de.root1.simon;
 import java.io.Serializable;
 
 /**
- * TODO Document me
+ * This is a marker-interface to mark a class as a remote class
  * @author achr
  *
  */

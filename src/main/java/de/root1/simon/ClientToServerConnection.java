@@ -45,136 +45,132 @@ import org.slf4j.LoggerFactory;
  * @author ACHR
  */
 public class ClientToServerConnection {
-	
-	@SuppressWarnings("unused")
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
-	private Dispatcher dispatcher;
-	private IoSession session;
-	private String ServerString;
-	private int referenceCount = 0;
-	private IoConnector connector;
-	private ExecutorService filterchainWorkerPool;
 
-	/**
-	 * Returns the {@link IoConnector} related to the connection
-	 * @return the related {@link IoConnector}
-	 */
-	protected IoConnector getConnector() {
-		return connector;
-	}
+    private Dispatcher dispatcher;
+    private IoSession session;
+    private String ServerString;
+    private int referenceCount = 0;
+    private IoConnector connector;
+    private ExecutorService filterchainWorkerPool;
 
-	/**
-	 * TODO document me
-	 * @param connector
-	 */
-	protected void setConnector(NioSocketConnector connector) {
-		this.connector = connector;
-	}
+    /**
+     * Returns the {@link IoConnector} related to the connection
+     * @return the related {@link IoConnector}
+     */
+    protected IoConnector getConnector() {
+        return connector;
+    }
 
-	/**
-	 * Creates a new Instance of {@link ClientToServerConnection}
-	 * 
-	 * @param serverString the used server string
-	 * @param dispatcher the used dispatcher
-	 * @param session
-	 * @param connector 
-	 * @param filterchainWorkerPool 
-	 */
-	protected ClientToServerConnection( String serverString,	
-										Dispatcher dispatcher, 
-										IoSession session, 
-										IoConnector connector, 
-										ExecutorService filterchainWorkerPool) {
-		
-		this.ServerString = serverString;
-		this.dispatcher = dispatcher;
-		this.session = session;
-		this.connector = connector;
-		this.filterchainWorkerPool = filterchainWorkerPool;
-	}
-	
-	protected ExecutorService getFilterchainWorkerPool() {
-		return filterchainWorkerPool;
-	}
+    /**
+     * TODO document me
+     * @param connector
+     */
+    protected void setConnector(NioSocketConnector connector) {
+        this.connector = connector;
+    }
 
-	protected void setFilterchainWorkerPool(ExecutorService filterchainWorkerPool) {
-		this.filterchainWorkerPool = filterchainWorkerPool;
-	}
+    /**
+     * Creates a new Instance of {@link ClientToServerConnection}
+     *
+     * @param serverString the used server string
+     * @param dispatcher the used dispatcher
+     * @param session
+     * @param connector
+     * @param filterchainWorkerPool
+     */
+    protected ClientToServerConnection(String serverString,
+            Dispatcher dispatcher,
+            IoSession session,
+            IoConnector connector,
+            ExecutorService filterchainWorkerPool) {
 
-	/**
-	 * 
-	 * Increases the reference count by one
-	 * 
-	 * @return the new reference count
-	 */
-	protected synchronized int addRef() {
-		return ++referenceCount;
-	}
-	
-	/**
-	 * Decreases the reference count by one
-	 * 
-	 * @return the new reference count
-	 */
-	protected synchronized int delRef(){
-		return --referenceCount;
-	}
-	
-	/**
-	 * Returns the current valid reference count
-	 * @return the current reference count
-	 */
-	protected int getRefCount(){
-		return referenceCount;
-	}
+        this.ServerString = serverString;
+        this.dispatcher = dispatcher;
+        this.session = session;
+        this.connector = connector;
+        this.filterchainWorkerPool = filterchainWorkerPool;
+    }
 
-	/**
-	 * Gets the {@link Dispatcher} the client uses to communicate with the network
-	 * @return the stored dispatcher
-	 */
-	protected Dispatcher getDispatcher() {
-		return dispatcher;
-	}
-	
-	/**
-	 * Sets the {@link Dispatcher} the client uses to communicate with the network
-	 * @param dispatcher the dispatcher to store
-	 */
-	protected void setDispatcher(Dispatcher dispatcher) {
-		this.dispatcher = dispatcher;
-	}
-	
-	/**
-	 * Gets the session which is used by the client to communicate with the server via {@link Dispatcher}
-	 * @return the stored session
-	 */
-	protected IoSession getSession() {
-		return session;
-	}
-	
-	/**
-	 * Sets the session which is used by the client to communicate with the server via {@link Dispatcher}
-	 * @param session the session to store
-	 */
-	protected void setSession(IoSession session) {
-		this.session = session;
-	}
-	
-	/**
-	 * Gets the server string
-	 * @return the stored server string
-	 */
-	protected String getServerString() {
-		return ServerString;
-	}
-	
-	/**
-	 * Sets the server string
-	 * @param serverString the server string to store
-	 */
-	protected void setServerString(String serverString) {
-		ServerString = serverString;
-	}
+    protected ExecutorService getFilterchainWorkerPool() {
+        return filterchainWorkerPool;
+    }
 
+    protected void setFilterchainWorkerPool(ExecutorService filterchainWorkerPool) {
+        this.filterchainWorkerPool = filterchainWorkerPool;
+    }
+
+    /**
+     *
+     * Increases the reference count by one
+     *
+     * @return the new reference count
+     */
+    protected synchronized int addRef() {
+        return ++referenceCount;
+    }
+
+    /**
+     * Decreases the reference count by one
+     *
+     * @return the new reference count
+     */
+    protected synchronized int delRef() {
+        return --referenceCount;
+    }
+
+    /**
+     * Returns the current valid reference count
+     * @return the current reference count
+     */
+    protected int getRefCount() {
+        return referenceCount;
+    }
+
+    /**
+     * Gets the {@link Dispatcher} the client uses to communicate with the network
+     * @return the stored dispatcher
+     */
+    protected Dispatcher getDispatcher() {
+        return dispatcher;
+    }
+
+    /**
+     * Sets the {@link Dispatcher} the client uses to communicate with the network
+     * @param dispatcher the dispatcher to store
+     */
+    protected void setDispatcher(Dispatcher dispatcher) {
+        this.dispatcher = dispatcher;
+    }
+
+    /**
+     * Gets the session which is used by the client to communicate with the server via {@link Dispatcher}
+     * @return the stored session
+     */
+    protected IoSession getSession() {
+        return session;
+    }
+
+    /**
+     * Sets the session which is used by the client to communicate with the server via {@link Dispatcher}
+     * @param session the session to store
+     */
+    protected void setSession(IoSession session) {
+        this.session = session;
+    }
+
+    /**
+     * Gets the server string
+     * @return the stored server string
+     */
+    protected String getServerString() {
+        return ServerString;
+    }
+
+    /**
+     * Sets the server string
+     * @param serverString the server string to store
+     */
+    protected void setServerString(String serverString) {
+        ServerString = serverString;
+    }
 }

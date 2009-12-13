@@ -27,166 +27,165 @@ import org.apache.mina.core.service.IoServiceStatistics;
  *
  */
 public class RegistryStatistics implements SimonRegistryStatistics {
-	
-	IoServiceStatistics ioServiceStatistics;
-	
-	protected RegistryStatistics(IoServiceStatistics ioServiceStatistics) {
-		this.ioServiceStatistics = ioServiceStatistics;
-	}
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLargestManagedSessionCount()
-	 */
-	public int getLargestManagedSessionCount(){
-		return ioServiceStatistics.getLargestManagedSessionCount();
-	}
+    private IoServiceStatistics ioServiceStatistics;
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getCumulativeManagedSessionCount()
-	 */
-	public long getCumulativeManagedSessionCount(){
-		return ioServiceStatistics.getCumulativeManagedSessionCount();
-	}
+    protected RegistryStatistics(IoServiceStatistics ioServiceStatistics) {
+        this.ioServiceStatistics = ioServiceStatistics;
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLastIoTime()
-	 */
-	public long getLastIoTime(){
-		return ioServiceStatistics.getLastIoTime();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLargestManagedSessionCount()
+     */
+    public int getLargestManagedSessionCount() {
+        return ioServiceStatistics.getLargestManagedSessionCount();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLastReadTime()
-	 */
-	public long getLastReadTime(){
-		return ioServiceStatistics.getLastReadTime();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getCumulativeManagedSessionCount()
+     */
+    public long getCumulativeManagedSessionCount() {
+        return ioServiceStatistics.getCumulativeManagedSessionCount();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLastWriteTime()
-	 */
-	public long getLastWriteTime(){
-		return ioServiceStatistics.getLastWriteTime();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLastIoTime()
+     */
+    public long getLastIoTime() {
+        return ioServiceStatistics.getLastIoTime();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getReadBytes()
-	 */
-	public long getReadBytes() {
-		return ioServiceStatistics.getReadBytes();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLastReadTime()
+     */
+    public long getLastReadTime() {
+        return ioServiceStatistics.getLastReadTime();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getWrittenBytes()
-	 */
-	public long getWrittenBytes(){
-		return ioServiceStatistics.getWrittenBytes();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLastWriteTime()
+     */
+    public long getLastWriteTime() {
+        return ioServiceStatistics.getLastWriteTime();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getReadMessages()
-	 */
-	public long getReadMessages(){
-		return ioServiceStatistics.getReadMessages();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getReadBytes()
+     */
+    public long getReadBytes() {
+        return ioServiceStatistics.getReadBytes();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getWrittenMessages()
-	 */
-	public long getWrittenMessages(){
-		return ioServiceStatistics.getWrittenMessages();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getWrittenBytes()
+     */
+    public long getWrittenBytes() {
+        return ioServiceStatistics.getWrittenBytes();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getReadBytesThroughput()
-	 */
-	public double getReadBytesThroughput(){
-		return ioServiceStatistics.getReadBytesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getReadMessages()
+     */
+    public long getReadMessages() {
+        return ioServiceStatistics.getReadMessages();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getWrittenBytesThroughput()
-	 */
-	public double getWrittenBytesThroughput(){
-		return ioServiceStatistics.getWrittenBytesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getWrittenMessages()
+     */
+    public long getWrittenMessages() {
+        return ioServiceStatistics.getWrittenMessages();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getReadMessagesThroughput()
-	 */
-	public double getReadMessagesThroughput(){
-		return ioServiceStatistics.getReadMessagesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getReadBytesThroughput()
+     */
+    public double getReadBytesThroughput() {
+        return ioServiceStatistics.getReadBytesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getWrittenMessagesThroughput()
-	 */
-	public double getWrittenMessagesThroughput(){
-		return ioServiceStatistics.getWrittenMessagesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getWrittenBytesThroughput()
+     */
+    public double getWrittenBytesThroughput() {
+        return ioServiceStatistics.getWrittenBytesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLargestReadBytesThroughput()
-	 */
-	public double getLargestReadBytesThroughput(){
-		return ioServiceStatistics.getLargestReadBytesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getReadMessagesThroughput()
+     */
+    public double getReadMessagesThroughput() {
+        return ioServiceStatistics.getReadMessagesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLargestWrittenBytesThroughput()
-	 */
-	public double getLargestWrittenBytesThroughput(){
-		return ioServiceStatistics.getLargestWrittenBytesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getWrittenMessagesThroughput()
+     */
+    public double getWrittenMessagesThroughput() {
+        return ioServiceStatistics.getWrittenMessagesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLargestReadMessagesThroughput()
-	 */
-	public double getLargestReadMessagesThroughput(){
-		return ioServiceStatistics.getLargestReadMessagesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLargestReadBytesThroughput()
+     */
+    public double getLargestReadBytesThroughput() {
+        return ioServiceStatistics.getLargestReadBytesThroughput();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getLargestWrittenMessagesThroughput()
-	 */
-	public double getLargestWrittenMessagesThroughput(){
-		return ioServiceStatistics.getLargestWrittenMessagesThroughput();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLargestWrittenBytesThroughput()
+     */
+    public double getLargestWrittenBytesThroughput() {
+        return ioServiceStatistics.getLargestWrittenBytesThroughput();
+    }
 
-	/**
-	 * Returns the interval (seconds) between each throughput calculation.
-	 * The default value is <tt>3</tt> seconds.
-	 */
-	public int getThroughputCalculationInterval(){
-		return ioServiceStatistics.getThroughputCalculationInterval();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLargestReadMessagesThroughput()
+     */
+    public double getLargestReadMessagesThroughput() {
+        return ioServiceStatistics.getLargestReadMessagesThroughput();
+    }
 
-	/**
-	 * Returns the interval (milliseconds) between each throughput calculation.
-	 */
-	public long getThroughputCalculationIntervalInMillis(){
-		return ioServiceStatistics.getThroughputCalculationIntervalInMillis();
-	}
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getLargestWrittenMessagesThroughput()
+     */
+    public double getLargestWrittenMessagesThroughput() {
+        return ioServiceStatistics.getLargestWrittenMessagesThroughput();
+    }
 
-	/**
-	 * Sets the interval (seconds) between each throughput calculation.  
-	 */
-	public void setThroughputCalculationInterval(int throughputCalculationInterval){
-		ioServiceStatistics.setThroughputCalculationInterval(throughputCalculationInterval);
-	}
+    /**
+     * Returns the interval (seconds) between each throughput calculation.
+     * The default value is <tt>3</tt> seconds.
+     */
+    public int getThroughputCalculationInterval() {
+        return ioServiceStatistics.getThroughputCalculationInterval();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getScheduledWriteBytes()
-	 */
-	public long getScheduledWriteBytes(){
-		return ioServiceStatistics.getScheduledWriteBytes();
-	}
+    /**
+     * Returns the interval (milliseconds) between each throughput calculation.
+     */
+    public long getThroughputCalculationIntervalInMillis() {
+        return ioServiceStatistics.getThroughputCalculationIntervalInMillis();
+    }
 
-	/* (non-Javadoc)
-	 * @see de.root1.simon.SimonStatistics#getScheduledWriteMessages()
-	 */
-	public long getScheduledWriteMessages(){
-		return ioServiceStatistics.getScheduledWriteMessages();
-	}
+    /**
+     * Sets the interval (seconds) between each throughput calculation.
+     */
+    public void setThroughputCalculationInterval(int throughputCalculationInterval) {
+        ioServiceStatistics.setThroughputCalculationInterval(throughputCalculationInterval);
+    }
 
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getScheduledWriteBytes()
+     */
+    public long getScheduledWriteBytes() {
+        return ioServiceStatistics.getScheduledWriteBytes();
+    }
+
+    /* (non-Javadoc)
+     * @see de.root1.simon.SimonStatistics#getScheduledWriteMessages()
+     */
+    public long getScheduledWriteMessages() {
+        return ioServiceStatistics.getScheduledWriteMessages();
+    }
 }

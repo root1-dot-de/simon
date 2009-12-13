@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.demux.MessageEncoder;
@@ -33,19 +34,19 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgCloseRawChannelReturnEncoder<T extends MsgCloseRawChannelReturn> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgCloseRawChannelReturnEncoder() {
         super(SimonMessageConstants.MSG_CLOSE_RAW_CHANNEL_RETURN);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message={}", message);
-    	out.put(Utils.booleanToByte(message.getReturnValue()));
-		logger.trace("end");
+
+        logger.trace("begin. message={}", message);
+        out.put(Utils.booleanToByte(message.getReturnValue()));
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

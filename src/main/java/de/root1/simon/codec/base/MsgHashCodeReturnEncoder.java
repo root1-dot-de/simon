@@ -35,26 +35,26 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgHashCodeReturnEncoder<T extends MsgHashCodeReturn> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgHashCodeReturnEncoder() {
         super(SimonMessageConstants.MSG_HASHCODE_RETURN);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message={}", message);
-    	try {
-    		out.putInt(message.getReturnValue());
-			out.putPrefixedString(message.getErrorMsg(),Charset.forName("UTF-8").newEncoder());
-		} catch (Exception e) {
-			// if an error occurs, close the connection immediately
-    		logger.error("Error while sending MsgHashCodeReturn. Error: {}", e.getMessage());
-    		session.close(true);
-		}
-		logger.trace("end");
+
+        logger.trace("begin. message={}", message);
+        try {
+            out.putInt(message.getReturnValue());
+            out.putPrefixedString(message.getErrorMsg(), Charset.forName("UTF-8").newEncoder());
+        } catch (Exception e) {
+            // if an error occurs, close the connection immediately
+            logger.error("Error while sending MsgHashCodeReturn. Error: {}", e.getMessage());
+            session.close(true);
+        }
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

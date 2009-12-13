@@ -312,11 +312,9 @@ public class LookupTable {
 	 * @param sessionId the id from {@link IoSession#getId()} from the related {@link IoSession}
 	 */
 	protected void unreference(long sessionId) {
-		
-		logger.debug("begin. cleanupDone={}",cleanupDone);
-		
-		logger.debug("unreferencing session with sessionId={}", Utils.longToHexString(sessionId));
-		
+		String id = Utils.longToHexString(sessionId);
+		logger.debug("begin. sessionId={} cleanupDone={}",id, cleanupDone);
+			
 		List<String> list;
 		synchronized (gcRemoteInstances) {
 			 list = gcRemoteInstances.remove(sessionId);
@@ -325,18 +323,18 @@ public class LookupTable {
 		if (list!=null) {
 			
 			if (logger.isDebugEnabled())
-				logger.debug("There are {} remote instances to be unreferenced.", list.size());
+				logger.debug("sessionId={} There are {} remote instances to be unreferenced.", id, list.size());
 			
 			for (String remoteObjectName : list) {
 				
 				if (logger.isDebugEnabled())
-					logger.debug("Unreferencing: {}", remoteObjectName);
+					logger.debug("sessionId={} Unreferencing: {}", id, remoteObjectName);
 				
 				synchronized (bindings) {
 					
 					SimonRemote remoteInstanceBindingToRemove = bindings.remove(remoteObjectName);
 					
-					logger.debug("SimonRemote to unreference: {}",remoteInstanceBindingToRemove);
+					logger.debug("sessionId={} SimonRemote to unreference: {}",id, remoteInstanceBindingToRemove);
 					
 					removeRemoteObjectFromHashMap(remoteInstanceBindingToRemove);
 					
@@ -347,13 +345,13 @@ public class LookupTable {
 						final SimonUnreferenced remoteBinding = (SimonUnreferenced) remoteInstanceBindingToRemove; 
 						remoteBinding.unreferenced();
 						
-						logger.debug("Called the unreferenced() method on {}", remoteInstanceBindingToRemove);
+						logger.debug("sessionId={} Called the unreferenced() method on {}", id, remoteInstanceBindingToRemove);
 
 					}
 				}
 			}
 		}
-		logger.debug("end");
+		logger.debug("end. sessionId={} ", id);
 	}
 	
 //	/**

@@ -51,12 +51,20 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
         IoBuffer buf = IoBuffer.allocate(16);
         buf.setAutoExpand(true); // Enable auto-expand for easier encoding
 
-        // Encode a header
-        buf.put(msgType);
-        buf.putInt(message.getSequence());
-
         // Encode a body
-        encodeBody(session, message, buf);
+        IoBuffer msgBuffer = IoBuffer.allocate(16);
+        msgBuffer.setAutoExpand(true);
+        encodeBody(session, message, msgBuffer);
+
+        // Encode a header
+        buf.put(msgType); // header contains message type
+        buf.putInt(message.getSequence()); // header contains sequence
+        buf.putInt(msgBuffer.position()); // and header contains length of message
+        logger.trace("Sending msg type [{}] with sequence [{}] and bodysize [{}] to next layer ...", new Object[]{msgType, message.getSequence(),msgBuffer.position()});
+
+        msgBuffer.flip();
+        buf.put(msgBuffer); // afterwards the header, the message is sent
+        
         buf.flip();
         out.write(buf);
     }

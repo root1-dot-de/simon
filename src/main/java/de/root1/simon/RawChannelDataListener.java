@@ -22,8 +22,7 @@ import java.nio.ByteBuffer;
 
 public interface RawChannelDataListener {
 
-	void write(ByteBuffer data);
+    void write(ByteBuffer data);
 
-	void close();
-
+    void close();
 }

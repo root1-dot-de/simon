@@ -71,58 +71,57 @@ import de.root1.simon.exceptions.SimonRemoteException;
  */
 public class RawChannel {
 
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	private Dispatcher dispatcher;
-	private IoSession session;
-	private int channelToken;
-	private boolean channelOpen=true;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private Dispatcher dispatcher;
+    private IoSession session;
+    private int channelToken;
+    private boolean channelOpen = true;
 
-	/**
-	 * Instantiates a new raw channel. This is done by calling {@link Simon#openRawChannel(int, SimonRemote)}.
-	 * @param dispatcher the related {@link Dispatcher}
-	 * @param session the related {@link IoSession}
-	 * @param channelToken the channeltoken we got from the remote station by calling {@link Simon#prepareRawChannel(RawChannelDataListener, SimonRemote)}
-	 */
-	protected RawChannel(Dispatcher dispatcher, IoSession session, int channelToken) {
-		logger.debug("token={}",channelToken);
-		this.dispatcher = dispatcher;
-		this.session = session;
-		this.channelToken = channelToken;
-	}
-	
-	/**
-	 * Writes the given buffer (position 0 up to current position) to the server. This method can be called several
-	 * times. The system ensures that the data receives in the order it was
-	 * sent. <i><b>Note:</b> Each buffer has to be wrapped by the SIMON protocol. The
-	 * overhead is about 9 byte per write() call. So you should not send too
-	 * small packets, otherwise you have some bandwidth loss!</i><br>
-	 * <b>Note:</b> Calling this method will block until the server received the data!
-	 * 
-	 * @param byteBuffer
-	 *            the buffer who's content is written to the server
-	 *            
-	 * @throws IllegalStateException if the channel is already closed.            
-	 * @throws SimonRemoteException 
-	 */
-	public void write(ByteBuffer byteBuffer) throws IllegalStateException, SimonRemoteException {
-		if (channelOpen) {
-			logger.trace("token={}. channel open. forwarding to dispatcher ...", channelToken);
-			dispatcher.writeRawData(session, channelToken, byteBuffer);
-			logger.trace("token={}. data forwarded", channelToken);
-		}
-		else
-			throw new IllegalStateException("Instance of RawChannel already closed!");
-	}
-	
-	/**
-	 * Signals on the remote station that the transmission has finished. This
-	 * also closes the raw channel. So after calling this method, each write()
-	 * call fails!
-	 * @throws SimonRemoteException 
-	 */
-	public void close() throws SimonRemoteException{
-		dispatcher.closeRawChannel(session, channelToken);
-		channelOpen=false;
-	}
+    /**
+     * Instantiates a new raw channel. This is done by calling {@link Simon#openRawChannel(int, SimonRemote)}.
+     * @param dispatcher the related {@link Dispatcher}
+     * @param session the related {@link IoSession}
+     * @param channelToken the channeltoken we got from the remote station by calling {@link Simon#prepareRawChannel(RawChannelDataListener, SimonRemote)}
+     */
+    protected RawChannel(Dispatcher dispatcher, IoSession session, int channelToken) {
+        logger.debug("token={}", channelToken);
+        this.dispatcher = dispatcher;
+        this.session = session;
+        this.channelToken = channelToken;
+    }
 
+    /**
+     * Writes the given buffer (position 0 up to current position) to the server. This method can be called several
+     * times. The system ensures that the data receives in the order it was
+     * sent. <i><b>Note:</b> Each buffer has to be wrapped by the SIMON protocol. The
+     * overhead is about 9 byte per write() call. So you should not send too
+     * small packets, otherwise you have some bandwidth loss!</i><br>
+     * <b>Note:</b> Calling this method will block until the server received the data!
+     *
+     * @param byteBuffer
+     *            the buffer who's content is written to the server
+     *
+     * @throws IllegalStateException if the channel is already closed.
+     * @throws SimonRemoteException
+     */
+    public void write(ByteBuffer byteBuffer) throws IllegalStateException, SimonRemoteException {
+        if (channelOpen) {
+            logger.trace("token={}. channel open. forwarding to dispatcher ...", channelToken);
+            dispatcher.writeRawData(session, channelToken, byteBuffer);
+            logger.trace("token={}. data forwarded", channelToken);
+        } else {
+            throw new IllegalStateException("Instance of RawChannel already closed!");
+        }
+    }
+
+    /**
+     * Signals on the remote station that the transmission has finished. This
+     * also closes the raw channel. So after calling this method, each write()
+     * call fails!
+     * @throws SimonRemoteException
+     */
+    public void close() throws SimonRemoteException {
+        dispatcher.closeRawChannel(session, channelToken);
+        channelOpen = false;
+    }
 }
