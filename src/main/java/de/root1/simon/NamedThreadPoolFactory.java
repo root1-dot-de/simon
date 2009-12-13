@@ -21,8 +21,7 @@ package de.root1.simon;
 import java.util.concurrent.ThreadFactory;
 
 /**
- * A simple factory-class that let's you use named threads in a thread-pool
- * TODO Documentation to be done
+ * A factory-class that let's you use named threads in a thread-pool
  *
  * @author achristian
  *
@@ -33,7 +32,6 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 	private String baseName;
 	
 	private long i = 0;
-	private StringBuilder sb = new StringBuilder();
 
 	/**
 	 * Creates a new thread-factory that gives each thread a basename
@@ -50,7 +48,7 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 	 */
 	public Thread newThread(Runnable r) {
 		if ((i++)==Long.MAX_VALUE) i=0;
-		sb.delete(0, sb.length());
+                StringBuffer sb = new StringBuffer();
 		sb.append(baseName);
 		sb.append(".#");
 		sb.append(i);

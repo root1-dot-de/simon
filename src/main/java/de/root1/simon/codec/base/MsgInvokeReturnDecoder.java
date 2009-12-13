@@ -39,45 +39,34 @@ import de.root1.simon.utils.SimonClassLoader;
  * @author ACHR
  */
 public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	private final String INVOKERETURNSTATE_ATTRIBUTE_KEY = Statics.SESSION_ATTRIBUTE_INVOKERETURNSTATE+getCurrentSequence();
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgInvokeReturnDecoder() {
         super(SimonMessageConstants.MSG_INVOKE_RETURN);
-    }
-    
-    protected class InvokeReturnState{
-    	public int msgSize;
     }
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	InvokeReturnState irs = (InvokeReturnState) session.getAttribute(INVOKERETURNSTATE_ATTRIBUTE_KEY);
-    	if (irs==null) {
-    		logger.trace("Reading size of msg for sequenceId={}...",getCurrentSequence());
-    		irs = new InvokeReturnState();
-    		irs.msgSize = in.getInt();
-    		logger.trace("seqId={}, msgSizeInBytes={} position={}",new Object[]{getCurrentSequence(), irs.msgSize, in.position()});
-    		session.setAttribute(INVOKERETURNSTATE_ATTRIBUTE_KEY,irs);
-    	} 
-    	if (in.remaining() < irs.msgSize){
-    		logger.trace("need more data for seqId={}, needed={} position={}, avail={}",new Object[]{getCurrentSequence(), irs.msgSize, in.position(),in.remaining()});
-    		return null;
-    	}
-    	
-    	logger.trace("all data ready!");
-        MsgInvokeReturn m = new MsgInvokeReturn();
-    	try {
-			Object returnValue = in.getObject(SimonClassLoader.getClassLoader(SimonRemote.class));
-			m.setReturnValue(returnValue);
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		logger.trace("message={}", m);
-		session.removeAttribute(INVOKERETURNSTATE_ATTRIBUTE_KEY);
-        return m;
+
+        try {
+
+            MsgInvokeReturn m = new MsgInvokeReturn();
+            try {
+                Object returnValue = in.getObject(SimonClassLoader.getClassLoader(SimonRemote.class));
+                m.setReturnValue(returnValue);
+            } catch (ClassNotFoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            logger.trace("message={}", m);
+            return m;
+
+        } catch (java.nio.BufferUnderflowException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return null;
     }
 
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {

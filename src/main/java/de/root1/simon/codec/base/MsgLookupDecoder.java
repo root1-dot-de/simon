@@ -18,6 +18,8 @@
  */
 package de.root1.simon.codec.base;
 
+import de.root1.simon.Statics;
+
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -31,6 +33,8 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.Utils;
+import java.nio.BufferUnderflowException;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgLookup}.
@@ -47,6 +51,7 @@ public class MsgLookupDecoder extends AbstractMessageDecoder {
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
+
         MsgLookup m = new MsgLookup();
 
         try {
@@ -54,9 +59,17 @@ public class MsgLookupDecoder extends AbstractMessageDecoder {
             m.setRemoteObjectName(remoteObjectName);
         } catch (CharacterCodingException e) {
             e.printStackTrace();
+        } catch (BufferUnderflowException e) {
+            System.err.println("Buffer Under Flow Exception !!");
+            e.printStackTrace();
+            System.out.flush();
+            System.err.flush();
+            System.exit(0);
         }
 
-        logger.trace("message={}", m);
+        if (logger.isTraceEnabled())
+            logger.trace("message={} on session={}", m, Utils.longToHexString(session.getId()));
+        
         return m;
     }
 

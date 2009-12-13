@@ -35,27 +35,27 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgRawChannelDataEncoder<T extends MsgRawChannelData> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgRawChannelDataEncoder() {
         super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	ByteBuffer bb = message.getData();
-    	
-    	// if a flip is needed
-    	if (bb.position()>0)
-    		bb.flip();
-    	
-    	int dataSize=bb.limit();
-    	logger.trace("begin. message={} dataSize={}",message, dataSize);
-    	out.putInt(dataSize+4); // size = capacity + 4 bytes for integer channel token
-    	out.putInt(message.getChannelToken()); // integer(4byte) -> token value
-    	out.put(bb); // raw data
-		logger.trace("end");
+        ByteBuffer bb = message.getData();
+
+        // if a flip is needed
+        if (bb.position() > 0) {
+            bb.flip();
+        }
+
+        int dataSize = bb.limit();
+        logger.trace("begin. message={} dataSize={}", message, dataSize);
+        out.putInt(message.getChannelToken()); // integer(4byte) -> token value
+        out.put(bb); // raw data
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

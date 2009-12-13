@@ -37,32 +37,30 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgHashCodeReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgHashCodeReturnDecoder() {
         super(SimonMessageConstants.MSG_HASHCODE_RETURN);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	MsgHashCodeReturn message = new MsgHashCodeReturn();
-    	try {
-    		message.setReturnValue(in.getInt());
-			message.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
-			
+        MsgHashCodeReturn message = new MsgHashCodeReturn();
+        try {
+            message.setReturnValue(in.getInt());
+            message.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
+
 //			// FIXME hardcore testing only
 //			if (1>0) throw new Exception("huhu");
-			
-		} catch (Exception e) {
-			message.setErrorMsg("Error while reading MsgHashCodeReturn. Error: "+e.getMessage());
-		}
-		logger.trace("message={}", message);
+
+        } catch (Exception e) {
+            message.setErrorMsg("Error while reading MsgHashCodeReturn. Error: " + e.getMessage());
+        }
+        logger.trace("message={}", message);
         return message;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

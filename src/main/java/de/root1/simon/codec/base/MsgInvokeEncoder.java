@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -39,66 +40,56 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgInvokeEncoder() {
         super(SimonMessageConstants.MSG_INVOKE);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message={}", message);
+
+        logger.trace("begin. message={}", message);
         try {
 
-			IoBuffer b = IoBuffer.allocate(4096);
-			b.setAutoExpand(true);
+            out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
+            out.putLong(Utils.computeMethodHash(message.getMethod()));
 
-        	b.putPrefixedString(message.getRemoteObjectName(),Charset.forName("UTF-8").newEncoder());
-			b.putLong(Utils.computeMethodHash(message.getMethod()));
-		
-			int argsLen=0;
-			
-			if (message.getArguments()!=null) 
-				argsLen = message.getArguments().length;
-			
-			logger.trace("argsLength={}", argsLen);
-			
-			b.putInt(argsLen);
-						
-			for (int i=0; i<argsLen;i++){
-				logger.trace("args[{}]={}", i, message.getArguments()[i]);
-				b.putObject(message.getArguments()[i]);
-			}
-			
-	    	int msgSize = b.position();
-			
-			b.flip();
-			logger.trace("msgSizeInBytes={}",msgSize);
-			out.putInt(msgSize);
-			out.put(b);
+            int argsLen = 0;
 
-			
-		} catch (Exception e) {
+            if (message.getArguments() != null) {
+                argsLen = message.getArguments().length;
+            }
 
-			String errorMsg = "Failed to transfer invoke command to the server. error="+e.getMessage();
-			logger.warn(errorMsg);
-			Dispatcher dispatcher = (Dispatcher) session.getAttribute(Statics.SESSION_ATTRIBUTE_DISPATCHER);
-			
-			MsgInvokeReturn mir = new MsgInvokeReturn();
-			mir.setSequence(message.getSequence());
-			mir.setReturnValue(new SimonRemoteException(errorMsg));
-			
-			try {
-				dispatcher.messageReceived(session, mir);
-			} catch (Exception e1) {
-				// FIXME When will this Exception occur? API Doc shows no information
-				e1.printStackTrace();
-				System.exit(1);
-			}
-		}
-		logger.trace("end");
+            logger.trace("argsLength={}", argsLen);
+
+            out.putInt(argsLen);
+
+            for (int i = 0; i < argsLen; i++) {
+                logger.trace("args[{}]={}", i, message.getArguments()[i]);
+                out.putObject(message.getArguments()[i]);
+            }
+
+        } catch (Exception e) {
+
+            String errorMsg = "Failed to transfer invoke command to the server. error=" + e.getMessage();
+            logger.warn(errorMsg);
+            Dispatcher dispatcher = (Dispatcher) session.getAttribute(Statics.SESSION_ATTRIBUTE_DISPATCHER);
+
+            MsgInvokeReturn mir = new MsgInvokeReturn();
+            mir.setSequence(message.getSequence());
+            mir.setReturnValue(new SimonRemoteException(errorMsg));
+
+            try {
+                dispatcher.messageReceived(session, mir);
+            } catch (Exception e1) {
+                // FIXME When will this Exception occur? API Doc shows no information
+                e1.printStackTrace();
+                System.exit(1);
+            }
+        }
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

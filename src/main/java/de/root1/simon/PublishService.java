@@ -35,63 +35,62 @@ import org.slf4j.LoggerFactory;
  */
 public final class PublishService extends Thread {
 
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	private MulticastSocket socket;
-	private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
-	private int groupPort = 4446;
-	private boolean shutdown;
-	private List<SimonPublication> publishments;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private MulticastSocket socket;
+    private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
+    private int groupPort = 4446;
+    private boolean shutdown;
+    private List<SimonPublication> publishments;
 
-	protected PublishService(List<SimonPublication> publishments) throws IOException {
-		logger.debug("preparing publish service");
-		setName(Statics.PUBLISH_SERVICE_THREAD_NAME);
-		socket = new MulticastSocket(groupPort);
-		socket.joinGroup(groupAddress);
-		socket.setSoTimeout(Statics.DEFAULT_SOCKET_TIMEOUT);
-		this.publishments = publishments;
-	}
+    protected PublishService(List<SimonPublication> publishments) throws IOException {
+        logger.debug("preparing publish service");
+        setName(Statics.PUBLISH_SERVICE_THREAD_NAME);
+        socket = new MulticastSocket(groupPort);
+        socket.joinGroup(groupAddress);
+        socket.setSoTimeout(Statics.DEFAULT_SOCKET_TIMEOUT);
+        this.publishments = publishments;
+    }
 
-	public void run() {
-		logger.debug("publish service up and running");
-		while (!shutdown) {
-			try {
-				
-				byte[] searchData = new byte[Statics.REQUEST_STRING.length()];
-				DatagramPacket searchPacket = new DatagramPacket(searchData,searchData.length);
-				socket.receive(searchPacket);
-				
-				InetAddress requestAddress = searchPacket.getAddress();
-				int requestPort = searchPacket.getPort();
-				String requestString = new String(searchPacket.getData());
-				
-				logger.debug("got 'find server' request. requestHost="+requestAddress+" requestPort="+requestPort+" requestString="+requestString);
-				
-				if (requestString.equals(Statics.REQUEST_STRING)) {
-					
-					// send answer pack to sender
-					for (SimonPublication publishment : publishments) {
-						logger.debug("answering: "+publishment);
-						byte[] answerData = publishment.toString().getBytes();
-						DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort-1);
-						socket.send(answerPacket);
-					}
-					
-				}
+    public void run() {
+        logger.debug("publish service up and running");
+        while (!shutdown) {
+            try {
+
+                byte[] searchData = new byte[Statics.REQUEST_STRING.length()];
+                DatagramPacket searchPacket = new DatagramPacket(searchData, searchData.length);
+                socket.receive(searchPacket);
+
+                InetAddress requestAddress = searchPacket.getAddress();
+                int requestPort = searchPacket.getPort();
+                String requestString = new String(searchPacket.getData());
+
+                logger.debug("got 'find server' request. requestHost=" + requestAddress + " requestPort=" + requestPort + " requestString=" + requestString);
+
+                if (requestString.equals(Statics.REQUEST_STRING)) {
+
+                    // send answer pack to sender
+                    for (SimonPublication publishment : publishments) {
+                        logger.debug("answering: " + publishment);
+                        byte[] answerData = publishment.toString().getBytes();
+                        DatagramPacket answerPacket = new DatagramPacket(answerData, answerData.length, requestAddress, groupPort - 1);
+                        socket.send(answerPacket);
+                    }
+
+                }
 
 
-			} catch (SocketTimeoutException e) {
-				// do nothing on timeout
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		socket.close();
-		logger.debug("publish service terminated!");
-	}
-	
-	protected void shutdown(){
-		shutdown = true;
-		logger.debug("Shutting down the publish service now ...");
-	}
-	
+            } catch (SocketTimeoutException e) {
+                // do nothing on timeout
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        socket.close();
+        logger.debug("publish service terminated!");
+    }
+
+    protected void shutdown() {
+        shutdown = true;
+        logger.debug("Shutting down the publish service now ...");
+    }
 }

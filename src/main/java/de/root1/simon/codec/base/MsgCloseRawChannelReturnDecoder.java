@@ -36,26 +36,24 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgCloseRawChannelReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgCloseRawChannelReturnDecoder() {
         super(SimonMessageConstants.MSG_CLOSE_RAW_CHANNEL_RETURN);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	MsgCloseRawChannelReturn message = new MsgCloseRawChannelReturn();
-    	
-    	message.setReturnValue(Utils.byteToBoolean(in.get()));
-        	
-		logger.trace("message={}", message);
+        MsgCloseRawChannelReturn message = new MsgCloseRawChannelReturn();
+
+        message.setReturnValue(Utils.byteToBoolean(in.get()));
+
+        logger.trace("message={}", message);
         return message;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

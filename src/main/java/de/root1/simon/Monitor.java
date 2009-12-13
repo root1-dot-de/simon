@@ -19,7 +19,7 @@
 package de.root1.simon;
 
 /**
- * A simple monitor class for use with "wait()" and "notify()"
+ * A simple monitor class whose instance can have a sequence id.
  * @author achr
  *
  */
@@ -45,7 +45,5 @@ public class Monitor {
 	protected int getSequenceId() {
 		return sequenceId;
 	}
-	
-	
 
 }

@@ -42,11 +42,11 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
     private final byte msgType;
-
     private int sequence;
+    private int bodysize;
 
     private boolean readHeader;
-
+    
     /**
      * Creates a new message decoder
      * @param msgType specifies a unique ID for the type of message
@@ -56,17 +56,22 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
     }
 
     public MessageDecoderResult decodable(IoSession session, IoBuffer in) {
-        // Return NEED_DATA if the whole header is not read yet.
+
+        // Return NEED_DATA if the whole header is not yet available
         if (in.remaining() < SimonMessageConstants.HEADER_LEN) {
+            logger.trace("Header not received completely. Right now we have {}/{} bytes", in.remaining(), SimonMessageConstants.HEADER_LEN);
             return MessageDecoderResult.NEED_DATA;
         }
-
-        // Return OK if type and bodyLength matches.
-        if (msgType == in.get()) {
+//        logger.trace("Header received completely. Right now we have {}/{} bytes", in.remaining(), SimonMessageConstants.HEADER_LEN);
+        // Return OK if THIS decoder is correct type to decode the message
+        int type = in.get();
+        if (msgType == type) {
+//            logger.trace("Can decode this message type: {}",msgType);
             return MessageDecoderResult.OK;
         }
 
-        // Return NOT_OK if not matches.
+//        logger.trace("Can't decode this message type: {}. Can only decode this: {}",type, msgType);
+        // Return NOT_OK if THIS decoder ns't able to decode THIS message
         return MessageDecoderResult.NOT_OK;
     }
 
@@ -76,7 +81,16 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
         if (!readHeader) {
             in.get(); // Skip 'msgType'.
             sequence = in.getInt(); // Get 'sequence'.
+            bodysize = in.getInt(); // Get the body's size
             readHeader = true;
+        }
+
+        // check if the complete message body is available
+        if (in.remaining()<bodysize) {
+            logger.debug("Message type [{}] with sequence [{}] needs [{}] bytes. Right now we only have [{}]. Waiting for more ...", new Object[]{msgType, sequence, bodysize, in.remaining()});
+            return MessageDecoderResult.NEED_DATA;
+        } else {
+            logger.debug("Message type [{}] with sequence [{}] with [{}] bytes body size is available. Now decoding ...", new Object[]{msgType, sequence, bodysize});
         }
 
         // Try to decode body
@@ -88,6 +102,7 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
             readHeader = false; // reset readHeader for the next decode
         }
         m.setSequence(sequence);
+        logger.trace("finished decoding complete message: {}. Forwarding to next layer ...",m);
         out.write(m);
 
         return MessageDecoderResult.OK;
@@ -100,5 +115,9 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
     
     protected int getCurrentSequence(){
     	return sequence;
+    }
+
+    protected int getBodySize(){
+        return bodysize;
     }
 }

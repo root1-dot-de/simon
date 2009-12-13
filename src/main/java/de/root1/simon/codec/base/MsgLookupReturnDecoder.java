@@ -17,6 +17,8 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
+import de.root1.simon.Statics;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -37,39 +39,43 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgLookupReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgLookupReturnDecoder() {
         super(SimonMessageConstants.MSG_LOOKUP_RETURN);
     }
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
-    	
-    	logger.trace("decoding ...");
-    	MsgLookupReturn m = new MsgLookupReturn();
-    	
-    	try {
-    		logger.trace("trying to read interfaces value");
-    		int arraySize = in.getInt();
-    		Class<?>[] interfaces = new Class<?>[arraySize];
-    		for (int i=0;i<arraySize;i++){
-    			interfaces[i] = Class.forName(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
-    			logger.trace("got interface={}", interfaces[i].getCanonicalName());
-    		}
-    		m.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
-			m.setInterfaces( interfaces);
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	
-		logger.trace("finished");
-    	return m;
+
+        logger.trace("decoding ...");
+        MsgLookupReturn m = new MsgLookupReturn();
+
+        try {
+            int arraySize = in.getInt();
+            logger.trace("trying to read interfaces value. num of interfaces: {}", arraySize);
+            Class<?>[] interfaces = new Class<?>[arraySize];
+            for (int i = 0; i < arraySize; i++) {
+                String iface = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+                logger.trace("Loading interface: [{}]",iface);
+                interfaces[i] = Class.forName(iface);
+                logger.trace("got interface=[{}]", interfaces[i].getCanonicalName());
+            }
+            m.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
+            m.setInterfaces(interfaces);
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (CharacterCodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (java.nio.BufferUnderflowException e) {
+            e.printStackTrace();
+        }
+
+        logger.trace("finished");
+        return m;
     }
 
     public void finishDecode(IoSession session, ProtocolDecoderOutput out)

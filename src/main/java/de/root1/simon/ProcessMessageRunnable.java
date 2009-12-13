@@ -73,7 +73,7 @@ public class ProcessMessageRunnable implements Runnable {
 
     public void run() {
 
-        logger.debug("ProcessMessageRunnable: {}", abstractMessage);
+        logger.debug("ProcessMessageRunnable: {} on sessionId {}", abstractMessage, Utils.longToHexString(session.getId()));
 
         int msgType = abstractMessage.getMsgType();
 
@@ -290,7 +290,7 @@ public class ProcessMessageRunnable implements Runnable {
             ret.setInterfaces(interfaces);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
-            ret.setErrorMsg(e.getMessage());
+            ret.setErrorMsg("Error: "+e.getClass()+"->"+e.getMessage());
         }
         session.write(ret);
 
