@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Random;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -46,6 +47,31 @@ public class TestRawChannel {
     private Registry registry;
 
     public TestRawChannel() {
+
+        File f = new File("target/test-classes/simon_logging.properties");
+        try {
+            FileInputStream is = new FileInputStream(f);
+            LogManager.getLogManager().readConfiguration(is);
+
+
+        } catch (FileNotFoundException e) {
+
+                System.err.println("File not found: "+f.getAbsolutePath()+".\n" +
+                                "If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
+                                "Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
+
+        } catch (SecurityException e) {
+
+                System.err.println("Security exception occured while trying to load "+f.getAbsolutePath()+"\n" +
+                                "Logging with SIMON not possible!.");
+
+        } catch (IOException e) {
+
+                System.err.println("Cannot load "+f.getAbsolutePath()+" ...\n" +
+                                "Please make sure that Java has access to that file.");
+
+        }
+
     }
 
 //    @BeforeClass
@@ -167,18 +193,21 @@ public class TestRawChannel {
 
         } catch (UnknownHostException ex) {
             System.out.println("UnknownHostException occured!");
+            new AssertionError("An UnknownHostException occured which should not be the case with localhost comunication.");
         } catch (LookupFailedException ex) {
             System.out.println("Lookup failed!");
             Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            new AssertionError("A LookupFailedException occured which should not be the case in test case.");
         } catch (SimonRemoteException ex) {
             System.out.println("SRE occured!");
             Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            new AssertionError("A unexcepted SimonRemoteException occured which should not be the case.");
         } catch (IOException ex) {
             System.out.println("IOE occured!");
             Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            new AssertionError("A unexcepted IOException occured which should not be the case in test case.");
         }
         System.out.println("test done");
-        assertTrue(true);
     }
 
 }

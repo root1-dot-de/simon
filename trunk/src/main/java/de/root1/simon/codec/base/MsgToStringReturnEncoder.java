@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -34,25 +35,25 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgToStringReturnEncoder<T extends MsgToStringReturn> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgToStringReturnEncoder() {
         super(SimonMessageConstants.MSG_TOSTRING_RETURN);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message={}", message);
+
+        logger.trace("begin. message={}", message);
         try {
-        	out.putPrefixedString(message.getReturnValue(),Charset.forName("UTF-8").newEncoder());
-		} catch (Exception e) {
-			// if an error occurs, close the connection immediately
-    		logger.error("Error while sending MsgToStringReturn. Error: {}", e.getMessage());
-    		session.close(true);
-		}
-		logger.trace("end");
+            out.putPrefixedString(message.getReturnValue(), Charset.forName("UTF-8").newEncoder());
+        } catch (Exception e) {
+            // if an error occurs, close the connection immediately
+            logger.error("Error while sending MsgToStringReturn. Error: {}", e.getMessage());
+            session.close(true);
+        }
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

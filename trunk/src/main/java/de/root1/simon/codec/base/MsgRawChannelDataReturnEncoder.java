@@ -33,18 +33,18 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgRawChannelDataReturnEncoder<T extends MsgRawChannelDataReturn> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgRawChannelDataReturnEncoder() {
         super(SimonMessageConstants.MSG_RAW_CHANNEL_DATA_RETURN);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	logger.trace("begin. message="+message);
-    	out.put((byte)0xff);
-		logger.trace("end");
+        logger.trace("begin. message=" + message);
+        out.put((byte) 0xff);
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

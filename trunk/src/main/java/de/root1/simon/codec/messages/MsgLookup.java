@@ -45,6 +45,6 @@ public class MsgLookup extends AbstractMessage {
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgLookup(" + remoteObjectName + ')';
+        return getSequence() + ":MsgLookup(" + (remoteObjectName.length()==0?"<NullLength>":remoteObjectName) + ')';
     }
 }

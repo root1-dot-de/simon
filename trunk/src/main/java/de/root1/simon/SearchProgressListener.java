@@ -36,12 +36,11 @@ package de.root1.simon;
  * @author achr
  */
 public interface SearchProgressListener {
-	
-	/**
-	 * Signals an search progress information update.
-	 * @param progress the progress as a integer percentage. 0=0%; 100=100%; value range: 0..100
-	 * @param numberOfFoundObjects the number of servers, respectively remote objects found 
-	 */
-	public void update(int progress, int numberOfFoundObjects);
 
+    /**
+     * Signals an search progress information update.
+     * @param progress the progress as a integer percentage. 0=0%; 100=100%; value range: 0..100
+     * @param numberOfFoundObjects the number of servers, respectively remote objects found
+     */
+    public void update(int progress, int numberOfFoundObjects);
 }

@@ -26,37 +26,36 @@ package de.root1.simon;
  */
 public interface SimonRegistryStatistics extends SimonRemoteStatistics {
 
-	/**
-	 * Returns the maximum number of sessions which were being managed at the
-	 * same time.
-	 */
-	public abstract int getLargestManagedSessionCount();
+    /**
+     * Returns the maximum number of sessions which were being managed at the
+     * same time.
+     */
+    public abstract int getLargestManagedSessionCount();
 
-	/**
-	 * Returns the cumulative number of sessions which were managed (or are
-	 * being managed) by this service, which means 'currently managed session
-	 * count + closed session count'.
-	 */
-	public abstract long getCumulativeManagedSessionCount();
+    /**
+     * Returns the cumulative number of sessions which were managed (or are
+     * being managed) by this service, which means 'currently managed session
+     * count + closed session count'.
+     */
+    public abstract long getCumulativeManagedSessionCount();
 
-	/**
-	 * Returns the maximum of the {@link #getReadBytesThroughput() readBytesThroughput}.
-	 */
-	public abstract double getLargestReadBytesThroughput();
+    /**
+     * Returns the maximum of the {@link #getReadBytesThroughput() readBytesThroughput}.
+     */
+    public abstract double getLargestReadBytesThroughput();
 
-	/**
-	 * Returns the maximum of the {@link #getWrittenBytesThroughput() writtenBytesThroughput}.
-	 */
-	public abstract double getLargestWrittenBytesThroughput();
+    /**
+     * Returns the maximum of the {@link #getWrittenBytesThroughput() writtenBytesThroughput}.
+     */
+    public abstract double getLargestWrittenBytesThroughput();
 
-	/**
-	 * Returns the maximum of the {@link #getReadMessagesThroughput() readMessagesThroughput}.
-	 */
-	public abstract double getLargestReadMessagesThroughput();
+    /**
+     * Returns the maximum of the {@link #getReadMessagesThroughput() readMessagesThroughput}.
+     */
+    public abstract double getLargestReadMessagesThroughput();
 
-	/**
-	 * Returns the maximum of the {@link #getWrittenMessagesThroughput() writtenMessagesThroughput}.
-	 */
-	public abstract double getLargestWrittenMessagesThroughput();
-
+    /**
+     * Returns the maximum of the {@link #getWrittenMessagesThroughput() writtenMessagesThroughput}.
+     */
+    public abstract double getLargestWrittenMessagesThroughput();
 }

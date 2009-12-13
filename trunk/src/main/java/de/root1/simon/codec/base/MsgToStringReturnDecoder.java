@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -37,33 +38,31 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgToStringReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgToStringReturnDecoder() {
         super(SimonMessageConstants.MSG_TOSTRING_RETURN);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	MsgToStringReturn message = new MsgToStringReturn();
-    	
+        MsgToStringReturn message = new MsgToStringReturn();
+
         try {
-        	
-        	String returnValue = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-        	message.setReturnValue(returnValue);
-        	
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} 
-		logger.trace("message={}", message);
+
+            String returnValue = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            message.setReturnValue(returnValue);
+
+        } catch (CharacterCodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        logger.trace("message={}", message);
         return message;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

@@ -33,19 +33,19 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgCloseRawChannelEncoder<T extends MsgCloseRawChannel> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgCloseRawChannelEncoder() {
         super(SimonMessageConstants.MSG_CLOSE_RAW_CHANNEL);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	
-    	logger.trace("begin. message="+message);
-    	out.putInt(message.getChannelToken()); // send the channel token
-		logger.trace("end");
+
+        logger.trace("begin. message=" + message);
+        out.putInt(message.getChannelToken()); // send the channel token
+        logger.trace("end");
     }
 
     public void dispose() throws Exception {

@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -35,36 +36,38 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgLookupReturnEncoder<T extends MsgLookupReturn> extends AbstractMessageEncoder<T> {
-    
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
-	public MsgLookupReturnEncoder() {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    public MsgLookupReturnEncoder() {
         super(SimonMessageConstants.MSG_LOOKUP_RETURN);
     }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	logger.trace("sending interfaces ...");
-    	Class<?>[] interfaces = message.getInterfaces();
-    	out.putInt(interfaces.length);
-    	logger.trace("interfaces to send: {}",interfaces.length);
-    	for (Class<?> class1 : interfaces) {
-			try {
-				logger.trace("interface={}", class1.getCanonicalName());
-				out.putPrefixedString(class1.getCanonicalName(), Charset.forName("UTF-8").newEncoder());
-			} catch (CharacterCodingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-    	try {
-    		logger.trace("sending erorMsg: '{}'", message.getErrorMsg());
-			out.putPrefixedString(message.getErrorMsg(), Charset.forName("UTF-8").newEncoder());
-		} catch (CharacterCodingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-    	logger.trace("finished");
+        logger.trace("sending interfaces ...");
+
+        Class<?>[] interfaces = message.getInterfaces();
+        out.putInt(interfaces.length);
+        logger.trace("interfaces to send: {}", interfaces.length);
+        for (Class<?> class1 : interfaces) {
+            try {
+                logger.trace("interface={}", class1.getCanonicalName());
+                out.putPrefixedString(class1.getCanonicalName(), Charset.forName("UTF-8").newEncoder());
+            } catch (CharacterCodingException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        try {
+            logger.trace("sending erorMsg: '{}'", message.getErrorMsg());
+            out.putPrefixedString(message.getErrorMsg(), Charset.forName("UTF-8").newEncoder());
+        } catch (CharacterCodingException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        logger.trace("finished");
     }
 
     public void dispose() throws Exception {

@@ -14,11 +14,11 @@ import de.root1.simon.exceptions.SimonRemoteException;
 public class RemoteObjectImpl implements RemoteObject {
 
     public void helloWorld() throws SimonRemoteException {
-        System.out.println("Hello World");
+//        System.out.println("Hello World");
     }
 
     public void helloWorldArg(String s) throws SimonRemoteException {
-        System.out.println("Hello WorldArg ["+s+"]");
+//        System.out.println("Hello WorldArg ["+s+"]");
     }
 
 }

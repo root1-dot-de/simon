@@ -52,7 +52,7 @@ public class MsgHashCodeDecoder extends AbstractMessageDecoder {
         	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
         	message.setRemoteObjectName(remoteObjectName);
 		} catch (Exception e) {
-			message.setErrorMsg(e.getMessage());
+			message.setErrorMsg("Error: "+e.getClass()+"->"+e.getMessage());
 		} 
 		logger.trace("message={}", message);
         return message;

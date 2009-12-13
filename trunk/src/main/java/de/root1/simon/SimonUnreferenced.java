@@ -18,9 +18,8 @@
  */
 package de.root1.simon;
 
-
 /**
- * Implement this interface in you SimonRemote implementing object, and the unreferenced() method will be called if the network connection
+ * Implement this interface in your SimonRemote implementing object, and the unreferenced() method will be called if the network connection
  * related to the SimonRemote object is broken, terminated or closed. 
  * <br><br><b>Warning:</b><br>
  * <i>DO NOT CALL FURTHER REMOTE METHODS IN unreferenced(), AS THIS CAUSES FURTHER REMOTE-EXCEPTIONS!
@@ -30,10 +29,9 @@ package de.root1.simon;
  */
 public interface SimonUnreferenced {
 
-	/**
-	 * This method is called by SIMON if an instance of the object which is 
-	 * implementing this interface, is no more referenced by a opposite endpoint
-	 */
-	public void unreferenced();
-
+    /**
+     * This method is called by SIMON if an instance of the object which is
+     * implementing this interface, is no more referenced by a opposite endpoint
+     */
+    public void unreferenced();
 }

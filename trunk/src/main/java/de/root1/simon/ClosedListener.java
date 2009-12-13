@@ -25,12 +25,11 @@ package de.root1.simon;
  * @version 200903041505
  */
 public interface ClosedListener {
-	
-	/**
-	 * Called whenever a server remote object is not useable anymore. This might
-	 * be due to a <code>Simon.release()</code> call, or due to a connection
-	 * error.
-	 */
-	public void closed();
 
+    /**
+     * Called whenever a server remote object is not useable anymore. This might
+     * be due to a <code>Simon.release()</code> call, or due to a connection
+     * error.
+     */
+    public void closed();
 }

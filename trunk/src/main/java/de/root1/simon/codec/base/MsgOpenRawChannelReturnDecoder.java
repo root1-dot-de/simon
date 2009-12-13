@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
@@ -35,26 +36,24 @@ import de.root1.simon.utils.Utils;
  * @author ACHR
  */
 public class MsgOpenRawChannelReturnDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgOpenRawChannelReturnDecoder() {
         super(SimonMessageConstants.MSG_OPEN_RAW_CHANNEL_RETURN);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	MsgOpenRawChannelReturn message = new MsgOpenRawChannelReturn();
-    	
-    	message.setReturnValue(Utils.byteToBoolean(in.get()));
-        	
-		logger.trace("message={}", message);
+        MsgOpenRawChannelReturn message = new MsgOpenRawChannelReturn();
+
+        message.setReturnValue(Utils.byteToBoolean(in.get()));
+
+        logger.trace("message={}", message);
         return message;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

@@ -34,8 +34,8 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractMessageEncoder<T> {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public MsgInvokeReturnEncoder() {
         super(SimonMessageConstants.MSG_INVOKE_RETURN);
@@ -43,40 +43,27 @@ public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractM
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
-    	logger.trace("begin. message={}", message);
+        logger.trace("begin. message={}", message);
 
-    	try {
-    		
-	    	// first put all into a autoexpanding buffer
-			IoBuffer b = IoBuffer.allocate(4096);
-			b.setAutoExpand(true);
-			
-			b.putObject(message.getReturnValue());
-			
-			/*
-			 * There is no need to write the message.getErrorMsg() string back to the client
-			 * If an error occurs while invoking the method, the exception is "transported" as 
-			 * the method-result back to the client where it is thrown in SimonProxy
-			 */
-			
-			// then check the size of the data that has to be sent
-	    	int msgSize = b.position();
-			b.flip();
-			logger.trace("msgSizeInBytes={}",msgSize);
-			
-			// send the size of the data before sending the data
-			out.putInt(msgSize);
-			out.put(b);
-			
-    	} catch (Exception e) {
-    		e.printStackTrace();
-    		// if an error occurs, close the connection immediately
-    		logger.error("Error while sending MsgInvokeReturnMsg. Error: {}", e.getMessage());
-    		session.close(true);
-    	}
+        try {
 
-		logger.trace("end");    
-	}
+            out.putObject(message.getReturnValue());
+
+            /*
+             * There is no need to write the message.getErrorMsg() string back to the client
+             * If an error occurs while invoking the method, the exception is "transported" as
+             * the method-result back to the client where it is thrown in SimonProxy
+             */
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // if an error occurs, close the connection immediately
+            logger.error("Error while sending MsgInvokeReturnMsg. Error: {}", e.getMessage());
+            session.close(true);
+        }
+
+        logger.trace("end");
+    }
 
     public void dispose() throws Exception {
     }
