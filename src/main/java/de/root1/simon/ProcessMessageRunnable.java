@@ -366,7 +366,7 @@ public class ProcessMessageRunnable implements Runnable {
 
             logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
 
-            SimonRemote simonRemote;
+            Object simonRemote;
             simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
             result = method.invoke(simonRemote, arguments);
 
@@ -375,11 +375,11 @@ public class ProcessMessageRunnable implements Runnable {
             }
 
             // register "SimonCallback"-results in lookup-table
-            if (result instanceof SimonRemote) {
+            if (result instanceof SimonRemote || Utils.isRemoteAnnotated(result)) {
 
-                logger.debug("Result of method '{}' is instance of SimonRemote: {}", method, result);
+                logger.debug("Result of method '{}' is SimonRemote: {}", method, result);
 
-                SimonRemoteInstance simonCallback = new SimonRemoteInstance(session, (SimonRemote) result);
+                SimonRemoteInstance simonCallback = new SimonRemoteInstance(session, result);
 
                 dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), (SimonRemote) result);
                 result = simonCallback;
@@ -497,7 +497,7 @@ public class ProcessMessageRunnable implements Runnable {
                 objectToCompareWith = dispatcher.getLookupTable().getRemoteBinding(argumentRemoteObjectName);
             }
 
-            SimonRemote remoteBinding = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
+            Object remoteBinding = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
             if (objectToCompareWith == null) {
                 equalsResult = false;
             } else {

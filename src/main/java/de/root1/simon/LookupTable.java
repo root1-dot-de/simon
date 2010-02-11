@@ -47,220 +47,212 @@ import de.root1.simon.utils.Utils;
  *
  */
 public class LookupTable {
-	
-	/**
-	 * TODO document me
-	 */
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
-	/**
-	 * Maps the remote object name to the remote object
-	 */
-	private final HashMap<String, SimonRemote> bindings = new HashMap<String, SimonRemote>();
-	
-	
-	/**
-	 * A Map that holds a list of remote instances for each socket connection, which contains names of 
-	 * remote objects which have to be removed if DGC finds a related broken connection
-	 * 
-	 * <session-ID, List<remoteObjectName>>
-	 */
-	private final Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
-	
-	/**
-	 * Maps the remote object to the map with the hash-mapped methods.
-	 */
-	private final Map<SimonRemote, Map<Long, Method>> simonRemote_to_hashToMethod_Map = new HashMap<SimonRemote, Map<Long, Method>>();
 
-	/**
-	 * TODO document me
-	 */
-	private final HashMap<Integer, SimonRemote> remoteobjectHashMap = new HashMap<Integer, SimonRemote>();
+    /**
+     * TODO document me
+     */
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    /**
+     * Maps the remote object name to the remote object
+     */
+    private final HashMap<String, Object> bindings = new HashMap<String, Object>();
+    /**
+     * A Map that holds a list of remote instances for each socket connection, which contains names of
+     * remote objects which have to be removed if DGC finds a related broken connection
+     *
+     * <session-ID, List<remoteObjectName>>
+     */
+    private final Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
+    /**
+     * Maps the remote object to the map with the hash-mapped methods.
+     */
+    private final Map<Object, Map<Long, Method>> simonRemote_to_hashToMethod_Map = new HashMap<Object, Map<Long, Method>>();
+    /**
+     * TODO document me
+     */
+    private final HashMap<Integer, Object> remoteobjectHashMap = new HashMap<Integer, Object>();
+    private Dispatcher dispatcher;
+    private boolean cleanupDone = false;
 
-	private Dispatcher dispatcher;
+    protected LookupTable(Dispatcher dispatcher) {
+        this.dispatcher = dispatcher;
+        Simon.registerLookupTable(this);
+    }
 
-	private boolean cleanupDone = false;
-	
-	protected LookupTable(Dispatcher dispatcher) {
-		this.dispatcher=dispatcher;
-		Simon.registerLookupTable(this);
-	}
-	
-	/**
-	 * Saves a remote object in the lookup table for later reference
-	 * 
-	 * @param remoteObjectName the name of the remote object
-	 * @param remoteObject a remote objects which implements SimonRemote
-	 */
-	protected synchronized void putRemoteBinding(String remoteObjectName, SimonRemote remoteObject) {
-		logger.debug("begin");
-		
-		logger.debug("remoteObjectName={} object={}", remoteObjectName, remoteObject);
-		
-		addRemoteObjectToHashMap(remoteObject);
-		bindings.put(remoteObjectName,remoteObject);	
-		
-		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
-		logger.debug("end");		
-	}
+    /**
+     * Saves a remote object in the lookup table for later reference
+     *
+     * @param remoteObjectName the name of the remote object
+     * @param remoteObject a remote objects which implements SimonRemote
+     */
+    protected synchronized void putRemoteBinding(String remoteObjectName, Object remoteObject) {
+        logger.debug("begin");
 
-	/**
-	 * TODO document me
-	 * @param remoteObject
-	 */
-	private void addRemoteObjectToHashMap(SimonRemote remoteObject) {
-		int hashCode=remoteObject.hashCode();
-		remoteobjectHashMap.put(hashCode, remoteObject);
-		logger.trace("Adding SimonRemote {} with hash={}", remoteObject, hashCode);
-	}
-	
-	/**
-	 * This method is used by the {@link Dispatcher} and the
-	 * {@link ProcessMessageRunnable} class. If a objects is passed and is an
-	 * instance of {@link SimonRemote}, then this object is saved in an extra
-	 * map in the lookup table. This is necessary for the DGC to release all
-	 * remote instances which are related to a specific {@link IoSession}.
-	 * 
-	 * @param sessionId
-	 *            the id from {@link IoSession#getId()} from the related
-	 *            {@link IoSession}
-	 * @param remoteObjectName
-	 *            the related remote object name
-	 * @param remoteObject
-	 *            the remote object that has been found in a method argument or
-	 *            method result
-	 */
-	protected synchronized void putRemoteInstanceBinding(long sessionId, String remoteObjectName, SimonRemote remoteObject){
-		logger.debug("begin");
-		
-		logger.debug("sessionId={} remoteObjectName={} remoteObject=", new Object[]{Utils.longToHexString(sessionId), remoteObjectName, remoteObject});
-		
-		List<String> remotes;
-		
-		// if there no list present, create one
-		if (!gcRemoteInstances.containsKey(sessionId)) {
-			logger.debug("session '{}' unknown, creating new remote instance list!", Utils.longToHexString(sessionId));
-			remotes = new ArrayList<String>();
-			gcRemoteInstances.put(sessionId, remotes);
-		} else {
-			remotes = gcRemoteInstances.get(sessionId);
-		}
-		
-		remotes.add(remoteObjectName);
-		
-		putRemoteBinding(remoteObjectName, remoteObject);
-		
-		logger.debug("session '{}' now has {} entries.", Utils.longToHexString(sessionId), remotes.size());
-				
-		simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
-		logger.debug("end");		
-	}
-	
-	
-	/**
-	 * 
-	 * Gets a already bind remote object according to the given remote object name
-	 * 
-	 * @param remoteObjectName the name of the object we are interested in
-	 * @return the remote object
-	 * @throws LookupFailedException if remote object is not available in lookup table
-	 */
-	protected synchronized SimonRemote getRemoteBinding(String remoteObjectName) throws LookupFailedException {
-		logger.debug("begin");
-		if (!bindings.containsKey(remoteObjectName)) {
-			logger.debug("remote object name=[{}] not found in LookupTable!", remoteObjectName);	
-			throw new LookupFailedException("remoteobject with name ["+remoteObjectName+"] not found in lookup table.");
-		}
+        logger.debug("remoteObjectName={} object={}", remoteObjectName, remoteObject);
 
-		logger.debug("name={} resolves to object='{}'", remoteObjectName, bindings.get(remoteObjectName));
-		
-		logger.debug("end");
-		return bindings.get(remoteObjectName);
-	}
+        addRemoteObjectToHashMap(remoteObject);
+        bindings.put(remoteObjectName, remoteObject);
 
-	/**
-	 * 
-	 * Frees a saved remote object. After a remote object is freed, it cannot be looked up again until it's bind again.
-	 * 
-	 * @param name the remote object to free
-	 */
-	protected synchronized void releaseRemoteBinding(String name){
-		logger.debug("begin");
+        simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+        logger.debug("end");
+    }
 
-		logger.debug("name={}",name);
+    /**
+     * TODO document me
+     * @param remoteObject
+     */
+    private void addRemoteObjectToHashMap(Object remoteObject) {
+        int hashCode = remoteObject.hashCode();
+        remoteobjectHashMap.put(hashCode, remoteObject);
+        logger.trace("Adding SimonRemote {} with hash={}", remoteObject, hashCode);
+    }
 
-		SimonRemote simonRemote = bindings.remove(name); 
+    /**
+     * This method is used by the {@link Dispatcher} and the
+     * {@link ProcessMessageRunnable} class. If a objects is passed and is an
+     * instance of {@link SimonRemote}, then this object is saved in an extra
+     * map in the lookup table. This is necessary for the DGC to release all
+     * remote instances which are related to a specific {@link IoSession}.
+     *
+     * @param sessionId
+     *            the id from {@link IoSession#getId()} from the related
+     *            {@link IoSession}
+     * @param remoteObjectName
+     *            the related remote object name
+     * @param remoteObject
+     *            the remote object that has been found in a method argument or
+     *            method result
+     */
+    protected synchronized void putRemoteInstanceBinding(long sessionId, String remoteObjectName, SimonRemote remoteObject) {
+        logger.debug("begin");
 
-                // simonRemote may be null in case of multithreaded access
-                // to Simon#unbind() and thus releaseRemoteBinding()
-                if (simonRemote!=null) {
-                    logger.debug("cleaning up [{}]");    
-                    removeRemoteObjectFromHashMap(simonRemote);
-                    simonRemote_to_hashToMethod_Map.remove(simonRemote);
-                } else {
-                    logger.debug("[{}] already removed or not available. nothing to do.");    
-                }
-		
-		logger.debug("end");
-	}
+        logger.debug("sessionId={} remoteObjectName={} remoteObject=", new Object[]{Utils.longToHexString(sessionId), remoteObjectName, remoteObject});
 
-	/**
-	 * TODO document me
-	 * @param simonRemote
-	 */
-	private void removeRemoteObjectFromHashMap(SimonRemote simonRemote) {
-		int hashCode=simonRemote.hashCode();
-		logger.debug("simonRemote={} hash={} map={}", new Object[]{simonRemote, hashCode, remoteobjectHashMap});
-		remoteobjectHashMap.remove(hashCode);
-		logger.trace("Removing SimonRemote with hash={}", hashCode);
-	}
-	
-	/**
-	 * 
-	 * Gets a method according to the given remote object name and method hash value
-	 * 
-	 * @param remoteObject the remote object which contains the method
-	 * @param methodHash the hash of the method
-	 * @return the method
-	 */
-	public synchronized Method getMethod(String remoteObject, long methodHash){
-		logger.debug("begin");
+        List<String> remotes;
 
-		Method m = simonRemote_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
+        // if there no list present, create one
+        if (!gcRemoteInstances.containsKey(sessionId)) {
+            logger.debug("session '{}' unknown, creating new remote instance list!", Utils.longToHexString(sessionId));
+            remotes = new ArrayList<String>();
+            gcRemoteInstances.put(sessionId, remotes);
+        } else {
+            remotes = gcRemoteInstances.get(sessionId);
+        }
 
-		logger.debug("hash={} resolves to method='{}'", methodHash, m);
-		logger.debug("end");
-		
-		return m;
-	}
-	
-	/**
-	 * 
-	 * Computes for each method of the given remote object a method has and save this in an internal map for later lookup
-	 * @param remoteClass the class that contains the methods
-	 * @return a map that holds the methods hash as the key and the method itself as the value
-	 */
-	protected HashMap<Long,Method> computeMethodHashMap(Class<?> remoteClass) {
-		logger.debug("begin");
+        remotes.add(remoteObjectName);
 
-		logger.debug("computing for remoteclass='{}'", remoteClass);
+        putRemoteBinding(remoteObjectName, remoteObject);
 
-        HashMap<Long,Method> map = new HashMap<Long,Method>();
-        
+        logger.debug("session '{}' now has {} entries.", Utils.longToHexString(sessionId), remotes.size());
+
+        simonRemote_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+        logger.debug("end");
+    }
+
+    /**
+     *
+     * Gets a already bind remote object according to the given remote object name
+     *
+     * @param remoteObjectName the name of the object we are interested in
+     * @return the remote object
+     * @throws LookupFailedException if remote object is not available in lookup table
+     */
+    protected synchronized Object getRemoteBinding(String remoteObjectName) throws LookupFailedException {
+        logger.debug("begin");
+        if (!bindings.containsKey(remoteObjectName)) {
+            logger.debug("remote object name=[{}] not found in LookupTable!", remoteObjectName);
+            throw new LookupFailedException("remoteobject with name [" + remoteObjectName + "] not found in lookup table.");
+        }
+
+        logger.debug("name={} resolves to object='{}'", remoteObjectName, bindings.get(remoteObjectName));
+
+        logger.debug("end");
+        return bindings.get(remoteObjectName);
+    }
+
+    /**
+     *
+     * Frees a saved remote object. After a remote object is freed, it cannot be looked up again until it's bind again.
+     *
+     * @param name the remote object to free
+     */
+    protected synchronized void releaseRemoteBinding(String name) {
+        logger.debug("begin");
+
+        logger.debug("name={}", name);
+
+        Object simonRemote = bindings.remove(name);
+
+        // simonRemote may be null in case of multithreaded access
+        // to Simon#unbind() and thus releaseRemoteBinding()
+        if (simonRemote != null) {
+            logger.debug("cleaning up [{}]");
+            removeRemoteObjectFromHashMap(simonRemote);
+            simonRemote_to_hashToMethod_Map.remove(simonRemote);
+        } else {
+            logger.debug("[{}] already removed or not available. nothing to do.");
+        }
+
+        logger.debug("end");
+    }
+
+    /**
+     * TODO document me
+     * @param simonRemote
+     */
+    private void removeRemoteObjectFromHashMap(Object simonRemote) {
+        int hashCode = simonRemote.hashCode();
+        logger.debug("simonRemote={} hash={} map={}", new Object[]{simonRemote, hashCode, remoteobjectHashMap});
+        remoteobjectHashMap.remove(hashCode);
+        logger.trace("Removing SimonRemote with hash={}", hashCode);
+    }
+
+    /**
+     *
+     * Gets a method according to the given remote object name and method hash value
+     *
+     * @param remoteObject the remote object which contains the method
+     * @param methodHash the hash of the method
+     * @return the method
+     */
+    public synchronized Method getMethod(String remoteObject, long methodHash) {
+        logger.debug("begin");
+
+        Method m = simonRemote_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
+
+        logger.debug("hash={} resolves to method='{}'", methodHash, m);
+        logger.debug("end");
+
+        return m;
+    }
+
+    /**
+     *
+     * Computes for each method of the given remote object a method has and save this in an internal map for later lookup
+     * @param remoteClass the class that contains the methods
+     * @return a map that holds the methods hash as the key and the method itself as the value
+     */
+    protected HashMap<Long, Method> computeMethodHashMap(Class<?> remoteClass) {
+        logger.debug("begin");
+
+        logger.debug("computing for remoteclass='{}'", remoteClass);
+
+        HashMap<Long, Method> map = new HashMap<Long, Method>();
+
         for (Class<?> cl = remoteClass; cl != null; cl = cl.getSuperclass()) {
 
-			logger.debug("examin superclass='{}' for interfaces", cl);
-        	
+            logger.debug("examin superclass='{}' for interfaces", cl);
+
             for (Class<?> intf : cl.getInterfaces()) {
-            	
-    			logger.debug("examin superclass' interface='{}'", intf);
 
-            	if (SimonRemote.class.isAssignableFrom(intf)) {
+                logger.debug("examin superclass' interface='{}'", intf);
 
-        			logger.debug("SimonRemote is assignable from '{}'", intf);
-                	
+//                if (SimonRemote.class.isAssignableFrom(intf)) {
+
+//                    logger.debug("SimonRemote is assignable from '{}'", intf);
+
                     for (Method method : intf.getMethods()) {
-                    	
+
                         final Method m = method;
                         /*
                          * Set this Method object to override language
@@ -268,92 +260,95 @@ public class LookupTable {
                          * methods from non-public remote interfaces.
                          */
                         AccessController.doPrivileged(
-                            new PrivilegedAction<Void>() {
-	                            public Void run() {
-	                                m.setAccessible(true);
-	                                return null;
-	                            }
-                            });
+                                new PrivilegedAction<Void>() {
+
+                                    public Void run() {
+                                        m.setAccessible(true);
+                                        return null;
+                                    }
+                                });
                         long methodHash = Utils.computeMethodHash(m);
                         map.put(methodHash, m);
-            			logger.debug("computing hash: method='{}' hash={}", m, methodHash);
+                        logger.debug("computing hash: method='{}' hash={}", m, methodHash);
 
                     }
-                }
-            } 
+//                }
+            }
         }
-        
-		logger.debug("begin");
+
+        logger.debug("begin");
         return map;
     }
 
-	/**
-	 * Clears the whole {@link LookupTable}
-	 *
-	 */
-	protected void cleanup() {
-		Simon.unregisterLookupTable(this);
-		
-		Iterator<Long> iterator = gcRemoteInstances.keySet().iterator();
-		while (iterator.hasNext()){
-			unreference(iterator.next());
-		}
-		
-		bindings.clear();
-		simonRemote_to_hashToMethod_Map.clear();
-		cleanupDone=true;
-	}
+    /**
+     * Clears the whole {@link LookupTable}
+     *
+     */
+    protected void cleanup() {
+        Simon.unregisterLookupTable(this);
 
-	/**
-	 * Removes remote instance objects from {@link LookupTable}.
-	 * If the remote object implements the interface {@link SimonUnreferenced}, 
-	 * the {@link SimonUnreferenced#unreferenced()} method is finally called.
-	 * 
-	 * @param sessionId the id from {@link IoSession#getId()} from the related {@link IoSession}
-	 */
-	protected void unreference(long sessionId) {
-		String id = Utils.longToHexString(sessionId);
-		logger.debug("begin. sessionId={} cleanupDone={}",id, cleanupDone);
-			
-		List<String> list;
-		synchronized (gcRemoteInstances) {
-			 list = gcRemoteInstances.remove(sessionId);
-		}
-		
-		if (list!=null) {
-			
-			if (logger.isDebugEnabled())
-				logger.debug("sessionId={} There are {} remote instances to be unreferenced.", id, list.size());
-			
-			for (String remoteObjectName : list) {
-				
-				if (logger.isDebugEnabled())
-					logger.debug("sessionId={} Unreferencing: {}", id, remoteObjectName);
-				
-				synchronized (bindings) {
-					
-					SimonRemote remoteInstanceBindingToRemove = bindings.remove(remoteObjectName);
-					
-					logger.debug("sessionId={} SimonRemote to unreference: {}",id, remoteInstanceBindingToRemove);
-					
-					removeRemoteObjectFromHashMap(remoteInstanceBindingToRemove);
-					
-					simonRemote_to_hashToMethod_Map.remove(remoteInstanceBindingToRemove);
-					
-					if (remoteInstanceBindingToRemove instanceof SimonUnreferenced) {
-						
-						final SimonUnreferenced remoteBinding = (SimonUnreferenced) remoteInstanceBindingToRemove; 
-						remoteBinding.unreferenced();
-						
-						logger.debug("sessionId={} Called the unreferenced() method on {}", id, remoteInstanceBindingToRemove);
+        Iterator<Long> iterator = gcRemoteInstances.keySet().iterator();
+        while (iterator.hasNext()) {
+            unreference(iterator.next());
+        }
 
-					}
-				}
-			}
-		}
-		logger.debug("end. sessionId={} ", id);
-	}
-	
+        bindings.clear();
+        simonRemote_to_hashToMethod_Map.clear();
+        cleanupDone = true;
+    }
+
+    /**
+     * Removes remote instance objects from {@link LookupTable}.
+     * If the remote object implements the interface {@link SimonUnreferenced},
+     * the {@link SimonUnreferenced#unreferenced()} method is finally called.
+     *
+     * @param sessionId the id from {@link IoSession#getId()} from the related {@link IoSession}
+     */
+    protected void unreference(long sessionId) {
+        String id = Utils.longToHexString(sessionId);
+        logger.debug("begin. sessionId={} cleanupDone={}", id, cleanupDone);
+
+        List<String> list;
+        synchronized (gcRemoteInstances) {
+            list = gcRemoteInstances.remove(sessionId);
+        }
+
+        if (list != null) {
+
+            if (logger.isDebugEnabled()) {
+                logger.debug("sessionId={} There are {} remote instances to be unreferenced.", id, list.size());
+            }
+
+            for (String remoteObjectName : list) {
+
+                if (logger.isDebugEnabled()) {
+                    logger.debug("sessionId={} Unreferencing: {}", id, remoteObjectName);
+                }
+
+                synchronized (bindings) {
+
+                    Object remoteInstanceBindingToRemove = bindings.remove(remoteObjectName);
+
+                    logger.debug("sessionId={} SimonRemote to unreference: {}", id, remoteInstanceBindingToRemove);
+
+                    removeRemoteObjectFromHashMap(remoteInstanceBindingToRemove);
+
+                    simonRemote_to_hashToMethod_Map.remove(remoteInstanceBindingToRemove);
+
+                    if (remoteInstanceBindingToRemove instanceof SimonUnreferenced) {
+
+                        final SimonUnreferenced remoteBinding = (SimonUnreferenced) remoteInstanceBindingToRemove;
+                        remoteBinding.unreferenced();
+
+                        logger.debug("sessionId={} Called the unreferenced() method on {}", id, remoteInstanceBindingToRemove);
+
+                    }
+                }
+            }
+        }
+        logger.debug("end. sessionId={} ", id);
+    }
+
 //	/**
 //	 * TODO document me
 //	 * @param dispatcher
@@ -362,24 +357,24 @@ public class LookupTable {
 //		this.dispatcher=dispatcher;
 //	}
 //	
-	/**
-	 * TODO document me
-	 * @return
-	 */
-	protected Dispatcher getDispatcher(){
-		return dispatcher;
-	}
+    /**
+     * TODO document me
+     * @return
+     */
+    protected Dispatcher getDispatcher() {
+        return dispatcher;
+    }
 
-	/**
-	 * TODO document me
-	 * @param simonRemote
-	 * @return
-	 */
-	protected boolean isSimonRemoteRegistered(SimonRemote simonRemote) {
-		logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectHashMap);
-		if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) 
-			return true;
-		return false;
-	}
-
+    /**
+     * TODO document me
+     * @param simonRemote
+     * @return
+     */
+    protected boolean isSimonRemoteRegistered(SimonRemote simonRemote) {
+        logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectHashMap);
+        if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) {
+            return true;
+        }
+        return false;
+    }
 }
