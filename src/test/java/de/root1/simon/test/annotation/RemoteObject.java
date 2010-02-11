@@ -5,7 +5,6 @@
 
 package de.root1.simon.test.annotation;
 
-import java.io.Serializable;
 
 /**
  *
