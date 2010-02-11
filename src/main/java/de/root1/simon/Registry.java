@@ -283,7 +283,11 @@ public final class Registry {
      *             if there are problems binding the remoteobject to the
      *             registry
      */
-    public void bind(String name, SimonRemote remoteObject) throws NameBindingException {
+    public void bind(String name, Object remoteObject) throws NameBindingException {
+
+        if (!Utils.isValidRemote(remoteObject))
+            throw new IllegalArgumentException("Provided remote object is not marked with SimonRemote or Remote annotation!");
+
         try {
             if (dispatcher.getLookupTable().getRemoteBinding(name) != null) {
                 throw new NameBindingException("a remote object with the name '" + name + "' is already bound to this registry. unbind() first, or alternatively rebind().");

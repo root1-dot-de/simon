@@ -92,7 +92,7 @@ public class SimonProxy implements InvocationHandler {
         /*
          * Check if the method is NOT a SIMON remote method
          */
-        if (!method.toString().contains("throws " + SimonRemoteException.class.getName())) {
+//        if (!method.toString().contains("throws " + SimonRemoteException.class.getName())) {
 
             try {
                 // redirect invocation
@@ -128,14 +128,15 @@ public class SimonProxy implements InvocationHandler {
                     }
                 } else if (method.toString().equalsIgnoreCase(Statics.TOSTRING_METHOD_SIGNATURE)) {
                     return remoteToString();
-                } else {
-                    throw new SimonRemoteException("'" + method.getName() + "' is whether a remote method, nor is it callable over remote.");
                 }
+//                else {
+//                    throw new SimonRemoteException("'" + method.getName() + "' is whether a remote method, nor is it callable over remote.");
+//                }
 
             } catch (IOException e) {
                 throw new SimonRemoteException("Could not process invocation of method '" + method.getName() + "'. Underlying exception: " + e);
             }
-        }
+//        }
 
         /*
          * server then does the following:

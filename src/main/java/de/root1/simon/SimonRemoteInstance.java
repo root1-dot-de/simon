@@ -49,7 +49,7 @@ public class SimonRemoteInstance implements Serializable {
      * @param session the {@link IoSession} to which the remote object is related to
      * @param remoteObject the remote object for which we generate this transport object for
      */
-    protected SimonRemoteInstance(IoSession session, SimonRemote remoteObject) {
+    protected SimonRemoteInstance(IoSession session, Object remoteObject) {
         logger.debug("begin");
 
         try {
