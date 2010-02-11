@@ -18,6 +18,7 @@
  */
 package de.root1.simon.utils;
 
+import de.root1.simon.Remote;
 import de.root1.simon.SimonRemote;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -192,22 +193,20 @@ public class Utils {
         }
     }
 
-    public static Class<SimonRemote>[] findAllInterfaces(
-            Class<?> clazz) {
-        Set<Class<SimonRemote>> interfaceSet = doFindAllInterfaces(clazz);
+    public static Class<?>[] findAllInterfaces(Class<?> clazz) {
+        Set<Class<?>> interfaceSet = doFindAllInterfaces(clazz);
 
-        Class<SimonRemote>[] interfaces = new Class[interfaceSet.size()];
+        Class<?>[] interfaces = new Class[interfaceSet.size()];
         return interfaceSet.toArray(interfaces);
     }
 
-    private static Set<Class<SimonRemote>> doFindAllInterfaces(
-            Class<?> clazz) {
-        Set<Class<SimonRemote>> interfaceSet = new HashSet<Class<SimonRemote>>();
+    private static Set<Class<?>> doFindAllInterfaces(Class<?> clazz) {
+        Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
 
         for (Class<?> interfaze : clazz.getInterfaces()) {
-            if (SimonRemote.class.isAssignableFrom(interfaze)) {
-                interfaceSet.add((Class<SimonRemote>) interfaze);
-            }
+//            if (SimonRemote.class.isAssignableFrom(interfaze)) {
+                interfaceSet.add((Class<?>) interfaze);
+//            }
         }
 
         if (clazz.getSuperclass() != null
@@ -216,5 +215,27 @@ public class Utils {
         }
 
         return interfaceSet;
+    }
+
+    /**
+     * Checks whether the object is annotated with <code>Remote</code> or not
+     * @param remoteObject the object to check
+     * @return true, if object is annotated, false if not
+     */
+    public static boolean isRemoteAnnotated(Object remoteObject) {
+        return remoteObject.getClass().isAnnotationPresent(Remote.class);
+    }
+
+    /**
+     * Checks if the given remote object is a valid remote object
+     * @param remoteObject the object to check
+     * @return true, if remote object is valid, false if not
+     */
+    public static boolean isValidRemote(Object remoteObject) {
+        if (remoteObject instanceof SimonRemote)
+            return true;
+        if (isRemoteAnnotated(remoteObject))
+            return true;
+        return false;
     }
 }

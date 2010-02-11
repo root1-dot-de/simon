@@ -242,7 +242,7 @@ public class Simon {
      *             if there's no such object on the server
      * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
      */
-    public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
+    public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
         return lookup(InetAddress.getByName(host), port, remoteObjectName);
     }
 
@@ -274,7 +274,7 @@ public class Simon {
      * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
      *
      */
-    public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+    public static Object lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
         return lookup(null, null, host, port, remoteObjectName, null);
     }
 
@@ -311,7 +311,7 @@ public class Simon {
      *             if there's no such object on the server
      * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used         *
      */
-    public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
         return lookup(sslContextFactory, proxyConfig, host, port, remoteObjectName, null);
     }
 
@@ -352,11 +352,11 @@ public class Simon {
      *             if there's no such object on the server
      * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
      */
-    public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
         logger.debug("begin");
 
         // check if there is already an dispatcher and key for THIS server
-        SimonRemote proxy = null;
+        Object proxy = null;
         Dispatcher dispatcher = null;
         IoSession session = null;
 
@@ -527,6 +527,10 @@ public class Simon {
 
             Class<?>[] listenerInterfaces = msg.getInterfaces();
 
+            for (Class<?> class1 : listenerInterfaces) {
+                logger.warn("iface: {}"+class1.getName());
+            }
+
             /*
              * Creates proxy for method-call-forwarding to server
              */
@@ -536,7 +540,7 @@ public class Simon {
             /*
              * Create the proxy-object with the needed interfaces
              */
-            proxy = (SimonRemote) Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
+            proxy = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
 
             // store closed listener
             if (listener != null) {
