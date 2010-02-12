@@ -701,51 +701,51 @@ public class Simon {
         poolSize = size;
     }
 
-    /**
-     *
-     * Releases an instance of a remote object. After this call, the remote
-     * object will be destroyed and is no more usable. If there are no more
-     * remote objects alive which are related to a specific server connection,
-     * this connection will be closed, until a new
-     * {@link Simon#lookup(String, int, String)} is called on the same server.
-     *
-     * @param proxyObject
-     *            the object to release
-     * @return true if the server connection is closed, false if there is still a
-     *         reference pending
-     */
-    public static boolean release(Object proxyObject) {
-        logger.debug("begin");
-
-        // retrieve the proxy object
-        SimonProxy proxy = getSimonProxy(proxyObject);
-
-        logger.debug("releasing proxy {}", proxy.getDetailString());
-//		logger.debug("releasing proxy...");
-
-
-        // release the proxy and get the related dispatcher
-        Dispatcher dispatcher = proxy.getDispatcher();
-
-        // get the list with listeners that have to be notified about the release and the followed close-event
-        List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
-
-        proxy.release();
-
-        if (removeClosedListenerList != null) {
-            // forward the release event to all listeners
-            for (ClosedListener closedListener : removeClosedListenerList) {
-                closedListener.closed();
-            }
-            removeClosedListenerList.clear();
-            removeClosedListenerList = null;
-        }
-
-        boolean result = AbstractLookup.releaseDispatcher(dispatcher);
-
-        logger.debug("end");
-        return result;
-    }
+//    /**
+//     *
+//     * Releases an instance of a remote object. After this call, the remote
+//     * object will be destroyed and is no more usable. If there are no more
+//     * remote objects alive which are related to a specific server connection,
+//     * this connection will be closed, until a new
+//     * {@link Simon#lookup(String, int, String)} is called on the same server.
+//     *
+//     * @param proxyObject
+//     *            the object to release
+//     * @return true if the server connection is closed, false if there is still a
+//     *         reference pending
+//     */
+//    public static boolean release(Object proxyObject) {
+//        logger.debug("begin");
+//
+//        // retrieve the proxy object
+//        SimonProxy proxy = getSimonProxy(proxyObject);
+//
+//        logger.debug("releasing proxy {}", proxy.getDetailString());
+////		logger.debug("releasing proxy...");
+//
+//
+//        // release the proxy and get the related dispatcher
+//        Dispatcher dispatcher = proxy.getDispatcher();
+//
+//        // get the list with listeners that have to be notified about the release and the followed close-event
+//        List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
+//
+//        proxy.release();
+//
+//        if (removeClosedListenerList != null) {
+//            // forward the release event to all listeners
+//            for (ClosedListener closedListener : removeClosedListenerList) {
+//                closedListener.closed();
+//            }
+//            removeClosedListenerList.clear();
+//            removeClosedListenerList = null;
+//        }
+//
+//        boolean result = AbstractLookup.releaseDispatcher(dispatcher);
+//
+//        logger.debug("end");
+//        return result;
+//    }
 
 //    /**
 //     * Attaches a closed listener to the specified remote object

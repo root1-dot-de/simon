@@ -90,7 +90,7 @@ public class TestLookupAndRelease {
             roiRemote.helloWorld();
             System.out.println("method call done");
 
-            Simon.release(roiRemote);
+//            Simon.release(roiRemote);
             System.out.println("release of roi done");
 
             r.unbind("roi");
@@ -108,7 +108,7 @@ public class TestLookupAndRelease {
             // TODO FIXME
 //            = (RemoteObject) Simon.lookup("localhost", 22222, "roi2");
             roiRemote2.helloWorld();
-            Simon.release(roiRemote2);
+//            Simon.release(roiRemote2);
 
             r2.unbind("roi2");
             r2.stop();

@@ -82,7 +82,36 @@ abstract class AbstractLookup implements Lookup {
 
     @Override
     public boolean release(Object proxyObject) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        logger.debug("begin");
+
+        // retrieve the proxy object
+        SimonProxy proxy = Simon.getSimonProxy(proxyObject);
+
+        logger.debug("releasing proxy {}", proxy.getDetailString());
+//		logger.debug("releasing proxy...");
+
+
+        // release the proxy and get the related dispatcher
+        Dispatcher dispatcher = proxy.getDispatcher();
+
+        // get the list with listeners that have to be notified about the release and the followed close-event
+        List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
+
+        proxy.release();
+
+        if (removeClosedListenerList != null) {
+            // forward the release event to all listeners
+            for (ClosedListener closedListener : removeClosedListenerList) {
+                closedListener.closed();
+            }
+            removeClosedListenerList.clear();
+            removeClosedListenerList = null;
+        }
+
+        boolean result = AbstractLookup.releaseDispatcher(dispatcher);
+
+        logger.debug("end");
+        return result;
     }
 
     @Override

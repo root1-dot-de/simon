@@ -192,7 +192,8 @@ public class TestRawChannel {
                 assertTrue("sent byte no. "+i+" must match received byte no. "+i, fileBytesToBeSend[i]==fileBytesReceived[i]);
             }
             System.out.println("Comparing sent file with received file ... *done*");
-            Simon.release(rcs);
+            // TODO FIXME
+//            Simon.release(rcs);
 
         } catch (UnknownHostException ex) {
             System.out.println("UnknownHostException occured!");

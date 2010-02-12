@@ -64,7 +64,7 @@ public class ManualTestAnnotation {
 
             System.out.println("myremotemethod called");
 
-            Simon.release(roiRemote);
+            lookup.release(roiRemote);
 
             System.out.println("released ...");
 

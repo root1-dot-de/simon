@@ -95,7 +95,7 @@ File f = new File("target/test-classes/simon_logging.properties");
 //                System.out.println("Running thread #"+i+" lookup *done*");
                 roiRemote.helloWorldArg(String.valueOf(i));
 //                System.out.println("Running thread #"+i+" invoke *done*");
-                Simon.release(roiRemote);
+//                Simon.release(roiRemote);
 //                System.out.println("Running thread #"+i+" release *done*");
             } catch (Throwable t) {
                 t.printStackTrace();

@@ -55,7 +55,7 @@ public class TestNull {
 
             roiRemote.equals(null);
 
-            Simon.release(roiRemote);
+//            Simon.release(roiRemote);
 
             r.unbind("roi");
             r.stop();
@@ -82,7 +82,7 @@ public class TestNull {
 
             roiRemote.helloWorldArg(null);
 
-            Simon.release(roiRemote);
+//            Simon.release(roiRemote);
 
             r.unbind("roi");
             r.stop();
