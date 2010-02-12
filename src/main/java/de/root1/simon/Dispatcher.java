@@ -44,8 +44,8 @@ import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.MsgLookup;
-import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgNameLookup;
+import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.codec.messages.MsgOpenRawChannel;
 import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
 import de.root1.simon.codec.messages.MsgPing;
@@ -202,7 +202,7 @@ public class Dispatcher implements IoHandler {
      * @return the object we made the lookup for
      * @throws SimonRemoteException
      */
-    protected MsgLookupReturn invokeLookup(IoSession session, String remoteObjectName) throws LookupFailedException, SimonRemoteException {
+    protected MsgNameLookupReturn invokeLookup(IoSession session, String remoteObjectName) throws LookupFailedException, SimonRemoteException {
         checkForInvalidState(session, "Simon.lookup({...}, " + remoteObjectName + ")");
         final int sequenceId = generateSequenceId();
 
@@ -212,7 +212,7 @@ public class Dispatcher implements IoHandler {
         // create a monitor that waits for the request-result
         final Monitor monitor = createMonitor(session, sequenceId);
 
-        MsgLookup msgLookup = new MsgLookup();
+        MsgNameLookup msgLookup = new MsgNameLookup();
         msgLookup.setSequence(sequenceId);
         msgLookup.setRemoteObjectName(remoteObjectName);
 
@@ -221,7 +221,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
         waitForResult(session, monitor);
-        MsgLookupReturn result = (MsgLookupReturn) getRequestResult(sequenceId);
+        MsgNameLookupReturn result = (MsgNameLookupReturn) getRequestResult(sequenceId);
 
         logger.debug("got answer for sequenceId={}", sequenceId);
         logger.trace("end sequenceId={}", sequenceId);
@@ -256,12 +256,12 @@ public class Dispatcher implements IoHandler {
         // register remote instance objects in the lookup-table
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
-                if (args[i] instanceof SimonRemote) {
-                    SimonRemoteInstance sc = new SimonRemoteInstance(session, (SimonRemote) args[i]);
+                if (Utils.isValidRemote(args[i])) {
+                    SimonRemoteInstance sc = new SimonRemoteInstance(session, args[i]);
 
                     logger.debug("SimonRemoteInstance found! id={}", sc.getId());
 
-                    lookupTable.putRemoteInstanceBinding(session.getId(), sc.getId(), (SimonRemote) args[i]);
+                    lookupTable.putRemoteInstanceBinding(session.getId(), sc.getId(), args[i]);
 
                     args[i] = sc; // overwrite arg with wrapped remote instance-interface
                 }
@@ -779,7 +779,7 @@ public class Dispatcher implements IoHandler {
         }
 
         // FIXME possible fix for issue #57
-        Simon.releaseDispatcher(this);
+        AbstractLookup.releaseDispatcher(this);
 
         logger.debug("{} ################################################", id);
     }

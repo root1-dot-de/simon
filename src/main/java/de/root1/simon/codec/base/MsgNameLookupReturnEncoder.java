@@ -27,20 +27,20 @@ import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgLookupReturn}.
+ * A {@link MessageEncoder} that encodes {@link MsgNameLookupReturn}.
  *
  * @author ACHR
  */
-public class MsgLookupReturnEncoder<T extends MsgLookupReturn> extends AbstractMessageEncoder<T> {
+public class MsgNameLookupReturnEncoder<T extends MsgNameLookupReturn> extends AbstractMessageEncoder<T> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgLookupReturnEncoder() {
-        super(SimonMessageConstants.MSG_LOOKUP_RETURN);
+    public MsgNameLookupReturnEncoder() {
+        super(SimonMessageConstants.MSG_NAME_LOOKUP_RETURN);
     }
 
     @Override

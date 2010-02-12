@@ -49,7 +49,9 @@ public class TestNull {
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
 
-            RemoteObject roiRemote = (RemoteObject) Simon.lookup("localhost", 22222, "roi");
+            RemoteObject roiRemote = null;
+            // TODO FIXME
+//            (RemoteObject) Simon.lookup("localhost", 22222, "roi");
 
             roiRemote.equals(null);
 
@@ -74,7 +76,9 @@ public class TestNull {
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
 
-            RemoteObject roiRemote = (RemoteObject) Simon.lookup("localhost", 22222, "roi");
+            RemoteObject roiRemote = null;
+            // TODO FIXME
+//            (RemoteObject) Simon.lookup("localhost", 22222, "roi");
 
             roiRemote.helloWorldArg(null);
 

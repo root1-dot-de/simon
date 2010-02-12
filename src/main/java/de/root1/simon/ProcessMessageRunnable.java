@@ -34,10 +34,12 @@ import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
+import de.root1.simon.codec.messages.MsgInterfaceLookup;
+import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.MsgLookup;
-import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgNameLookup;
+import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.codec.messages.MsgOpenRawChannel;
 import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
 import de.root1.simon.codec.messages.MsgRawChannelData;
@@ -48,7 +50,7 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.utils.SimonClassLoader;
+import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 import java.nio.ByteBuffer;
 
@@ -79,11 +81,15 @@ public class ProcessMessageRunnable implements Runnable {
 
         switch (msgType) {
 
-            case SimonMessageConstants.MSG_LOOKUP:
-                processLookup();
+            case SimonMessageConstants.MSG_NAME_LOOKUP:
+                processNameLookup();
                 break;
 
-            case SimonMessageConstants.MSG_LOOKUP_RETURN:
+            case SimonMessageConstants.MSG_INTERFACE_LOOKUP:
+                processInterfaceLookup();
+                break;
+
+            case SimonMessageConstants.MSG_NAME_LOOKUP_RETURN:
                 processLookupReturn();
                 break;
 
@@ -266,26 +272,24 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     /**
-     *
-     * processes a lookup
-     * @throws LookupFailedException
+     * processes a name lookup
      */
-    private void processLookup() {
+    private void processNameLookup() {
         logger.debug("begin");
 
         logger.debug("processing MsgLookup...");
-        MsgLookup msg = (MsgLookup) abstractMessage;
+        MsgNameLookup msg = (MsgNameLookup) abstractMessage;
         String remoteObjectName = msg.getRemoteObjectName();
 
         logger.debug("Sending result for remoteObjectName={}", remoteObjectName);
 
-        MsgLookupReturn ret = new MsgLookupReturn();
+        MsgNameLookupReturn ret = new MsgNameLookupReturn();
         ret.setSequence(msg.getSequence());
         try {
             Class<?>[] interfaces = null;
 
-            //interfaces = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass().getInterfaces();
-            interfaces = Utils.findAllInterfaces(dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).getClass());
+            //interfaces = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getClass().getInterfaces();
+            interfaces = Utils.findAllInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
 
             ret.setInterfaces(interfaces);
         } catch (LookupFailedException e) {
@@ -297,11 +301,40 @@ public class ProcessMessageRunnable implements Runnable {
         logger.debug("end");
     }
 
+    /**
+     * processes a interface lookup
+     */
+    private void processInterfaceLookup() {
+        logger.debug("begin");
+
+        logger.debug("processing MsgInterfaceLookup...");
+        MsgInterfaceLookup msg = (MsgInterfaceLookup) abstractMessage;
+        String interfaceName = msg.getInterfaceName();
+
+        logger.debug("Sending result for interfaceName={}", interfaceName);
+
+        MsgInterfaceLookupReturn ret = new MsgInterfaceLookupReturn();
+        ret.setSequence(msg.getSequence());
+        try {
+            Class<?>[] interfaces = null;
+
+            interfaces = dispatcher.getLookupTable().getRemoteObjectContainerByInterface(interfaceName).getRemoteObjectInterfaces();
+
+            ret.setInterfaces(interfaces);
+        } catch (LookupFailedException e) {
+            logger.debug("Lookup for remote object '{}' failed: {}", interfaceName, e.getMessage());
+            ret.setErrorMsg("Error: "+e.getClass()+"->"+e.getMessage());
+        }
+        session.write(ret);
+
+        logger.debug("end");
+    }
+
     private void processLookupReturn() {
         logger.debug("begin");
 
         logger.debug("processing MsgLookupReturn...");
-        MsgLookupReturn msg = (MsgLookupReturn) abstractMessage;
+        MsgNameLookupReturn msg = (MsgNameLookupReturn) abstractMessage;
 
         logger.debug("Forward result to waiting monitor");
         dispatcher.putResultToQueue(session, msg.getSequence(), msg);
@@ -357,7 +390,7 @@ public class ProcessMessageRunnable implements Runnable {
                         listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
                         // re-implant the proxy object
-                        arguments[i] = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
+                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
                         logger.debug("proxy object for SimonCallback injected");
                     }
                 }
@@ -366,9 +399,8 @@ public class ProcessMessageRunnable implements Runnable {
 
             logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
 
-            Object simonRemote;
-            simonRemote = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
-            result = method.invoke(simonRemote, arguments);
+            Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
+            result = method.invoke(remoteObject, arguments);
 
             if (method.getReturnType() == void.class) {
                 result = new SimonVoid();
@@ -452,7 +484,7 @@ public class ProcessMessageRunnable implements Runnable {
         String remoteObjectName = msg.getRemoteObjectName();
         String returnValue = null;
         try {
-            returnValue = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).toString();
+            returnValue = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().toString();
         } catch (LookupFailedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -494,10 +526,10 @@ public class ProcessMessageRunnable implements Runnable {
 
                 final String argumentRemoteObjectName = ((SimonRemoteInstance) objectToCompareWith).getRemoteObjectName();
 
-                objectToCompareWith = dispatcher.getLookupTable().getRemoteBinding(argumentRemoteObjectName);
+                objectToCompareWith = dispatcher.getLookupTable().getRemoteObjectContainer(argumentRemoteObjectName).getRemoteObject();
             }
 
-            Object remoteBinding = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName);
+            Object remoteBinding = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName);
             if (objectToCompareWith == null) {
                 equalsResult = false;
             } else {
@@ -542,7 +574,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         int returnValue = -1;
         try {
-            returnValue = dispatcher.getLookupTable().getRemoteBinding(remoteObjectName).hashCode();
+            returnValue = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().hashCode();
         } catch (LookupFailedException e) {
             returnMsg.setErrorMsg("Failed looking up the remote object for getting the hash code. Error: " + e.getMessage());
         }
@@ -562,4 +594,6 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("end");
     }
+
+
 }

@@ -25,11 +25,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.MsgLookup;
+import de.root1.simon.codec.messages.MsgNameLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgLookup}.
+ * A {@link MessageEncoder} that encodes {@link MsgInvokeReturn}.
  *
  * @author ACHR
  */

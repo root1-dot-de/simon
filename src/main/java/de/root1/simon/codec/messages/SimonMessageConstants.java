@@ -32,8 +32,8 @@ public final class SimonMessageConstants {
     
     // ---------------------
 
-    public static final byte MSG_LOOKUP = 0x00;
-    public static final byte MSG_LOOKUP_RETURN = 0x01;
+    public static final byte MSG_NAME_LOOKUP = 0x00;
+    public static final byte MSG_NAME_LOOKUP_RETURN = 0x01;
 
     public static final byte MSG_INVOKE = 0x02;
     public static final byte MSG_INVOKE_RETURN = 0x03;
@@ -58,6 +58,9 @@ public final class SimonMessageConstants {
 
     public static final byte MSG_PING = 0x10;
     public static final byte MSG_PONG = 0x11;
+
+    public static final byte MSG_INTERFACE_LOOKUP = 0x12;
+    public static final byte MSG_INTERFACE_LOOKUP_RETURN = 0x13;
 	
     private SimonMessageConstants() {
     }

@@ -18,7 +18,6 @@
  */
 package de.root1.simon.codec.base;
 
-import de.root1.simon.Statics;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -30,27 +29,27 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgLookupReturn}.
+ * A {@link MessageDecoder} that decodes {@link MsgNameLookupReturn}.
  *
  * @author ACHR
  */
-public class MsgLookupReturnDecoder extends AbstractMessageDecoder {
+public class MsgNameLookupReturnDecoder extends AbstractMessageDecoder {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgLookupReturnDecoder() {
-        super(SimonMessageConstants.MSG_LOOKUP_RETURN);
+    public MsgNameLookupReturnDecoder() {
+        super(SimonMessageConstants.MSG_NAME_LOOKUP_RETURN);
     }
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
         logger.trace("decoding ...");
-        MsgLookupReturn m = new MsgLookupReturn();
+        MsgNameLookupReturn m = new MsgNameLookupReturn();
 
         try {
             int arraySize = in.getInt();
