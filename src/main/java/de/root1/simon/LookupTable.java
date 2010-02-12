@@ -224,7 +224,7 @@ public class LookupTable {
     public synchronized Method getMethod(String remoteObject, long methodHash) {
         logger.debug("begin");
 
-        Method m = remoteObject_to_hashToMethod_Map.get(bindings.get(remoteObject)).get(methodHash);
+        Method m = remoteObject_to_hashToMethod_Map.get(bindings.get(remoteObject).getRemoteObject()).get(methodHash);
 
         logger.debug("hash={} resolves to method='{}'", methodHash, m);
         logger.debug("end");
