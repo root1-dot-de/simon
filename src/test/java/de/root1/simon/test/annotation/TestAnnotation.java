@@ -81,7 +81,7 @@ public class TestAnnotation {
             roiRemote.equals(null);
             roiRemote.myRemoteMethod();
 
-            Simon.release(roiRemote);
+//            Simon.release(roiRemote);
 
             r.unbind("roi");
             r.stop();
