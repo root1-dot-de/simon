@@ -149,6 +149,7 @@ public class Simon {
      *
      * @param port
      *            the port on which SIMON listens for connections
+     * @return the created registry object
      * @throws UnknownHostException
      *             if no IP address for the host could be found
      * @throws IOException
@@ -167,6 +168,7 @@ public class Simon {
      * @param registry
      *            the registry to shut down
      *
+     * @throws IllegalStateException
      * @deprecated You should call <code>stop()</code> on the registry to
      *             shutdown the registry instead of using this method.
      */
@@ -576,7 +578,7 @@ public class Simon {
      *            the proxy object
      * @return the InetSocketAddress on the remote-side
      */
-    public static InetSocketAddress getRemoteInetSocketAddress(Object proxyObject) throws IllegalArgumentException {
+    public static InetSocketAddress getRemoteInetSocketAddress(Object proxyObject) {
         return (InetSocketAddress) getSimonProxy(proxyObject).getRemoteSocketAddress();
     }
 
@@ -592,7 +594,7 @@ public class Simon {
      *             <code>Simon.getRemoteInetSocketAddress(Object).getAddress()</code>
      *             instead!
      */
-    public static InetAddress getRemoteInetAddress(Object proxyObject) throws IllegalArgumentException {
+    public static InetAddress getRemoteInetAddress(Object proxyObject) {
         return getRemoteInetSocketAddress(proxyObject).getAddress();
     }
 
@@ -607,7 +609,7 @@ public class Simon {
      *             <code> Simon.getRemoteInetSocketAddress(proxyObject).getPort()</code>
      *             instead!
      */
-    public static int getRemotePort(Object proxyObject) throws IllegalArgumentException {
+    public static int getRemotePort(Object proxyObject) {
         return getRemoteInetSocketAddress(proxyObject).getPort();
     }
 
@@ -620,7 +622,7 @@ public class Simon {
      *            the proxy object
      * @return the InetSocketAddress on the local-side
      */
-    public static InetSocketAddress getLocalInetSocketAddress(Object proxyObject) throws IllegalArgumentException {
+    public static InetSocketAddress getLocalInetSocketAddress(Object proxyObject) {
         return (InetSocketAddress) getSimonProxy(proxyObject).getLocalSocketAddress();
     }
 
@@ -636,7 +638,7 @@ public class Simon {
      *             instead!
      *
      */
-    public static int getLocalPort(Object proxyObject) throws IllegalArgumentException {
+    public static int getLocalPort(Object proxyObject) {
         return getLocalInetSocketAddress(proxyObject).getPort();
     }
 
@@ -914,11 +916,12 @@ public class Simon {
     /**
      * Sets the keep alive interval time in seconds for the specified remote object
      *
+     * @param remoteObject
      * @param seconds
      *            time in seconds
      * @throws IllegalArgumentException if the object is not a valid remote object
      */
-    public static void setKeepAliveInterval(Object remoteObject, int seconds) throws IllegalArgumentException {
+    public static void setKeepAliveInterval(Object remoteObject, int seconds) {
         logger.debug("setting keep alive interval on {} to {} sec.", remoteObject, seconds);
         getSimonProxy(remoteObject).getIoSession().getConfig().setIdleTime(IdleStatus.BOTH_IDLE, seconds);
     }
@@ -926,21 +929,23 @@ public class Simon {
     /**
      * Gets the keep alive interval time in seconds of the given remote object.
      *
+     * @param remoteObject
      * @return current set keep alive interval of given remote object
      * @throws IllegalArgumentException if the object is not a valid remote object
      */
-    public static int getKeepAliveInterval(Object remoteObject) throws IllegalArgumentException {
+    public static int getKeepAliveInterval(Object remoteObject) {
         return getSimonProxy(remoteObject).getIoSession().getConfig().getIdleTime(IdleStatus.BOTH_IDLE);
     }
 
     /**
      * Sets the keep alive timeout time in seconds for the specified remote object.
      *
+     * @param remoteObject 
      * @param seconds
      *            time in seconds
      * @throws IllegalArgumentException if the object is not a valid remote object
      */
-    public static void setKeepAliveTimeout(Object remoteObject, int seconds) throws IllegalArgumentException {
+    public static void setKeepAliveTimeout(Object remoteObject, int seconds) {
         logger.debug("setting keep alive timeout on {} to {} sec.", remoteObject, seconds);
         getSimonProxy(remoteObject).getIoSession().getConfig().setWriteTimeout(seconds);
     }
@@ -948,6 +953,7 @@ public class Simon {
     /**
      * Gets the keep alive timeout time in seconds of the given remote object.
      *
+     * @param remoteObject
      * @return current set keep alive timeout of given remote object
      * @throws IllegalArgumentException if the object is not a valid remote object
      */
@@ -1117,6 +1123,7 @@ public class Simon {
      *            the remote object which lives on the remote station which has
      *            a prepared raw data channel, related to the
      *            <code>channelToken</code>. Note: This <b>has to be</b> a remote object stub.
+     * @return the opened raw channel object
      * @throws SimonRemoteException
      */
     public static RawChannel openRawChannel(int channelToken, SimonRemote simonRemote) throws SimonRemoteException {
