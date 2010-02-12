@@ -20,8 +20,8 @@ package de.root1.simon;
 
 import de.root1.simon.codec.base.MsgInvokeDecoder;
 import de.root1.simon.codec.base.MsgInvokeReturnDecoder;
-import de.root1.simon.codec.base.MsgLookupDecoder;
-import de.root1.simon.codec.base.MsgLookupReturnDecoder;
+import de.root1.simon.codec.base.MsgNameLookupDecoder;
+import de.root1.simon.codec.base.MsgNameLookupReturnDecoder;
 
 /**
  * Holds some static variables defining timeouts, thread and method names, ...
@@ -37,8 +37,8 @@ public class Statics {
     public static final String SESSION_ATTRIBUTE_LOOKUPTABLE = LookupTable.class.getName();
     public static final String SESSION_ATTRIBUTE_INVOKESTATE = MsgInvokeDecoder.class.getName() + ".InvokeState";
     public static final String SESSION_ATTRIBUTE_INVOKERETURNSTATE = MsgInvokeReturnDecoder.class.getName() + ".InvokeReturnState";
-    public static final String SESSION_ATTRIBUTE_LOOKUPSTATE = MsgLookupDecoder.class.getName() + ".LookupState";
-    public static final String SESSION_ATTRIBUTE_LOOKUPRETURNSTATE = MsgLookupReturnDecoder.class.getName() + ".LookupReturnState";
+    public static final String SESSION_ATTRIBUTE_LOOKUPSTATE = MsgNameLookupDecoder.class.getName() + ".LookupState";
+    public static final String SESSION_ATTRIBUTE_LOOKUPRETURNSTATE = MsgNameLookupReturnDecoder.class.getName() + ".LookupReturnState";
     public static final String SESSION_ATTRIBUTE_PINGTIMEOUT = PingWatchdog.class.getName() + ".PingTimeOut";
     // values in milliseconds
     protected static final int DEFAULT_SOCKET_TIMEOUT = 100;

@@ -55,14 +55,14 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.SimonProxyFilter;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
-import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.FilterEntry;
-import de.root1.simon.utils.SimonClassLoader;
+import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -75,10 +75,7 @@ public class Simon {
      * The logger used for this class
      */
     private final static Logger logger = LoggerFactory.getLogger(Simon.class);
-    /**
-     * A relation map between remote object names and the SelectionKey + Dispatcher
-     */
-    private static final HashMap<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
+
     /**
      * The size of the used thread pool. -1 indicates a cached thread pool.
      */
@@ -98,7 +95,7 @@ public class Simon {
     /**
      * Identifies the class, that is used as SIMON's standard protocol codec factory
      */
-    protected static final String SIMON_STD_PROTOCOL_CODEC_FACTORY = "de.root1.simon.codec.base.SimonProtocolCodecFactory";
+    protected static final String SIMON_STD_PROTOCOL_CODEC_FACTORY = de.root1.simon.codec.base.SimonProtocolCodecFactory.class.getName();
     /**
      * The current set name of the protocol factory class
      */
@@ -107,41 +104,6 @@ public class Simon {
      * A list with all active/still alive LookupTables ever created
      */
     private static final List<LookupTable> lookupTableList = new ArrayList<LookupTable>();
-
-    /**
-     * Try to load 'config/simon_logging.properties'
-     */
-    static {
-
-        // only debug, if public DEBUG flag is enabled in Utils class
-        if (Utils.DEBUG) {
-
-            InputStream is;
-            File f = new File("config/simon_logging.properties");
-            try {
-                is = new FileInputStream(f);
-                LogManager.getLogManager().readConfiguration(is);
-
-                logger.debug("Logging: Loaded config {}", f.getAbsolutePath());
-
-            } catch (FileNotFoundException e) {
-
-                System.err.println("File not found: " + f.getAbsolutePath() + ".\n" + "If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" + "Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
-
-            } catch (SecurityException e) {
-
-                System.err.println("Security exception occured while trying to load " + f.getAbsolutePath() + "\n" + "Logging with SIMON not possible!.");
-
-            } catch (IOException e) {
-
-                System.err.println("Cannot load " + f.getAbsolutePath() + " ...\n" + "Please make sure that Java has access to that file.");
-
-            }
-
-        }
-        logger.debug("Simon lib loaded ...");
-
-    }
 
     /**
      * Creates a registry listening on all interfaces with the last known worker
@@ -218,6 +180,56 @@ public class Simon {
     }
 
     /**
+     * Creates a interface lookup object that is used to lookup remote objects. <br>
+     * Lookup is made via a known interface of the remote object.
+     *
+     * @param host the name of the host on which the registry server runs
+     * @param port the port on which the registry server is listening
+     * @return the lookup object
+     * @throws UnknownHostException if the specified hostname is unknown
+     */
+    public static Lookup createInterfaceLookup(String host, int port) throws UnknownHostException {
+            return new InterfaceLookup(host, port);
+    }
+
+    /**
+     * Creates a interface lookup object that is used to lookup remote objects. <br>
+     * Lookup is made via a known interface of the remote object.
+     *
+     * @param address the address of the host on which the registry server runs
+     * @param port the port on which the registry server is listening
+     * @return the lookup object
+     */
+    public static Lookup createInterfaceLookup(InetAddress address, int port) {
+            return new InterfaceLookup(address, port);
+    }
+
+    /**
+     * Creates a name lookup object that is used to lookup remote objects. <br>
+     * Lookup is made via a known name of the remote object.
+     *
+     * @param host the name of the host on which the registry server runs
+     * @param port the port on which the registry server is listening
+     * @return the lookup object
+     * @throws UnknownHostException if the specified hostname is unknown
+     */
+    public static Lookup createLookup(String host, int port) throws UnknownHostException {
+            return new NameLookup(host, port);
+    }
+
+    /**
+     * Creates a name lookup object that is used to lookup remote objects. <br>
+     * Lookup is made via a known name of the remote object.
+     *
+     * @param address the address of the host on which the registry server runs
+     * @param port the port on which the registry server is listening
+     * @return the lookup object
+     */
+    public static Lookup createLookup(InetAddress address, int port) {
+            return new NameLookup(address, port);
+    }
+
+    /**
      *
      * Retrieves a remote object from the server. At least, it tries to retrieve
      * it. This may fail if the named object is not available or if the
@@ -244,9 +256,9 @@ public class Simon {
      *             if there's no such object on the server
      * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
      */
-    public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
-        return lookup(InetAddress.getByName(host), port, remoteObjectName);
-    }
+//    public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
+//        return lookup(InetAddress.getByName(host), port, remoteObjectName);
+//    }
 
     /**
      *
@@ -276,9 +288,9 @@ public class Simon {
      * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
      *
      */
-    public static Object lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-        return lookup(null, null, host, port, remoteObjectName, null);
-    }
+//    public static Object lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+//        return lookup(null, null, host, port, remoteObjectName, null);
+//    }
 
     /**
      *
@@ -313,261 +325,248 @@ public class Simon {
      *             if there's no such object on the server
      * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used         *
      */
-    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-        return lookup(sslContextFactory, proxyConfig, host, port, remoteObjectName, null);
-    }
+//    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+//        return lookup(sslContextFactory, proxyConfig, host, port, remoteObjectName, null);
+//    }
 
-    /**
-     *
-     * Retrieves a remote object from the server. At least, it tries to retrieve
-     * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
-     *
-     * @param sslContextFactory
-     *            the factory for creating the ssl context. <b>No SSL is used if
-     *            <code>null</code> is given!</b>
-     * @param proxyConfig
-     *            configuration details for connecting via proxy. <b>No proxy is
-     *            used if <code>null</code> is given!</b>
-     * @param host
-     *            host address where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
-     * @param listener
-     *            a listener that get's notified if the remote object's
-     *            connection is closed/released. <b>No listener is
-     *            used if <code>null</code> is given!</b>
-     * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
-     */
-    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-        logger.debug("begin");
+//    /**
+//     *
+//     * Retrieves a remote object from the server. At least, it tries to retrieve
+//     * it. This may fail if the named object is not available or if the
+//     * connection could not be established.<br>
+//     * <i>Note: If your are finished with the remote object, don't forget to
+//     * call {@link Simon#release(Object)} to decrease the reference count and
+//     * finally release the connection to the server</i>
+//     *
+//     * @param sslContextFactory
+//     *            the factory for creating the ssl context. <b>No SSL is used if
+//     *            <code>null</code> is given!</b>
+//     * @param proxyConfig
+//     *            configuration details for connecting via proxy. <b>No proxy is
+//     *            used if <code>null</code> is given!</b>
+//     * @param host
+//     *            host address where the lookup takes place
+//     * @param port
+//     *            port number of the simon remote registry
+//     * @param remoteObjectName
+//     *            name of the remote object which is bind to the remote registry
+//     * @param listener
+//     *            a listener that get's notified if the remote object's
+//     *            connection is closed/released. <b>No listener is
+//     *            used if <code>null</code> is given!</b>
+//     * @return and instance of the remote object
+//     * @throws SimonRemoteException
+//     *             if there's a problem with the simon communication
+//     * @throws IOException
+//     *             if there is a problem with the communication itself
+//     * @throws EstablishConnectionFailed
+//     *             if its not possible to establish a connection to the remote
+//     *             registry
+//     * @throws LookupFailedException
+//     *             if there's no such object on the server
+//     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+//     */
+//    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+//        logger.debug("begin");
+//
+//        // check if there is already an dispatcher and key for THIS server
+//        Object proxy = null;
+//        Dispatcher dispatcher = null;
+//        IoSession session = null;
+//
+//        String serverString = createServerString(host, port);
+//
+//        logger.debug("check if serverstring '{}' is already in the serverDispatcherRelation list", serverString);
+//
+//        synchronized (serverDispatcherRelation) {
+//
+//            if (serverDispatcherRelation.containsKey(serverString)) {
+//
+//                // retrieve the already stored connection
+//                ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
+//                ctsc.addRef();
+//                serverDispatcherRelation.put(serverString, ctsc);
+//                dispatcher = ctsc.getDispatcher();
+//                session = ctsc.getSession();
+//                logger.debug("Got ClientToServerConnection from list");
+//
+//
+//            } else {
+//
+//                logger.debug("No ClientToServerConnection in list. Creating new one.");
+//
+//                dispatcher = new Dispatcher(serverString, getThreadPool());
+//
+//                // an executor service for handling the message reading in a threadpool
+//                ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
+//
+//                IoConnector connector = new NioSocketConnector();
+//                connector.setHandler(dispatcher);
+//
+//                /* ******************************************
+//                 * Setup filterchain before connecting to get all events like session created
+//                 * and session opened within the filters
+//                 */
+//                DefaultIoFilterChainBuilder filterChain = connector.getFilterChain();
+//
+//                // create a list of used filters
+//                List<FilterEntry> filters = new ArrayList<FilterEntry>();
+//
+//
+//                // check for SSL
+//                if (sslContextFactory != null) {
+//                    SSLContext context = sslContextFactory.getSslContext();
+//
+//                    if (context != null) {
+//                        SslFilter sslFilter = new SslFilter(context);
+//                        sslFilter.setUseClientMode(true); // only on client side needed
+//                        filters.add(new FilterEntry(sslFilter.getClass().getName(), sslFilter));
+//
+//                        logger.debug("SSL ON");
+//                    } else {
+//                        logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
+//                    }
+//                }
+//
+//                if (logger.isTraceEnabled()) {
+//                    filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
+//                }
+//
+//                // don't use a threading model on filter level
+//                //filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
+//
+//                // add the simon protocol
+//                SimonProtocolCodecFactory protocolFactory = null;
+//                try {
+//
+//                    protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
+//
+//                } catch (ClassNotFoundException e) {
+//                    logger.error("ClassNotFoundException while preparing ProtocolFactory: {}", e.getMessage());
+//                    throw new IllegalArgumentException(e);
+//                } catch (InstantiationException e) {
+//                    logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
+//                    throw new IllegalArgumentException(e);
+//                } catch (IllegalAccessException e) {
+//                    logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
+//                    throw new IllegalArgumentException(e);
+//                }
+//
+//                protocolFactory.setup(false);
+//                filters.add(new FilterEntry(protocolFactory.getClass().getName(), new ProtocolCodecFilter(protocolFactory)));
+//
+//                // setup for proxy connection if necessary
+//                String connectionTarget;
+//                if (proxyConfig != null) {
+//
+//                    // create the proxy filter with reference to the filter list
+//                    // proxy filter will later on replace all proxy filters etc. with the ones from filter list
+//                    connectionTarget = proxyConfig.toString();
+//                    filterChain.addLast(SimonProxyFilter.class.getName(), new SimonProxyFilter(host.getHostName(), port, proxyConfig, filters));
+//                    logger.trace("prepared for proxy connection. chain is now: {}", filterChain);
+//
+//                } else {
+//
+//                    // add the filters from the list to the filter chain
+//                    connectionTarget = "Connection[" + host + ":" + port + "]";
+//                    for (FilterEntry relation : filters) {
+//                        filterChain.addLast(relation.name, relation.filter);
+//                    }
+//                }
+//                logger.debug("Using: {}", connectionTarget);
+//
+//                // now we can try to connect ...
+//                ConnectFuture future = null;
+//                try {
+//
+//                    // decide whether the connection goes via proxy or not
+//                    if (proxyConfig == null) {
+//                        future = connector.connect(new InetSocketAddress(host, port));
+//                    } else {
+//                        future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
+//                    }
+//                    future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
+//
+//
+//                } catch (Exception e) {
+//
+//                    if (session != null) {
+//                        logger.trace("session != null. closing it...");
+//                        session.close(true);
+//                    }
+//                    connector.dispose();
+//                    dispatcher.shutdown();
+//                    filterchainWorkerPool.shutdown();
+//
+//                    throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ". Error was: " + e + ": " + e.getMessage());
+//                }
+//
+//                if (future.isConnected()) { // check if the connection succeeded
+//
+//                    session = future.getSession(); // this cannot return null, because we waited uninterruptibly for the connect-process
+//                    logger.trace("connected with {}. remoteObjectName={}", connectionTarget, remoteObjectName);
+//
+//                } else {
+//                    connector.dispose();
+//                    dispatcher.shutdown();
+//                    filterchainWorkerPool.shutdown();
+//                    throw new EstablishConnectionFailed("Could not establish connection to " + connectionTarget + ". Maybe host or network is down?");
+//                }
+//
+//                // configure the session
+//                session.getConfig().setIdleTime(IdleStatus.BOTH_IDLE, Statics.DEFAULT_IDLE_TIME);
+//                session.getConfig().setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+//
+//                // store this connection for later re-use
+//                ClientToServerConnection ctsc = new ClientToServerConnection(serverString, dispatcher, session, connector, filterchainWorkerPool);
+//                ctsc.addRef();
+//                serverDispatcherRelation.put(serverString, ctsc);
+//            }
+//        }
+//
+//        /*
+//         * Create array with interfaces the proxy should have
+//         * first contact server for lookup of interfaces
+//         * --> this request blocks!
+//         */
+//        MsgNameLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
+//
+//        if (msg.hasError()) {
+//
+//            logger.trace("Lookup failed. Releasing dispatcher.");
+//            releaseDispatcher(dispatcher);
+//            throw new LookupFailedException(msg.getErrorMsg());
+//
+//        } else {
+//
+//            Class<?>[] listenerInterfaces = msg.getInterfaces();
+//
+//            for (Class<?> class1 : listenerInterfaces) {
+//                logger.warn("iface: {}" + class1.getName());
+//            }
+//
+//            /*
+//             * Creates proxy for method-call-forwarding to server
+//             */
+//            SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
+//            logger.trace("proxy created");
+//
+//            /*
+//             * Create the proxy-object with the needed interfaces
+//             */
+//            proxy = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(Simon.class), listenerInterfaces, handler);
+//
+//            // store closed listener
+//            if (listener != null) {
+//                addClosedListener(listener, proxy);
+//            }
+//
+//            logger.debug("end");
+//            return proxy;
+//
+//        }
+//    }
 
-        // check if there is already an dispatcher and key for THIS server
-        Object proxy = null;
-        Dispatcher dispatcher = null;
-        IoSession session = null;
-
-        String serverString = createServerString(host, port);
-
-        logger.debug("check if serverstring '{}' is already in the serverDispatcherRelation list", serverString);
-
-        synchronized (serverDispatcherRelation) {
-
-            if (serverDispatcherRelation.containsKey(serverString)) {
-
-                // retrieve the already stored connection
-                ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
-                ctsc.addRef();
-                serverDispatcherRelation.put(serverString, ctsc);
-                dispatcher = ctsc.getDispatcher();
-                session = ctsc.getSession();
-                logger.debug("Got ClientToServerConnection from list");
-
-
-            } else {
-
-                logger.debug("No ClientToServerConnection in list. Creating new one.");
-
-                dispatcher = new Dispatcher(serverString, getThreadPool());
-
-                // an executor service for handling the message reading in a threadpool
-                ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
-
-                IoConnector connector = new NioSocketConnector();
-                connector.setHandler(dispatcher);
-
-                /* ******************************************
-                 * Setup filterchain before connecting to get all events like session created
-                 * and session opened within the filters
-                 */
-                DefaultIoFilterChainBuilder filterChain = connector.getFilterChain();
-
-                // create a list of used filters
-                List<FilterEntry> filters = new ArrayList<FilterEntry>();
-
-
-                // check for SSL
-                if (sslContextFactory != null) {
-                    SSLContext context = sslContextFactory.getSslContext();
-
-                    if (context != null) {
-                        SslFilter sslFilter = new SslFilter(context);
-                        sslFilter.setUseClientMode(true); // only on client side needed
-                        filters.add(new FilterEntry(sslFilter.getClass().getName(), sslFilter));
-
-                        logger.debug("SSL ON");
-                    } else {
-                        logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
-                    }
-                }
-
-                if (logger.isTraceEnabled()) {
-                    filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
-                }
-
-                // don't use a threading model on filter level
-                //filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
-
-                // add the simon protocol
-                SimonProtocolCodecFactory protocolFactory = null;
-                try {
-
-                    protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
-
-                } catch (ClassNotFoundException e) {
-                    logger.error("ClassNotFoundException while preparing ProtocolFactory: {}", e.getMessage());
-                    throw new IllegalArgumentException(e);
-                } catch (InstantiationException e) {
-                    logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
-                    throw new IllegalArgumentException(e);
-                } catch (IllegalAccessException e) {
-                    logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
-                    throw new IllegalArgumentException(e);
-                }
-
-                protocolFactory.setup(false);
-                filters.add(new FilterEntry(protocolFactory.getClass().getName(), new ProtocolCodecFilter(protocolFactory)));
-
-                // setup for proxy connection if necessary
-                String connectionTarget;
-                if (proxyConfig != null) {
-
-                    // create the proxy filter with reference to the filter list
-                    // proxy filter will later on replace all proxy filters etc. with the ones from filter list
-                    connectionTarget = proxyConfig.toString();
-                    filterChain.addLast(SimonProxyFilter.class.getName(), new SimonProxyFilter(host.getHostName(), port, proxyConfig, filters));
-                    logger.trace("prepared for proxy connection. chain is now: {}", filterChain);
-
-                } else {
-
-                    // add the filters from the list to the filter chain
-                    connectionTarget = "Connection[" + host + ":" + port + "]";
-                    for (FilterEntry relation : filters) {
-                        filterChain.addLast(relation.name, relation.filter);
-                    }
-                }
-                logger.debug("Using: {}", connectionTarget);
-
-                // now we can try to connect ...
-                ConnectFuture future = null;
-                try {
-
-                    // decide whether the connection goes via proxy or not
-                    if (proxyConfig == null) {
-                        future = connector.connect(new InetSocketAddress(host, port));
-                    } else {
-                        future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
-                    }
-                    future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
-
-
-                } catch (Exception e) {
-
-                    if (session != null) {
-                        logger.trace("session != null. closing it...");
-                        session.close(true);
-                    }
-                    connector.dispose();
-                    dispatcher.shutdown();
-                    filterchainWorkerPool.shutdown();
-
-                    throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ". Error was: " + e + ": " + e.getMessage());
-                }
-
-                if (future.isConnected()) { // check if the connection succeeded
-
-                    session = future.getSession(); // this cannot return null, because we waited uninterruptibly for the connect-process
-                    logger.trace("connected with {}. remoteObjectName={}", connectionTarget, remoteObjectName);
-
-                } else {
-                    connector.dispose();
-                    dispatcher.shutdown();
-                    filterchainWorkerPool.shutdown();
-                    throw new EstablishConnectionFailed("Could not establish connection to " + connectionTarget + ". Maybe host or network is down?");
-                }
-
-                // configure the session
-                session.getConfig().setIdleTime(IdleStatus.BOTH_IDLE, Statics.DEFAULT_IDLE_TIME);
-                session.getConfig().setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
-
-                // store this connection for later re-use
-                ClientToServerConnection ctsc = new ClientToServerConnection(serverString, dispatcher, session, connector, filterchainWorkerPool);
-                ctsc.addRef();
-                serverDispatcherRelation.put(serverString, ctsc);
-            }
-        }
-
-        /*
-         * Create array with interfaces the proxy should have
-         * first contact server for lookup of interfaces
-         * --> this request blocks!
-         */
-        MsgLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
-
-        if (msg.hasError()) {
-
-            logger.trace("Lookup failed. Releasing dispatcher.");
-            releaseDispatcher(dispatcher);
-            throw new LookupFailedException(msg.getErrorMsg());
-
-        } else {
-
-            Class<?>[] listenerInterfaces = msg.getInterfaces();
-
-            for (Class<?> class1 : listenerInterfaces) {
-                logger.warn("iface: {}"+class1.getName());
-            }
-
-            /*
-             * Creates proxy for method-call-forwarding to server
-             */
-            SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
-            logger.trace("proxy created");
-
-            /*
-             * Create the proxy-object with the needed interfaces
-             */
-            proxy = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(Simon.class), listenerInterfaces, handler);
-
-            // store closed listener
-            if (listener != null) {
-                addClosedListener(listener, proxy);
-            }
-
-            logger.debug("end");
-            return proxy;
-
-        }
-    }
-
-    /**
-     *
-     * Creates a unique string for a server by using the host and port
-     *
-     * @param host
-     *            the servers host
-     * @param port
-     *            the port the server listens on
-     * @return a server string
-     */
-    private static String createServerString(InetAddress host, int port) {
-        return host.getHostAddress() + ":" + port;
-    }
 
     /**
      *
@@ -742,111 +741,43 @@ public class Simon {
             removeClosedListenerList = null;
         }
 
-        boolean result = releaseDispatcher(dispatcher);
+        boolean result = AbstractLookup.releaseDispatcher(dispatcher);
 
         logger.debug("end");
         return result;
     }
 
-    /**
-     * Attaches a closed listener to the specified remote object
-     * @param listener the listener to add
-     * @param proxyObject the remote object to which the listener is attached to
-     */
-    public static void addClosedListener(ClosedListener listener, Object proxyObject) {
-        // retrieve the proxy object
-        SimonProxy proxy = getSimonProxy(proxyObject);
+//    /**
+//     * Attaches a closed listener to the specified remote object
+//     * @param listener the listener to add
+//     * @param proxyObject the remote object to which the listener is attached to
+//     */
+//    public static void addClosedListener(ClosedListener listener, Object proxyObject) {
+//        // retrieve the proxy object
+//        SimonProxy proxy = getSimonProxy(proxyObject);
+//
+//
+//        Dispatcher dispatcher = proxy.getDispatcher();
+//        dispatcher.addClosedListener(listener, proxy.getRemoteObjectName());
+//    }
 
+//    /**
+//     * Removes an already attached closed listener from the specified remote object
+//     * @param listener the listener to remove
+//     * @param proxyObject the remote object from which the listener has to be removed
+//     * @return true, if listener was removed, false if there is no listener to remove
+//     */
+//    public static boolean removeClosedListener(ClosedListener listener, Object proxyObject) {
+//        // retrieve the proxy object
+//        SimonProxy proxy = getSimonProxy(proxyObject);
+//
+//        Dispatcher dispatcher = proxy.getDispatcher();
+//        return dispatcher.removeClosedListener(listener, proxy.getRemoteObjectName());
+//    }
 
-        Dispatcher dispatcher = proxy.getDispatcher();
-        dispatcher.addClosedListener(listener, proxy.getRemoteObjectName());
-    }
+    
 
-    /**
-     * Removes an already attached closed listener from the specified remote object
-     * @param listener the listener to remove
-     * @param proxyObject the remote object from which the listener has to be removed
-     * @return true, if listener was removed, false if there is no listener to remove
-     */
-    public static boolean removeClosedListener(ClosedListener listener, Object proxyObject) {
-        // retrieve the proxy object
-        SimonProxy proxy = getSimonProxy(proxyObject);
-
-        Dispatcher dispatcher = proxy.getDispatcher();
-        return dispatcher.removeClosedListener(listener, proxy.getRemoteObjectName());
-    }
-
-    /**
-     *  Releases a {@link Dispatcher}. If there is no more
-     * server string referencing the Dispatcher, the Dispatcher will be
-     * released/shutdown.
-     *
-     * @param dispatcher
-     *            the iDispatcher to release
-     * @return true if the Dispatcher is shut down, false if there's still a
-     *         reference pending
-     */
-    protected static boolean releaseDispatcher(Dispatcher dispatcher) {
-        // get the serverstring the dispatcher is connected to
-        String serverString = dispatcher.getServerString();
-        boolean result = releaseServerDispatcherRelation(serverString);
-        return result;
-    }
-
-    /**
-     *
-     * Releases a reference for a {@link Dispatcher} identified by a specific
-     * server string (see: {@link Simon#createServerString}. If there is no more
-     * server string referencing the Dispatcher, the Dispatcher will be
-     * released/shutdown.
-     *
-     * @param serverString
-     *            the identifier of the Dispatcher to release
-     * @return true if the Dispatcher is shut down, false if there's still a
-     *         reference pending
-     */
-    protected static boolean releaseServerDispatcherRelation(String serverString) {
-
-        boolean result = false;
-
-        synchronized (serverDispatcherRelation) {
-
-            // if there's an instance of this connection known ...
-            if (serverDispatcherRelation.containsKey(serverString)) {
-
-                // ... remove the connection from the list ...
-                final ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
-                int refCount = ctsc.delRef();
-
-                logger.trace("removed serverString '{}' from serverDispatcherRelation. new refcount is {}", serverString, refCount);
-
-                if (refCount == 0) {
-                    // .. and shutdown the dispatcher if there's no further reference
-                    logger.debug("refCount reached 0. shutting down session and all related stuff.");
-                    ctsc.getDispatcher().shutdown();
-
-                    CloseFuture closeFuture = ctsc.getSession().close(false);
-
-                    closeFuture.addListener(new IoFutureListener<IoFuture>() {
-
-                        public void operationComplete(IoFuture future) {
-                            ctsc.getFilterchainWorkerPool().shutdown();
-                            ctsc.getConnector().dispose();
-                        }
-                    });
-                    result = true;
-                } else {
-                    logger.debug("refCount={}. put back the ClientToServerConnection.", refCount);
-                    serverDispatcherRelation.put(serverString, ctsc);
-                }
-
-            } else {
-                logger.debug("no ServerDispatcherRelation found for {}. Maybe remote object is already released?", serverString);
-            }
-
-        }
-        return result;
-    }
+    
 
     /**
      * Sets the DGC's interval time in milliseconds

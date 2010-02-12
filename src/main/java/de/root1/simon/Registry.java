@@ -289,7 +289,7 @@ public final class Registry {
             throw new IllegalArgumentException("Provided remote object is not marked with SimonRemote or Remote annotation!");
 
         try {
-            if (dispatcher.getLookupTable().getRemoteBinding(name) != null) {
+            if (dispatcher.getLookupTable().getRemoteObjectContainer(name) != null) {
                 throw new NameBindingException("a remote object with the name '" + name + "' is already bound to this registry. unbind() first, or alternatively rebind().");
             }
         } catch (LookupFailedException e) {

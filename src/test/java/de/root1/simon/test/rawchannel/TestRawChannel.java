@@ -140,7 +140,10 @@ public class TestRawChannel {
         try {
 
             System.out.println("Doing lookup ...");
-            RawChannelServer rcs = (RawChannelServer) Simon.lookup(InetAddress.getLocalHost(), 2000, BIND_NAME);
+            RawChannelServer rcs = null;
+            // TODO FIXME
+//            (RawChannelServer) Simon.lookup(InetAddress.getLocalHost(), 2000, BIND_NAME);
+            if (1==0) throw new LookupFailedException("fixme");
             System.out.println("Doing lookup ... *done*");
 
             assertTrue("looked up remote must not be null", rcs!=null);
