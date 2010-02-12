@@ -18,61 +18,46 @@
  */
 package de.root1.simon.codec.base;
 
-import de.root1.simon.Statics;
-
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.ProtocolDecoderOutput;
-import org.apache.mina.filter.codec.demux.MessageDecoder;
+import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgLookup;
+import de.root1.simon.codec.messages.MsgNameLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
-import de.root1.simon.utils.Utils;
-import java.nio.BufferUnderflowException;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgLookup}.
+ * A {@link MessageEncoder} that encodes {@link MsgNameLookup}.
  *
  * @author ACHR
  */
-public class MsgLookupDecoder extends AbstractMessageDecoder {
+public class MsgNameLookupEncoder<T extends MsgNameLookup> extends AbstractMessageEncoder<T> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgLookupDecoder() {
-        super(SimonMessageConstants.MSG_LOOKUP);
+    public MsgNameLookupEncoder() {
+        super(SimonMessageConstants.MSG_NAME_LOOKUP);
     }
 
     @Override
-    protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
+    protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
-        MsgLookup m = new MsgLookup();
-
+        logger.trace("begin. message={}", message);
+        logger.trace("position before: {}",out.position());
         try {
-            String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-            m.setRemoteObjectName(remoteObjectName);
+            out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
         } catch (CharacterCodingException e) {
             e.printStackTrace();
-        } catch (BufferUnderflowException e) {
-            System.err.println("Buffer Under Flow Exception !!");
-            e.printStackTrace();
-            System.out.flush();
-            System.err.flush();
-            System.exit(0);
+            logger.error(e.getMessage());
         }
-
-        if (logger.isTraceEnabled())
-            logger.trace("message={} on session={}", m, Utils.longToHexString(session.getId()));
-        
-        return m;
+        logger.trace("position after: {}",out.position());
+        logger.trace("end");
     }
 
-    public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
+    public void dispose() throws Exception {
     }
 }

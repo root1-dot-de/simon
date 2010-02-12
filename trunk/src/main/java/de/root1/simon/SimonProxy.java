@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.utils.SimonClassLoader;
+import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -167,7 +167,7 @@ public class SimonProxy implements InvocationHandler {
             SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId());
 
             // reimplant the proxy object
-            result = Proxy.newProxyInstance(SimonClassLoader.getClassLoader(this.getClass()), listenerInterfaces, handler);
+            result = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler);
 
 
         }
@@ -187,7 +187,7 @@ public class SimonProxy implements InvocationHandler {
 
     private void shutdownServerConnection(Method method) {
         logger.error("Problematic error while invoking '{}#{}'. Shutting down server connection.", remoteObjectName, method);
-        Simon.releaseDispatcher(dispatcher);
+        AbstractLookup.releaseDispatcher(dispatcher);
         dispatcher = null;
     }
 

@@ -26,10 +26,12 @@ import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
+import de.root1.simon.codec.messages.MsgInterfaceLookup;
+import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.MsgLookup;
-import de.root1.simon.codec.messages.MsgLookupReturn;
+import de.root1.simon.codec.messages.MsgNameLookup;
+import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.codec.messages.MsgOpenRawChannel;
 import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
 import de.root1.simon.codec.messages.MsgPing;
@@ -53,136 +55,148 @@ public class SimonProtocolCodecFactory extends DemuxingProtocolCodecFactory {
 	 * @param isServer if true, setup for server mode, false for client mode
 	 */
 	public void setup(boolean isServer){
-		if (isServer) { // **** SERVER **** 
-        	// incoming lookup
-            super.addMessageDecoder(MsgLookupDecoder.class);
-            // outgoing lookup return
-            super.addMessageEncoder(MsgLookupReturn.class, MsgLookupReturnEncoder.class);
-        } 
-        else // **** CLIENT ****
-        {
-        	// outgoing lookup
-        	super.addMessageEncoder(MsgLookup.class, MsgLookupEncoder.class);
-        	// incoming lookup return
-        	super.addMessageDecoder(MsgLookupReturnDecoder.class);        	
-        }
-        
-        /* *****************************************
-         *  Encoder and Decoder for both sides
-         * *****************************************/
-        
-    	/*
-    	 * invocation handling
-    	 */
-    	
-    	// outgoing invoke 
-    	super.addMessageEncoder(MsgInvoke.class, MsgInvokeEncoder.class);
-    	// incoming invoke return 
-    	super.addMessageDecoder(MsgInvokeReturnDecoder.class);
+            if (isServer) { // **** SERVER ****
 
-    	// incoming invoke
-        super.addMessageDecoder(MsgInvokeDecoder.class);
-        // outgoing invoke return
-        super.addMessageEncoder(MsgInvokeReturn.class, MsgInvokeReturnEncoder.class);
-        
-        /*
-         * "toString()" handling
-         */
-        
-        // outgoing toString
-        super.addMessageEncoder(MsgToString.class, MsgToStringEncoder.class);
-        // incoming toString return
-        super.addMessageDecoder(MsgToStringReturnDecoder.class);
-        
-        // incoming toString
-        super.addMessageDecoder(MsgToStringDecoder.class);
-        // outgoing toString return
-        super.addMessageEncoder(MsgToStringReturn.class, MsgToStringReturnEncoder.class);
-        
-        /*
-         * "hashCode()" handling
-         */
-        
-        // outgoing hashCode
-        super.addMessageEncoder(MsgHashCode.class, MsgHashCodeEncoder.class);
-        // incoming hashCode return
-        super.addMessageDecoder(MsgHashCodeReturnDecoder.class);
-        
-        // incoming hashCode
-        super.addMessageDecoder(MsgHashCodeDecoder.class);
-        // outgoing hashCode return
-        super.addMessageEncoder(MsgHashCodeReturn.class, MsgHashCodeReturnEncoder.class);
-        
-        /*
-         * "equals()" handling
-         */
-        
-        // outgoing equals
-        super.addMessageEncoder(MsgEquals.class, MsgEqualsEncoder.class);
-        // incoming equals return
-        super.addMessageDecoder(MsgEqualsReturnDecoder.class);
-        
-        // incoming equals
-        super.addMessageDecoder(MsgEqualsDecoder.class);
-        // outgoing equals return
-        super.addMessageEncoder(MsgEqualsReturn.class, MsgEqualsReturnEncoder.class);
+                // incoming service lookup
+                super.addMessageDecoder(MsgNameLookupDecoder.class);
+                // outgoing service lookup return
+                super.addMessageEncoder(MsgNameLookupReturn.class, MsgNameLookupReturnEncoder.class);
+                
+                // incoming interface lookup
+                super.addMessageDecoder(MsgInterfaceLookupDecoder.class);
+                // outgoing interface lookup return
+                super.addMessageEncoder(MsgInterfaceLookupReturn.class, MsgInterfaceLookupReturnEncoder.class);
 
+            }
+            else // **** CLIENT ****
+            {
+                    // outgoing service lookup
+                    super.addMessageEncoder(MsgNameLookup.class, MsgNameLookupEncoder.class);
+                    // incoming service lookup return
+                    super.addMessageDecoder(MsgNameLookupReturnDecoder.class);
+
+                    // outgoing interface lookup
+                    super.addMessageEncoder(MsgInterfaceLookup.class, MsgInterfaceLookupEncoder.class);
+                    // incoming interface lookup return
+                    super.addMessageDecoder(MsgInterfaceLookupReturnDecoder.class);
+            }
         
-        /*
-         * open raw channel handling
-         */
-        
-        // outgoing open channel
-        super.addMessageEncoder(MsgOpenRawChannel.class, MsgOpenRawChannelEncoder.class);
-        // incoming open channel return
-        super.addMessageDecoder(MsgOpenRawChannelReturnDecoder.class);
-        
-        // incoming open channel
-        super.addMessageDecoder(MsgOpenRawChannelDecoder.class);
-        // outgoing open channel return
-        super.addMessageEncoder(MsgOpenRawChannelReturn.class, MsgOpenRawChannelReturnEncoder.class);
-        
-        /*
-         * close raw channel handling
-         */
-        
-        // outgoing close channel
-        super.addMessageEncoder(MsgCloseRawChannel.class, MsgCloseRawChannelEncoder.class);
-        // incoming close channel return
-        super.addMessageDecoder(MsgCloseRawChannelReturnDecoder.class);
-        
-        // incoming close channel
-        super.addMessageDecoder(MsgCloseRawChannelDecoder.class);
-        // outgoing close channel return
-        super.addMessageEncoder(MsgCloseRawChannelReturn.class, MsgCloseRawChannelReturnEncoder.class);
-        
-        /*
-         * raw channel data handling
-         */
-        
-        // outgoing channel data 
-        super.addMessageEncoder(MsgRawChannelData.class, MsgRawChannelDataEncoder.class);
-        // incoming channel data 
-        super.addMessageDecoder(MsgRawChannelDataDecoder.class);
-        
-        // outgoing channel data return
-        super.addMessageEncoder(MsgRawChannelDataReturn.class, MsgRawChannelDataReturnEncoder.class);
-        // incoming channel data return 
-        super.addMessageDecoder(MsgRawChannelDataReturnDecoder.class);
-        
-        /*
-         * ping/pong handling
-         */
-        
-        // outgoing ping
-        super.addMessageEncoder(MsgPing.class, MsgPingEncoder.class);
-        // incoming ping
-        super.addMessageDecoder(MsgPingDecoder.class);
-        
-        // outgoing pong
-        super.addMessageEncoder(MsgPong.class, MsgPongEncoder.class);
-        // incoming pong
-        super.addMessageDecoder(MsgPongDecoder.class);
+            /* *****************************************
+             *  Encoder and Decoder for both sides
+             * *****************************************/
+
+            /*
+             * invocation handling
+             */
+
+            // outgoing invoke
+            super.addMessageEncoder(MsgInvoke.class, MsgInvokeEncoder.class);
+            // incoming invoke return
+            super.addMessageDecoder(MsgInvokeReturnDecoder.class);
+
+            // incoming invoke
+            super.addMessageDecoder(MsgInvokeDecoder.class);
+            // outgoing invoke return
+            super.addMessageEncoder(MsgInvokeReturn.class, MsgInvokeReturnEncoder.class);
+
+            /*
+             * "toString()" handling
+             */
+
+            // outgoing toString
+            super.addMessageEncoder(MsgToString.class, MsgToStringEncoder.class);
+            // incoming toString return
+            super.addMessageDecoder(MsgToStringReturnDecoder.class);
+
+            // incoming toString
+            super.addMessageDecoder(MsgToStringDecoder.class);
+            // outgoing toString return
+            super.addMessageEncoder(MsgToStringReturn.class, MsgToStringReturnEncoder.class);
+
+            /*
+             * "hashCode()" handling
+             */
+
+            // outgoing hashCode
+            super.addMessageEncoder(MsgHashCode.class, MsgHashCodeEncoder.class);
+            // incoming hashCode return
+            super.addMessageDecoder(MsgHashCodeReturnDecoder.class);
+
+            // incoming hashCode
+            super.addMessageDecoder(MsgHashCodeDecoder.class);
+            // outgoing hashCode return
+            super.addMessageEncoder(MsgHashCodeReturn.class, MsgHashCodeReturnEncoder.class);
+
+            /*
+             * "equals()" handling
+             */
+
+            // outgoing equals
+            super.addMessageEncoder(MsgEquals.class, MsgEqualsEncoder.class);
+            // incoming equals return
+            super.addMessageDecoder(MsgEqualsReturnDecoder.class);
+
+            // incoming equals
+            super.addMessageDecoder(MsgEqualsDecoder.class);
+            // outgoing equals return
+            super.addMessageEncoder(MsgEqualsReturn.class, MsgEqualsReturnEncoder.class);
+
+
+            /*
+             * open raw channel handling
+             */
+
+            // outgoing open channel
+            super.addMessageEncoder(MsgOpenRawChannel.class, MsgOpenRawChannelEncoder.class);
+            // incoming open channel return
+            super.addMessageDecoder(MsgOpenRawChannelReturnDecoder.class);
+
+            // incoming open channel
+            super.addMessageDecoder(MsgOpenRawChannelDecoder.class);
+            // outgoing open channel return
+            super.addMessageEncoder(MsgOpenRawChannelReturn.class, MsgOpenRawChannelReturnEncoder.class);
+
+            /*
+             * close raw channel handling
+             */
+
+            // outgoing close channel
+            super.addMessageEncoder(MsgCloseRawChannel.class, MsgCloseRawChannelEncoder.class);
+            // incoming close channel return
+            super.addMessageDecoder(MsgCloseRawChannelReturnDecoder.class);
+
+            // incoming close channel
+            super.addMessageDecoder(MsgCloseRawChannelDecoder.class);
+            // outgoing close channel return
+            super.addMessageEncoder(MsgCloseRawChannelReturn.class, MsgCloseRawChannelReturnEncoder.class);
+
+            /*
+             * raw channel data handling
+             */
+
+            // outgoing channel data
+            super.addMessageEncoder(MsgRawChannelData.class, MsgRawChannelDataEncoder.class);
+            // incoming channel data
+            super.addMessageDecoder(MsgRawChannelDataDecoder.class);
+
+            // outgoing channel data return
+            super.addMessageEncoder(MsgRawChannelDataReturn.class, MsgRawChannelDataReturnEncoder.class);
+            // incoming channel data return
+            super.addMessageDecoder(MsgRawChannelDataReturnDecoder.class);
+
+            /*
+             * ping/pong handling
+             */
+
+            // outgoing ping
+            super.addMessageEncoder(MsgPing.class, MsgPingEncoder.class);
+            // incoming ping
+            super.addMessageDecoder(MsgPingDecoder.class);
+
+            // outgoing pong
+            super.addMessageEncoder(MsgPong.class, MsgPongEncoder.class);
+            // incoming pong
+            super.addMessageDecoder(MsgPongDecoder.class);
 
 	}
 }

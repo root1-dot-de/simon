@@ -18,33 +18,42 @@
  */
 package de.root1.simon.codec.messages;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import de.root1.simon.Statics;
 
 /**
- * <code>LOOKUP</code> message
+ * Lookup return message
  *
  * @author ACHR
  */
-public class MsgLookup extends AbstractMessage {
-	
+public class MsgNameLookupReturn extends AbstractMessage {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final long serialVersionUID = 1L;
+    private Class<?>[] interfaces;
+    private String errorMsg = Statics.NO_ERROR;
 
-    private String remoteObjectName;
+    public MsgNameLookupReturn() {
+        super(SimonMessageConstants.MSG_NAME_LOOKUP_RETURN);
 
-    public MsgLookup() {
-    	super(SimonMessageConstants.MSG_LOOKUP);
+        // dummy init so that on case of an error no "null" has top be transferred
+        interfaces = new Class<?>[1];
+        interfaces[0] = Object.class;
+        logger.trace("interfaces.length={}", interfaces.length);
     }
 
-    public String getRemoteObjectName() {
-        return remoteObjectName;
+    public Class<?>[] getInterfaces() {
+        return interfaces;
     }
 
-    public void setRemoteObjectName(String remoteObjectName) {
-        this.remoteObjectName = remoteObjectName;
+    public void setInterfaces(Class<?>[] interfaces) {
+        this.interfaces = interfaces;
     }
 
     @Override
     public String toString() {
-        // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgLookup(" + (remoteObjectName.length()==0?"<NullLength>":remoteObjectName) + ')';
+        return getSequence() + ":MsgServiceLookupReturn(interface=" + interfaces + "|errorMsg=" + errorMsg + ")";
     }
 }

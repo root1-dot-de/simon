@@ -16,27 +16,33 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon.exceptions;
+package de.root1.simon.codec.messages;
 
 /**
- * TODO Documentation to be done
+ * <code>SERVICE_LOOKUP</code> message
  *
- * @author achristian
- *
+ * @author ACHR
  */
-public class EstablishConnectionFailed extends Exception {
-	
-	/**
-	 * TODO Documentation to be done
-	 * 
-	 */
-	private static final long serialVersionUID = 5427579794488190977L;
+public class MsgNameLookup extends AbstractMessage {
 
-	/**
-	 * TODO Documentation to be done
-	 */
-	public EstablishConnectionFailed(String msg) {
-		super(msg);
-	}
+    private static final long serialVersionUID = 1L;
+    private String remoteObjectName;
 
+    public MsgNameLookup() {
+        super(SimonMessageConstants.MSG_NAME_LOOKUP);
+    }
+
+    public String getRemoteObjectName() {
+        return remoteObjectName;
+    }
+
+    public void setRemoteObjectName(String remoteObjectName) {
+        this.remoteObjectName = remoteObjectName;
+    }
+
+    @Override
+    public String toString() {
+        // it is a good practice to create toString() method on message classes.
+        return getSequence() + ":MsgLookup(" + (remoteObjectName.length() == 0 ? "<NullLength>" : remoteObjectName) + ')';
+    }
 }
