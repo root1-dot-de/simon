@@ -18,8 +18,6 @@
  */
 package de.root1.simon.utils;
 
-import de.root1.simon.Remote;
-import de.root1.simon.SimonRemote;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -218,14 +216,14 @@ public class Utils {
     }
 
     /**
-     * Checks whether the object is annotated with <code>Remote</code> or not
+     * Checks whether the object is annotated with <code>SimonRemote</code> or not
      * @param remoteObject the object to check
      * @return true, if object is annotated, false if not
      */
     public static boolean isRemoteAnnotated(Object remoteObject) {
         if (remoteObject==null)
             throw new IllegalArgumentException("Cannot check a null-argument. You have to provide a proxy object instance ...");
-        return remoteObject.getClass().isAnnotationPresent(Remote.class);
+        return remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
     }
 
     /**
@@ -236,7 +234,7 @@ public class Utils {
     public static boolean isValidRemote(Object remoteObject) {
         if (remoteObject==null)
             return false;
-        if (remoteObject instanceof SimonRemote)
+        if (remoteObject instanceof de.root1.simon.SimonRemote)
             return true;
         if (isRemoteAnnotated(remoteObject))
             return true;

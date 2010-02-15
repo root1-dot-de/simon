@@ -28,23 +28,23 @@ public class MsgInterfaceLookup extends AbstractMessage {
 	
     private static final long serialVersionUID = 1L;
 
-    private String interfaceName;
+    private String canonicalInterfaceName;
 
     public MsgInterfaceLookup() {
     	super(SimonMessageConstants.MSG_INTERFACE_LOOKUP);
     }
 
-    public String getInterfaceName() {
-        return interfaceName;
+    public String getCanonicalInterfaceName() {
+        return canonicalInterfaceName;
     }
 
-    public void setRemoteObjectName(String interfaceName) {
-        this.interfaceName = interfaceName;
+    public void setCanonicalInterfaceName(String canonicalInterfaceName) {
+        this.canonicalInterfaceName = canonicalInterfaceName;
     }
 
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgInterfaceLookup(" + (interfaceName.length()==0?"<NullLength>":interfaceName) + ')';
+        return getSequence() + ":MsgInterfaceLookup(" + (canonicalInterfaceName.length()==0?"<NullLength>":canonicalInterfaceName) + ')';
     }
 }

@@ -42,19 +42,17 @@ public class NameLookup extends AbstractLookup {
     }
 
     @Override
-    public <T> Object lookup(T arg) throws LookupFailedException, EstablishConnectionFailed {
+    public Object lookup(String remoteObjectName) throws LookupFailedException, EstablishConnectionFailed {
 
         logger.debug("begin");
 
-        if (arg == null) {
+        if (remoteObjectName == null) {
             throw new IllegalArgumentException("Argument cannot be null");
         }
 
-        if (!(arg instanceof String) || ((String) arg).length() == 0) {
+        if (remoteObjectName.length() == 0) {
             throw new IllegalArgumentException("Argument is not a valid remote object name");
         }
-
-        String remoteObjectName = (String) arg;
 
         // check if there is already an dispatcher and key for THIS server
         Object proxy = null;
@@ -68,7 +66,7 @@ public class NameLookup extends AbstractLookup {
          * first contact server for lookup of interfaces
          * --> this request blocks!
          */
-        MsgNameLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
+        MsgNameLookupReturn msg = dispatcher.invokeNameLookup(session, remoteObjectName);
 
         if (msg.hasError()) {
 

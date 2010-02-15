@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgInterfaceLookup;
 import de.root1.simon.codec.messages.MsgNameLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
@@ -51,11 +52,11 @@ public class MsgInterfaceLookupDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-        MsgNameLookup m = new MsgNameLookup();
+        MsgInterfaceLookup m = new MsgInterfaceLookup();
 
         try {
-            String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-            m.setRemoteObjectName(remoteObjectName);
+            String canonicalInterfaceName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            m.setCanonicalInterfaceName(canonicalInterfaceName);
         } catch (CharacterCodingException e) {
             e.printStackTrace();
         } catch (BufferUnderflowException e) {
