@@ -213,7 +213,7 @@ public class Simon {
      * @return the lookup object
      * @throws UnknownHostException if the specified hostname is unknown
      */
-    public static Lookup createLookup(String host, int port) throws UnknownHostException {
+    public static Lookup createNameLookup(String host, int port) throws UnknownHostException {
             return new NameLookup(host, port);
     }
 
@@ -225,8 +225,8 @@ public class Simon {
      * @param port the port on which the registry server is listening
      * @return the lookup object
      */
-    public static Lookup createLookup(InetAddress address, int port) {
-            return new NameLookup(address, port);
+    public static Lookup createNameLookup(InetAddress address, int port) {
+        return new NameLookup(address, port);
     }
 
     /**

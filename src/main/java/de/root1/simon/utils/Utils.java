@@ -223,6 +223,8 @@ public class Utils {
      * @return true, if object is annotated, false if not
      */
     public static boolean isRemoteAnnotated(Object remoteObject) {
+        if (remoteObject==null)
+            throw new IllegalArgumentException("Cannot check a null-argument. You have to provide a proxy object instance ...");
         return remoteObject.getClass().isAnnotationPresent(Remote.class);
     }
 
@@ -232,6 +234,8 @@ public class Utils {
      * @return true, if remote object is valid, false if not
      */
     public static boolean isValidRemote(Object remoteObject) {
+        if (remoteObject==null)
+            return false;
         if (remoteObject instanceof SimonRemote)
             return true;
         if (isRemoteAnnotated(remoteObject))

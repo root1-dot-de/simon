@@ -51,7 +51,7 @@ public class ManualTestAnnotation {
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
-            Lookup lookup = Simon.createLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
