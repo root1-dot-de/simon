@@ -1,5 +1,6 @@
 package de.root1.simon.test;
 
+import de.root1.simon.Lookup;
 import java.util.concurrent.Semaphore;
 
 import org.junit.Test;
@@ -88,14 +89,13 @@ File f = new File("target/test-classes/simon_logging.properties");
         public void run() {
 //            System.out.println("Running thread #"+i+" Free: "+semaphore.availablePermits());
             try {
-//                System.out.println("Running thread #"+i+" lookup");
-                RemoteObject roiRemote = null;
-                // TODO FIXME
-//                (RemoteObject) Simon.lookup("localhost", 22222, "roi");
+                //                System.out.println("Running thread #"+i+" lookup");
+                Lookup lookup = Simon.createNameLookup("localhost", 22222);
+                RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 //                System.out.println("Running thread #"+i+" lookup *done*");
                 roiRemote.helloWorldArg(String.valueOf(i));
 //                System.out.println("Running thread #"+i+" invoke *done*");
-//                Simon.release(roiRemote);
+                lookup.release(roiRemote);
 //                System.out.println("Running thread #"+i+" release *done*");
             } catch (Throwable t) {
                 t.printStackTrace();

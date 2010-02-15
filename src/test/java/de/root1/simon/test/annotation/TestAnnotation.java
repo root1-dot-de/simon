@@ -5,6 +5,7 @@
 
 package de.root1.simon.test.annotation;
 
+import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import java.io.File;
@@ -73,21 +74,20 @@ public class TestAnnotation {
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
+            Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
-            RemoteObject roiRemote = null;
-            // TODO FIXME
-//            (RemoteObject) Simon.lookup("localhost", 22222, "roi");
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
             roiRemote.equals(null);
             roiRemote.myRemoteMethod();
 
-//            Simon.release(roiRemote);
+            lookup.release(roiRemote);
 
             r.unbind("roi");
             r.stop();
         
         } catch (Exception ex) {
-            throw new AssertionError(ex);
+            new AssertionError("Error during test: "+ex.getMessage());
         }
 
     }
