@@ -5,10 +5,12 @@
 
 package de.root1.simon.test.rawchannel;
 
+import de.root1.simon.Lookup;
 import de.root1.simon.RawChannel;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import de.root1.simon.SimonRemote;
+import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -140,10 +142,9 @@ public class TestRawChannel {
         try {
 
             System.out.println("Doing lookup ...");
-            RawChannelServer rcs = null;
-            // TODO FIXME
-//            (RawChannelServer) Simon.lookup(InetAddress.getLocalHost(), 2000, BIND_NAME);
-            if (1==0) throw new LookupFailedException("fixme");
+            Lookup lookup = Simon.createNameLookup(InetAddress.getLocalHost(), 2000);
+            RawChannelServer rcs;
+                rcs = (RawChannelServer) lookup.lookup(BIND_NAME);
             System.out.println("Doing lookup ... *done*");
 
             assertTrue("looked up remote must not be null", rcs!=null);
@@ -192,8 +193,7 @@ public class TestRawChannel {
                 assertTrue("sent byte no. "+i+" must match received byte no. "+i, fileBytesToBeSend[i]==fileBytesReceived[i]);
             }
             System.out.println("Comparing sent file with received file ... *done*");
-            // TODO FIXME
-//            Simon.release(rcs);
+            lookup.release(rcs);
 
         } catch (UnknownHostException ex) {
             System.out.println("UnknownHostException occured!");
@@ -210,6 +210,10 @@ public class TestRawChannel {
             System.out.println("IOE occured!");
             Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
             new AssertionError("A unexcepted IOException occured which should not be the case in test case.");
+        } catch (EstablishConnectionFailed ex) {
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
+            new AssertionError("Establishing connection failed during test run ..."+ex.getMessage());
         }
         System.out.println("test done");
     }

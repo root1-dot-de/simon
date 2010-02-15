@@ -5,6 +5,7 @@
 
 package de.root1.simon.test;
 
+import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import java.io.File;
@@ -80,17 +81,16 @@ public class TestLookupAndRelease {
             r.bind("roi", roi);
 
             System.out.println("bound roi to registry ...");
+            Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
-            RemoteObject roiRemote = null;
-            // TODO FIXME
-//            = (RemoteObject) Simon.lookup("localhost", 22222, "roi");
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
             System.out.println("roi lookup done");
 
             roiRemote.helloWorld();
             System.out.println("method call done");
 
-//            Simon.release(roiRemote);
+            lookup.release(roiRemote);
             System.out.println("release of roi done");
 
             r.unbind("roi");
@@ -103,12 +103,11 @@ public class TestLookupAndRelease {
             RemoteObjectImpl roi2 = new RemoteObjectImpl();
             Registry r2 = Simon.createRegistry(22222);
             r2.bind("roi2", roi2);
+            Lookup lookup2 = Simon.createNameLookup("localhost", 22222);
 
-            RemoteObject roiRemote2 = null;
-            // TODO FIXME
-//            = (RemoteObject) Simon.lookup("localhost", 22222, "roi2");
+            RemoteObject roiRemote2 = (RemoteObject) lookup.lookup("roi2");
             roiRemote2.helloWorld();
-//            Simon.release(roiRemote2);
+            lookup2.release(roiRemote2);
 
             r2.unbind("roi2");
             r2.stop();
