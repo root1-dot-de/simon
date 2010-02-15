@@ -33,26 +33,27 @@ public class Statics {
     protected static final String TOSTRING_METHOD_SIGNATURE = "public java.lang.String java.lang.Object.toString()";
     protected static final String HASHCODE_METHOD_SIGNATURE = "public native int java.lang.Object.hashCode()";
     protected static final String EQUALS_METHOD_SIGNATURE = "public boolean java.lang.Object.equals(java.lang.Object)";
+
     public static final String SESSION_ATTRIBUTE_DISPATCHER = Dispatcher.class.getName();
     public static final String SESSION_ATTRIBUTE_LOOKUPTABLE = LookupTable.class.getName();
-    public static final String SESSION_ATTRIBUTE_INVOKESTATE = MsgInvokeDecoder.class.getName() + ".InvokeState";
-    public static final String SESSION_ATTRIBUTE_INVOKERETURNSTATE = MsgInvokeReturnDecoder.class.getName() + ".InvokeReturnState";
-    public static final String SESSION_ATTRIBUTE_LOOKUPSTATE = MsgNameLookupDecoder.class.getName() + ".LookupState";
-    public static final String SESSION_ATTRIBUTE_LOOKUPRETURNSTATE = MsgNameLookupReturnDecoder.class.getName() + ".LookupReturnState";
-    public static final String SESSION_ATTRIBUTE_PINGTIMEOUT = PingWatchdog.class.getName() + ".PingTimeOut";
+
     // values in milliseconds
     protected static final int DEFAULT_SOCKET_TIMEOUT = 100;
     protected static final long MONITOR_WAIT_TIMEOUT = 200;
     protected static final int WAIT_FOR_SHUTDOWN_SLEEPTIME = 50;
+
     // values in seconds
     protected static int DEFAULT_IDLE_TIME = 30;
     protected static int DEFAULT_WRITE_TIMEOUT = 30;
+
     /** String that is needed for answering a "find server" packet */
     protected static final String REQUEST_STRING = "[SIMON|FindServer]";
+
     // some names for the used threads/pools
     protected static final String DISPATCHER_WORKERPOOL_NAME = "Simon.Dispatcher.WorkerPool";
     protected static final String PINGWATCHDOG_WORKERPOOL_NAME = "Simon.Dispatcher.PingWatchdogPool";
     protected static final String PUBLISH_SERVICE_THREAD_NAME = "Simon.PublishService";
     protected static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
+    
     public static final String NO_ERROR = "{#}";
 }
