@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
 import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
@@ -49,9 +50,10 @@ public class MsgInterfaceLookupReturnDecoder extends AbstractMessageDecoder {
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
         logger.trace("decoding ...");
-        MsgNameLookupReturn m = new MsgNameLookupReturn();
+        MsgInterfaceLookupReturn m = new MsgInterfaceLookupReturn();
 
         try {
+            String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
             int arraySize = in.getInt();
             logger.trace("trying to read interfaces value. num of interfaces: {}", arraySize);
             Class<?>[] interfaces = new Class<?>[arraySize];
@@ -63,6 +65,7 @@ public class MsgInterfaceLookupReturnDecoder extends AbstractMessageDecoder {
             }
             m.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
             m.setInterfaces(interfaces);
+            m.setRemoteObjectName(remoteObjectName);
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

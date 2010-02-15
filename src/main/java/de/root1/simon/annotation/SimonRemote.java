@@ -16,7 +16,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon;
+package de.root1.simon.annotation;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -28,6 +28,6 @@ import java.lang.annotation.RetentionPolicy;
  * @author achristian
  */
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Remote {
+public @interface SimonRemote {
 
 }

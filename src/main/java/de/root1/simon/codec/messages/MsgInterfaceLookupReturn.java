@@ -34,11 +34,12 @@ public class MsgInterfaceLookupReturn extends AbstractMessage {
     private static final long serialVersionUID = 1L;
     private Class<?>[] interfaces;
     private String errorMsg = Statics.NO_ERROR;
+    private String remoteObjectName = null;
 
     public MsgInterfaceLookupReturn() {
         super(SimonMessageConstants.MSG_INTERFACE_LOOKUP_RETURN);
 
-        // dummy init so that on case of an error no "null" has top be transferred
+        // dummy init so that on case of an error no "null" has to be transferred
         interfaces = new Class<?>[1];
         interfaces[0] = Object.class;
         logger.trace("interfaces.length={}", interfaces.length);
@@ -52,8 +53,18 @@ public class MsgInterfaceLookupReturn extends AbstractMessage {
         this.interfaces = interfaces;
     }
 
+    public String getRemoteObjectName() {
+        return remoteObjectName;
+    }
+
+    public void setRemoteObjectName(String remoteObjectName) {
+        this.remoteObjectName = remoteObjectName;
+    }
+
+
     @Override
     public String toString() {
-        return getSequence() + ":MsgInterfaceLookupReturn(interface=" + interfaces + "|errorMsg=" + errorMsg + ")";
+        return getSequence() + ":MsgInterfaceLookupReturn(interface=" + interfaces + "|remoteObjectName="+(getRemoteObjectName().length() == 0 ? "<NullLength>" : getRemoteObjectName())+"|errorMsg=" + errorMsg + ")";
     }
+
 }

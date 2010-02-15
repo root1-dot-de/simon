@@ -54,6 +54,6 @@ public class MsgNameLookupReturn extends AbstractMessage {
 
     @Override
     public String toString() {
-        return getSequence() + ":MsgServiceLookupReturn(interface=" + interfaces + "|errorMsg=" + errorMsg + ")";
+        return getSequence() + ":MsgNameLookupReturn(interface=" + interfaces + "|errorMsg=" + errorMsg + ")";
     }
 }

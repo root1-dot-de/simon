@@ -529,7 +529,7 @@ public class Simon {
 //         * first contact server for lookup of interfaces
 //         * --> this request blocks!
 //         */
-//        MsgNameLookupReturn msg = dispatcher.invokeLookup(session, remoteObjectName);
+//        MsgNameLookupReturn msg = dispatcher.invokeNameLookup(session, remoteObjectName);
 //
 //        if (msg.hasError()) {
 //

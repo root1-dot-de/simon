@@ -57,7 +57,7 @@ public interface Lookup {
 
     int getServerPort();
 
-    <T> Object lookup(T arg) throws LookupFailedException, EstablishConnectionFailed;
+    Object lookup(String lookupString) throws LookupFailedException, EstablishConnectionFailed;
 
     boolean release(Object proxyObject);
 }

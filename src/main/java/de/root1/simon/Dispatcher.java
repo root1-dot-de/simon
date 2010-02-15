@@ -42,6 +42,8 @@ import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
+import de.root1.simon.codec.messages.MsgInterfaceLookup;
+import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.MsgNameLookup;
@@ -197,12 +199,12 @@ public class Dispatcher implements IoHandler {
      *
      * Sends a remote object lookup to the server
      *
-     * @@param session the related session over which the invoke request comes
+     * @param session the related session over which the invoke request comes
      * @param remoteObjectName the remote object to lookup
-     * @return the object we made the lookup for
+     * @return the name lookup return message
      * @throws SimonRemoteException
      */
-    protected MsgNameLookupReturn invokeLookup(IoSession session, String remoteObjectName) throws LookupFailedException, SimonRemoteException {
+    protected MsgNameLookupReturn invokeNameLookup(IoSession session, String remoteObjectName) throws LookupFailedException, SimonRemoteException {
         checkForInvalidState(session, "Simon.lookup({...}, " + remoteObjectName + ")");
         final int sequenceId = generateSequenceId();
 
@@ -212,16 +214,52 @@ public class Dispatcher implements IoHandler {
         // create a monitor that waits for the request-result
         final Monitor monitor = createMonitor(session, sequenceId);
 
-        MsgNameLookup msgLookup = new MsgNameLookup();
-        msgLookup.setSequence(sequenceId);
-        msgLookup.setRemoteObjectName(remoteObjectName);
+        MsgNameLookup msgNameLookup = new MsgNameLookup();
+        msgNameLookup.setSequence(sequenceId);
+        msgNameLookup.setRemoteObjectName(remoteObjectName);
 
-        session.write(msgLookup);
+        session.write(msgNameLookup);
 
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
         waitForResult(session, monitor);
         MsgNameLookupReturn result = (MsgNameLookupReturn) getRequestResult(sequenceId);
+
+        logger.debug("got answer for sequenceId={}", sequenceId);
+        logger.trace("end sequenceId={}", sequenceId);
+
+        return result;
+
+    }
+
+    /**
+     *
+     * Sends a remote object lookup to the server
+     *
+     * @param session the related session over which the invoke request comes
+     * @param canonicalInterfaceName the canonical name of the interface
+     * @return the interface lookup return message
+     * @throws SimonRemoteException
+     */
+    protected MsgInterfaceLookupReturn invokeInterfaceLookup(IoSession session, String canonicalInterfaceName) throws LookupFailedException, SimonRemoteException {
+        checkForInvalidState(session, "Simon.lookup({...}, " + canonicalInterfaceName + ")");
+        final int sequenceId = generateSequenceId();
+
+        logger.debug("begin sequenceId={} session={}", sequenceId, session);
+
+        // create a monitor that waits for the request-result
+        final Monitor monitor = createMonitor(session, sequenceId);
+
+        MsgInterfaceLookup msgInterfaceLookup = new MsgInterfaceLookup();
+        msgInterfaceLookup.setSequence(sequenceId);
+        msgInterfaceLookup.setCanonicalInterfaceName(canonicalInterfaceName);
+
+        session.write(msgInterfaceLookup);
+
+        logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
+
+        waitForResult(session, monitor);
+        MsgInterfaceLookupReturn result = (MsgInterfaceLookupReturn) getRequestResult(sequenceId);
 
         logger.debug("got answer for sequenceId={}", sequenceId);
         logger.trace("end sequenceId={}", sequenceId);
