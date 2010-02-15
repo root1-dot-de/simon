@@ -50,7 +50,7 @@ public class MsgInterfaceLookupEncoder<T extends MsgInterfaceLookup> extends Abs
         logger.trace("begin. message={}", message);
         logger.trace("position before: {}",out.position());
         try {
-            out.putPrefixedString(message.getInterfaceName(), Charset.forName("UTF-8").newEncoder());
+            out.putPrefixedString(message.getCanonicalInterfaceName(), Charset.forName("UTF-8").newEncoder());
         } catch (CharacterCodingException e) {
             e.printStackTrace();
             logger.error(e.getMessage());

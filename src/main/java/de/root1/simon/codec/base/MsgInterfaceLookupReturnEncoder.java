@@ -21,6 +21,7 @@ package de.root1.simon.codec.base;
 import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.util.logging.Level;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -49,6 +50,12 @@ public class MsgInterfaceLookupReturnEncoder<T extends MsgInterfaceLookupReturn>
         logger.trace("sending interfaces ...");
 
         Class<?>[] interfaces = message.getInterfaces();
+        try {
+            out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
+        } catch (CharacterCodingException ex) {
+            // TODO Auto-generated catch block
+            ex.printStackTrace();
+        }
         out.putInt(interfaces.length);
         logger.trace("interfaces to send: {}", interfaces.length);
         for (Class<?> class1 : interfaces) {

@@ -5,11 +5,15 @@
 
 package de.root1.simon;
 
+import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.ssl.SslContextFactory;
+import de.root1.simon.utils.SimonClassLoaderHelper;
+import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,8 +74,58 @@ public class InterfaceLookup extends AbstractLookup {
         return serverPort;
     }
 
-    public <T> Object lookup(T arg) throws LookupFailedException, EstablishConnectionFailed {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+    public Object lookup(String canonicalInterfaceName) throws LookupFailedException, EstablishConnectionFailed {
+        logger.debug("begin");
 
+        if (canonicalInterfaceName == null) {
+            throw new IllegalArgumentException("Argument cannot be null");
+        }
+
+        if (canonicalInterfaceName.length() == 0) {
+            throw new IllegalArgumentException("Argument is not a valid canonical name of remote interface");
+        }
+
+        // check if there is already an dispatcher and key for THIS server
+        Object proxy = null;
+
+        SessionDispatcherContainer sessionDispatcherContainer = buildSessionDispatcherContainer(canonicalInterfaceName, serverAddress, serverPort, sslContextFactory, proxyConfig);
+
+        Dispatcher dispatcher = sessionDispatcherContainer.getDispatcher();
+        IoSession session = sessionDispatcherContainer.getSession();
+        /*
+         * Create array with interfaces the proxy should have
+         * first contact server for lookup of interfaces
+         * --> this request blocks!
+         */
+        MsgInterfaceLookupReturn msg = dispatcher.invokeInterfaceLookup(session, canonicalInterfaceName);
+
+        if (msg.hasError()) {
+
+            logger.trace("Lookup failed. Releasing dispatcher.");
+            releaseDispatcher(dispatcher);
+            throw new LookupFailedException(msg.getErrorMsg());
+
+        } else {
+
+            Class<?>[] listenerInterfaces = msg.getInterfaces();
+
+            for (Class<?> class1 : listenerInterfaces) {
+                logger.warn("iface: {}" + class1.getName());
+            }
+
+            /*
+             * Creates proxy for method-call-forwarding to server
+             */
+            SimonProxy handler = new SimonProxy(dispatcher, session, msg.getRemoteObjectName());
+            logger.trace("proxy created");
+
+            /*
+             * Create the proxy-object with the needed interfaces
+             */
+            proxy = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(Simon.class, classLoader), listenerInterfaces, handler);
+            logger.debug("end");
+            return proxy;
+
+        }
+    }
 }

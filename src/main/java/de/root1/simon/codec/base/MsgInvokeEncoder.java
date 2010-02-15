@@ -72,6 +72,7 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
 
             String errorMsg = "Failed to transfer invoke command to the server. error=" + e.getMessage();
             logger.warn(errorMsg);

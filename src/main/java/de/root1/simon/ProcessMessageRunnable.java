@@ -75,7 +75,7 @@ public class ProcessMessageRunnable implements Runnable {
 
     public void run() {
 
-        logger.debug("ProcessMessageRunnable: {} on sessionId {}", abstractMessage, Utils.longToHexString(session.getId()));
+        logger.info("ProcessMessageRunnable: {} on sessionId {}", abstractMessage, Utils.longToHexString(session.getId()));
 
         int msgType = abstractMessage.getMsgType();
 
@@ -90,7 +90,11 @@ public class ProcessMessageRunnable implements Runnable {
                 break;
 
             case SimonMessageConstants.MSG_NAME_LOOKUP_RETURN:
-                processLookupReturn();
+                processNameLookupReturn();
+                break;
+
+            case SimonMessageConstants.MSG_INTERFACE_LOOKUP_RETURN:
+                processInterfaceLookupReturn();
                 break;
 
             case SimonMessageConstants.MSG_INVOKE:
@@ -288,7 +292,6 @@ public class ProcessMessageRunnable implements Runnable {
         try {
             Class<?>[] interfaces = null;
 
-            //interfaces = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getClass().getInterfaces();
             interfaces = Utils.findAllInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
 
             ret.setInterfaces(interfaces);
@@ -309,20 +312,21 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("processing MsgInterfaceLookup...");
         MsgInterfaceLookup msg = (MsgInterfaceLookup) abstractMessage;
-        String interfaceName = msg.getInterfaceName();
+        String canonicalInterfaceName = msg.getCanonicalInterfaceName();
 
-        logger.debug("Sending result for interfaceName={}", interfaceName);
+        logger.debug("Sending result for interfaceName={}", canonicalInterfaceName);
 
         MsgInterfaceLookupReturn ret = new MsgInterfaceLookupReturn();
         ret.setSequence(msg.getSequence());
         try {
-            Class<?>[] interfaces = null;
 
-            interfaces = dispatcher.getLookupTable().getRemoteObjectContainerByInterface(interfaceName).getRemoteObjectInterfaces();
+            RemoteObjectContainer container = dispatcher.getLookupTable().getRemoteObjectContainerByInterface(canonicalInterfaceName);
 
-            ret.setInterfaces(interfaces);
+            ret.setInterfaces(container.getRemoteObjectInterfaces());
+            ret.setRemoteObjectName(container.getRemoteObjectName());
+
         } catch (LookupFailedException e) {
-            logger.debug("Lookup for remote object '{}' failed: {}", interfaceName, e.getMessage());
+            logger.debug("Lookup for remote object '{}' failed: {}", canonicalInterfaceName, e.getMessage());
             ret.setErrorMsg("Error: "+e.getClass()+"->"+e.getMessage());
         }
         session.write(ret);
@@ -330,10 +334,10 @@ public class ProcessMessageRunnable implements Runnable {
         logger.debug("end");
     }
 
-    private void processLookupReturn() {
+    private void processNameLookupReturn() {
         logger.debug("begin");
 
-        logger.debug("processing MsgLookupReturn...");
+        logger.debug("processing MsgNameLookupReturn...");
         MsgNameLookupReturn msg = (MsgNameLookupReturn) abstractMessage;
 
         logger.debug("Forward result to waiting monitor");
@@ -341,6 +345,19 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("end");
     }
+
+    private void processInterfaceLookupReturn() {
+        logger.debug("begin");
+
+        logger.debug("processing MsgInterfaceLookupReturn...");
+        MsgInterfaceLookupReturn msg = (MsgInterfaceLookupReturn) abstractMessage;
+
+        logger.debug("Forward result to waiting monitor");
+        dispatcher.putResultToQueue(session, msg.getSequence(), msg);
+
+        logger.debug("end");
+    }
+
 
     private void processInvoke() {
         logger.debug("begin");
@@ -594,6 +611,5 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("end");
     }
-
 
 }

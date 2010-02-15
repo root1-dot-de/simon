@@ -5,13 +5,13 @@
 
 package de.root1.simon.test.annotation;
 
-import de.root1.simon.Remote;
+import de.root1.simon.annotation.SimonRemote;
 
 /**
  *
  * @author achristian
  */
-@Remote
+@SimonRemote
 public class RemoteObjectImpl implements RemoteObject {
 
     public void myRemoteMethod() {
