@@ -18,51 +18,28 @@
  */
 package de.root1.simon;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.LogManager;
 
-import javax.net.ssl.SSLContext;
 
-import org.apache.mina.core.filterchain.DefaultIoFilterChainBuilder;
-import org.apache.mina.core.future.CloseFuture;
-import org.apache.mina.core.future.ConnectFuture;
-import org.apache.mina.core.future.IoFuture;
-import org.apache.mina.core.future.IoFutureListener;
-import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IdleStatus;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
-import org.apache.mina.filter.logging.LoggingFilter;
-import org.apache.mina.filter.ssl.SslFilter;
-import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.SimonProxyFilter;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
-import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
-import de.root1.simon.utils.FilterEntry;
-import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -179,6 +156,161 @@ public class Simon {
         return registry;
     }
 
+   /**
+     *
+     * Retrieves a remote object from the server. At least, it tries to retrieve
+     * it. This may fail if the named object is not available or if the
+     * connection could not be established.<br>
+     * <i>Note: If your are finished with the remote object, don't forget to
+     * call {@link Simon#release(Object)} to decrease the reference count and
+     * finally release the connection to the server</i>
+     *
+     * @param host
+     *            hostname where the lookup takes place
+     * @param port
+     *            port number of the simon remote registry
+     * @param remoteObjectName
+     *            name of the remote object which is bind to the remote registry
+     * @return and instance of the remote object
+     * @throws SimonRemoteException
+     *             if there's a problem with the simon communication
+     * @throws IOException
+     *             if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed
+     *             if its not possible to establish a connection to the remote
+     *             registry
+     * @throws LookupFailedException
+     *             if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @deprecated Use Simon#createNameLookup() instead ...
+     */
+    public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
+        Lookup nameLookup = createNameLookup(host, port);
+        return (SimonRemote) nameLookup.lookup(remoteObjectName);
+    }
+
+/**
+     *
+     * Retrieves a remote object from the server. At least, it tries to retrieve
+     * it. This may fail if the named object is not available or if the
+     * connection could not be established.<br>
+     * <i>Note: If your are finished with the remote object, don't forget to
+     * call {@link Simon#release(Object)} to decrease the reference count and
+     * finally release the connection to the server</i>
+     *
+     * @param host
+     *            host address where the lookup takes place
+     * @param port
+     *            port number of the simon remote registry
+     * @param remoteObjectName
+     *            name of the remote object which is bind to the remote registry
+     * @return and instance of the remote object
+     * @throws SimonRemoteException
+     *             if there's a problem with the simon communication
+     * @throws IOException
+     *             if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed
+     *             if its not possible to establish a connection to the remote
+     *             registry
+     * @throws LookupFailedException
+     *             if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @deprecated Use Simon#createNameLookup() instead ...
+     *
+     */
+    public static SimonRemote lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+        Lookup nameLookup = createNameLookup(host, port);
+        return (SimonRemote) nameLookup.lookup(remoteObjectName);
+    }
+
+/**
+     *
+     * Retrieves a remote object from the server. At least, it tries to retrieve
+     * it. This may fail if the named object is not available or if the
+     * connection could not be established.<br>
+     * <i>Note: If your are finished with the remote object, don't forget to
+     * call {@link Simon#release(Object)} to decrease the reference count and
+     * finally release the connection to the server</i>
+     *
+     * @param sslContextFactory
+     *            the factory for creating the ssl context. <b>No SSL is used if
+     *            <code>null</code> is given!</b>
+     * @param proxyConfig
+     *            configuration details for connecting via proxy. <b>No proxy is
+     *            used if <code>null</code> is given!</b>
+     * @param host
+     *            host address where the lookup takes place
+     * @param port
+     *            port number of the simon remote registry
+     * @param remoteObjectName
+     *            name of the remote object which is bind to the remote registry
+     * @return and instance of the remote object
+     * @throws SimonRemoteException
+     *             if there's a problem with the simon communication
+     * @throws IOException
+     *             if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed
+     *             if its not possible to establish a connection to the remote
+     *             registry
+     * @throws LookupFailedException
+     *             if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used         *
+     * @deprecated Use Simon#createNameLookup() instead ...
+     */
+    public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+        Lookup nameLookup = createNameLookup(host, port);
+        nameLookup.setProxyConfig(proxyConfig);
+        nameLookup.setSslContextFactory(sslContextFactory);
+        return (SimonRemote) nameLookup.lookup(remoteObjectName);
+    }
+
+/**
+     *
+     * Retrieves a remote object from the server. At least, it tries to retrieve
+     * it. This may fail if the named object is not available or if the
+     * connection could not be established.<br>
+     * <i>Note: If your are finished with the remote object, don't forget to
+     * call {@link Simon#release(Object)} to decrease the reference count and
+     * finally release the connection to the server</i>
+     *
+     * @param sslContextFactory
+     *            the factory for creating the ssl context. <b>No SSL is used if
+     *            <code>null</code> is given!</b>
+     * @param proxyConfig
+     *            configuration details for connecting via proxy. <b>No proxy is
+     *            used if <code>null</code> is given!</b>
+     * @param host
+     *            host address where the lookup takes place
+     * @param port
+     *            port number of the simon remote registry
+     * @param remoteObjectName
+     *            name of the remote object which is bind to the remote registry
+     * @param listener
+     *            a listener that get's notified if the remote object's
+     *            connection is closed/released. <b>No listener is
+     *            used if <code>null</code> is given!</b>
+     * @return and instance of the remote object
+     * @throws SimonRemoteException
+     *             if there's a problem with the simon communication
+     * @throws IOException
+     *             if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed
+     *             if its not possible to establish a connection to the remote
+     *             registry
+     * @throws LookupFailedException
+     *             if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @deprecated Use Simon#createNameLookup() instead ...
+     */
+    public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
+        Lookup nameLookup = createNameLookup(host, port);
+        nameLookup.setProxyConfig(proxyConfig);
+        nameLookup.setSslContextFactory(sslContextFactory);
+        nameLookup.addClosedListener(remoteObjectName, listener);
+        return (SimonRemote) nameLookup.lookup(remoteObjectName);
+    }
+
+
     /**
      * Creates a interface lookup object that is used to lookup remote objects. <br>
      * Lookup is made via a known interface of the remote object.
@@ -212,6 +344,7 @@ public class Simon {
      * @param port the port on which the registry server is listening
      * @return the lookup object
      * @throws UnknownHostException if the specified hostname is unknown
+     * @since version 1.1.0
      */
     public static Lookup createNameLookup(String host, int port) throws UnknownHostException {
             return new NameLookup(host, port);
@@ -224,6 +357,7 @@ public class Simon {
      * @param address the address of the host on which the registry server runs
      * @param port the port on which the registry server is listening
      * @return the lookup object
+     * @since version 1.1.0
      */
     public static Lookup createNameLookup(InetAddress address, int port) {
         return new NameLookup(address, port);
