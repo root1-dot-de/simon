@@ -22,12 +22,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
+ * Declares the remote simon class. Can only be used on the implementation class.
+ * When value() is specified, the value defines the remote interfaces to use. Only those interfaces can then be used remotely.
+ * If value() is not specified, all known interfaces can be used remotely.
  *
- * Annotation that marks a remote class.
- * 
  * @author achristian
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface SimonRemote {
+
+    /**
+     * When value() is specified, the value defines the remote interfaces to use. Only those interfaces can then be used remotely.
+     * If value() is not specified, all known interfaces can be used remotely.
+     * @return the remote interface array
+     */
+    public abstract java.lang.Class[] value() default {};
 
 }

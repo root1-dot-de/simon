@@ -11,11 +11,16 @@ import de.root1.simon.annotation.SimonRemote;
  *
  * @author achristian
  */
-@SimonRemote
-public class RemoteObjectImpl implements RemoteObject {
+@SimonRemote({RemoteObject1.class, RemoteObject2.class})
+//@SimonRemote(RemoteObject2.class)
+public class RemoteObjectImpl implements RemoteObject1, RemoteObject2 {
 
-    public void myRemoteMethod() {
-        System.out.println("myRemoteMethod() called!");
+    public void myRemoteMethod1() {
+        System.out.println("myRemoteMethod1() called!");
+    }
+
+    public void myRemoteMethod2() {
+        System.out.println("myRemoteMethod2() called!");
     }
 
 }

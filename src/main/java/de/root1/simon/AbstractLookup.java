@@ -5,16 +5,9 @@
 
 package de.root1.simon;
 
-import de.root1.simon.ClientToServerConnection;
-import de.root1.simon.ClosedListener;
-import de.root1.simon.Dispatcher;
-import de.root1.simon.Simon;
-import de.root1.simon.SimonProxy;
-import de.root1.simon.SimonProxyConfig;
 import de.root1.simon.codec.SimonProxyFilter;
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
-import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.FilterEntry;
 import de.root1.simon.utils.Utils;
@@ -38,7 +31,6 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.filter.ssl.SslFilter;
-import org.apache.mina.proxy.ProxyConnector;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +53,9 @@ abstract class AbstractLookup implements Lookup {
      */
     static final Map<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
 
+    /**
+     * A simple container class that relates the dispatcher to a session
+     */
     static class SessionDispatcherContainer {
 
         private final Dispatcher dispatcher;
@@ -88,8 +83,6 @@ abstract class AbstractLookup implements Lookup {
         SimonProxy proxy = Simon.getSimonProxy(proxyObject);
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
-//		logger.debug("releasing proxy...");
-
 
         // release the proxy and get the related dispatcher
         Dispatcher dispatcher = proxy.getDispatcher();
@@ -116,7 +109,9 @@ abstract class AbstractLookup implements Lookup {
 
     @Override
     public List<ClosedListener> getClosedListeners(Object remoteObject) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        SimonProxy simonProxy = Simon.getSimonProxy(remoteObject);
+        Dispatcher dispatcher = simonProxy.getDispatcher();
+        return new ArrayList<ClosedListener>(dispatcher.getClosedListenerList(simonProxy.getRemoteObjectName()));
     }
 
     @Override
@@ -147,6 +142,16 @@ abstract class AbstractLookup implements Lookup {
         return host.getHostAddress() + ":" + port;
     }
 
+    /**
+     * Creates a connection to the server and returns a container that holds the dispatcher session relation
+     * @param remoteObjectName the remote object name
+     * @param serverAddress the address of the server
+     * @param serverPort the server registrys port
+     * @param sslContextFactory the used ssl context factory
+     * @param proxyConfig the used proxy configuration
+     * @return a container with the created session and dispatcher
+     * @throws EstablishConnectionFailed if connection to server can't be established
+     */
     SessionDispatcherContainer buildSessionDispatcherContainer(String remoteObjectName, InetAddress serverAddress, int serverPort, SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig) throws EstablishConnectionFailed {
 
         Dispatcher dispatcher = null;

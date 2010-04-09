@@ -1067,4 +1067,13 @@ public class Dispatcher implements IoHandler {
     protected PingWatchdog getPingWatchdog() {
         return pingWatchdog;
     }
+
+    /**
+     * Returns a list of ClosedListeners which listen for closed event for given remote object name
+     * @param remoteObjectName the remote objects name
+     * @return the list with listeners
+     */
+    protected List<ClosedListener> getClosedListenerList(String remoteObjectName) {
+        return remoteObjectClosedListenersList.get(remoteObjectName);
+    }
 }
