@@ -11,7 +11,8 @@ import de.root1.simon.annotation.SimonRemote;
  *
  * @author achristian
  */
-@SimonRemote({RemoteObject1.class, RemoteObject2.class})
+@SimonRemote
+//@SimonRemote({RemoteObject1.class, RemoteObject2.class})
 //@SimonRemote(RemoteObject2.class)
 public class RemoteObjectImpl implements RemoteObject1, RemoteObject2 {
 
