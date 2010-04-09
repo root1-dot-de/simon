@@ -76,10 +76,10 @@ public class TestAnnotation {
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
-            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+            RemoteObject1 roiRemote = (RemoteObject1) lookup.lookup("roi");
 
             roiRemote.equals(null);
-            roiRemote.myRemoteMethod();
+            roiRemote.myRemoteMethod1();
 
             lookup.release(roiRemote);
 
