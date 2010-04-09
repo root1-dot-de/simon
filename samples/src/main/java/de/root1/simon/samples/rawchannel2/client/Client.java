@@ -39,6 +39,8 @@ public class Client {
             ex.printStackTrace();
         } catch (IOException ex) {
             ex.printStackTrace();
+        } catch (EstablishConnectionFailed ex) {
+            ex.printStackTrace();
         }
         System.out.println("Client terminated...");
     }
