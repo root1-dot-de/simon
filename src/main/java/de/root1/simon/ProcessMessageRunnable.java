@@ -292,7 +292,7 @@ public class ProcessMessageRunnable implements Runnable {
         try {
             Class<?>[] interfaces = null;
 
-            interfaces = Utils.findAllInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
+            interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
 
             ret.setInterfaces(interfaces);
         } catch (LookupFailedException e) {
@@ -407,7 +407,7 @@ public class ProcessMessageRunnable implements Runnable {
                         listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
                         // re-implant the proxy object
-                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId()));
+                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces));
                         logger.debug("proxy object for SimonCallback injected");
                     }
                 }

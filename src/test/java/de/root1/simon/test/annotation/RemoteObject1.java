@@ -10,8 +10,8 @@ package de.root1.simon.test.annotation;
  *
  * @author achristian
  */
-public interface RemoteObject {
+public interface RemoteObject1 {
 
-    public void myRemoteMethod();
+    public void myRemoteMethod1();
 
 }

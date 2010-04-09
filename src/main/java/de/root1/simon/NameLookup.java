@@ -85,7 +85,7 @@ public class NameLookup extends AbstractLookup {
             /*
              * Creates proxy for method-call-forwarding to server
              */
-            SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
+            SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName, listenerInterfaces);
             logger.trace("proxy created");
 
             /*

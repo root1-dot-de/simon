@@ -18,6 +18,7 @@
  */
 package de.root1.simon.utils;
 
+import de.root1.simon.annotation.SimonRemote;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -30,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -42,19 +44,24 @@ import java.util.Set;
 public class Utils {
 
     private final static Logger logger = LoggerFactory.getLogger(Utils.class);
-    /** if this flag is set to TRUE, SIMON tries to load the java.util.logging properties and enabled the debug-mode */
+    /**
+     * if this flag is set to TRUE, SIMON tries to load the java.util.logging properties and enabled the debug-mode
+     * @deprecated use JVM argument "java.util.logging.config.file=./log/mylogconfig.properties"
+     */
     public static boolean DEBUG = false;
     /**
      * A map that memories some method hashes so that they need not to be re-generated each time the hash is used.
      * If memory is getting short, some entries are gc'ed so that more memory is available. There is no need to
      * clear the map ourselves.
      */
-    private static WeakHashMap<Method, Long> methodHashes = new WeakHashMap<Method, Long>();
+    private static final WeakHashMap<Method, Long> methodHashes = new WeakHashMap<Method, Long>();
 
     /**
      * Compute the "method hash" of a remote method. The method hash is a long
      * containing the first 64 bits of the SHA digest from the bytes representing
      * the complete method signature.
+     * @param m the method for which the hash has to be computed
+     * @return the computed hash
      */
     public static long computeMethodHash(Method m) {
 
@@ -113,6 +120,7 @@ public class Utils {
      *            that this class correctly overrides
      *            {@link SimonProtocolCodecFactory#setup(boolean)}. For further
      *            details, look at {@link SimonProtocolCodecFactory}!</i>
+     * @return the protocolcodecfactory instance according to the given protocol factory class name
      * @throws IllegalAccessException
      *             if the class or its nullary constructor is not accessible.
      * @throws InstantiationException
@@ -138,7 +146,7 @@ public class Utils {
             throw new ClassCastException(
                     "The given class '"
                     + protocolFactory
-                    + "' must extend 'de.root1.simon.codec.base.SimonProtocolCodecFactory' !");
+                    + "' must extend '"+de.root1.simon.codec.base.SimonProtocolCodecFactory.class.getCanonicalName()+"' !");
         }
     }
 
@@ -150,16 +158,15 @@ public class Utils {
      */
     public static String longToHexString(long l) {
 
-        String id = Long.toHexString(l).toUpperCase();
+        StringBuffer id = new StringBuffer();
+        id.append(Long.toHexString(l).toUpperCase());
 
-        // Somewhat inefficient, but it won't happen that often
-        // because an ID is often a big integer.
         while (id.length() < 8) {
-            id = '0' + id; // padding
+            id.insert(0, "0");
         }
-        id = "0x" + id;
+        id.insert(0, "0x");
 
-        return id;
+        return id.toString();
     }
 
     /**
@@ -191,25 +198,62 @@ public class Utils {
         }
     }
 
-    public static Class<?>[] findAllInterfaces(Class<?> clazz) {
-        Set<Class<?>> interfaceSet = doFindAllInterfaces(clazz);
+    /**
+     * Method that returns an Class<?> array containing all remote interfaces of a given class
+     * @param clazz the class to analyse for remote interfaces
+     * @return the array with all known remote interfaces
+     */
+    public static Class<?>[] findAllRemoteInterfaces(Class<?> clazz) {
+        Set<Class<?>> interfaceSet = doFindAllRemoteInterfaces(clazz);
 
         Class<?>[] interfaces = new Class[interfaceSet.size()];
         return interfaceSet.toArray(interfaces);
     }
 
-    private static Set<Class<?>> doFindAllInterfaces(Class<?> clazz) {
+    /**
+     * Internal helper method for finding remote interfaces
+     * @param clazz the class to analyse for remote interfaces
+     * @return a set with remote interfaces
+     */
+    private static Set<Class<?>> doFindAllRemoteInterfaces(Class<?> clazz) {
         Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
 
-        for (Class<?> interfaze : clazz.getInterfaces()) {
-//            if (SimonRemote.class.isAssignableFrom(interfaze)) {
+        // check for allowed remote interfaces
+        Class[] remoteInterfaces = null;
+
+        SimonRemote annotation = clazz.getAnnotation(SimonRemote.class);
+        if (annotation!=null) {
+            remoteInterfaces = annotation.value();
+        }
+
+        if (remoteInterfaces==null) {
+
+            if (annotation==null) {
+                logger.trace("No SimonRemote annotation found for clazz {}. Adding all known interfaces.", clazz.getName());
+            } else {
+                logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces.", clazz.getName());
+            }
+            
+            for (Class<?> interfaze : clazz.getInterfaces()) {
+    //            if (SimonRemote.class.isAssignableFrom(interfaze)) {
+                    interfaceSet.add((Class<?>) interfaze);
+    //            }
+            }
+
+        } else {
+
+            if (logger.isTraceEnabled()) {
+                logger.trace("SimonRemote annotation found. Remote interfaces where explicitly specified: {}. Adding them...", Arrays.toString(remoteInterfaces));
+            }
+            for (Class<?> interfaze : remoteInterfaces) {
                 interfaceSet.add((Class<?>) interfaze);
-//            }
+            }
+
         }
 
         if (clazz.getSuperclass() != null
                 && !clazz.getSuperclass().equals(Object.class)) {
-            interfaceSet.addAll(doFindAllInterfaces(clazz.getSuperclass()));
+            interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
         }
 
         return interfaceSet;

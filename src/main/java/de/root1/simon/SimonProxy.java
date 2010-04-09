@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
+import java.util.Arrays;
 
 /**
  * The InvocationHandler which redirects each method call over the network to the related dispatcher
@@ -48,6 +49,8 @@ public class SimonProxy implements InvocationHandler {
     private Dispatcher dispatcher;
     /** a reference to the session which is the reference to the related network connection */
     private IoSession session;
+    /** the interfaces that the remote object has exported */
+    Class<?>[] remoteInterfaces;
 
     /**
      *
@@ -56,12 +59,14 @@ public class SimonProxy implements InvocationHandler {
      * @param dispatcher a reference to the underlying dispatcher
      * @param session a reference to the {@link IoSession} of the corresponding network connection
      * @param remoteObjectName name of the remote object
+     * @param remoteInterfaces the interfaces that the remote object has exported
      */
-    protected SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName) {
+    protected SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName, Class<?>[] remoteInterfaces) {
         this.dispatcher = dispatcher;
         this.session = session;
 
         this.remoteObjectName = remoteObjectName;
+        this.remoteInterfaces = remoteInterfaces;
     }
 
     /**
@@ -164,7 +169,7 @@ public class SimonProxy implements InvocationHandler {
             Class<?>[] listenerInterfaces = new Class<?>[1];
             listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
 
-            SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId());
+            SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId(), new Class<?>[]{});
 
             // reimplant the proxy object
             result = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler);
@@ -227,6 +232,8 @@ public class SimonProxy implements InvocationHandler {
         return "[Proxy=" + remoteObjectName
                 + "|invocationHandler=" + super.toString()
                 + "|remote=" + dispatcher.invokeToString(session, remoteObjectName)
+                + "|interfaces=" + Arrays.toString(remoteInterfaces)
+                + "|sessionId=" + Utils.longToHexString(session.getId())
                 + "]";
     }
 

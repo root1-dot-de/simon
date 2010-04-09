@@ -10,7 +10,7 @@ public class UtilsTestCase {
 
 	@Test
 	public void testFindAllInterfaces() {
-		Class<?>[] interfases = Utils.findAllInterfaces(InhertedClass.class);
+		Class<?>[] interfases = Utils.findAllRemoteInterfaces(InhertedClass.class);
 		assertNotNull(interfases);
 		assertEquals(2, interfases.length);
 	}
