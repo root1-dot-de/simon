@@ -6,6 +6,7 @@ package de.root1.simon.samples.rawchannel.client;
 
 import de.root1.simon.RawChannel;
 import de.root1.simon.Simon;
+import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.samples.rawchannel.shared.RawChannelServer;
@@ -80,6 +81,8 @@ public class Client {
         } catch (SimonRemoteException ex) {
             ex.printStackTrace();
         } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (EstablishConnectionFailed ex) {
             ex.printStackTrace();
         }
 
