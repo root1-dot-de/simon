@@ -49,16 +49,18 @@ public class ManualTestAnnotation {
 
         try {
 
-            System.out.println("1");
+            System.out.println("2");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
-            RemoteObject1 roiRemote = (RemoteObject1) lookup.lookup("roi");
+            Object roiObject =  lookup.lookup("roi");
 
-            System.out.println("got remote object: "+roiRemote);
+            System.out.println("got remote object: "+roiObject);
+
+            RemoteObject1 roiRemote = (RemoteObject1) roiObject;
 
 //            System.out.println("equals: "+roiRemote.equals(roiRemote));
 //
