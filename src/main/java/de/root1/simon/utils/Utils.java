@@ -226,12 +226,14 @@ public class Utils {
             remoteInterfaces = annotation.value();
         }
 
-        if (remoteInterfaces==null) {
+        if (remoteInterfaces.length==0) {
 
-            if (annotation==null) {
-                logger.trace("No SimonRemote annotation found for clazz {}. Adding all known interfaces.", clazz.getName());
-            } else {
-                logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces.", clazz.getName());
+            if (logger.isTraceEnabled()) {
+                if (annotation==null) {
+                    logger.trace("No SimonRemote annotation found for clazz {}. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
+                } else {
+                    logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
+                }
             }
             
             for (Class<?> interfaze : clazz.getInterfaces()) {
