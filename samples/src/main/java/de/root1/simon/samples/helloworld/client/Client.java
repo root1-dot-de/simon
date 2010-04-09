@@ -5,6 +5,7 @@
 
 package de.root1.simon.samples.helloworld.client;
 
+import de.root1.simon.exceptions.EstablishConnectionFailed;
 import java.io.IOException;
 
 import de.root1.simon.Simon;
@@ -13,7 +14,7 @@ import de.root1.simon.samples.helloworld.shared.ServerInterface;
 
 public class Client {
 
-   public static void main(String[] args) throws IOException, LookupFailedException {
+   public static void main(String[] args) throws IOException, LookupFailedException, EstablishConnectionFailed {
 
       // create a callback object
       ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();

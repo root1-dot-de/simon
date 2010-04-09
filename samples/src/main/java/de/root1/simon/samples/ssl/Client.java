@@ -5,6 +5,7 @@
 
 package de.root1.simon.samples.ssl;
 
+import de.root1.simon.exceptions.EstablishConnectionFailed;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.security.KeyManagementException;
@@ -22,7 +23,7 @@ import de.root1.simon.ssl.DefaultSslContextFactory;
 
  public class Client {
 
-     public static void main(String[] args) throws IOException, LookupFailedException, UnrecoverableKeyException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
+     public static void main(String[] args) throws IOException, LookupFailedException, UnrecoverableKeyException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException, CertificateException, EstablishConnectionFailed {
 
          // create a callback object
          ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
