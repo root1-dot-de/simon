@@ -79,7 +79,7 @@ public class NameLookup extends AbstractLookup {
             Class<?>[] listenerInterfaces = msg.getInterfaces();
 
             for (Class<?> class1 : listenerInterfaces) {
-                logger.warn("iface: {}" + class1.getName());
+                logger.debug("iface: {}", class1.getName());
             }
 
             /*
