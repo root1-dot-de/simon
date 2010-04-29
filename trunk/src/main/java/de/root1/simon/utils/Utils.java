@@ -226,7 +226,7 @@ public class Utils {
             remoteInterfaces = annotation.value();
         }
 
-        if (remoteInterfaces.length==0) {
+        if (remoteInterfaces==null || remoteInterfaces.length==0) {
 
             if (logger.isTraceEnabled()) {
                 if (annotation==null) {
