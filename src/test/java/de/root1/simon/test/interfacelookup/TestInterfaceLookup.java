@@ -50,7 +50,7 @@ public class TestInterfaceLookup {
 
         try {
 
-            System.out.println("Begin ...");
+            System.out.println("Begin interfaceLookupAndReleaseTwice...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
@@ -95,6 +95,7 @@ public class TestInterfaceLookup {
             assert true;
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw new AssertionError(ex);
         }
     }
