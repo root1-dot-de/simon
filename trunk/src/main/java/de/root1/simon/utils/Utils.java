@@ -235,7 +235,7 @@ public class Utils {
                     logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
                 }
             }
-            
+            //System.out.println("clazz "+ clazz.getName()+". Adding all known interfaces: "+ Arrays.toString(clazz.getInterfaces()));
             for (Class<?> interfaze : clazz.getInterfaces()) {
     //            if (SimonRemote.class.isAssignableFrom(interfaze)) {
                     interfaceSet.add((Class<?>) interfaze);
