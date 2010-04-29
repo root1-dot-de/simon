@@ -110,7 +110,7 @@ public class InterfaceLookup extends AbstractLookup {
             Class<?>[] listenerInterfaces = msg.getInterfaces();
 
             for (Class<?> class1 : listenerInterfaces) {
-                logger.warn("iface: {}" + class1.getName());
+                logger.trace("iface: {}", class1.getName());
             }
 
             /*
