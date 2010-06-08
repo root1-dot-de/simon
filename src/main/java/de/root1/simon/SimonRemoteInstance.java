@@ -18,7 +18,12 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.annotation.SimonRemote;
+import de.root1.simon.utils.Utils;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
 
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -36,7 +41,7 @@ public class SimonRemoteInstance implements Serializable {
     private static final long serialVersionUID = 1;
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
     /** Name of the interface that is used to implement the remote object */
-    private String interfaceName = null;
+    private List<String> interfaceNames = new ArrayList<String>();
     /** a unique identifier for the corresponding remote object */
     private String id = null;
     /** the remote object name of the simon proxy to which the SimonRemote belongs */
@@ -78,44 +83,54 @@ public class SimonRemoteInstance implements Serializable {
 
         logger.debug("SimonRemoteInstance created with id={}", this.id);
 
-        // get the interfaces the arg has implemented
-        Class<?>[] remoteObjectInterfaceClasses = remoteObject.getClass().getInterfaces();
 
-        // check each interface if THIS is the one which implements "SimonRemote"
-        for (Class<?> remoteObjectInterfaceClass : remoteObjectInterfaceClasses) {
+        Class[] remoteInterfacesInAnnotation=null;
+        if (Utils.isRemoteAnnotated(remoteObject)) {
+            SimonRemote annotation = remoteObject.getClass().getAnnotation(SimonRemote.class);
+            remoteInterfacesInAnnotation = annotation.value();
+        }
 
+        // check if we have to look for the annotation or the implemented interfaces
+        if (remoteInterfacesInAnnotation!=null) {
+            logger.trace("SimonRemoteObject is a annotated class AND has defined interfaces");
 
-            String remoteObjectInterfaceClassNameTemp = remoteObjectInterfaceClass.getName();
-
-            logger.debug("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, SimonRemote.class.getName());
-
-            // Get the interfaces of the implementing interface
-            Class<?>[] remoteObjectInterfaceSubInterfaces = remoteObjectInterfaceClass.getInterfaces();
-
-            boolean isSimonRemote = false;
-            for (Class<?> remoteObjectInterfaceSubInterface : remoteObjectInterfaceSubInterfaces) {
-
-                logger.debug("Checking child interfaces for '{}': child={}", remoteObjectInterfaceClassNameTemp, remoteObjectInterfaceSubInterface);
-
-                if (remoteObjectInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
-                    isSimonRemote = true;
-                    break;
-                }
+            for (Class interfaceClazz : remoteInterfacesInAnnotation) {
+                String clazzName = interfaceClazz.getCanonicalName();
+                logger.trace("Adding {} to the list of remote interfaces", clazzName);
+                interfaceNames.add(clazzName);
             }
 
-            if (isSimonRemote) {
-                interfaceName = remoteObjectInterfaceClassNameTemp;
+        } else {
 
-                logger.debug("SimonRemote found in arg: interfaceName='{}'", interfaceName);
 
-                break;
+            Class[] remoteInterfaces = remoteObject.getClass().getInterfaces();
 
-            } else {
-                interfaceName = null;
+            // check each interface if THIS is the one which implements "SimonRemote"
+            for (Class<?> interfaceClazz : remoteInterfaces) {
+
+
+                String remoteObjectInterfaceClassNameTemp = interfaceClazz.getCanonicalName();
+
+                logger.trace("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, SimonRemote.class.getName());
+
+                // Get the interfaces of the implementing interface
+                Class<?>[] remoteObjectInterfaceSubInterfaces = interfaceClazz.getInterfaces();
+
+                for (Class<?> remoteObjectInterfaceSubInterface : remoteObjectInterfaceSubInterfaces) {
+
+                    logger.trace("Checking child interfaces for '{}': child={}", remoteObjectInterfaceClassNameTemp, remoteObjectInterfaceSubInterface);
+
+                    if (remoteObjectInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
+                        logger.trace("Adding {} to the list of remote interfaces", remoteObjectInterfaceClassNameTemp);
+                        interfaceNames.add(remoteObjectInterfaceClassNameTemp);
+                    }
+                }
+
             }
         }
         logger.debug("end");
     }
+
 
     /**
      *
@@ -123,8 +138,8 @@ public class SimonRemoteInstance implements Serializable {
      *
      * @return the remote object's interface
      */
-    protected String getInterfaceName() {
-        return interfaceName;
+    protected List<String> getInterfaceNames() {
+        return interfaceNames;
     }
 
     /**
