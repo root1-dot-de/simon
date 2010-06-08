@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.List;
 
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -403,8 +404,11 @@ public class ProcessMessageRunnable implements Runnable {
 
                         logger.debug("SimonCallback in args found. id={}", simonCallback.getId());
 
-                        Class<?>[] listenerInterfaces = new Class<?>[1];
-                        listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
+                        List<String> interfaceNames = simonCallback.getInterfaceNames();
+                        Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
+                        for (int j=0;j<interfaceNames.size();j++){
+                            listenerInterfaces[j]=Class.forName(interfaceNames.get(i));
+                        }
 
                         // re-implant the proxy object
                         arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces));
@@ -430,7 +434,7 @@ public class ProcessMessageRunnable implements Runnable {
 
                 SimonRemoteInstance simonCallback = new SimonRemoteInstance(session, result);
 
-                dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), (SimonRemote) result);
+                dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), result);
                 result = simonCallback;
 
             }
@@ -455,7 +459,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         // test result for serialization
 //		System.out.println("result class: "+result.getClass());
-//		Class<?>[] interfaces = result.getClass().getInterfaces();
+//		Class<?>[] interfaces = result.getClass().getInterfaceNames();
 //		System.out.println("no of interfaces: "+interfaces.length);
 //		for (Class<?> class1 : interfaces) {
 //			System.out.println("result has interface: "+class1.getName());

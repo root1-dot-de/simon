@@ -33,6 +33,7 @@ import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * The InvocationHandler which redirects each method call over the network to the related dispatcher
@@ -166,8 +167,12 @@ public class SimonProxy implements InvocationHandler {
 
             // creating a proxy for the callback
             SimonRemoteInstance simonCallback = (SimonRemoteInstance) result;
-            Class<?>[] listenerInterfaces = new Class<?>[1];
-            listenerInterfaces[0] = Class.forName(simonCallback.getInterfaceName());
+
+            List<String> interfaceNames = simonCallback.getInterfaceNames();
+            Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
+            for (int j=0;j<interfaceNames.size();j++){
+                listenerInterfaces[j]=Class.forName(interfaceNames.get(j));
+            }
 
             SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId(), new Class<?>[]{});
 
