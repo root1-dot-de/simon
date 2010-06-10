@@ -23,8 +23,10 @@ import java.io.Serializable;
 /**
  * This is a marker-interface to mark a class as a remote class
  * @author achr
- *
+ * @deprecated Please use de.root1.simon.annotation.SimonRemote to
+ * mark your objects as SimonRemote
  */
+@Deprecated
 public interface SimonRemote extends Serializable {
 
 }

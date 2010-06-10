@@ -27,10 +27,8 @@ import java.lang.annotation.RetentionPolicy;
  * If value() is not specified, all known interfaces can be used remotely.
  *
  * @author achristian
- * @deprecated Please use the newer annotation mechanism to mark your remote object as SimonRemote
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Deprecated
 public @interface SimonRemote {
 
     /**
