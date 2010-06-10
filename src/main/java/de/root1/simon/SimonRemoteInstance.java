@@ -85,14 +85,16 @@ public class SimonRemoteInstance implements Serializable {
 
 
         Class[] remoteInterfacesInAnnotation=null;
-        if (Utils.isRemoteAnnotated(remoteObject)) {
+        boolean isAnnotated = Utils.isRemoteAnnotated(remoteObject);
+        if (isAnnotated) {
             SimonRemote annotation = remoteObject.getClass().getAnnotation(SimonRemote.class);
             remoteInterfacesInAnnotation = annotation.value();
+            logger.trace("SimonRemoteObject is annotated with SimonRemote");
         }
 
         // check if we have to look for the annotation or the implemented interfaces
-        if (remoteInterfacesInAnnotation!=null) {
-            logger.trace("SimonRemoteObject is a annotated class AND has defined interfaces");
+        if (remoteInterfacesInAnnotation!=null && remoteInterfacesInAnnotation.length>0) {
+            logger.trace("SimonRemoteObject has defined interfaces in it's annotation");
 
             for (Class interfaceClazz : remoteInterfacesInAnnotation) {
                 String clazzName = interfaceClazz.getCanonicalName();
@@ -102,33 +104,70 @@ public class SimonRemoteInstance implements Serializable {
 
         } else {
 
+            logger.trace("Need to manually search for remote interfaces ...");
 
-            Class[] remoteInterfaces = remoteObject.getClass().getInterfaces();
+            if (isAnnotated) {
+                logger.trace("Getting all (sub)interfaces...");
 
-            // check each interface if THIS is the one which implements "SimonRemote"
-            for (Class<?> interfaceClazz : remoteInterfaces) {
+                Stack<Class> stack = new Stack<Class>();
+                
+                putInterfacesToStack(stack, remoteObject.getClass());
 
-
-                String remoteObjectInterfaceClassNameTemp = interfaceClazz.getCanonicalName();
-
-                logger.trace("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, SimonRemote.class.getName());
-
-                // Get the interfaces of the implementing interface
-                Class<?>[] remoteObjectInterfaceSubInterfaces = interfaceClazz.getInterfaces();
-
-                for (Class<?> remoteObjectInterfaceSubInterface : remoteObjectInterfaceSubInterfaces) {
-
-                    logger.trace("Checking child interfaces for '{}': child={}", remoteObjectInterfaceClassNameTemp, remoteObjectInterfaceSubInterface);
-
-                    if (remoteObjectInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
-                        logger.trace("Adding {} to the list of remote interfaces", remoteObjectInterfaceClassNameTemp);
-                        interfaceNames.add(remoteObjectInterfaceClassNameTemp);
+                while (!stack.empty()) {
+                    Class iClazz = stack.pop();
+                    String iClazzName = iClazz.getCanonicalName();
+                    logger.trace("Adding {} to the list of remote interfaces", iClazzName);
+                    if (!interfaceNames.contains(iClazzName)) {
+                        interfaceNames.add(iClazzName);
                     }
+                    putInterfacesToStack(stack, iClazz);
                 }
 
+
+            } else {
+                logger.trace("Searching for explicit remote interfaces marked with {} ...", SimonRemote.class.getName());
+
+                Class[] remoteInterfaces = remoteObject.getClass().getInterfaces();
+
+                // check each interface if THIS is the one which implements "SimonRemote"
+                for (Class<?> interfaceClazz : remoteInterfaces) {
+
+
+                    String remoteObjectInterfaceClassNameTemp = interfaceClazz.getCanonicalName();
+
+                    logger.trace("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, SimonRemote.class.getName());
+
+                    // Get the interfaces of the implementing interface
+                    Class<?>[] remoteObjectInterfaceSubInterfaces = interfaceClazz.getInterfaces();
+
+                    for (Class<?> remoteObjectInterfaceSubInterface : remoteObjectInterfaceSubInterfaces) {
+
+                        logger.trace("Checking child interfaces for '{}': child={}", remoteObjectInterfaceClassNameTemp, remoteObjectInterfaceSubInterface);
+
+                        if (remoteObjectInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
+                            logger.trace("Adding {} to the list of remote interfaces", remoteObjectInterfaceClassNameTemp);
+                            if (!interfaceNames.contains(remoteObjectInterfaceClassNameTemp)) {
+                                interfaceNames.add(remoteObjectInterfaceClassNameTemp);
+                            }
+                        }
+                    }
+
+                }
             }
         }
         logger.debug("end");
+    }
+
+    /**
+     * TODO document me ...
+     * @param stack
+     * @param clazz
+     */
+    private void putInterfacesToStack(Stack<Class> stack, Class clazz) {
+        Class[] interfaces = clazz.getInterfaces();
+        for (Class iClazz : interfaces) {
+            stack.push(iClazz);
+        }
     }
 
 
