@@ -66,14 +66,21 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
             long methodHash = in.getLong();
             logger.trace("got method hash {}", methodHash);
             Method method = lookupTable.getMethod(msgInvoke.getRemoteObjectName(), methodHash);
-            logger.trace("method looked up ... pos={}", in.position());
+            logger.trace("method looked up ... pos={} method=[{}]", in.position(), method.toString());
 
             int argsLength = in.getInt();
             logger.trace("args len read read ... pos={}", in.position());
             logger.trace("getting {} args", argsLength);
             Object[] args = new Object[argsLength];
             for (int i = 0; i < argsLength; i++) {
-                args[i] = in.getObject();
+                try {
+                    args[i] = in.getObject();
+                } catch (NullPointerException ex) {
+                    NullPointerException npe = new NullPointerException("Problem reading method argument. Maybe argument isn't serializable?!");
+                    npe.initCause(ex.getCause());
+                    npe.setStackTrace(ex.getStackTrace());
+                    throw npe;
+                }
                 logger.trace("arg #{} read ... pos={} object={}", new Object[]{i, in.position(), args[i]});
             }
 
