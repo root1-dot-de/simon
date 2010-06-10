@@ -18,69 +18,54 @@
  */
 package de.root1.simon.utils;
 
-import java.text.DecimalFormat;
-import java.util.GregorianCalendar;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
-
 /**
  * This class formats the loggin-output for the console
- * 
+ *
  * @version 20060518 0920
  */
+public class ConsoleLogFormatter extends Formatter {
 
-public class ConsoleLogFormatter extends Formatter
-{
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-mm-dd HH:mm::ss.SSS");
+    private static final String CRLF = "\r\n";
 
-	private DecimalFormat df2 = new DecimalFormat( "00" );
-	private DecimalFormat df3 = new DecimalFormat( "000" );
-	private DecimalFormat df4 = new DecimalFormat( "0000" );
+    /* (non-Javadoc)
+     * @see java.util.logging.Formatter#format(java.util.logging.LogRecord)
+     */
+    public String format(LogRecord record) {
 
-	private static final String CRLF = "\r\n";
-	private GregorianCalendar calendar = new GregorianCalendar(); 
-	StringBuilder output = new StringBuilder();
+        StringBuffer output = new StringBuffer();
 
-	/* (non-Javadoc)
-	 * @see java.util.logging.Formatter#format(java.util.logging.LogRecord)
-	 */
-	public String format(LogRecord record)
-	{
-		
-		output.delete(0, output.length());
+        output.append(simpleDateFormat.format(new Date(record.getMillis())));
+//        output.append(" [");
+//        output.append(record.getLevel().getName());
 
-		calendar.setTimeInMillis(record.getMillis());
-		
-		output.append(df4.format(calendar.get(GregorianCalendar.YEAR)));
-		output.append("-");
-		output.append(df2.format((calendar.get(GregorianCalendar.MONTH)+ 1)));
-		output.append("-");
-		output.append(df2.format(calendar.get(GregorianCalendar.DAY_OF_MONTH)));
-		output.append(" ");
-		output.append(df2.format(calendar.get(GregorianCalendar.HOUR_OF_DAY)));
-		output.append(":");
-		output.append(df2.format(calendar.get(GregorianCalendar.MINUTE)));
-		output.append(":");
-		output.append(df2.format(calendar.get(GregorianCalendar.SECOND)));
-		output.append(",");
-		output.append(df3.format(calendar.get(GregorianCalendar.MILLISECOND)));
-		output.append(" [");
-		output.append(record.getLevel().getName());
-		
-		if (record.getLevel().getName().length()<7)
-			output.append("\t");
-		
-		output.append("] ");
-		output.append("t_id=");
-		output.append(record.getThreadID());
-		output.append(" ");
-		output.append(record.getSourceClassName());
-		output.append(".");
-		output.append(record.getSourceMethodName());
-		output.append(" -> ");
-		output.append(record.getMessage());
-		output.append(CRLF);
+        StringBuilder sb = new StringBuilder();
+        // Send all output to the Appendable object sb
+        java.util.Formatter formatter = new java.util.Formatter(sb, Locale.getDefault());
+        formatter.format(" %-7s ", record.getLevel().getName());
+        output.append(sb);
 
-		return output.toString();
-	}
+//        if (record.getLevel().getName().length() < 7) {
+//            output.append("\t");
+//        }
+
+//        output.append("] ");
+        output.append("tid=");
+        output.append(record.getThreadID());
+        output.append(" ");
+        output.append(record.getSourceClassName());
+        output.append(".");
+        output.append(record.getSourceMethodName());
+        output.append(": ");
+        output.append(record.getMessage());
+        output.append(CRLF);
+
+        return output.toString();
+    }
 }
