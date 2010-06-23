@@ -18,7 +18,6 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.annotation.SimonRemote;
 import de.root1.simon.utils.Utils;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -87,7 +86,7 @@ public class SimonRemoteInstance implements Serializable {
         Class[] remoteInterfacesInAnnotation=null;
         boolean isAnnotated = Utils.isRemoteAnnotated(remoteObject);
         if (isAnnotated) {
-            SimonRemote annotation = remoteObject.getClass().getAnnotation(SimonRemote.class);
+            de.root1.simon.annotation.SimonRemote annotation = remoteObject.getClass().getAnnotation(de.root1.simon.annotation.SimonRemote.class);
             remoteInterfacesInAnnotation = annotation.value();
             logger.trace("SimonRemoteObject is annotated with SimonRemote");
         }
@@ -125,7 +124,7 @@ public class SimonRemoteInstance implements Serializable {
 
 
             } else {
-                logger.trace("Searching for explicit remote interfaces marked with {} ...", SimonRemote.class.getName());
+                logger.trace("Searching for explicit remote interfaces marked with {} ...", de.root1.simon.SimonRemote.class.getCanonicalName());
 
                 Class[] remoteInterfaces = remoteObject.getClass().getInterfaces();
 
@@ -135,7 +134,7 @@ public class SimonRemoteInstance implements Serializable {
 
                     String remoteObjectInterfaceClassNameTemp = interfaceClazz.getCanonicalName();
 
-                    logger.trace("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, SimonRemote.class.getName());
+                    logger.trace("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, de.root1.simon.SimonRemote.class.getCanonicalName());
 
                     // Get the interfaces of the implementing interface
                     Class<?>[] remoteObjectInterfaceSubInterfaces = interfaceClazz.getInterfaces();
@@ -144,10 +143,12 @@ public class SimonRemoteInstance implements Serializable {
 
                         logger.trace("Checking child interfaces for '{}': child={}", remoteObjectInterfaceClassNameTemp, remoteObjectInterfaceSubInterface);
 
-                        if (remoteObjectInterfaceSubInterface.getName().equalsIgnoreCase(SimonRemote.class.getName())) {
+                        if (remoteObjectInterfaceSubInterface.equals(de.root1.simon.SimonRemote.class)) {
                             logger.trace("Adding {} to the list of remote interfaces", remoteObjectInterfaceClassNameTemp);
                             if (!interfaceNames.contains(remoteObjectInterfaceClassNameTemp)) {
                                 interfaceNames.add(remoteObjectInterfaceClassNameTemp);
+                            } else {
+                                logger.trace("{} already in list. skipping.", remoteObjectInterfaceClassNameTemp);
                             }
                         }
                     }

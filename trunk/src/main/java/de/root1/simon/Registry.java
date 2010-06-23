@@ -330,7 +330,7 @@ public final class Registry {
      * @throws NameBindingException
      *             if binding fails
      */
-    public void bindAndPublish(String name, SimonRemote remoteObject) throws NameBindingException {
+    public void bindAndPublish(String name, Object remoteObject) throws NameBindingException {
         bind(name, remoteObject);
         try {
             Simon.publish(new SimonPublication(address, port, name));
@@ -382,7 +382,7 @@ public final class Registry {
      * @param remoteObject
      *            the object to rebind
      */
-    public void rebind(String name, SimonRemote remoteObject) {
+    public void rebind(String name, Object remoteObject) {
         unbind(name);
         try {
             bind(name, remoteObject);
