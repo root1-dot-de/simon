@@ -298,7 +298,7 @@ public class ProcessMessageRunnable implements Runnable {
             ret.setInterfaces(interfaces);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
-            ret.setErrorMsg("Error: "+e.getClass()+"->"+e.getMessage());
+            ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage());
         }
         session.write(ret);
 
@@ -328,7 +328,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", canonicalInterfaceName, e.getMessage());
-            ret.setErrorMsg("Error: "+e.getClass()+"->"+e.getMessage());
+            ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage());
         }
         session.write(ret);
 
@@ -358,7 +358,6 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("end");
     }
-
 
     private void processInvoke() {
         logger.debug("begin");
@@ -406,8 +405,8 @@ public class ProcessMessageRunnable implements Runnable {
 
                         List<String> interfaceNames = simonCallback.getInterfaceNames();
                         Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
-                        for (int j=0;j<interfaceNames.size();j++){
-                            listenerInterfaces[j]=Class.forName(interfaceNames.get(i));
+                        for (int j = 0; j < interfaceNames.size(); j++) {
+                            listenerInterfaces[j] = Class.forName(interfaceNames.get(i));
                         }
 
                         // re-implant the proxy object
@@ -420,43 +419,39 @@ public class ProcessMessageRunnable implements Runnable {
 
             logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
 
-                logger.info("*****");
-                if (arguments!=null) {
+            Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
+
+            try {
+                result = method.invoke(remoteObject, arguments);
+            } catch (IllegalArgumentException ex) {
+                logger.error("IllegalArgumentException while invoking remote method. Arguments obviously do not match the methods parameter types. Errormsg: "+ex.getMessage());
+                logger.error("***** Analysis of arguments and paramtypes ... ron={} method={} ", remoteObjectName, method.getName());
+                if (arguments != null) {
                     for (int i = 0; i < arguments.length; i++) {
-                        logger.info("***** ron={} method={} arguments["+i+"]: "+(arguments[i]==null?"null":arguments[i].getClass().getCanonicalName()) + " toString: "+ (arguments[i]==null?"null":arguments[i].toString()), remoteObjectName, method.getName());
+                        logger.error("***** arguments[" + i + "]: " + (arguments[i] == null ? "null" : arguments[i].getClass().getCanonicalName()) + " toString: " + (arguments[i] == null ? "null" : arguments[i].toString()));
                     }
+                } else {
+                    logger.error("***** no arguments available.");
                 }
 
                 Class<?>[] paramType = method.getParameterTypes();
-                if (paramType!=null) {
+                if (paramType != null) {
                     for (int i = 0; i < paramType.length; i++) {
-                        logger.info("***** ron={} method={} paramType["+i+"]: "+(paramType[i]==null?"null":paramType[i].getClass().getCanonicalName()), remoteObjectName, method.getName());
+                        logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getClass().getCanonicalName()));
                     }
+                } else {
+                    logger.error("***** no paramtypes available.");
                 }
-                logger.info("*****\n");
-
-            Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
-
-//            try {
-                result = method.invoke(remoteObject, arguments);
-//            } catch (IllegalArgumentException ex) {
-//                for (int i = 0; i < arguments.length; i++) {
-//                    System.out.println("arguments["+i+"]: "+arguments[i].getClass().getCanonicalName() + " toString: "+ arguments[i].toString());
-//                }
-//
-//                Class<?>[] paramType = method.getParameterTypes();
-//                for (int i = 0; i < paramType.length; i++) {
-//                    System.out.println("paramType["+i+"]: "+paramType[i].getClass().getCanonicalName());
-//                }
-//
-//            }
+                logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
+                throw ex;
+            }
 
             if (method.getReturnType() == void.class) {
                 result = new SimonVoid();
             }
 
             // register "SimonCallback"-results in lookup-table
-            if (result instanceof SimonRemote || Utils.isRemoteAnnotated(result)) {
+            if (Utils.isValidRemote(result)) {
 
                 logger.debug("Result of method '{}' is SimonRemote: {}", method, result);
 
@@ -476,7 +471,7 @@ public class ProcessMessageRunnable implements Runnable {
         } catch (InvocationTargetException e) {
             result = e.getTargetException();
         } catch (Exception e) {
-            result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to Exception: " + e.getClass()+ " / "+ e.getMessage() + " / " + e.getCause());
+            result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to Exception: " + e.getClass() + " / " + e.getMessage() + " / " + e.getCause());
             e.printStackTrace();
         }
 
@@ -586,7 +581,7 @@ public class ProcessMessageRunnable implements Runnable {
                 equalsResult = remoteBinding.toString().equals(objectToCompareWith.toString());
             }
 
-            logger.debug("remoteBinding='{}' objectToCompareWith='{}' equalsResult={}", new Object[]{remoteBinding.toString(), (objectToCompareWith==null?"NULL":objectToCompareWith.toString()), equalsResult});
+            logger.debug("remoteBinding='{}' objectToCompareWith='{}' equalsResult={}", new Object[]{remoteBinding.toString(), (objectToCompareWith == null ? "NULL" : objectToCompareWith.toString()), equalsResult});
 
         } catch (LookupFailedException e) {
             // TODO Auto-generated catch block
@@ -644,5 +639,4 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("end");
     }
-
 }

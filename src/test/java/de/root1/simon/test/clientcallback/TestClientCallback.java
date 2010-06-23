@@ -46,7 +46,7 @@ public class TestClientCallback {
     // The methods must be annotated with annotation @Test. For example:
     //
     @Test
-    public void LookupAndReleaseTwice() {
+    public void passCallbackToServerTest() {
 
         File f = new File("target/test-classes/simon_logging.properties");
         try {
