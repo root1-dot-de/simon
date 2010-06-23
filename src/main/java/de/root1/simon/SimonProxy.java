@@ -106,9 +106,9 @@ public class SimonProxy implements InvocationHandler {
 
                     // check if object is an remote object which has to be looked up at the opposite ReadEventHandler
                     Object o = args[0];
-                    if (o instanceof SimonRemote) {
+                    if (Utils.isValidRemote(o)) {
 
-                        o = new SimonRemoteInstance(session, (SimonRemote) args[0]);
+                        o = new SimonRemoteInstance(session, args[0]);
 
                     } else { // else, it's a standard object
 

@@ -310,13 +310,13 @@ public class Dispatcher implements IoHandler {
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
                 if (Utils.isValidRemote(args[i])) {
-                    SimonRemoteInstance sc = new SimonRemoteInstance(session, args[i]);
+                    SimonRemoteInstance sri = new SimonRemoteInstance(session, args[i]);
 
-                    logger.debug("SimonRemoteInstance found! id={}", sc.getId());
+                    logger.debug("SimonRemoteInstance found! id={}", sri.getId());
 
-                    lookupTable.putRemoteInstanceBinding(session.getId(), sc.getId(), args[i]);
+                    lookupTable.putRemoteInstanceBinding(session.getId(), sri.getId(), args[i]);
 
-                    args[i] = sc; // overwrite arg with wrapped remote instance-interface
+                    args[i] = sri; // overwrite arg with wrapped remote instance-interface
                 }
             }
         }
