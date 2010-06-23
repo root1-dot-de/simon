@@ -420,8 +420,36 @@ public class ProcessMessageRunnable implements Runnable {
 
             logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
 
+                logger.info("*****");
+                if (arguments!=null) {
+                    for (int i = 0; i < arguments.length; i++) {
+                        logger.info("***** ron={} method={} arguments["+i+"]: "+(arguments[i]==null?"null":arguments[i].getClass().getCanonicalName()) + " toString: "+ (arguments[i]==null?"null":arguments[i].toString()), remoteObjectName, method.getName());
+                    }
+                }
+
+                Class<?>[] paramType = method.getParameterTypes();
+                if (paramType!=null) {
+                    for (int i = 0; i < paramType.length; i++) {
+                        logger.info("***** ron={} method={} paramType["+i+"]: "+(paramType[i]==null?"null":paramType[i].getClass().getCanonicalName()), remoteObjectName, method.getName());
+                    }
+                }
+                logger.info("*****\n");
+
             Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
-            result = method.invoke(remoteObject, arguments);
+
+//            try {
+                result = method.invoke(remoteObject, arguments);
+//            } catch (IllegalArgumentException ex) {
+//                for (int i = 0; i < arguments.length; i++) {
+//                    System.out.println("arguments["+i+"]: "+arguments[i].getClass().getCanonicalName() + " toString: "+ arguments[i].toString());
+//                }
+//
+//                Class<?>[] paramType = method.getParameterTypes();
+//                for (int i = 0; i < paramType.length; i++) {
+//                    System.out.println("paramType["+i+"]: "+paramType[i].getClass().getCanonicalName());
+//                }
+//
+//            }
 
             if (method.getReturnType() == void.class) {
                 result = new SimonVoid();
@@ -448,7 +476,8 @@ public class ProcessMessageRunnable implements Runnable {
         } catch (InvocationTargetException e) {
             result = e.getTargetException();
         } catch (Exception e) {
-            result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to Exception: " + e.getMessage() + " / " + e.getCause());
+            result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to Exception: " + e.getClass()+ " / "+ e.getMessage() + " / " + e.getCause());
+            e.printStackTrace();
         }
 
         // a return value can be "null" ... this has to be serialized to the client
