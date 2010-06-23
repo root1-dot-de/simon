@@ -18,6 +18,7 @@
  */
 package de.root1.simon.codec.base;
 
+import de.root1.simon.Simon;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
@@ -25,7 +26,6 @@ import org.apache.mina.filter.codec.demux.MessageDecoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.SimonRemote;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
@@ -51,7 +51,7 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
 
             MsgInvokeReturn m = new MsgInvokeReturn();
             try {
-                Object returnValue = in.getObject(SimonClassLoaderHelper.getClassLoader(SimonRemote.class));
+                Object returnValue = in.getObject(SimonClassLoaderHelper.getClassLoader(Simon.class));
                 m.setReturnValue(returnValue);
             } catch (ClassNotFoundException e) {
                 // TODO Auto-generated catch block
@@ -67,6 +67,7 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
         return null;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }
