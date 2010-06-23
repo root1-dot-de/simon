@@ -40,6 +40,8 @@ import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.Utils;
+import java.net.ServerSocket;
+import java.nio.channels.ServerSocketChannel;
 
 /**
  * The SIMON server acts as a registry for remote objects. So, Registry is
@@ -139,6 +141,7 @@ public final class Registry {
 
         acceptor = new NioSocketAcceptor();
 
+        // currently this check is senseless. But in future we may provide more acceptor types?!
         if (acceptor instanceof NioSocketAcceptor) {
             NioSocketAcceptor nioSocketAcceptor = (NioSocketAcceptor) acceptor;
 
@@ -147,6 +150,23 @@ public final class Registry {
 
             logger.debug("setting 'ReuseAddress' on NioSocketAcceptor");
             nioSocketAcceptor.setReuseAddress(true);
+
+            // FIXME workaround for http://dev.root1.de/issues/show/77
+            try {
+                ServerSocketChannel channel = ServerSocketChannel.open();
+                channel.configureBlocking(false);
+                ServerSocket socket = channel.socket();
+                int receiveBufferSize = socket.getReceiveBufferSize();
+                try {socket.close(); channel.close();} catch (Exception e) {} // close the temporary socket and channel and ignore all errors
+                logger.debug("setting 'ReceiveBufferSize' on NioSocketAcceptor to {}", receiveBufferSize);
+                nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
+            } catch (IOException ex) {
+                logger.debug("Not able to get readbuffersize from a default NIO socket. Error: {}", ex.getMessage());
+                if (nioSocketAcceptor.getSessionConfig().getReadBufferSize()==1024 && System.getProperty("os.name").equals("Windows 7")) {
+                    logger.warn("Server may have a drastic performance loss. Please consult 'http://dev.root1.de/issues/show/77' for more details.");
+                }
+            }
+            // end of workaround
         }
 
 
