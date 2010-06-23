@@ -62,17 +62,22 @@ import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
 
 /**
- * TODO documentation
+ * This class is the "brain" of SIMON on server side, as well as on client side.
+ *
+ * It handles all the I/O and delegates the required tasks
  * 
  * @author ACHR
  */
 public class Dispatcher implements IoHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
+
     /** The table that holds all the registered/bind remote objects */
     private final LookupTable lookupTable;
+
     /** a simple counter that is used for creating sequence IDs */
     private final AtomicInteger sequenceIdCounter = new AtomicInteger(0);
+
     /**
      * The map that holds the relation between the sequenceID and the received
      * result. If a request is placed, the map contains the sequenceID and the
@@ -80,63 +85,73 @@ public class Dispatcher implements IoHandler {
      * is replaced with the result
      */
     private final Map<Integer, Object> requestMonitorAndResultMap = Collections.synchronizedMap(new HashMap<Integer, Object>());
+
     /**
      * This map contains pairs of sessions and list of open requests
      * This is needed to do a clean shutdown of a session
      */
     private final Map<IoSession, List<Integer>> sessionHasRequestPlaced = Collections.synchronizedMap(new HashMap<IoSession, List<Integer>>());
-//	/** a memory map for the client the unwrap the incoming return value after executing a method on the server */
-//	private Map<Integer, Class<?>> requestReturnType = Collections.synchronizedMap(new HashMap<Integer, Class<?>>());
+
     /** the thread-pool where the worker-threads live in */
     private ExecutorService messageProcessorPool = null;
+
     /** Shutdown flag. If set to true, the dispatcher is going to shutdown itself and all related stuff */
     private boolean shutdownInProgress;
+
     /** indicates if the dispatcher is running or not */
     private boolean isRunning;
+
     /** an identifier string to determine to which server this dispatcher is connected to  */
     private final String serverString;
-    /** TODO document me */
+
+    /** A map that contains the token<->RawChannelDatalisteners relation */
     private final HashMap<Integer, RawChannelDataListener> rawChannelMap = new HashMap<Integer, RawChannelDataListener>();
-    /** TODO document me */
+    
+    /** a list of currently used tokens */
     private final ArrayList<Integer> tokenList = new ArrayList<Integer>();
-    /** TODO document me */
+    
+    /** the dispatcher's reference to the pingwatchdog */
     private final PingWatchdog pingWatchdog;
-    /** TODO document me */
-    private int writeTimeout = Statics.DEFAULT_WRITE_TIMEOUT;
+
+    /** the timout value in milliseconds that is used by PipngWatchdog for keep-alive check */
+    private int pingTimeOut = Statics.DEFAULT_WRITE_TIMEOUT;
+
     /**
      * A map containing remote object names and a related list with closed listeners
      */
     private final Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
 
     /**
-     * TODO document me
+     * Method used by the PingWatchdog for getting the current ping/keepalive timeout
      * @return the pingTimeOut
      */
-    protected int getWriteTimeout() {
-        return writeTimeout;
+    protected int getPingTimeout() {
+        return pingTimeOut;
     }
 
     /**
-     * TODO document me
+     * Method used by the Registry while setting the keep alive timeout
+     * 
      * @param pingTimeOut the pingTimeOut to set
      */
     protected void setPingTimeOut(int pingTimeOut) {
-        this.writeTimeout = pingTimeOut;
+        this.pingTimeOut = pingTimeOut;
     }
 
     /**
-     * TODO document me
-     * @param remoteObjectName
-     * @return
+     * Method used by the Loopup-Classes to remove a list of closed listener for a given remote object
+     *
+     * @param remoteObjectName the remote object that correlates to the closed listenert
+     * @return the list of removed closed listeners
      */
     protected List<ClosedListener> removeClosedListenerList(String remoteObjectName) {
         return remoteObjectClosedListenersList.remove(remoteObjectName);
     }
 
     /**
-     * TODO document me
-     * @param listener
-     * @param remoteObjectName
+     * Method used by the Lookup-Classes to register a closed listener with a given remote object name
+     * @param listener the listener to add
+     * @param remoteObjectName the obejct that we listen for closed situations
      */
     protected void addClosedListener(ClosedListener listener, String remoteObjectName) {
         if (!remoteObjectClosedListenersList.containsKey(remoteObjectName)) {
@@ -149,9 +164,9 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * TODO document me
-     * @param listener
-     * @param remoteObjectName
+     * Method used by the lookup-Classes to remove a single closed listener from a remote object
+     * @param listener the listener to remove
+     * @param remoteObjectName the related remote object
      */
     protected boolean removeClosedListener(ClosedListener listener, String remoteObjectName) {
         if (remoteObjectClosedListenersList.containsKey(remoteObjectName)) {
@@ -160,7 +175,7 @@ public class Dispatcher implements IoHandler {
             boolean result = remoteObjectClosedListenersList.get(remoteObjectName).remove(listener);
 
             // if the list is now empty, remove the liste from the map
-            if (remoteObjectClosedListenersList.get(remoteObjectName).size() == 0) {
+            if (remoteObjectClosedListenersList.get(remoteObjectName).isEmpty()) {
                 remoteObjectClosedListenersList.remove(remoteObjectName);
             }
             // return the result of the removal
@@ -626,9 +641,11 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * TODO document me
-     * @param method
-     * @throws SessionException
+     * Internal method for checking for invalid state before executing invoke-actions.
+     * If the state is okay, the method will simply return without any notice.
+     *
+     * @param method the method name that we will try to call afterwards... Could be left to \"\", but it's useful for logging purpose
+     * @throws SessionException occurs when the system is already in shutdown process and no further remote call can be made
      */
     private void checkForInvalidState(IoSession session, String method) throws SessionException {
         if (shutdownInProgress) {
@@ -816,7 +833,7 @@ public class Dispatcher implements IoHandler {
             list.clear();
         }
 
-        // FIXME possible fix for issue #57
+        // fix for issue #57
         AbstractLookup.releaseDispatcher(this);
 
         logger.debug("{} ################################################", id);

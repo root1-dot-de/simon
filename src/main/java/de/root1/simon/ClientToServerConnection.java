@@ -62,7 +62,7 @@ public class ClientToServerConnection {
     }
 
     /**
-     * TODO document me
+     * Sets the socket connector used by SIMON to connect to server
      * @param connector
      */
     protected void setConnector(NioSocketConnector connector) {

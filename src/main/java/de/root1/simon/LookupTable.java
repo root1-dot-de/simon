@@ -18,10 +18,6 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.Dispatcher;
-import de.root1.simon.Simon;
-import de.root1.simon.SimonRemote;
-import de.root1.simon.SimonUnreferenced;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -53,13 +49,15 @@ import de.root1.simon.utils.Utils;
 public class LookupTable {
 
     /**
-     * TODO document me
+     * the local logger
      */
     private final Logger logger = LoggerFactory.getLogger(getClass());
+
     /**
      * Maps the remote object name to the remote object
      */
     private final HashMap<String, RemoteObjectContainer> bindings = new HashMap<String, RemoteObjectContainer>();
+
     /**
      * A Map that holds a list of remote instances for each socket connection, which contains names of
      * remote objects which have to be removed if DGC finds a related broken connection
@@ -67,17 +65,24 @@ public class LookupTable {
      * <session-ID, List<remoteObjectName>>
      */
     private final Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
+
     /**
      * Maps the remote object to the map with the hash-mapped methods.
      */
     private final Map<Object, Map<Long, Method>> remoteObject_to_hashToMethod_Map = new HashMap<Object, Map<Long, Method>>();
+
     /**
-     * TODO document me
+     * Map with key='remote objects's hash value' and value='remote object instance'
      */
     private final HashMap<Integer, Object> remoteobjectHashMap = new HashMap<Integer, Object>();
+
     private Dispatcher dispatcher;
     private boolean cleanupDone = false;
 
+    /**
+     * Called via Dispatcher to create a lookup table. There's only one LookupTabnle for one Dispatcher.
+     * @param dispatcher
+     */
     protected LookupTable(Dispatcher dispatcher) {
         this.dispatcher = dispatcher;
         Simon.registerLookupTable(this);
