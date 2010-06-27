@@ -44,12 +44,16 @@ import java.util.List;
 public class SimonProxy implements InvocationHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
+
     /** name of the corresponding remote object in the remote lookup table */
     private String remoteObjectName;
+
     /** a reference to the associated dispatcher */
     private Dispatcher dispatcher;
+
     /** a reference to the session which is the reference to the related network connection */
     private IoSession session;
+
     /** the interfaces that the remote object has exported */
     Class<?>[] remoteInterfaces;
 
@@ -74,6 +78,7 @@ public class SimonProxy implements InvocationHandler {
      *
      * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
+    @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         logger.debug("begin");
 
@@ -95,54 +100,45 @@ public class SimonProxy implements InvocationHandler {
             }
         }
 
-        /*
-         * Check if the method is NOT a SIMON remote method
-         */
-//        if (!method.toString().contains("throws " + SimonRemoteException.class.getName())) {
+        try {
+            // redirect invocation
+            if (method.toString().equalsIgnoreCase(Statics.EQUALS_METHOD_SIGNATURE)) {
 
-            try {
-                // redirect invocation
-                if (method.toString().equalsIgnoreCase(Statics.EQUALS_METHOD_SIGNATURE)) {
+                // check if object is an remote object which has to be looked up at the opposite ReadEventHandler
+                Object o = args[0];
+                if (Utils.isValidRemote(o)) {
 
-                    // check if object is an remote object which has to be looked up at the opposite ReadEventHandler
-                    Object o = args[0];
-                    if (Utils.isValidRemote(o)) {
+                    o = new SimonRemoteInstance(session, args[0]);
 
-                        o = new SimonRemoteInstance(session, args[0]);
+                } else { // else, it's a standard object
 
-                    } else { // else, it's a standard object
-
-                        // .. and if the standard object is not serializable, throw an exception
-                        if (o != null && !(o instanceof Serializable)) {
-                            throw new IllegalArgumentException("SIMON remote objects can only compared with objects that are serializable!");
-                        }
-
+                    // .. and if the standard object is not serializable, throw an exception
+                    if (o != null && !(o instanceof Serializable)) {
+                        throw new IllegalArgumentException("SIMON remote objects can only compared with objects that are serializable!");
                     }
 
-                    // in case of 'null', the return value is false, we don't have to transport it to the remote...
-                    if (o == null) {
-                        return false;
-                    }
-
-                    return remoteEquals(o);
-                } else if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)) {
-                    try {
-                        return remoteHashCode();
-                    } catch (SimonRemoteException e) {
-                        shutdownServerConnection(method);
-                        throw new SimonRemoteException(e.getMessage());
-                    }
-                } else if (method.toString().equalsIgnoreCase(Statics.TOSTRING_METHOD_SIGNATURE)) {
-                    return remoteToString();
                 }
-//                else {
-//                    throw new SimonRemoteException("'" + method.getName() + "' is whether a remote method, nor is it callable over remote.");
-//                }
 
-            } catch (IOException e) {
-                throw new SimonRemoteException("Could not process invocation of method '" + method.getName() + "'. Underlying exception: " + e);
+                // in case of 'null', the return value is false, we don't have to transport it to the remote...
+                if (o == null) {
+                    return false;
+                }
+
+                return remoteEquals(o);
+            } else if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)) {
+                try {
+                    return remoteHashCode();
+                } catch (SimonRemoteException e) {
+                    shutdownServerConnection(method);
+                    throw new SimonRemoteException(e.getMessage());
+                }
+            } else if (method.toString().equalsIgnoreCase(Statics.TOSTRING_METHOD_SIGNATURE)) {
+                return remoteToString();
             }
-//        }
+
+        } catch (IOException e) {
+            throw new SimonRemoteException("Could not process invocation of method '" + method.getName() + "'. Underlying exception: " + e);
+        }
 
         /*
          * server then does the following:
@@ -178,7 +174,6 @@ public class SimonProxy implements InvocationHandler {
 
             // reimplant the proxy object
             result = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler);
-
 
         }
         logger.debug("end");
