@@ -1309,4 +1309,17 @@ public class Simon {
         logger.debug("end");
         return result;
     }
+
+    /**
+     * TODO document me!
+     * @param o
+     * @return
+     */
+    public static Object exportObject(Object o) {
+        Class<?>[] interfaces = o.getClass().getInterfaces();
+
+
+
+        return o;
+    }
 }

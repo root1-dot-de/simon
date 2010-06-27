@@ -359,6 +359,10 @@ public class ProcessMessageRunnable implements Runnable {
         logger.debug("end");
     }
 
+    /**
+     * This method is processed on the remote end that finally calls the method
+     * and returns the result to the calling end.
+     */
     private void processInvoke() {
         logger.debug("begin");
 
@@ -508,6 +512,10 @@ public class ProcessMessageRunnable implements Runnable {
         logger.debug("end");
     }
 
+    /**
+     * This method is triggered on caller end to retrieve the invocation result,
+     * pass it to the result map and wake the caller thread
+     */
     private void processInvokeReturn() {
         logger.debug("begin");
 
