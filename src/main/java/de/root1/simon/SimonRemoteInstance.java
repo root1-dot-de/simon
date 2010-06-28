@@ -56,12 +56,17 @@ public class SimonRemoteInstance implements Serializable {
     protected SimonRemoteInstance(IoSession session, Object remoteObject) {
         logger.debug("begin");
 
+        /*
+         * try to get an name for this object.
+         * The name is used by the equals-method in ProcessMessageRunnable to get an instance to compare with.
+         * As this does only make sense in case of it's a object that has been explicitly bound to registry, it's save
+         * to have a non working remote object name in case of any other implicit remote object
+         */
         try {
             remoteObjectName = Simon.getSimonProxy(remoteObject).getRemoteObjectName();
         } catch (IllegalArgumentException e) {
             remoteObjectName = "{SimonRemoteInstance:RemoteObjectNameNotAvailable}";
         }
-
 
         String IP = session.getRemoteAddress().toString();
         long sessionId = session.getId();
@@ -82,8 +87,14 @@ public class SimonRemoteInstance implements Serializable {
 
         logger.debug("SimonRemoteInstance created with id={}", this.id);
 
-
+        /*
+         * first, check all prerequisites to then decide how the interfaces names are gathered
+         */
+        // check for manually marked object
+        SimonRemoteMarker marker = Utils.getMarker(remoteObject);
         Class[] remoteInterfacesInAnnotation=null;
+
+        // check for annotations
         boolean isAnnotated = Utils.isRemoteAnnotated(remoteObject);
         if (isAnnotated) {
             de.root1.simon.annotation.SimonRemote annotation = remoteObject.getClass().getAnnotation(de.root1.simon.annotation.SimonRemote.class);
@@ -91,8 +102,18 @@ public class SimonRemoteInstance implements Serializable {
             logger.trace("SimonRemoteObject is annotated with SimonRemote");
         }
 
-        // check if we have to look for the annotation or the implemented interfaces
-        if (remoteInterfacesInAnnotation!=null && remoteInterfacesInAnnotation.length>0) {
+        /*
+         * get the interfaces names ...
+         */
+
+        if (marker!=null) { // if it's a marked class, read the interfaces from it's marker
+
+            logger.info("Provided remote object is a marked object.");
+            Utils.putAllInterfaceNames(marker.getObjectToBeMarked(), interfaceNames);
+            logger.info("Got interfaces: {}", interfaceNames);
+            
+        } else if (remoteInterfacesInAnnotation!=null && remoteInterfacesInAnnotation.length>0) { // check for defined interfaces in annotation
+
             logger.trace("SimonRemoteObject has defined interfaces in it's annotation");
 
             for (Class interfaceClazz : remoteInterfacesInAnnotation) {
@@ -101,29 +122,17 @@ public class SimonRemoteInstance implements Serializable {
                 interfaceNames.add(clazzName);
             }
 
-        } else {
+        } else { // need to manually search for useable interfaces
 
             logger.trace("Need to manually search for remote interfaces ...");
 
-            if (isAnnotated) {
-                logger.trace("Getting all (sub)interfaces...");
-
-                Stack<Class> stack = new Stack<Class>();
+            if (isAnnotated) { // if it's annotated, but no interface was explicitly specified, we have to use all known interfaces
                 
-                putInterfacesToStack(stack, remoteObject.getClass());
-
-                while (!stack.empty()) {
-                    Class iClazz = stack.pop();
-                    String iClazzName = iClazz.getCanonicalName();
-                    logger.trace("Adding {} to the list of remote interfaces", iClazzName);
-                    if (!interfaceNames.contains(iClazzName)) {
-                        interfaceNames.add(iClazzName);
-                    }
-                    putInterfacesToStack(stack, iClazz);
-                }
-
+                logger.trace("Getting all (sub)interfaces...");
+                Utils.putAllInterfaceNames(remoteObject, interfaceNames);
 
             } else {
+
                 logger.trace("Searching for explicit remote interfaces marked with {} ...", de.root1.simon.SimonRemote.class.getCanonicalName());
 
                 Class[] remoteInterfaces = remoteObject.getClass().getInterfaces();
@@ -159,17 +168,9 @@ public class SimonRemoteInstance implements Serializable {
         logger.debug("end");
     }
 
-    /**
-     * TODO document me ...
-     * @param stack
-     * @param clazz
-     */
-    private void putInterfacesToStack(Stack<Class> stack, Class clazz) {
-        Class[] interfaces = clazz.getInterfaces();
-        for (Class iClazz : interfaces) {
-            stack.push(iClazz);
-        }
-    }
+    
+
+    
 
 
     /**
@@ -194,7 +195,8 @@ public class SimonRemoteInstance implements Serializable {
     }
 
     /**
-     * Returns the proxy's remote object name in the related lookup table
+     * Returns the proxy's remote object name in the related lookup table.
+     * This method is used by {@link ProcessMessageRunnable#processEquals() } to get an instance of this object from lookup table for comparison. 
      * @return the remote object name
      */
     protected String getRemoteObjectName() {
