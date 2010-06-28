@@ -18,6 +18,7 @@
  */
 package de.root1.simon.utils;
 
+import de.root1.simon.SimonRemoteMarker;
 import de.root1.simon.annotation.SimonRemote;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -31,9 +32,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 /**
  * 
@@ -146,7 +151,7 @@ public class Utils {
             throw new ClassCastException(
                     "The given class '"
                     + protocolFactory
-                    + "' must extend '"+de.root1.simon.codec.base.SimonProtocolCodecFactory.class.getCanonicalName()+"' !");
+                    + "' must extend '" + de.root1.simon.codec.base.SimonProtocolCodecFactory.class.getCanonicalName() + "' !");
         }
     }
 
@@ -222,14 +227,14 @@ public class Utils {
         Class[] remoteInterfaces = null;
 
         SimonRemote annotation = clazz.getAnnotation(SimonRemote.class);
-        if (annotation!=null) {
+        if (annotation != null) {
             remoteInterfaces = annotation.value();
         }
 
-        if (remoteInterfaces==null || remoteInterfaces.length==0) {
+        if (remoteInterfaces == null || remoteInterfaces.length == 0) {
 
             if (logger.isTraceEnabled()) {
-                if (annotation==null) {
+                if (annotation == null) {
                     logger.trace("No SimonRemote annotation found for clazz {}. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
                 } else {
                     logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
@@ -237,9 +242,9 @@ public class Utils {
             }
             //System.out.println("clazz "+ clazz.getName()+". Adding all known interfaces: "+ Arrays.toString(clazz.getInterfaces()));
             for (Class<?> interfaze : clazz.getInterfaces()) {
-    //            if (SimonRemote.class.isAssignableFrom(interfaze)) {
-                    interfaceSet.add((Class<?>) interfaze);
-    //            }
+                //            if (SimonRemote.class.isAssignableFrom(interfaze)) {
+                interfaceSet.add((Class<?>) interfaze);
+                //            }
             }
 
         } else {
@@ -267,8 +272,9 @@ public class Utils {
      * @return true, if object is annotated, false if not
      */
     public static boolean isRemoteAnnotated(Object remoteObject) {
-        if (remoteObject==null)
+        if (remoteObject == null) {
             throw new IllegalArgumentException("Cannot check a null-argument. You have to provide a proxy object instance ...");
+        }
         return remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
     }
 
@@ -278,12 +284,65 @@ public class Utils {
      * @return true, if remote object is valid, false if not
      */
     public static boolean isValidRemote(Object remoteObject) {
-        if (remoteObject==null)
+        if (remoteObject == null) {
             return false;
-        if (remoteObject instanceof de.root1.simon.SimonRemote)
+        }
+        if (remoteObject instanceof de.root1.simon.SimonRemote) {
             return true;
-        if (isRemoteAnnotated(remoteObject))
+        }
+        if (isRemoteAnnotated(remoteObject)) {
             return true;
+        }
+        if (getMarker(remoteObject) != null) {
+            return true;
+        }
         return false;
+    }
+
+    /**
+     * Returns the related instance of {@link SimonRemoteMarker} of the given object.
+     * if the specified object isn't marked, null is returned.
+     * @param o
+     * @return the related instance of {@link SimonRemoteMarker}, or null if given object is not marked
+     */
+    public static SimonRemoteMarker getMarker(Object o) {
+        if (o instanceof Proxy) {
+            InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
+            if (invocationHandler instanceof SimonRemoteMarker) {
+                return (SimonRemoteMarker) invocationHandler;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Small helper method that pushes all interfaces of the specified class to the specified stack
+     * @param stack
+     * @param clazz
+     */
+    private static void putInterfacesToStack(Stack<Class> stack, Class clazz) {
+        Class[] interfaces = clazz.getInterfaces();
+        for (Class iClazz : interfaces) {
+            stack.push(iClazz);
+        }
+    }
+
+    /**
+     * Reads all interfaces and subinterfaces of the given object and add the names to the provided interface name list
+     * @param object the object to search for interfaces
+     * @param interfaceNames the list to which found interfaces names are added
+     */
+    public static void putAllInterfaceNames(Object object, List<String> interfaceNames) {
+        Stack<Class> stack = new Stack<Class>();
+        Utils.putInterfacesToStack(stack, object.getClass());
+        while (!stack.empty()) {
+            Class iClazz = stack.pop();
+            String iClazzName = iClazz.getCanonicalName();
+            logger.trace("Adding {} to the list of remote interfaces", iClazzName);
+            if (!interfaceNames.contains(iClazzName)) {
+                interfaceNames.add(iClazzName);
+            }
+            Utils.putInterfacesToStack(stack, iClazz);
+        }
     }
 }

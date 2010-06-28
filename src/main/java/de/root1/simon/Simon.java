@@ -1315,11 +1315,13 @@ public class Simon {
      * @param o
      * @return
      */
-    public static Object exportObject(Object o) {
+    public static Object markAsRemote(Object o) {
         Class<?>[] interfaces = o.getClass().getInterfaces();
-
-
-
-        return o;
+        if (interfaces.length==0) {
+            throw new IllegalArgumentException("There need to be at least one onterface to mark the given object as simon remote");
+        }
+        SimonRemoteMarker smr = new SimonRemoteMarker(o);
+        Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, smr);
+        return newProxyInstance;
     }
 }
