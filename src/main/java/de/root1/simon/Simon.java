@@ -1311,14 +1311,17 @@ public class Simon {
     }
 
     /**
-     * TODO document me!
-     * @param o
-     * @return
+     * Marks the object with SimonRemote to make it able to receive incoming
+     * calls.
+     *
+     * @param o the object to mark as an SimonRemote
+     * @return a marked (proxy) class
+     * @since 1.1.0
      */
     public static Object markAsRemote(Object o) {
         Class<?>[] interfaces = o.getClass().getInterfaces();
         if (interfaces.length==0) {
-            throw new IllegalArgumentException("There need to be at least one onterface to mark the given object as simon remote");
+            throw new IllegalArgumentException("There need to be at least one interface to mark the given object as simon remote");
         }
         SimonRemoteMarker smr = new SimonRemoteMarker(o);
         Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, smr);
