@@ -370,11 +370,11 @@ public class Simon {
 
                 // retrieve the already stored connection
                 ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
-                ctsc.addRef();
+                logger.debug("Got ClientToServerConnection from list: {}", ctsc);
                 serverDispatcherRelation.put(serverString, ctsc);
                 dispatcher = ctsc.getDispatcher();
                 session = ctsc.getSession();
-                logger.debug("Got ClientToServerConnection from list");
+                logger.debug("Reusing existing ClientToServerConnection. refcount now is: {}",ctsc.addRef());
 
 
             } else {
@@ -505,7 +505,7 @@ public class Simon {
 
                 // store this connection for later re-use
                 ClientToServerConnection ctsc = new ClientToServerConnection(serverString, dispatcher, session, connector, filterchainWorkerPool);
-                ctsc.addRef();
+                logger.debug("Created new ClientToServerConnection. refcount now is: {}",ctsc.addRef());
                 serverDispatcherRelation.put(serverString, ctsc);
             }
         }
@@ -716,8 +716,6 @@ public class Simon {
         SimonProxy proxy = getSimonProxy(proxyObject);
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
-//		logger.debug("releasing proxy...");
-
 
         // release the proxy and get the related dispatcher
         Dispatcher dispatcher = proxy.getDispatcher();

@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.utils.Utils;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.mina.core.service.IoConnector;
@@ -173,4 +174,20 @@ public class ClientToServerConnection {
     protected void setServerString(String serverString) {
         ServerString = serverString;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(this.getClass().getName())
+                .append("[dispatcher=").append(dispatcher)
+                .append("|session-id=").append(Utils.longToHexString(session.getId()))
+                .append("|server-string=").append(ServerString)
+                .append("|refCount=").append(referenceCount)
+            .append("]");
+
+        return sb.toString();
+    }
+
+
 }

@@ -711,7 +711,7 @@ public class Dispatcher implements IoHandler {
             throws Exception {
         if (logger.isTraceEnabled()) {
 
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
 
             StackTraceElement[] stackTrace = throwable.getStackTrace();
