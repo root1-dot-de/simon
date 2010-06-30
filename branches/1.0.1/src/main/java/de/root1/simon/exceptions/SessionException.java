@@ -24,7 +24,7 @@ package de.root1.simon.exceptions;
  * 
  * @author ACHR
  */
-public class SessionException extends SimonRemoteException {
+public class SessionException extends RuntimeException {
 	
 	private static final long serialVersionUID = 2999458111410425350L;
 

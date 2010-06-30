@@ -129,11 +129,11 @@ public class SimonProxy implements InvocationHandler {
                 } else if (method.toString().equalsIgnoreCase(Statics.TOSTRING_METHOD_SIGNATURE)) {
                     return remoteToString();
                 } else {
-                    throw new SimonRemoteException("'" + method.getName() + "' is whether a remote method, nor is it callable over remote.");
+                    throw new RuntimeException("'" + method.getName() + "' is whether a remote method, nor is it callable over remote.");
                 }
 
             } catch (IOException e) {
-                throw new SimonRemoteException("Could not process invocation of method '" + method.getName() + "'. Underlying exception: " + e);
+                throw new RuntimeException("Could not process invocation of method '" + method.getName() + "'. Underlying exception: " + e);
             }
         }
 

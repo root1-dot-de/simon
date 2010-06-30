@@ -594,7 +594,7 @@ public class Dispatcher implements IoHandler {
      */
     private void checkForInvalidState(IoSession session, String method) throws SessionException {
         if (shutdownInProgress) {
-            throw new SessionException("Cannot handle method call \"" + method + "\" while shutdown.");
+            throw new SessionException("Cannot handle method call \"" + method + "\" while registry is shutting down.");
         }
         if (!isRunning || session.isClosing()) {
             throw new SessionException("Cannot handle method call \"" + method + "\" on already closed session.");
