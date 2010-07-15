@@ -804,6 +804,7 @@ public class Dispatcher implements IoHandler {
      * (non-Javadoc)
      * @see org.apache.mina.core.service.IoHandler#sessionClosed(org.apache.mina.core.session.IoSession)
      */
+    @Override
     public void sessionClosed(IoSession session) throws Exception {
         String id = Utils.longToHexString(session.getId());
         

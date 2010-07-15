@@ -20,7 +20,6 @@ package de.root1.simon.codec.base;
 
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
-import java.nio.BufferUnderflowException;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -34,6 +33,7 @@ import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.Utils;
 import java.nio.BufferUnderflowException;
 
 /**
@@ -94,8 +94,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
             System.err.flush();
             System.exit(1);
         } catch (Exception e) {
-            e.printStackTrace();
-            msgInvoke.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage());
+            msgInvoke.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
         } 
 
         logger.trace("message={}", msgInvoke);

@@ -17,6 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+
 import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.Utils;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgHashCode}.
@@ -36,30 +38,28 @@ import de.root1.simon.codec.messages.SimonMessageConstants;
  * @author ACHR
  */
 public class MsgHashCodeDecoder extends AbstractMessageDecoder {
-	
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-	
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public MsgHashCodeDecoder() {
         super(SimonMessageConstants.MSG_HASHCODE);
     }
-    
+
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-    	MsgHashCode message = new MsgHashCode();
-    	
+        MsgHashCode message = new MsgHashCode();
+
         try {
-        	String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-        	message.setRemoteObjectName(remoteObjectName);
-		} catch (Exception e) {
-			message.setErrorMsg("Error: "+e.getClass()+"->"+e.getMessage());
-		} 
-		logger.trace("message={}", message);
+            String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            message.setRemoteObjectName(remoteObjectName);
+        } catch (Exception e) {
+            message.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
+        }
+        logger.trace("message={}", message);
         return message;
     }
-    
+
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
-    
-   
 }

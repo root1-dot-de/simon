@@ -52,12 +52,10 @@ public class LookupTable {
      * the local logger
      */
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
     /**
      * Maps the remote object name to the remote object
      */
     private final HashMap<String, RemoteObjectContainer> bindings = new HashMap<String, RemoteObjectContainer>();
-
     /**
      * A Map that holds a list of remote instances for each socket connection, which contains names of
      * remote objects which have to be removed if DGC finds a related broken connection
@@ -65,17 +63,14 @@ public class LookupTable {
      * <session-ID, List<remoteObjectName>>
      */
     private final Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
-
     /**
      * Maps the remote object to the map with the hash-mapped methods.
      */
     private final Map<Object, Map<Long, Method>> remoteObject_to_hashToMethod_Map = new HashMap<Object, Map<Long, Method>>();
-
     /**
      * Map with key='remote objects's hash value' and value='remote object instance'
      */
     private final HashMap<Integer, Object> remoteobjectHashMap = new HashMap<Integer, Object>();
-
     private Dispatcher dispatcher;
     private boolean cleanupDone = false;
 
@@ -273,6 +268,7 @@ public class LookupTable {
                     AccessController.doPrivileged(
                             new PrivilegedAction<Void>() {
 
+                                @Override
                                 public Void run() {
                                     m.setAccessible(true);
                                     return null;
@@ -338,7 +334,7 @@ public class LookupTable {
 
                 synchronized (bindings) {
 
-                    Object remoteInstanceBindingToRemove = bindings.remove(remoteObjectName);
+                    Object remoteInstanceBindingToRemove = bindings.remove(remoteObjectName).getRemoteObject();
 
                     logger.debug("sessionId={} SimonRemote to unreference: {}", id, remoteInstanceBindingToRemove);
 

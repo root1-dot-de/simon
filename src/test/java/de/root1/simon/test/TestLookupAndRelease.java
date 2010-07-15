@@ -77,11 +77,11 @@ public class TestLookupAndRelease {
             System.out.println("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(33333);
             r.bind("roi", roi);
 
             System.out.println("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", 33333);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -101,9 +101,9 @@ public class TestLookupAndRelease {
             // ----------------
 
             RemoteObjectImpl roi2 = new RemoteObjectImpl();
-            Registry r2 = Simon.createRegistry(22222);
+            Registry r2 = Simon.createRegistry(33333);
             r2.bind("roi2", roi2);
-            Lookup lookup2 = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup2 = Simon.createNameLookup("localhost", 33333);
 
             RemoteObject roiRemote2 = (RemoteObject) lookup.lookup("roi2");
             roiRemote2.helloWorld();
