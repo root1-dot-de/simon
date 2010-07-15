@@ -22,10 +22,10 @@ public class TestMarkAsRemote {
         try {
             Pojo p = new Pojo();
             IPojo markedAsRemote = (IPojo) Simon.markAsRemote(p);
-            Registry registry = Simon.createRegistry(22222);
+            Registry registry = Simon.createRegistry(22224);
 
             registry.bind("test", markedAsRemote);
-            Lookup nameLookup = Simon.createNameLookup("localhost", 22222);
+            Lookup nameLookup = Simon.createNameLookup("localhost", 22224);
             IPojo remotePojo = (IPojo) nameLookup.lookup("test");
 
             System.out.println(remotePojo.getHelloName("Tester"));
