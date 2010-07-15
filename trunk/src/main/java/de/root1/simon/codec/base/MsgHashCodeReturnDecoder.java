@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.Utils;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgHashCodeReturn}.
@@ -55,7 +56,7 @@ public class MsgHashCodeReturnDecoder extends AbstractMessageDecoder {
 //			if (1>0) throw new Exception("huhu");
 
         } catch (Exception e) {
-            message.setErrorMsg("Error while reading MsgHashCodeReturn. Error: " + e.getMessage());
+            message.setErrorMsg("Error while reading MsgHashCodeReturn. Error: " + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
         }
         logger.trace("message={}", message);
         return message;

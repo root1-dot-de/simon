@@ -30,6 +30,7 @@ import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.SimonClassLoaderHelper;
+import de.root1.simon.utils.Utils;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgInvokeReturn}.
@@ -53,15 +54,14 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
             try {
                 Object returnValue = in.getObject(SimonClassLoaderHelper.getClassLoader(Simon.class));
                 m.setReturnValue(returnValue);
-            } catch (ClassNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (Throwable e) {
+                logger.error("Error occured while reading invoke return:\n"+Utils.getStackTraceAsString(e));
             }
             logger.trace("message={}", m);
             return m;
 
         } catch (java.nio.BufferUnderflowException e) {
-            e.printStackTrace();
+            logger.error("BufferUnderflowException occured while reading invoke return:\n"+Utils.getStackTraceAsString(e));
             System.exit(1);
         }
         return null;

@@ -298,7 +298,7 @@ public class ProcessMessageRunnable implements Runnable {
             ret.setInterfaces(interfaces);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
-            ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage());
+            ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
         }
         session.write(ret);
 
@@ -328,7 +328,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", canonicalInterfaceName, e.getMessage());
-            ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage());
+            ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
         }
         session.write(ret);
 
@@ -410,7 +410,7 @@ public class ProcessMessageRunnable implements Runnable {
                         List<String> interfaceNames = simonCallback.getInterfaceNames();
                         Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
                         for (int j = 0; j < interfaceNames.size(); j++) {
-                            listenerInterfaces[j] = Class.forName(interfaceNames.get(i));
+                            listenerInterfaces[j] = Class.forName(interfaceNames.get(j));
                         }
 
                         // re-implant the proxy object
@@ -629,7 +629,7 @@ public class ProcessMessageRunnable implements Runnable {
         try {
             returnValue = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().hashCode();
         } catch (LookupFailedException e) {
-            returnMsg.setErrorMsg("Failed looking up the remote object for getting the hash code. Error: " + e.getMessage());
+            returnMsg.setErrorMsg("Failed looking up the remote object for getting the hash code. Error: " + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
         }
 
         returnMsg.setReturnValue(returnValue);

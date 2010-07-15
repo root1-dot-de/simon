@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -344,5 +345,35 @@ public class Utils {
             }
             Utils.putInterfacesToStack(stack, iClazz);
         }
+    }
+
+    public static String getStackTraceAsString(Throwable e) {
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream ps = new PrintStream(baos);
+
+        e.printStackTrace(ps);
+
+        return baos.toString();
+//
+//        StringBuilder sb = new StringBuilder();
+//        sb.append(e.getClass().getCanonicalName());
+//        sb.append(": ");
+//        sb.append(e.getMessage());
+//        sb.append("\n");
+//        StackTraceElement[] stackTrace = e.getStackTrace();
+//        for (int i = 0; i < stackTrace.length; i++)
+//        {
+//            sb.append("\tat ");
+//            sb.append(stackTrace[i].getClassName());
+//            sb.append(".");
+//            sb.append(stackTrace[i].getMethodName());
+//            sb.append("(");
+//            sb.append(stackTrace[i].getFileName());
+//            sb.append(":");
+//            sb.append(stackTrace[i].getLineNumber());
+//            sb.append(")\n");
+//        }
+//        return sb.toString();
     }
 }
