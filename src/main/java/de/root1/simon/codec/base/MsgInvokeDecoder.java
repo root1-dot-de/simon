@@ -75,11 +75,12 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
             for (int i = 0; i < argsLength; i++) {
                 try {
                     args[i] = in.getObject();
-                } catch (NullPointerException ex) {
-                    NullPointerException npe = new NullPointerException("Problem reading method argument. Maybe argument isn't serializable?!");
-                    npe.initCause(ex.getCause());
-                    npe.setStackTrace(ex.getStackTrace());
-                    throw npe;
+                } catch (Exception ex) {
+                    Exception ex1 = new Exception("Problem reading method argument. Maybe argument isn't serializable?!");
+                    ex1.initCause(ex.getCause());
+                    ex1.setStackTrace(ex.getStackTrace());
+                    logger.error("Exception while reading arguments.", ex);
+                    throw ex1;
                 }
                 logger.trace("arg #{} read ... pos={} object={}", new Object[]{i, in.position(), args[i]});
             }
@@ -95,6 +96,9 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
             System.exit(1);
         } catch (Exception e) {
             msgInvoke.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
+//            e.printStackTrace();
+//            System.err.flush();
+//            System.exit(1);
         } 
 
         logger.trace("message={}", msgInvoke);
