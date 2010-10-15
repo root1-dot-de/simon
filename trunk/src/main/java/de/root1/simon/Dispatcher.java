@@ -652,7 +652,7 @@ public class Dispatcher implements IoHandler {
             throw new SessionException("Cannot handle method call \"" + method + "\" while shutdown.");
         }
         if (!isRunning || session.isClosing()) {
-            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed session.");
+            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed session. isRunning="+isRunning+" isClosing="+session.isClosing());
         }
     }
 
@@ -753,7 +753,7 @@ public class Dispatcher implements IoHandler {
         if (remove != null) {
             List<Integer> removeCopy = new ArrayList<Integer>(remove);
             for (Integer sequenceId : removeCopy) {
-                putResultToQueue(session, sequenceId, new SimonRemoteException("session was closed."));
+                putResultToQueue(session, sequenceId, new SimonRemoteException("session was closed. sessionid="+Utils.longToHexString(session.getId())));
             }
         }
     }
@@ -764,20 +764,9 @@ public class Dispatcher implements IoHandler {
      */
     public void exceptionCaught(IoSession session, Throwable throwable)
             throws Exception {
-        if (logger.isTraceEnabled()) {
 
-            StringBuffer sb = new StringBuffer();
-
-
-            StackTraceElement[] stackTrace = throwable.getStackTrace();
-            for (StackTraceElement stackTraceElement : stackTrace) {
-               sb.append(stackTraceElement.toString());
-               sb.append("\n");
-            }
-
-            logger.trace("exception Caught. session={} cause={} stack=\n{}", new Object[]{Utils.longToHexString(session.getId()), throwable, sb.toString()});
+        logger.error("exception Caught. session={}. Exception\n {}", new Object[]{Utils.longToHexString(session.getId()), Utils.getStackTraceAsString(throwable)});
             
-        }
         logger.debug("Closing the session now! session={}", Utils.longToHexString(session.getId()));
         session.close(true);
     }
