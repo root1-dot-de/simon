@@ -54,9 +54,9 @@ public class NameLookup extends AbstractLookup {
             throw new IllegalArgumentException("Argument is not a valid remote object name");
         }
 
-        // check if there is already an dispatcher and key for THIS server
         Object proxy = null;
 
+        // check if there is already an dispatcher and key for THIS server
         SessionDispatcherContainer sessionDispatcherContainer = buildSessionDispatcherContainer(remoteObjectName, serverAddress, serverPort, sslContextFactory, proxyConfig);
 
         Dispatcher dispatcher = sessionDispatcherContainer.getDispatcher();

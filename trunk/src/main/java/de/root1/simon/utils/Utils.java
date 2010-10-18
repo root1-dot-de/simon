@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
@@ -164,7 +166,7 @@ public class Utils {
      */
     public static String longToHexString(long l) {
 
-        StringBuffer id = new StringBuffer();
+        StringBuilder id = new StringBuilder();
         id.append(Long.toHexString(l).toUpperCase());
 
         while (id.length() < 8) {
@@ -348,32 +350,10 @@ public class Utils {
     }
 
     public static String getStackTraceAsString(Throwable e) {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(baos);
-
-        e.printStackTrace(ps);
-
-        return baos.toString();
-//
-//        StringBuilder sb = new StringBuilder();
-//        sb.append(e.getClass().getCanonicalName());
-//        sb.append(": ");
-//        sb.append(e.getMessage());
-//        sb.append("\n");
-//        StackTraceElement[] stackTrace = e.getStackTrace();
-//        for (int i = 0; i < stackTrace.length; i++)
-//        {
-//            sb.append("\tat ");
-//            sb.append(stackTrace[i].getClassName());
-//            sb.append(".");
-//            sb.append(stackTrace[i].getMethodName());
-//            sb.append("(");
-//            sb.append(stackTrace[i].getFileName());
-//            sb.append(":");
-//            sb.append(stackTrace[i].getLineNumber());
-//            sb.append(")\n");
-//        }
-//        return sb.toString();
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        e.printStackTrace(pw);
+        return sw.toString();
     }
+
 }
