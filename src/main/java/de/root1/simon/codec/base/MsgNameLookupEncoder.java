@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgNameLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.Utils;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgNameLookup}.
@@ -46,16 +47,33 @@ public class MsgNameLookupEncoder<T extends MsgNameLookup> extends AbstractMessa
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
-        logger.trace("begin. message={}", message);
-        logger.trace("position before: {}",out.position());
+            int a=0;
+            int b=0;
         try {
-            out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
-        } catch (CharacterCodingException e) {
-            e.printStackTrace();
-            logger.error(e.getMessage());
+            logger.trace("begin. message={}", message);
+            logger.trace("position before: {}",out.position());
+            try {
+                a = out.position();
+                out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
+                b = out.position();
+            } catch (CharacterCodingException e) {
+                e.printStackTrace();
+                logger.error("Error 1 while encoding MsgNameLookup: "+Utils.getStackTraceAsString(e));
+                System.exit(1);
+            }
+            logger.trace("position after: {}",out.position());
+            logger.trace("end");
+        } catch (Throwable t) {
+            t.printStackTrace();
+            logger.error("Error 2 while encoding MsgNameLookup: "+Utils.getStackTraceAsString(t));
+            System.exit(1);
+//            throw new RuntimeException(t);
         }
-        logger.trace("position after: {}",out.position());
-        logger.trace("end");
+// FIXME Temporary.. Will be removed after fixing mina 2.0.0 threading issue
+            if (a==b) {
+                System.err.println("a="+a+ " b="+b);
+                System.exit(1);
+            }
     }
 
     public void dispose() throws Exception {
