@@ -58,7 +58,7 @@ public class TestThreadedLookup {
 
 
         for (int i = 0; i < TESTING_THREADS; i++) {
-//            System.out.println("Creating threads and blocking semaphore: #"+i);
+            System.out.println("Creating threads and blocking semaphore: #"+i);
             threads[i] = new Thread(new ThreadderSchredder(semaphore, i));
             semaphore.acquire();
         }
@@ -88,17 +88,26 @@ public class TestThreadedLookup {
 
         public void run() {
 //            System.out.println("Running thread #"+i+" Free: "+semaphore.availablePermits());
+            String done = "";
             try {
                 //                System.out.println("Running thread #"+i+" lookup");
+                done = "creating namelookup";
                 Lookup lookup = Simon.createNameLookup("localhost", 22223);
+                done = "creating namelookup *done* doing lookup";
                 RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+                done = "creating namelookup *done* doing lookup *done* remote call";
 //                System.out.println("Running thread #"+i+" lookup *done*");
                 roiRemote.helloWorldArg(String.valueOf(i));
+                done = "creating namelookup *done* doing lookup *done* remote call *done* release";
 //                System.out.println("Running thread #"+i+" invoke *done*");
                 lookup.release(roiRemote);
+                done = "creating namelookup *done* doing lookup *done* remote call *done* release *done*";
 //                System.out.println("Running thread #"+i+" release *done*");
             } catch (Throwable t) {
+                System.err.println("########### "+done);
+                System.err.flush();
                 t.printStackTrace();
+                System.err.println("################################");
             } finally {
 //                System.out.println("Releasing one semaphore aquire: #"+i+". Free: "+semaphore.availablePermits());
                 semaphore.release();
