@@ -1182,7 +1182,7 @@ public class Simon {
      *            a token that identifies the already prepared raw channel from
      *            the remote station. Those token can only be created on the
      *            remote station. Thus a remote call which does the
-     *            {@link Simon#prepareRawChannel(RawChannelDataListener, SimonRemote)}
+     *            {@link Simon#prepareRawChannel(RawChannelDataListener, Object)}
      *            is needed in advance.
      * @param simonRemote
      *            the remote object which lives on the remote station which has
@@ -1191,7 +1191,7 @@ public class Simon {
      * @return the opened raw channel object
      * @throws SimonRemoteException
      */
-    public static RawChannel openRawChannel(int channelToken, SimonRemote simonRemote) throws SimonRemoteException {
+    public static RawChannel openRawChannel(int channelToken, Object simonRemote) throws SimonRemoteException {
         logger.debug("begin. token={}", channelToken);
         SimonProxy simonProxy = getSimonProxy(simonRemote);
         logger.trace("simon proxy detail string for given simonRemote: {}", simonProxy.getDetailString());
@@ -1225,7 +1225,7 @@ public class Simon {
      * @return a token that identifies the prepared channel
      * @throws SimonException
      */
-    public static int prepareRawChannel(RawChannelDataListener listener, SimonRemote simonRemote) throws SimonException {
+    public static int prepareRawChannel(RawChannelDataListener listener, Object simonRemote) throws SimonException {
         logger.debug("preparing raw channel for listener {}", listener);
         Dispatcher dispatcher = getDispatcher(simonRemote);
         if (dispatcher != null) {
@@ -1261,7 +1261,7 @@ public class Simon {
      * @param simonRemote
      * @return the related {@link Dispatcher}
      */
-    private static Dispatcher getDispatcher(SimonRemote simonRemote) {
+    private static Dispatcher getDispatcher(Object simonRemote) {
         for (LookupTable lookupTable : lookupTableList) {
             logger.debug("searching in LookupTable {} for simonRemote {}", lookupTable, simonRemote);
             if (lookupTable.isSimonRemoteRegistered(simonRemote)) {

@@ -87,7 +87,7 @@ public class LookupTable {
      * Saves a remote object in the lookup table for later reference
      *
      * @param remoteObjectName the name of the remote object
-     * @param remoteObject a remote objects which implements SimonRemote
+     * @param remoteObject a simon remote object
      */
     protected synchronized void putRemoteBinding(String remoteObjectName, Object remoteObject) {
         logger.debug("begin");
@@ -110,15 +110,16 @@ public class LookupTable {
     private void addRemoteObjectToHashMap(Object remoteObject) {
         int hashCode = remoteObject.hashCode();
         remoteobjectHashMap.put(hashCode, remoteObject);
-        logger.trace("Adding SimonRemote {} with hash={}", remoteObject, hashCode);
+        logger.trace("Adding simon remote {} with hash={}", remoteObject, hashCode);
     }
 
     /**
      * This method is used by the {@link Dispatcher} and the
-     * {@link ProcessMessageRunnable} class. If a objects is passed and is an
-     * instance of {@link SimonRemote}, then this object is saved in an extra
-     * map in the lookup table. This is necessary for the DGC to release all
-     * remote instances which are related to a specific {@link IoSession}.
+     * {@link ProcessMessageRunnable} class. Calling this method will store the 
+     * simon remote object for later GC along with the session This is necessary
+     * for the DGC to release all remote instances which are related to a 
+     * specific {@link IoSession}.
+     * The object is also stored as a remote binding.
      *
      * @param sessionId
      *            the id from {@link IoSession#getId()} from the related
@@ -134,6 +135,7 @@ public class LookupTable {
 
         logger.debug("sessionId={} remoteObjectName={} remoteObject=", new Object[]{Utils.longToHexString(sessionId), remoteObjectName, remoteObject});
 
+        // list ob remote object nams that need to be GC'ed somewhen later
         List<String> remotes;
 
         // if there no list present, create one
@@ -144,7 +146,6 @@ public class LookupTable {
         } else {
             remotes = gcRemoteInstances.get(sessionId);
         }
-
         remotes.add(remoteObjectName);
 
         putRemoteBinding(remoteObjectName, remoteObject);
@@ -336,7 +337,7 @@ public class LookupTable {
 
                     Object remoteInstanceBindingToRemove = bindings.remove(remoteObjectName).getRemoteObject();
 
-                    logger.debug("sessionId={} SimonRemote to unreference: {}", id, remoteInstanceBindingToRemove);
+                    logger.debug("sessionId={} simon remote to unreference: {}", id, remoteInstanceBindingToRemove);
 
                     removeRemoteObjectFromHashMap(remoteInstanceBindingToRemove);
 
@@ -366,7 +367,7 @@ public class LookupTable {
 //	
     /**
      * TODO document me
-     * @return
+     * @return related diuspatcher
      */
     protected Dispatcher getDispatcher() {
         return dispatcher;
@@ -375,9 +376,9 @@ public class LookupTable {
     /**
      * TODO document me
      * @param simonRemote
-     * @return
+     * @return true, if the given object is registered, false if not
      */
-    protected boolean isSimonRemoteRegistered(SimonRemote simonRemote) {
+    protected boolean isSimonRemoteRegistered(Object simonRemote) {
         logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectHashMap);
         if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) {
             return true;

@@ -6,29 +6,29 @@
 package de.root1.simon.test.rawchannel;
 
 import de.root1.simon.Simon;
-import de.root1.simon.exceptions.SimonRemoteException;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author achristian
  */
+@de.root1.simon.annotation.SimonRemote
 public class RawChannelServerImpl implements RawChannelServer {
 
-    public int openFileChannel(String filename) throws SimonRemoteException {
+    @Override
+    public int openFileChannel(String filename){
         int token = Simon.prepareRawChannel(new FileReceiver(filename),this);
         System.out.println("-> opened raw data channel on server side for file '"+filename+"'. token is: "+token);
         return token;
         
     }
 
-    public byte[] getFileBytes(String filename) throws SimonRemoteException {
+    @Override
+    public byte[] getFileBytes(String filename){
         System.out.println("-> transfering received file back to client.");
         File f = new File(filename);
 

@@ -5,17 +5,16 @@
 
 package de.root1.simon.test.rawchannel;
 
-import de.root1.simon.SimonRemote;
 import de.root1.simon.exceptions.SimonRemoteException;
 
 /**
  *
  * @author achristian
  */
-interface RawChannelServer extends SimonRemote {
+interface RawChannelServer {
 
-    public int openFileChannel(String filename) throws SimonRemoteException;
+    public int openFileChannel(String filename);
 
-    public byte[] getFileBytes(String filename) throws SimonRemoteException;
+    public byte[] getFileBytes(String filename);
 
 }

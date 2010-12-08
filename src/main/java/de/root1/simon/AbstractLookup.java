@@ -314,7 +314,7 @@ abstract class AbstractLookup implements Lookup {
     /**
      *
      * Releases a reference for a {@link Dispatcher} identified by a specific
-     * server string (see: {@link Simon#createServerString}. If there is no more
+     * server string (see: {@link AbstractLookup#createServerString(InetAddress, int)}}. If there is no more
      * server string referencing the Dispatcher, the Dispatcher will be
      * released/shutdown.
      *
@@ -347,6 +347,7 @@ abstract class AbstractLookup implements Lookup {
 
                     closeFuture.addListener(new IoFutureListener<IoFuture>() {
 
+                        @Override
                         public void operationComplete(IoFuture future) {
                             ctsc.getFilterchainWorkerPool().shutdown();
                             ctsc.getConnector().dispose();
