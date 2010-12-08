@@ -20,8 +20,6 @@ package de.root1.simon;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +47,7 @@ public class SimonRemoteMarker implements InvocationHandler {
 
     /**
      * TODO document me!
-     * @return
+     * @return objectToBeMarked
      */
     protected Object getObjectToBeMarked(){
         return objectToBeMarked;
