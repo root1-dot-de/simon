@@ -5,19 +5,20 @@
 
 package de.root1.simon.test;
 
-import de.root1.simon.exceptions.SimonRemoteException;
-
 /**
  *
  * @author achristian
  */
+@de.root1.simon.annotation.SimonRemote
 public class RemoteObjectImpl implements RemoteObject {
 
-    public void helloWorld() throws SimonRemoteException {
+    @Override
+    public void helloWorld(){
 //        System.out.println("Hello World");
     }
 
-    public void helloWorldArg(String s) throws SimonRemoteException {
+    @Override
+    public void helloWorldArg(String s){
 //        System.out.println("Hello WorldArg ["+s+"]");
     }
 

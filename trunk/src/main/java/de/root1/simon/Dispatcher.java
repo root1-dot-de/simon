@@ -431,7 +431,7 @@ public class Dispatcher implements IoHandler {
      *
      * Forwards an "equals()" call to the remote side to be handled there
      *
-     * @param key the key to which the invocation is sent
+     * @param session the session to which the invocation is sent
      * @param remoteObjectName the name of the remote object that has to be compared
      * @param objectToCompareWith the object to which the remote object is compared with
      * @return the result of the comparison
