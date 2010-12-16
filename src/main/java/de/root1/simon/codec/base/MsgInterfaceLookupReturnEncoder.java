@@ -18,10 +18,10 @@
  */
 package de.root1.simon.codec.base;
 
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.util.logging.Level;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgNameLookupReturn;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgNameLookupReturn}.
@@ -41,10 +40,6 @@ public class MsgInterfaceLookupReturnEncoder<T extends MsgInterfaceLookupReturn>
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgInterfaceLookupReturnEncoder() {
-        super(SimonMessageConstants.MSG_INTERFACE_LOOKUP_RETURN);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
         logger.trace("sending interfaces ...");
@@ -53,8 +48,14 @@ public class MsgInterfaceLookupReturnEncoder<T extends MsgInterfaceLookupReturn>
         try {
             out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
         } catch (CharacterCodingException ex) {
-            // TODO Auto-generated catch block
-            ex.printStackTrace();
+            MsgError error = new MsgError();
+            error.setEncodeError();
+            error.setErrorMessage("Error while encoding interface lookup() return: Not able to write remote object name '"+message.getRemoteObjectName()+"' due to CharacterCodingException.");
+            error.setRemoteObjectName(message.getRemoteObjectName());
+            error.setInitSequenceId(message.getSequence());
+            error.setThrowable(ex);
+            sendEncodingError(out, session, error);
+            return;
         }
         out.putInt(interfaces.length);
         logger.trace("interfaces to send: {}", interfaces.length);
@@ -63,21 +64,31 @@ public class MsgInterfaceLookupReturnEncoder<T extends MsgInterfaceLookupReturn>
                 logger.trace("interface={}", class1.getCanonicalName());
                 out.putPrefixedString(class1.getCanonicalName(), Charset.forName("UTF-8").newEncoder());
             } catch (CharacterCodingException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                MsgError error = new MsgError();
+                error.setEncodeError();
+                error.setErrorMessage("Error while encoding interface lookup() return: Not able to write interface name '"+class1.getCanonicalName()+"' due to CharacterCodingException.");
+                error.setRemoteObjectName(message.getRemoteObjectName());
+                error.setInitSequenceId(message.getSequence());
+                error.setThrowable(e);
+                sendEncodingError(out, session, error);
+                return;
             }
         }
         try {
             logger.trace("sending erorMsg: '{}'", message.getErrorMsg());
             out.putPrefixedString(message.getErrorMsg(), Charset.forName("UTF-8").newEncoder());
         } catch (CharacterCodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            MsgError error = new MsgError();
+            error.setEncodeError();
+            error.setErrorMessage("Error while encoding interface lookup() return: Not able to write errorMsg '"+message.getErrorMsg()+"' due to CharacterCodingException.");
+            error.setRemoteObjectName(message.getRemoteObjectName());
+            error.setInitSequenceId(message.getSequence());
+            error.setThrowable(e);
+            sendEncodingError(out, session, error);
+            return;
         }
 
         logger.trace("finished");
     }
 
-    public void dispose() throws Exception {
-    }
 }

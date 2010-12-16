@@ -1,5 +1,3 @@
-package de.root1.simon;
-
 /*
  * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
@@ -18,18 +16,19 @@ package de.root1.simon;
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
+package de.root1.simon;
+
 /**
  * A Listener interface that gets a closed event on a server remote object
  * 
  * @author achristian
- * @version 200903041505
+ * @version 201012101601
  */
 public interface ClosedListener {
 
     /**
      * Called whenever a server remote object is not useable anymore. This might
-     * be due to a <code>Simon.release()</code> call, or due to a connection
-     * error.
+     * be due to a release-call, or due to a connection error.
      */
     public void closed();
 }

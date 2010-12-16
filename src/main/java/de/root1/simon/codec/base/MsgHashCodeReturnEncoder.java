@@ -18,6 +18,7 @@
  */
 package de.root1.simon.codec.base;
 
+import de.root1.simon.codec.messages.MsgError;
 import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -27,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
-import de.root1.simon.codec.messages.SimonMessageConstants;
+import java.nio.charset.CharacterCodingException;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgHashCodeReturn}.
@@ -38,10 +39,6 @@ public class MsgHashCodeReturnEncoder<T extends MsgHashCodeReturn> extends Abstr
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgHashCodeReturnEncoder() {
-        super(SimonMessageConstants.MSG_HASHCODE_RETURN);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
@@ -49,14 +46,16 @@ public class MsgHashCodeReturnEncoder<T extends MsgHashCodeReturn> extends Abstr
         try {
             out.putInt(message.getReturnValue());
             out.putPrefixedString(message.getErrorMsg(), Charset.forName("UTF-8").newEncoder());
-        } catch (Exception e) {
-            // if an error occurs, close the connection immediately
-            logger.error("Error while sending MsgHashCodeReturn. Error: {}", e.getMessage());
-            session.close(true);
+        } catch (CharacterCodingException e) {
+            MsgError error = new MsgError();
+            error.setEncodeError();
+            error.setErrorMessage("Error while encoding hashCode() return: Not able to write errorMsg '"+message.getErrorMsg()+"' due to CharacterCodingException.");
+            error.setRemoteObjectName(null);
+            error.setInitSequenceId(message.getSequence());
+            error.setThrowable(e);
+            sendEncodingError(out, session, error);
         }
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

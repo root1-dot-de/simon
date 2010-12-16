@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgNameLookupReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
@@ -64,19 +65,24 @@ public class MsgNameLookupReturnDecoder extends AbstractMessageDecoder {
             m.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
             m.setInterfaces(interfaces);
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding name lookup return: Not able to load interfaces due to ClassNotFoundException");
+            error.setRemoteObjectName(null);
+            error.setThrowable(e);
+            return error;
         } catch (CharacterCodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (java.nio.BufferUnderflowException e) {
-            e.printStackTrace();
-        }
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding name lookup return: Not able to read interface names due to CharacterCodingException");
+            error.setRemoteObjectName(null);
+            error.setThrowable(e);
+            return error;
+        } 
 
         logger.trace("finished");
         return m;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out)
             throws Exception {
     }

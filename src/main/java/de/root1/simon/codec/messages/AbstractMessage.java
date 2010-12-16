@@ -24,6 +24,10 @@ import de.root1.simon.Statics;
 
 /**
  * A base message for SIMON protocol messages.
+ * Error messages are not being sent via the errorMsg field:
+ * In case of a problems reading a message, the responsible decoder class will 
+ * inject the error message, so that the ProcessMessageRunnable can react on 
+ * that error accordingly.
  *
  * @author ACHR
  */
@@ -75,7 +79,7 @@ public abstract class AbstractMessage implements Serializable {
      * Returns the message type as described by {@link SimonMessageConstants}
      * @return the msgType
      */
-    public int getMsgType() {
+    public byte getMsgType() {
         return msgType;
     }
 

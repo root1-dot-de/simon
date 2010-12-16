@@ -24,6 +24,7 @@ import de.root1.simon.codec.messages.MsgCloseRawChannel;
 import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
 import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.MsgInterfaceLookup;
@@ -197,6 +198,16 @@ public class SimonProtocolCodecFactory extends DemuxingProtocolCodecFactory {
             super.addMessageEncoder(MsgPong.class, MsgPongEncoder.class);
             // incoming pong
             super.addMessageDecoder(MsgPongDecoder.class);
+            
+            
+            /*
+             * error message handling
+             */
+
+            // outgoing error
+            super.addMessageEncoder(MsgError.class, MsgErrorEncoder.class);
+            // incoming error
+            super.addMessageDecoder(MsgErrorDecoder.class);
 
 	}
 }

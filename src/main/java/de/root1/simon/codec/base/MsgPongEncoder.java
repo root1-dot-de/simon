@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgPong;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgPong}.
@@ -36,10 +35,6 @@ public class MsgPongEncoder<T extends MsgPong> extends AbstractMessageEncoder<T>
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgPongEncoder() {
-        super(SimonMessageConstants.MSG_PONG);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
@@ -48,6 +43,4 @@ public class MsgPongEncoder<T extends MsgPong> extends AbstractMessageEncoder<T>
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

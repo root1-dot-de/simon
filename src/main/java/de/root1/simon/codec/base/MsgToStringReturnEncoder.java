@@ -18,6 +18,7 @@
  */
 package de.root1.simon.codec.base;
 
+import de.root1.simon.codec.messages.MsgError;
 import java.nio.charset.Charset;
 
 import org.apache.mina.core.buffer.IoBuffer;
@@ -27,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgToStringReturn;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgToStringReturn}.
@@ -38,10 +38,6 @@ public class MsgToStringReturnEncoder<T extends MsgToStringReturn> extends Abstr
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgToStringReturnEncoder() {
-        super(SimonMessageConstants.MSG_TOSTRING_RETURN);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
@@ -49,13 +45,15 @@ public class MsgToStringReturnEncoder<T extends MsgToStringReturn> extends Abstr
         try {
             out.putPrefixedString(message.getReturnValue(), Charset.forName("UTF-8").newEncoder());
         } catch (Exception e) {
-            // if an error occurs, close the connection immediately
-            logger.error("Error while sending MsgToStringReturn. Error: {}", e.getMessage());
-            session.close(true);
+            MsgError error = new MsgError();
+            error.setEncodeError();
+            error.setErrorMessage("Error while encoding toString() request: Not able to write result'"+message.getReturnValue()+"' due to CharacterCodingException.");
+            error.setRemoteObjectName(null);
+            error.setInitSequenceId(message.getSequence());
+            error.setThrowable(e);
+            sendEncodingError(out, session, error);
         }
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

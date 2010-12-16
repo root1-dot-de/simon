@@ -56,6 +56,7 @@ public class MsgPingDecoder extends AbstractMessageDecoder {
         return ping;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

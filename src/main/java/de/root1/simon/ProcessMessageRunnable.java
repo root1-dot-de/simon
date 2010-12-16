@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.List;
+import org.apache.mina.core.future.CloseFuture;
 
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ import de.root1.simon.codec.messages.MsgCloseRawChannel;
 import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
 import de.root1.simon.codec.messages.MsgEquals;
 import de.root1.simon.codec.messages.MsgEqualsReturn;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.MsgHashCodeReturn;
 import de.root1.simon.codec.messages.MsgInterfaceLookup;
@@ -50,13 +52,20 @@ import de.root1.simon.codec.messages.MsgToStringReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
+import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 import java.nio.ByteBuffer;
 
 /**
- * TODO document me
+ * This class is feed with all kind of messages (requests/invokes and returns)
+ * and is then run on a thread pool.
+ * 
+ * The message gets then processed and answered. Either ProcessMessageRunnable 
+ * invokes the requested method and returns the result to the remote, or it 
+ * passes the result to the dispatcher where then the requesting call is getting
+ * answered.
  * 
  * @author achr
  *
@@ -74,6 +83,7 @@ public class ProcessMessageRunnable implements Runnable {
         this.abstractMessage = abstractMessage;
     }
 
+    @Override
     public void run() {
 
         logger.debug("ProcessMessageRunnable: {} on sessionId {}", abstractMessage, Utils.longToHexString(session.getId()));
@@ -161,6 +171,10 @@ public class ProcessMessageRunnable implements Runnable {
             case SimonMessageConstants.MSG_PONG:
                 processPong();
                 break;
+                
+            case SimonMessageConstants.MSG_ERROR:
+                processError();
+                break;                
 
             default:
                 // FIXME what to do here ?!
@@ -476,30 +490,14 @@ public class ProcessMessageRunnable implements Runnable {
             result = e.getTargetException();
         } catch (Exception e) {
             result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to Exception: " + e.getClass() + " / " + e.getMessage() + " / " + e.getCause());
-            e.printStackTrace();
         }
 
         // a return value can be "null" ... this has to be serialized to the client
         if (result != null && !(result instanceof Serializable)) {
-            logger.warn("Result '{}' is not Serializable", result);
+            logger.warn("Result '{}' is not serializable", result);
             result = new SimonRemoteException("result of method '" + method + "' must be serializable and therefore implement 'java.io.Serializable' or 'de.root1.simon.SimonRemote'");
         }
 
-        // test result for serialization
-//		System.out.println("result class: "+result.getClass());
-//		Class<?>[] interfaces = result.getClass().getInterfaceNames();
-//		System.out.println("no of interfaces: "+interfaces.length);
-//		for (Class<?> class1 : interfaces) {
-//			System.out.println("result has interface: "+class1.getName());
-//		}
-//		
-//		if (result instanceof Serializable) {
-//			System.out.println("result IS serializable!");
-//		} else {
-//			System.out.println("result IS NOT serializable");
-//		}
-
-        // ----
 
         MsgInvokeReturn returnMsg = new MsgInvokeReturn();
         returnMsg.setSequence(msg.getSequence());
@@ -646,5 +644,42 @@ public class ProcessMessageRunnable implements Runnable {
         logger.debug("put result to queue={}", msg);
 
         logger.debug("end");
+    }
+
+    private void processError() {
+        logger.debug("begin");
+
+        logger.debug("processing MsgError...");
+        MsgError msg = (MsgError) abstractMessage;
+
+        String remoteObjectName = msg.getRemoteObjectName();
+        String errorMessage = msg.getErrorMessage();
+        Throwable throwable = msg.getThrowable();
+        boolean isDecodeError = msg.isDecodeError();
+        
+        String exceptionMessage = "";
+        
+        // if error happened on the local while reading a message
+        if (isDecodeError) {
+            if (remoteObjectName!=null && remoteObjectName.length()>0) {
+                exceptionMessage = "An error occured while reading a message for remote object '"+remoteObjectName+"'. Error message: "+errorMessage;
+            } else {
+                exceptionMessage = "An error occured while reading a message. Error message: "+errorMessage;
+            }
+        // if error happened on remote while writing a message
+        } else {
+            if (remoteObjectName!=null && remoteObjectName.length()>0) {
+                exceptionMessage = "An error occured on remote while writing a message to remote object '"+remoteObjectName+"'. Error message: "+errorMessage;
+            } else {
+                exceptionMessage = "An error occured on remote while writing a message. Error message: "+errorMessage;
+            }
+        }
+        
+        SimonException se = new SimonException(exceptionMessage);
+        se.initCause(throwable);
+        CloseFuture closeFuture = session.close(true);
+        closeFuture.awaitUninterruptibly();
+        logger.debug("end");
+        throw se;
     }
 }

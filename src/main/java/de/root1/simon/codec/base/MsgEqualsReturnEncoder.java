@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgEqualsReturn;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -37,10 +36,6 @@ public class MsgEqualsReturnEncoder<T extends MsgEqualsReturn> extends AbstractM
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgEqualsReturnEncoder() {
-        super(SimonMessageConstants.MSG_EQUALS_RETURN);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
@@ -49,6 +44,4 @@ public class MsgEqualsReturnEncoder<T extends MsgEqualsReturn> extends AbstractM
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

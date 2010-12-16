@@ -27,19 +27,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageDecoder} that decodes message header and forwards
  * the decoding of body to a subclass.
  *
- * @author The Apache MINA Project (dev@mina.apache.org)
- * @version $Rev: 671827 $, $Date: 2008-06-26 10:49:48 +0200 (jeu, 26 jun 2008) $
+ * @author achr
  */
 public abstract class AbstractMessageDecoder implements MessageDecoder {
 	
-	@SuppressWarnings("unused")
-	private final Logger logger = LoggerFactory.getLogger(getClass());
+    @SuppressWarnings("unused")
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 	
     private final byte msgType;
     private int sequence;
@@ -55,28 +55,26 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
         this.msgType = msgType;
     }
 
+    @Override
     public MessageDecoderResult decodable(IoSession session, IoBuffer in) {
 
         // Return NEED_DATA if the whole header is not yet available
         if (in.remaining() < SimonMessageConstants.HEADER_LEN) {
-            logger.trace("Header not received completely. Right now we have {}/{} bytes", in.remaining(), SimonMessageConstants.HEADER_LEN);
+            logger.trace("Header not received completely. Right now we have {} of {} bytes", in.remaining(), SimonMessageConstants.HEADER_LEN);
             return MessageDecoderResult.NEED_DATA;
         }
-//        logger.trace("Header received completely. Right now we have {}/{} bytes", in.remaining(), SimonMessageConstants.HEADER_LEN);
         // Return OK if THIS decoder is correct type to decode the message
         int type = in.get();
         if (msgType == type) {
-//            logger.trace("Can decode this message type: {}",msgType);
             return MessageDecoderResult.OK;
         }
 
-//        logger.trace("Can't decode this message type: {}. Can only decode this: {}",type, msgType);
-        // Return NOT_OK if THIS decoder ns't able to decode THIS message
+        // Return NOT_OK if THIS decoder isn't able to decode THIS message
         return MessageDecoderResult.NOT_OK;
     }
 
+    @Override
     public MessageDecoderResult decode(IoSession session, IoBuffer in, ProtocolDecoderOutput out) throws Exception {
-    	
         // Try to skip header if not read.
         if (!readHeader) {
             in.get(); // Skip 'msgType'.
@@ -87,25 +85,42 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
 
         // check if the complete message body is available
         if (in.remaining()<bodysize) {
-            logger.debug("Message type [{}] with sequence [{}] needs [{}] bytes. Right now we only have [{}]. Waiting for more ...", new Object[]{msgType, sequence, bodysize, in.remaining()});
+            logger.trace("Message type [{}] with sequence [{}] needs [{}] bytes. Right now we only have [{}]. Waiting for more ...", new Object[]{msgType, sequence, bodysize, in.remaining()});
             return MessageDecoderResult.NEED_DATA;
         } else {
-            logger.debug("Message type [{}] with sequence [{}] with [{}] bytes body size is available. Now decoding ...", new Object[]{msgType, sequence, bodysize});
+            logger.trace("Message type [{}] with sequence [{}] with [{}] bytes body size is available. Now decoding ...", new Object[]{msgType, sequence, bodysize});
         }
 
-        // Try to decode body
-        AbstractMessage m = decodeBody(session, in);
-        // Return NEED_DATA if the body is not fully read.
-        if (m == null) {
-            return MessageDecoderResult.NEED_DATA;
-        } else {
-            readHeader = false; // reset readHeader for the next decode
+        // catch all errors/exceptions/problems which are not handled by decodeBody
+        try {
+            // Try to decode body
+            AbstractMessage m = decodeBody(session, in);
+            // Return NEED_DATA if the body is not fully read.
+            if (m == null) {
+                return MessageDecoderResult.NEED_DATA;
+            } else {
+                readHeader = false; // reset readHeader for the next decode
+            }
+            m.setSequence(sequence);
+            logger.trace("finished decoding complete message: {}. Forwarding to next layer ...",m);
+            out.write(m);
+            return MessageDecoderResult.OK;
+        } catch (Throwable t) {
+            
+            // gather all available information an inform the remote side about the problem
+            MsgError m = new MsgError();
+            m.setErrorMessage("Error while decoding message. sequence="+sequence+" bodySize="+bodysize+" type="+(msgType==-1?"{unknown}":msgType));
+            m.setRemoteObjectName(null);
+            m.setThrowable(t);
+            try {
+                session.write(m);
+            } catch (Throwable tt) {
+                logger.warn("Not able to send error message to remote: "+m);
+            }
+            
         }
-        m.setSequence(sequence);
-        logger.trace("finished decoding complete message: {}. Forwarding to next layer ...",m);
-        out.write(m);
-
-        return MessageDecoderResult.OK;
+        
+        return MessageDecoderResult.NOT_OK;
     }
 
     /**

@@ -30,7 +30,6 @@ import de.root1.simon.Dispatcher;
 import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
 
@@ -42,10 +41,6 @@ import de.root1.simon.utils.Utils;
 public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncoder<T> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    public MsgInvokeEncoder() {
-        super(SimonMessageConstants.MSG_INVOKE);
-    }
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
@@ -72,7 +67,6 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
 
             String errorMsg = "Failed to transfer invoke command to the server. error=" + e.getMessage();
             logger.warn(errorMsg);
@@ -86,13 +80,10 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
                 dispatcher.messageReceived(session, mir);
             } catch (Exception e1) {
                 // FIXME When will this Exception occur? API Doc shows no information
-                e1.printStackTrace();
-                System.exit(1);
+                logger.error("Got exception when calling 'dispatcher.messageReceived()'", e1);
             }
         }
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

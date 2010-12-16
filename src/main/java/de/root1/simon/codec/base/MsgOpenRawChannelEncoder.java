@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgOpenRawChannel;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgOpenRawChannel}.
@@ -36,10 +35,6 @@ public class MsgOpenRawChannelEncoder<T extends MsgOpenRawChannel> extends Abstr
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgOpenRawChannelEncoder() {
-        super(SimonMessageConstants.MSG_OPEN_RAW_CHANNEL);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
@@ -48,6 +43,4 @@ public class MsgOpenRawChannelEncoder<T extends MsgOpenRawChannel> extends Abstr
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

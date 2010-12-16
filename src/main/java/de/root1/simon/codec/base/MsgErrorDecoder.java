@@ -18,7 +18,6 @@
  */
 package de.root1.simon.codec.base;
 
-
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -31,45 +30,55 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgError;
-import de.root1.simon.codec.messages.MsgInterfaceLookup;
-import de.root1.simon.codec.messages.MsgNameLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
-import java.nio.BufferUnderflowException;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgNameLookup}.
+ * A {@link MessageDecoder} that decodes {@link MsgError}.
  *
  * @author ACHR
  */
-public class MsgInterfaceLookupDecoder extends AbstractMessageDecoder {
+public class MsgErrorDecoder extends AbstractMessageDecoder {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgInterfaceLookupDecoder() {
-        super(SimonMessageConstants.MSG_INTERFACE_LOOKUP);
+    public MsgErrorDecoder() {
+        super(SimonMessageConstants.MSG_ERROR);
     }
 
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
-        MsgInterfaceLookup m = new MsgInterfaceLookup();
-
-        try {
-            String canonicalInterfaceName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
-            m.setCanonicalInterfaceName(canonicalInterfaceName);
-        } catch (CharacterCodingException e) {
-            MsgError error = new MsgError();
-            error.setErrorMessage("Error while decoding interrace lookup: Not able to read interface name due to CharacterCodingException.");
-            error.setRemoteObjectName(null);
-            error.setThrowable(e);
-            return error;
-        } 
-
-        if (logger.isTraceEnabled())
-            logger.trace("message={} on session={}", m, Utils.longToHexString(session.getId()));
+        MsgError message = new MsgError();
+        String remoteObjectName = null;
+        String errorMsg = null;
+        Throwable throwable = null;
+        int initSequenceId = -1;
+        boolean isDecoderError = true;
         
-        return m;
+        try {
+
+            remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            errorMsg = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            throwable = (Throwable) in.getObject();
+            initSequenceId = in.getInt();
+            isDecoderError = Utils.byteToBoolean(in.get());
+            
+        } catch (CharacterCodingException e) {
+            // TODO what to do here?
+        } catch (ClassNotFoundException e) {
+            // TODO what to do here?
+        }
+        message.setRemoteObjectName(remoteObjectName);
+        message.setErrorMessage(errorMsg);
+        message.setThrowable(throwable);
+        message.setInitSequenceId(initSequenceId);
+        
+        if (isDecoderError) message.setDecodeError();
+        else message.setEncodeError();
+        
+        logger.trace("message={}", message);
+        return message;
     }
 
     @Override
