@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgError;
+import de.root1.simon.exceptions.SimonException;
 
 /**
  * A {@link MessageEncoder} that encodes message header and forwards
@@ -38,7 +39,7 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
 	
     @SuppressWarnings("unused")
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private boolean errorOccured = false;
+    private MsgError msgError = null;
 
 //    /**
 //     * Creates a new message encoder
@@ -70,14 +71,27 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
             
             // put the message into the buffer
             putMessageToBuffer(buf, session, message);
-            errorOccured = true;
+            msgError = error;
         }
         
         // send the buffer
         out.write(buf);
         
-        if (errorOccured) {
+        if (msgError!=null) {
             session.close(false);
+            String exceptionMessage = "";
+            String remoteObjectName = msgError.getRemoteObjectName();
+            String errorMessage = msgError.getErrorMessage();
+            Throwable throwable = msgError.getThrowable();
+            
+            if (remoteObjectName!=null && remoteObjectName.length()>0) {
+                exceptionMessage = "An error occured on remote while writing a message to remote object '"+remoteObjectName+"'. Error message: "+errorMessage;
+            } else {
+                exceptionMessage = "An error occured on remote while writing a message. Error message: "+errorMessage;
+            }
+            
+            SimonException se = new SimonException(exceptionMessage);
+            se.initCause(throwable);
         }
     }
 
@@ -125,6 +139,6 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
         out.clear();
         MsgErrorEncoder mee = new MsgErrorEncoder();
         mee.encodeBody(session, error, out);
-        errorOccured = true;
+        msgError = error;
     }
 }
