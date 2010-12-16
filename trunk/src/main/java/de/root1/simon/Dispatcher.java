@@ -762,6 +762,7 @@ public class Dispatcher implements IoHandler {
      * (non-Javadoc)
      * @see org.apache.mina.core.service.IoHandler#exceptionCaught(org.apache.mina.core.session.IoSession, java.lang.Throwable)
      */
+    @Override
     public void exceptionCaught(IoSession session, Throwable throwable)
             throws Exception {
 
@@ -775,6 +776,7 @@ public class Dispatcher implements IoHandler {
      * (non-Javadoc)
      * @see org.apache.mina.core.service.IoHandler#messageReceived(org.apache.mina.core.session.IoSession, java.lang.Object)
      */
+    @Override
     public void messageReceived(IoSession session, Object message) throws Exception {
         logger.debug("Received message from session {}", Utils.longToHexString(session.getId()));
         AbstractMessage abstractMessage = (AbstractMessage) message;
@@ -785,6 +787,7 @@ public class Dispatcher implements IoHandler {
      * (non-Javadoc)
      * @see org.apache.mina.core.service.IoHandler#messageSent(org.apache.mina.core.session.IoSession, java.lang.Object)
      */
+    @Override
     public void messageSent(IoSession session, Object msg) throws Exception {
         logger.debug("Message sent to session session={} msg='{}'", Utils.longToHexString(session.getId()), msg);
     }
@@ -833,6 +836,7 @@ public class Dispatcher implements IoHandler {
      * (non-Javadoc)
      * @see org.apache.mina.core.service.IoHandler#sessionCreated(org.apache.mina.core.session.IoSession)
      */
+    @Override
     public void sessionCreated(IoSession session) throws Exception {
         logger.debug("session created. session={}", session);
         session.setAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE, lookupTable); // attach the lookup table to the session
@@ -844,10 +848,9 @@ public class Dispatcher implements IoHandler {
      * (non-Javadoc)
      * @see org.apache.mina.core.service.IoHandler#sessionIdle(org.apache.mina.core.session.IoSession, org.apache.mina.core.session.IdleStatus)
      */
+    @Override
     public void sessionIdle(IoSession session, IdleStatus idleStatus) throws Exception {
         logger.debug("session idle. session={} idleStatus={}", Utils.longToHexString(session.getId()), idleStatus);
-
-//		if (isServerDispatcher())
 
         if (!session.isClosing()) {
             if (idleStatus == IdleStatus.READER_IDLE || idleStatus == IdleStatus.BOTH_IDLE) {
@@ -892,6 +895,7 @@ public class Dispatcher implements IoHandler {
      * (non-Javadoc)
      * @see org.apache.mina.core.service.IoHandler#sessionOpened(org.apache.mina.core.session.IoSession)
      */
+    @Override
     public void sessionOpened(IoSession session) throws Exception {
         logger.debug("session opened. session={}", session);
     }
@@ -934,8 +938,10 @@ public class Dispatcher implements IoHandler {
         throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
     }
 
-    /** TODO document me
-     * @throws SimonException */
+    /** 
+     * TODO document me
+     * @throws SimonException 
+     */
     protected int prepareRawChannel(RawChannelDataListener listener) throws SimonException {
         int channelToken = getRawChannelToken();
         synchronized (rawChannelMap) {
@@ -945,7 +951,9 @@ public class Dispatcher implements IoHandler {
         return channelToken;
     }
 
-    /** TODO document me */
+    /** 
+     * TODO document me 
+     */
     protected boolean isRawChannelDataListenerRegistered(int channelToken) {
         logger.trace("searching in map for token={} map={}", channelToken, rawChannelMap);
         synchronized (rawChannelMap) {
@@ -953,7 +961,9 @@ public class Dispatcher implements IoHandler {
         }
     }
 
-    /** TODO document me */
+    /** 
+     * TODO document me 
+     */
     protected RawChannelDataListener getRawChannelDataListener(int channelToken) {
         logger.trace("getting listener token={} map={}", channelToken, rawChannelMap);
         synchronized (rawChannelMap) {
@@ -961,8 +971,10 @@ public class Dispatcher implements IoHandler {
         }
     }
 
-    /** TODO document me
-     * @throws SimonException */
+    /** 
+     * TODO document me
+     * @throws SimonException 
+     */
     private int getRawChannelToken() throws SimonException {
         synchronized (tokenList) {
 
@@ -1035,6 +1047,12 @@ public class Dispatcher implements IoHandler {
         logger.debug("end. got ack for data send for sequenceId={} and channelToken={}", sequenceId, channelToken);
     }
 
+    /**
+     * Triggers a close of a raw channel
+     * 
+     * @param session the related IoSession
+     * @param channelToken the related channel token
+     */
     protected void closeRawChannel(IoSession session, int channelToken) throws SimonRemoteException {
         checkForInvalidState(session, "closeRawChannel()");
 

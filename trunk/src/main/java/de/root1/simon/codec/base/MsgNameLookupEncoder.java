@@ -18,6 +18,7 @@
  */
 package de.root1.simon.codec.base;
 
+import de.root1.simon.codec.messages.MsgError;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -28,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgNameLookup;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
 
 /**
@@ -40,42 +40,24 @@ public class MsgNameLookupEncoder<T extends MsgNameLookup> extends AbstractMessa
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgNameLookupEncoder() {
-        super(SimonMessageConstants.MSG_NAME_LOOKUP);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
-            int a=0;
-            int b=0;
+        logger.trace("begin. message={}", message);
+        logger.trace("position before: {}",out.position());
         try {
-            logger.trace("begin. message={}", message);
-            logger.trace("position before: {}",out.position());
-            try {
-                a = out.position();
-                out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
-                b = out.position();
-            } catch (CharacterCodingException e) {
-                e.printStackTrace();
-                logger.error("Error 1 while encoding MsgNameLookup: "+Utils.getStackTraceAsString(e));
-                System.exit(1);
-            }
-            logger.trace("position after: {}",out.position());
-            logger.trace("end");
-        } catch (Throwable t) {
-            t.printStackTrace();
-            logger.error("Error 2 while encoding MsgNameLookup: "+Utils.getStackTraceAsString(t));
-            System.exit(1);
-//            throw new RuntimeException(t);
+            out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
+        } catch (CharacterCodingException e) {
+            MsgError error = new MsgError();
+            error.setEncodeError();
+            error.setErrorMessage("Error while encoding name lookup() request: Not able to write remote object name '"+message.getRemoteObjectName()+"' due to CharacterCodingException.");
+            error.setRemoteObjectName(null);
+            error.setInitSequenceId(message.getSequence());
+            error.setThrowable(e);
+            sendEncodingError(out, session, error);
         }
-// FIXME Temporary.. Will be removed after fixing mina 2.0.0 threading issue
-            if (a==b) {
-                System.err.println("a="+a+ " b="+b);
-                System.exit(1);
-            }
+        logger.trace("position after: {}",out.position());
+        logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

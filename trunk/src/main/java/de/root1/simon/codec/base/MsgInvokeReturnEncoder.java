@@ -25,8 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.MsgNameLookup;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgInvokeReturn}.
@@ -37,34 +35,19 @@ public class MsgInvokeReturnEncoder<T extends MsgInvokeReturn> extends AbstractM
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgInvokeReturnEncoder() {
-        super(SimonMessageConstants.MSG_INVOKE_RETURN);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
         logger.trace("begin. message={}", message);
 
-        try {
+        out.putObject(message.getReturnValue());
 
-            out.putObject(message.getReturnValue());
-
-            /*
-             * There is no need to write the message.getErrorMsg() string back to the client
-             * If an error occurs while invoking the method, the exception is "transported" as
-             * the method-result back to the client where it is thrown in SimonProxy
-             */
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            // if an error occurs, close the connection immediately
-            logger.error("Error while sending MsgInvokeReturnMsg. Error: {}", e.getMessage());
-            session.close(true);
-        }
+        /*
+         * There is no need to write the message.getErrorMsg() string back to the client
+         * If an error occurs while invoking the method, the exception is "transported" as
+         * the method-result back to the client where it is thrown in SimonProxy
+         */
 
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

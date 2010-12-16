@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 
 /**
  * A {@link MessageEncoder} that encodes message header and forwards
@@ -35,38 +36,70 @@ import de.root1.simon.codec.messages.AbstractMessage;
  */
 public abstract class AbstractMessageEncoder<T extends AbstractMessage> implements MessageEncoder<T> {
 	
-	@SuppressWarnings("unused")
-	private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final byte msgType;
+    @SuppressWarnings("unused")
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private boolean errorOccured = false;
 
-    /**
-     * Creates a new message encoder
-     * @param msgType specifies a unique ID for the type of message
-     */
-    protected AbstractMessageEncoder(byte msgType) {
-        this.msgType = msgType;
-    }
+//    /**
+//     * Creates a new message encoder
+//     * @param msgType specifies a unique ID for the type of message
+//     */
+//    protected AbstractMessageEncoder() {
+//    }
 
+    @Override
     public void encode(IoSession session, T message, ProtocolEncoderOutput out) throws Exception {
         IoBuffer buf = IoBuffer.allocate(16);
+        try {
+        
+            putMessageToBuffer(buf, session, message);
+        
+        } catch (Throwable t) {
+
+            // clear/erase the buffer from any failed encoding
+            buf.clear();
+
+            // form an error message
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while encoding message. sequence="+message.getSequence()+" type="+(message.getMsgType()==-1?"{unknown}":message.getMsgType()));
+            error.setInitSequenceId(message.getSequence());
+            error.setEncodeError();
+            
+            // change type to error;
+//            msgType = SimonMessageConstants.MSG_ERROR;
+            
+            // put the message into the buffer
+            putMessageToBuffer(buf, session, message);
+            errorOccured = true;
+        }
+        
+        // send the buffer
+        out.write(buf);
+        
+        if (errorOccured) {
+            session.close(false);
+        }
+    }
+
+    private void putMessageToBuffer(IoBuffer buf, IoSession session, T message) {
         buf.setAutoExpand(true); // Enable auto-expand for easier encoding
 
-        // Encode a body
+        // Encode the body
         IoBuffer msgBuffer = IoBuffer.allocate(16);
         msgBuffer.setAutoExpand(true);
+        
         encodeBody(session, message, msgBuffer);
 
-        // Encode a header
-        buf.put(msgType); // header contains message type
+        // Encode the header
+        buf.put(message.getMsgType()); // header contains message type
         buf.putInt(message.getSequence()); // header contains sequence
         buf.putInt(msgBuffer.position()); // and header contains length of message
-        logger.trace("Sending msg type [{}] with sequence [{}] and bodysize [{}] to next layer ...", new Object[]{msgType, message.getSequence(),msgBuffer.position()});
+        logger.trace("Sending msg type [{}] with sequence [{}] and bodysize [{}] to next layer ...", new Object[]{message.getMsgType(), message.getSequence(),msgBuffer.position()});
 
         msgBuffer.flip();
-        buf.put(msgBuffer); // afterwards the header, the message is sent
+        buf.put(msgBuffer); // after the header, the message is sent
         
         buf.flip();
-        out.write(buf);
     }
 
     /**
@@ -77,4 +110,21 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
      * @param out
      */
     protected abstract void encodeBody(IoSession session, T message, IoBuffer out);
+    
+    /**
+     * This method is called by an Encoder class in case of an exception:
+     * The encoder class gathers all available error information, put them into an 
+     * {@link MsgError} message and calls this method.
+     * This method clean the buffer and replaces the content with the error message
+     * 
+     * @param out the "out" buffer used by the encoder class to store data to be sent
+     * @param session the assiciated session
+     * @param error the error message
+     */
+    void sendEncodingError(IoBuffer out, IoSession session, MsgError error) {
+        out.clear();
+        MsgErrorEncoder mee = new MsgErrorEncoder();
+        mee.encodeBody(session, error, out);
+        errorOccured = true;
+    }
 }

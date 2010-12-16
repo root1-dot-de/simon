@@ -290,13 +290,13 @@ public class Utils {
         if (remoteObject == null) {
             return false;
         }
-        if (remoteObject instanceof de.root1.simon.SimonRemote) {
-            return true;
-        }
         if (isRemoteAnnotated(remoteObject)) {
             return true;
         }
         if (getMarker(remoteObject) != null) {
+            return true;
+        }
+        if (remoteObject instanceof de.root1.simon.SimonRemote) {
             return true;
         }
         return false;

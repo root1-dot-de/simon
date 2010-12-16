@@ -28,9 +28,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgHashCode;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
+import java.nio.charset.CharacterCodingException;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgHashCode}.
@@ -53,13 +55,18 @@ public class MsgHashCodeDecoder extends AbstractMessageDecoder {
         try {
             String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
             message.setRemoteObjectName(remoteObjectName);
-        } catch (Exception e) {
-            message.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
+        } catch (CharacterCodingException e) {
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding hashCode() request: Not able to read remote object name due to CharacterCodingException.");
+            error.setRemoteObjectName(null);
+            error.setThrowable(e);
+            return error;
         }
         logger.trace("message={}", message);
         return message;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

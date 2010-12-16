@@ -63,6 +63,7 @@ public class MsgRawChannelDataReturnDecoder extends AbstractMessageDecoder {
         return msg;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

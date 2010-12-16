@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgEquals;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
@@ -49,24 +50,34 @@ public class MsgEqualsDecoder extends AbstractMessageDecoder {
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
         MsgEquals message = new MsgEquals();
-
+        String remoteObjectName = null;
         try {
 
-            String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
             Object objectToCompareWith = in.getObject();
             message.setRemoteObjectName(remoteObjectName);
             message.setObjectToCompareWith(objectToCompareWith);
+            
         } catch (CharacterCodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding equals() request: Not able to read remote object name due to CharacterCodingException.");
+            error.setRemoteObjectName(remoteObjectName);
+            error.setThrowable(e);
+            return error;
+
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding equals() request: Not able to read object due to ClassNotFoundException.");
+            error.setRemoteObjectName(remoteObjectName);
+            error.setThrowable(e);
+            return error;
         }
         logger.debug("message={}", message);
         return message;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

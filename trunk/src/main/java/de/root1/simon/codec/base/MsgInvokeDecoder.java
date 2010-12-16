@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.LookupTable;
 import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
@@ -53,13 +54,13 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
         MsgInvoke msgInvoke = new MsgInvoke();
-
+        String remoteObjectName=null;
         try {
 
             LookupTable lookupTable = (LookupTable) session.getAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
 
             logger.trace("start pos={} capacity={}", in.position(), in.capacity());
-            String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
+            remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
             msgInvoke.setRemoteObjectName(remoteObjectName);
             logger.trace("remote object name read ... remoteObjectName={} pos={}", remoteObjectName, in.position());
 
@@ -89,22 +90,19 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
             msgInvoke.setRemoteObjectName(remoteObjectName);
             msgInvoke.setMethod(method);
 
-        } catch (BufferUnderflowException e) {
-            System.err.println("BufferUnderFlow!!!!!");
-            e.printStackTrace();
-            System.err.flush();
-            System.exit(1);
         } catch (Exception e) {
-            msgInvoke.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
-//            e.printStackTrace();
-//            System.err.flush();
-//            System.exit(1);
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding invoke request");
+            error.setRemoteObjectName(remoteObjectName);
+            error.setThrowable(e);
+            return error;
         } 
 
         logger.trace("message={}", msgInvoke);
         return msgInvoke;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

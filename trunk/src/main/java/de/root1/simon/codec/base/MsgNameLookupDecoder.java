@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgNameLookup;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.Utils;
@@ -57,14 +58,12 @@ public class MsgNameLookupDecoder extends AbstractMessageDecoder {
             String remoteObjectName = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
             m.setRemoteObjectName(remoteObjectName);
         } catch (CharacterCodingException e) {
-            e.printStackTrace();
-        } catch (BufferUnderflowException e) {
-            System.err.println("Buffer Under Flow Exception !!");
-            e.printStackTrace();
-            System.out.flush();
-            System.err.flush();
-            System.exit(0);
-        }
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding name lookup: Not able to read remoteObjectName CharacterCodingException");
+            error.setRemoteObjectName(null);
+            error.setThrowable(e);
+            return error;
+        } 
 
         if (logger.isTraceEnabled())
             logger.trace("message={} on session={}", m, Utils.longToHexString(session.getId()));
@@ -72,6 +71,7 @@ public class MsgNameLookupDecoder extends AbstractMessageDecoder {
         return m;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

@@ -18,6 +18,7 @@
  */
 package de.root1.simon.codec.base;
 
+import de.root1.simon.codec.messages.MsgError;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -28,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgHashCode;
-import de.root1.simon.codec.messages.SimonMessageConstants;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgHashCode}.
@@ -39,10 +39,6 @@ public class MsgHashCodeEncoder<T extends MsgHashCode> extends AbstractMessageEn
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgHashCodeEncoder() {
-        super(SimonMessageConstants.MSG_HASHCODE);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
@@ -50,12 +46,15 @@ public class MsgHashCodeEncoder<T extends MsgHashCode> extends AbstractMessageEn
         try {
             out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
         } catch (CharacterCodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            MsgError error = new MsgError();
+            error.setEncodeError();
+            error.setErrorMessage("Error while encoding hashCode() request: Not able to write remote object name '"+message.getRemoteObjectName()+"' due to CharacterCodingException.");
+            error.setRemoteObjectName(message.getRemoteObjectName());
+            error.setInitSequenceId(message.getSequence());
+            error.setThrowable(e);
+            sendEncodingError(out, session, error);
         }
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }
