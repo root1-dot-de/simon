@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgToStringReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 
@@ -56,13 +57,17 @@ public class MsgToStringReturnDecoder extends AbstractMessageDecoder {
             message.setReturnValue(returnValue);
 
         } catch (CharacterCodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding toString() return: Not able to read result due to CharacterCodingException");
+            error.setRemoteObjectName(null);
+            error.setThrowable(e);
+            return error;
         }
         logger.trace("message={}", message);
         return message;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

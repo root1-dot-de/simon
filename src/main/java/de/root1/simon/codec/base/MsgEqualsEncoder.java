@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.MsgEquals;
-import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.codec.messages.MsgError;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgEquals}.
@@ -39,10 +39,6 @@ public class MsgEqualsEncoder<T extends MsgEquals> extends AbstractMessageEncode
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MsgEqualsEncoder() {
-        super(SimonMessageConstants.MSG_EQUALS);
-    }
-
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
@@ -51,12 +47,15 @@ public class MsgEqualsEncoder<T extends MsgEquals> extends AbstractMessageEncode
             out.putPrefixedString(message.getRemoteObjectName(), Charset.forName("UTF-8").newEncoder());
             out.putObject(message.getObjectToCompareWith());
         } catch (CharacterCodingException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            MsgError error = new MsgError();
+            error.setEncodeError();
+            error.setErrorMessage("Error while encoding equals() request: Not able to write remote object name '"+message.getRemoteObjectName()+"' due to CharacterCodingException.");
+            error.setRemoteObjectName(message.getRemoteObjectName());
+            error.setInitSequenceId(message.getSequence());
+            error.setThrowable(e);
+            sendEncodingError(out, session, error);
         }
         logger.trace("end");
     }
 
-    public void dispose() throws Exception {
-    }
 }

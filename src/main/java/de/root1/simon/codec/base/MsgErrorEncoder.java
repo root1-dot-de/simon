@@ -19,7 +19,6 @@
 package de.root1.simon.codec.base;
 
 import de.root1.simon.codec.messages.MsgError;
-import de.root1.simon.codec.messages.MsgInterfaceLookup;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 
@@ -29,34 +28,38 @@ import org.apache.mina.filter.codec.demux.MessageEncoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.root1.simon.codec.messages.MsgNameLookup;
+import de.root1.simon.utils.Utils;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgNameLookup}.
+ * A {@link MessageEncoder} that encodes {@link MsgError}.
  *
  * @author ACHR
  */
-public class MsgInterfaceLookupEncoder<T extends MsgInterfaceLookup> extends AbstractMessageEncoder<T> {
+public class MsgErrorEncoder<T extends MsgError> extends AbstractMessageEncoder<T> {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Override
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
 
-        logger.trace("begin. message={}", message);
-        logger.trace("position before: {}",out.position());
+        logger.trace("begin. message=" + message);
+        
+        String remoteObjectName = message.getRemoteObjectName();
+        String errorMsg = message.getErrorMessage();
+        Throwable throwable = message.getThrowable();
+        int initSequenceId = message.getInitSequenceId();
+        boolean isDecodeError = message.isDecodeError();
+        
         try {
-            out.putPrefixedString(message.getCanonicalInterfaceName(), Charset.forName("UTF-8").newEncoder());
+            out.putPrefixedString(remoteObjectName, Charset.forName("UTF-8").newEncoder());
+            out.putPrefixedString(errorMsg, Charset.forName("UTF-8").newEncoder());
         } catch (CharacterCodingException e) {
-            MsgError error = new MsgError();
-            error.setEncodeError();
-            error.setErrorMessage("Error while encoding interface lookup() request: Not able to write interface name '"+message.getCanonicalInterfaceName()+"' due to CharacterCodingException.");
-            error.setRemoteObjectName(null);
-            error.setInitSequenceId(message.getSequence());
-            error.setThrowable(e);
-            sendEncodingError(out, session, error);
+           // TODO what to do here?
         }
-        logger.trace("position after: {}",out.position());
+        out.putObject(throwable);
+        out.putInt(initSequenceId);
+        out.put(Utils.booleanToByte(isDecodeError));
+        
         logger.trace("end");
     }
 

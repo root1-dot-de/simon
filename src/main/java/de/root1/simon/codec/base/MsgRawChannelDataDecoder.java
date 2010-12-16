@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.SimonMessageConstants;
-import java.nio.BufferUnderflowException;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgRawChannelData}.
@@ -48,28 +47,25 @@ public class MsgRawChannelDataDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
         MsgRawChannelData message = new MsgRawChannelData();
-        try {
         
-            message.setSequence(getCurrentSequence());
+        message.setSequence(getCurrentSequence());
 
-            int dataSize = getBodySize()-4; // not counting the 4 bytes from the channel token
-            logger.trace("datasize={}", dataSize);
+        int dataSize = getBodySize()-4; // not counting the 4 bytes from the channel token
+        logger.trace("datasize={}", dataSize);
 
-            int channelToken = in.getInt();
-            logger.trace("channelToken={}", channelToken);
-            message.setChannelToken(channelToken);
+        int channelToken = in.getInt();
+        logger.trace("channelToken={}", channelToken);
+        message.setChannelToken(channelToken);
 
-            byte[] b = new byte[dataSize];
-            in.get(b);
-            message.setData(ByteBuffer.allocate(dataSize).put(b));
-            logger.trace("message={}", message);
+        byte[] b = new byte[dataSize];
+        in.get(b);
+        message.setData(ByteBuffer.allocate(dataSize).put(b));
+        logger.trace("message={}", message);
             
-        } catch (BufferUnderflowException e) {
-            e.printStackTrace();
-        }
         return message;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

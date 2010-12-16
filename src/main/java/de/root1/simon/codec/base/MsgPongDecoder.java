@@ -55,6 +55,7 @@ public class MsgPongDecoder extends AbstractMessageDecoder {
         return pong;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

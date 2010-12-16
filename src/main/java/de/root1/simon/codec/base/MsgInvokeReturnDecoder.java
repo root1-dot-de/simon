@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.SimonClassLoaderHelper;
@@ -48,23 +49,21 @@ public class MsgInvokeReturnDecoder extends AbstractMessageDecoder {
     @Override
     protected AbstractMessage decodeBody(IoSession session, IoBuffer in) {
 
+
+        MsgInvokeReturn m = new MsgInvokeReturn();
         try {
-
-            MsgInvokeReturn m = new MsgInvokeReturn();
-            try {
-                Object returnValue = in.getObject(SimonClassLoaderHelper.getClassLoader(Simon.class));
-                m.setReturnValue(returnValue);
-            } catch (Throwable e) {
-                logger.error("Error occured while reading invoke return:\n"+Utils.getStackTraceAsString(e));
-            }
-            logger.trace("message={}", m);
-            return m;
-
-        } catch (java.nio.BufferUnderflowException e) {
-            logger.error("BufferUnderflowException occured while reading invoke return:\n"+Utils.getStackTraceAsString(e));
-            System.exit(1);
+            Object returnValue = in.getObject(SimonClassLoaderHelper.getClassLoader(Simon.class));
+            m.setReturnValue(returnValue);
+        } catch (ClassNotFoundException e) {
+            MsgError error = new MsgError();
+            error.setErrorMessage("Error while decoding invoke return: Not able to read invoke result due to ClassNotFoundException");
+            error.setRemoteObjectName(null);
+            error.setThrowable(e);
+            return error;
         }
-        return null;
+        logger.trace("message={}", m);
+        return m;
+
     }
 
     @Override

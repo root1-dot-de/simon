@@ -53,6 +53,7 @@ public class MsgEqualsReturnDecoder extends AbstractMessageDecoder {
         return message;
     }
 
+    @Override
     public void finishDecode(IoSession session, ProtocolDecoderOutput out) throws Exception {
     }
 }

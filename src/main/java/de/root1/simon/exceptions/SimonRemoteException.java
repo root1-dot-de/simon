@@ -18,6 +18,7 @@
  */
 package de.root1.simon.exceptions;
 
+
 /**
  * 
  * General exception used by SIMON. All other "not from SUN" exceptions should extend this class.
@@ -35,7 +36,7 @@ public class SimonRemoteException extends RuntimeException {
 	 * @param msg a exception message
 	 */
 	public SimonRemoteException(String msg) {
-		super(msg);
+            super(msg);
 	}
 
 }
