@@ -126,6 +126,7 @@ public class TestClientCallback {
                 roiRemote.getCallback();
                 throw new AssertionError("sending local endpoints should throw an exception");
             } catch (Exception e) {
+                e.printStackTrace();
                 System.out.println("Got exception: "+e+" --> SUCCESS");
             }
             
@@ -165,6 +166,7 @@ public class TestClientCallback {
                 roiRemote.sendCallbackViaCallback();
                 throw new AssertionError("sending local endpoints should throw an exception");
             } catch (Exception e) {
+                e.printStackTrace();
                 System.out.println("Got exception: "+e+" --> SUCCESS");
             }
 

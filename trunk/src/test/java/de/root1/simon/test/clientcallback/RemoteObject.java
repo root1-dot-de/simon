@@ -5,8 +5,6 @@
 
 package de.root1.simon.test.clientcallback;
 
-import de.root1.simon.SimonRemote;
-
 /**
  *
  * @author achristian

@@ -5,10 +5,13 @@
 
 package de.root1.simon.test.clientcallback;
 
+import de.root1.simon.annotation.SimonRemote;
+
 /**
  *
  * @author ACHR
  */
+@SimonRemote(value={ClientCallback.class})
 public class ClientCallbackImpl implements ClientCallback {
 
     @Override
