@@ -14,5 +14,6 @@ import de.root1.simon.SimonRemote;
 public interface ClientCallback extends SimonRemote {
 
     public void sayHello();
-
+    
+    public void sayObjectHello(Object o);
 }

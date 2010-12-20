@@ -101,5 +101,83 @@ public class TestClientCallback {
             throw new AssertionError(ex);
         }
     }
+    
+    @Test
+    public void testGetCallbackBackFromRemote() {
+        try {
+
+            System.out.println("Begin ...");
+            RemoteObjectImpl roi = new RemoteObjectImpl();
+
+            Registry r = Simon.createRegistry(22222);
+            r.bind("roi", roi);
+
+            System.out.println("bound roi to registry ...");
+            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+
+            System.out.println("roi lookup done");
+
+            ClientCallbackImpl cci = new ClientCallbackImpl();
+            roiRemote.setCallback(cci);
+            
+            try {
+                roiRemote.getCallback();
+                throw new AssertionError("sending local endpoints should throw an exception");
+            } catch (Exception e) {
+                System.out.println("Got exception: "+e+" --> SUCCESS");
+            }
+            
+            r.unbind("roi");
+            System.out.println("unbind of roi done");
+            r.stop();
+            System.out.println("registry stopped");
+
+            assert true;
+
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
+    }
+    
+    @Test
+    public void testSendCallbackViaCallback() {
+        try {
+
+            System.out.println("Begin ...");
+            RemoteObjectImpl roi = new RemoteObjectImpl();
+
+            Registry r = Simon.createRegistry(22222);
+            r.bind("roi", roi);
+
+            System.out.println("bound roi to registry ...");
+            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+
+            System.out.println("roi lookup done");
+
+            ClientCallbackImpl cci = new ClientCallbackImpl();
+            roiRemote.setCallback(cci);
+            
+            try {
+                roiRemote.sendCallbackViaCallback();
+                throw new AssertionError("sending local endpoints should throw an exception");
+            } catch (Exception e) {
+                System.out.println("Got exception: "+e+" --> SUCCESS");
+            }
+
+            r.unbind("roi");
+            System.out.println("unbind of roi done");
+            r.stop();
+            System.out.println("registry stopped");
+
+            assert true;
+
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
+    }
 
 }

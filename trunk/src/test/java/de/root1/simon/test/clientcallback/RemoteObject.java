@@ -11,8 +11,10 @@ import de.root1.simon.SimonRemote;
  *
  * @author achristian
  */
-public interface RemoteObject extends SimonRemote {
+public interface RemoteObject {
 
     public void setCallback(ClientCallback clientCallback);
+    public ClientCallback getCallback();
+    public void sendCallbackViaCallback();
 
 }

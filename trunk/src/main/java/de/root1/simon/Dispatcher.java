@@ -309,6 +309,11 @@ public class Dispatcher implements IoHandler {
         // register remote instance objects in the lookup-table
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
+                
+                if (Utils.isSimonProxy(args[i])) {
+                    throw new SimonException("Given method parameter no# "+(i+1)+" is a local endpoint of a remote object. Endpoints can not be transferred.");
+                }
+                
                 if (Utils.isValidRemote(args[i])) {
                     SimonRemoteInstance sri = new SimonRemoteInstance(session, args[i]);
 

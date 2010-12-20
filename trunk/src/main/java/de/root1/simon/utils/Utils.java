@@ -18,6 +18,7 @@
  */
 package de.root1.simon.utils;
 
+import de.root1.simon.SimonProxy;
 import de.root1.simon.SimonRemoteMarker;
 import de.root1.simon.annotation.SimonRemote;
 import java.io.ByteArrayOutputStream;
@@ -299,6 +300,24 @@ public class Utils {
         if (remoteObject instanceof de.root1.simon.SimonRemote) {
             return true;
         }
+        return false;
+    }
+    
+    /**
+     * Checks if given object is a simon proxy.
+     * 
+     * @param o object to check
+     * @return true, if object is a simon proxy, false if not
+     */
+    public static boolean isSimonProxy(Object o) {
+        if (o instanceof Proxy) {
+            InvocationHandler invocationHandler = Proxy.getInvocationHandler(o);
+            logger.trace("Got invocation handler ...");
+            if (invocationHandler instanceof SimonProxy) {
+                logger.trace("Yeeha. It's a SimonProxy ...");
+                return true;
+            } 
+        } 
         return false;
     }
 
