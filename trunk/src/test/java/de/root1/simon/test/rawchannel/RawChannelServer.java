@@ -18,8 +18,6 @@
  */
 package de.root1.simon.test.rawchannel;
 
-import de.root1.simon.exceptions.SimonRemoteException;
-
 /**
  *
  * @author achristian
