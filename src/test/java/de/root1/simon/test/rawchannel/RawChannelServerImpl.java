@@ -19,6 +19,7 @@
 package de.root1.simon.test.rawchannel;
 
 import de.root1.simon.Simon;
+import de.root1.simon.annotation.SimonRemote;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -29,7 +30,7 @@ import java.io.IOException;
  *
  * @author achristian
  */
-@de.root1.simon.annotation.SimonRemote
+@SimonRemote
 public class RawChannelServerImpl implements RawChannelServer {
 
     @Override
