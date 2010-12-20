@@ -5,13 +5,12 @@
 
 package de.root1.simon.test.clientcallback;
 
-import de.root1.simon.SimonRemote;
 
 /**
  *
  * @author ACHR
  */
-public interface ClientCallback extends SimonRemote {
+public interface ClientCallback {
 
     public void sayHello();
     
