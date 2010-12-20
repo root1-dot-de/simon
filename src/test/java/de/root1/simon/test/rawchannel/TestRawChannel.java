@@ -22,7 +22,6 @@ import de.root1.simon.Lookup;
 import de.root1.simon.RawChannel;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
-import de.root1.simon.SimonRemote;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
@@ -42,9 +41,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
