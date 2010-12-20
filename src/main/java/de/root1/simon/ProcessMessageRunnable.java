@@ -463,6 +463,10 @@ public class ProcessMessageRunnable implements Runnable {
                 logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
                 throw ex;
             }
+            
+            if (Utils.isSimonProxy(result)) {
+                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
+            }
 
             if (method.getReturnType() == void.class) {
                 result = new SimonVoid();
@@ -480,25 +484,22 @@ public class ProcessMessageRunnable implements Runnable {
 
             }
 
-        } catch (LookupFailedException e) {
-            result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to LookupFailedException: " + e.getMessage() + " / " + e.getCause());
         } catch (IllegalArgumentException e) {
             result = e;
-        } catch (IllegalAccessException e) {
-            result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to IllegalAccessException: " + e.getMessage() + " / " + e.getCause());
         } catch (InvocationTargetException e) {
             result = e.getTargetException();
-        } catch (Exception e) {
-            result = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to Exception: " + e.getClass() + " / " + e.getMessage() + " / " + e.getCause());
+        } catch (Exception e) { 
+            SimonRemoteException sre = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to underlying exception: "+e.getClass());
+            sre.initCause(e);
+            result = sre;
         }
 
         // a return value can be "null" ... this has to be serialized to the client
         if (result != null && !(result instanceof Serializable)) {
             logger.warn("Result '{}' is not serializable", result);
-            result = new SimonRemoteException("result of method '" + method + "' must be serializable and therefore implement 'java.io.Serializable' or 'de.root1.simon.SimonRemote'");
+            result = new SimonRemoteException("Result of method '" + method + "' must be serializable and therefore implement 'java.io.Serializable' or 'de.root1.simon.SimonRemote'");
         }
-
-
+        
         MsgInvokeReturn returnMsg = new MsgInvokeReturn();
         returnMsg.setSequence(msg.getSequence());
 
