@@ -16,4 +16,9 @@ public class ClientCallbackImpl implements ClientCallback {
         System.out.println("Hello");
     }
 
+    @Override
+    public void sayObjectHello(Object o) {
+        
+    }
+
 }
