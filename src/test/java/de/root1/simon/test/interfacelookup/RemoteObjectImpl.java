@@ -5,12 +5,14 @@
 
 package de.root1.simon.test.interfacelookup;
 
+import de.root1.simon.annotation.SimonRemote;
 import de.root1.simon.exceptions.SimonRemoteException;
 
 /**
  *
  * @author achristian
  */
+@SimonRemote
 public class RemoteObjectImpl implements RemoteObject {
 
     public void helloWorld() throws SimonRemoteException {
