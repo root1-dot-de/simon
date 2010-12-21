@@ -78,7 +78,7 @@ public class RawChannel {
     private boolean channelOpen = true;
 
     /**
-     * Instantiates a new raw channel. This is done by calling {@link Simon#openRawChannel(int, SimonRemote)}.
+     * Instantiates a new raw channel. This is done by calling {@link Simon#openRawChannel(int, Object)}.
      * @param dispatcher the related {@link Dispatcher}
      * @param session the related {@link IoSession}
      * @param channelToken the channeltoken we got from the remote station by calling {@link Simon#prepareRawChannel(RawChannelDataListener, Object)}

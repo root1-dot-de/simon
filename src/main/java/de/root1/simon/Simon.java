@@ -1211,7 +1211,7 @@ public class Simon {
      * <li>on the <i>receiving side</i> with the registered
      * {@link RawChannelDataListener},</li>
      * <li>and on the <i>sending side</i> for opening the {@link RawChannel} by
-     * calling {@link Simon#openRawChannel(int, SimonRemote)}.</li>
+     * calling {@link Simon#openRawChannel(int, Object)}.</li>
      * </ul>
      * <br>
      * This method has to be called on the receiving side.
