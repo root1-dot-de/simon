@@ -22,7 +22,6 @@ import de.root1.simon.utils.Utils;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Stack;
 
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -108,9 +107,9 @@ public class SimonRemoteInstance implements Serializable {
 
         if (marker!=null) { // if it's a marked class, read the interfaces from it's marker
 
-            logger.info("Provided remote object is a marked object.");
+            logger.debug("Provided remote object is a marked object.");
             Utils.putAllInterfaceNames(marker.getObjectToBeMarked(), interfaceNames);
-            logger.info("Got interfaces: {}", interfaceNames);
+            logger.debug("Got interfaces: {}", interfaceNames);
             
         } else if (remoteInterfacesInAnnotation!=null && remoteInterfacesInAnnotation.length>0) { // check for defined interfaces in annotation
 
