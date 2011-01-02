@@ -56,6 +56,7 @@ import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
 
 /**
@@ -463,6 +464,10 @@ public class ProcessMessageRunnable implements Runnable {
                 logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
                 throw ex;
             }
+//            catch (Throwable ex) {
+//                result = Utils.getRootCause(ex);
+//                System.err.println("undeclared throwable exception: root cause: "+result);
+//            }
             
             if (Utils.isSimonProxy(result)) {
                 throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
@@ -487,7 +492,11 @@ public class ProcessMessageRunnable implements Runnable {
         } catch (IllegalArgumentException e) {
             result = e;
         } catch (InvocationTargetException e) {
-            result = e.getTargetException();
+            if (e.getTargetException() instanceof UndeclaredThrowableException) {
+                result = Utils.getRootCause(e.getTargetException());
+            } else {
+                result = e.getTargetException();
+            }
         } catch (Exception e) { 
             SimonRemoteException sre = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to underlying exception: "+e.getClass());
             sre.initCause(e);
