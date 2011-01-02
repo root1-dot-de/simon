@@ -33,16 +33,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import org.xml.sax.SAXException;
 
 /**
  * 
@@ -368,11 +369,46 @@ public class Utils {
         }
     }
 
+    /**
+     * Returns the stacktrace of the given throwable as a string.
+     * String will be the same as "e.printStackTrace();" woulld print to console
+     *
+     * @param e
+     * @return the exceptions stacktrace as a string
+     */
     public static String getStackTraceAsString(Throwable e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
         return sw.toString();
+    }
+
+    /**
+     * Looks up and returns the root cause of an exception. If none is found, returns
+     * supplied Throwable object unchanged. If root is found, recursively "unwraps" it,
+     * and returns the result to the caller.
+     * 
+     * @param th
+     * @return the exceptions root-cause, if available, otherwise th will be returned unchanged
+     */
+    public static Throwable getRootCause(Throwable th) {
+        if (th instanceof SAXException) {
+          SAXException sax = (SAXException) th;
+          if (sax.getException() != null) {
+              return getRootCause(sax.getException());
+          }
+      }
+      else if (th instanceof SQLException) {
+          SQLException sql = (SQLException) th;
+          if (sql.getNextException() != null) {
+              return getRootCause(sql.getNextException());
+          }
+      }
+      else if (th.getCause() != null) {
+          return getRootCause(th.getCause());
+      }
+
+      return th;
     }
 
 }
