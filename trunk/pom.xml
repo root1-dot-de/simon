@@ -22,7 +22,7 @@
     <groupId>de.root1</groupId>
     <artifactId>simon</artifactId>
     <name>SIMON ${version}</name>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
     <description>SIMON (Simple Invocation of Methods Over Network) is a kind of RMI replacement which solves the most common problems many people complain about. It's fast, it's scalable, it's small and finally, easy to use.</description>
     <url>http://dev.root1.de/project-sites/simon/</url>
 
