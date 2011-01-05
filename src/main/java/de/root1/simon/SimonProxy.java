@@ -308,7 +308,8 @@ public class SimonProxy implements InvocationHandler {
     }
 
     /**
-     * Returns the {@link Dispatcher} instance related to this proxy
+     * Returns the {@link Dispatcher} instance related to this proxy.
+     * May return null in case of an already shutdown session
      * @return an instance of {@link Dispatcher}
      */
     protected Dispatcher getDispatcher() {
