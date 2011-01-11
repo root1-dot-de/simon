@@ -58,6 +58,7 @@ import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * This class is feed with all kind of messages (requests/invokes and returns)
@@ -445,23 +446,37 @@ public class ProcessMessageRunnable implements Runnable {
             } catch (IllegalArgumentException ex) {
                 logger.error("IllegalArgumentException while invoking remote method. Arguments obviously do not match the methods parameter types. Errormsg: "+ex.getMessage());
                 logger.error("***** Analysis of arguments and paramtypes ... ron={} method={} ", remoteObjectName, method.getName());
-                if (arguments != null) {
+                if (arguments != null && arguments.length!=0) {
                     for (int i = 0; i < arguments.length; i++) {
                         logger.error("***** arguments[" + i + "]: " + (arguments[i] == null ? "null" : arguments[i].getClass().getCanonicalName()) + " toString: " + (arguments[i] == null ? "null" : arguments[i].toString()));
+//                        if (arguments[i]!=null) {
+//                            for (Method m : arguments[i].getClass().getMethods()){
+//                                logger.error("***** arguments[" + i + "] has method: {}",m);
+//                            }
+//                        }
                     }
                 } else {
                     logger.error("***** no arguments available.");
                 }
 
                 Class<?>[] paramType = method.getParameterTypes();
-                if (paramType != null) {
+                if (paramType != null && paramType.length!=0) {
                     for (int i = 0; i < paramType.length; i++) {
-                        logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getClass().getCanonicalName()));
+//                        logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getClass().getCanonicalName()));
+                        logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getCanonicalName()));
                     }
                 } else {
                     logger.error("***** no paramtypes available.");
                 }
+                
+                for (Method m : remoteObject.getClass().getMethods()){
+                    logger.error("***** remoteObject '{}' has method: {}",remoteObjectName, m);
+                }
+                
+                logger.error("***** method signature: {}", method.toString());
+                logger.error("***** generic method signature: {}", method.toGenericString());
                 logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
+                ex.printStackTrace();
                 throw ex;
             }
 //            catch (Throwable ex) {
