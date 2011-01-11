@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
+import de.root1.simon.exceptions.IllegalRemoteObjectException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
@@ -1316,12 +1317,13 @@ public class Simon {
      *
      * @param o the object to mark as an SimonRemote
      * @return a marked (proxy) class
+     * @throws IllegalRemoteObjectException thrown in case of missing interfaces of given object
      * @since 1.1.0
      */
     public static Object markAsRemote(Object o) {
         Class<?>[] interfaces = o.getClass().getInterfaces();
         if (interfaces.length==0) {
-            throw new IllegalArgumentException("There need to be at least one interface to mark the given object as simon remote");
+            throw new IllegalRemoteObjectException("There need to be at least one interface to mark the given object as simon remote");
         }
         SimonRemoteMarker smr = new SimonRemoteMarker(o);
         Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, smr);
