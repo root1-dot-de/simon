@@ -8,7 +8,6 @@ package de.root1.simon.test.markAsRemote;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
-import de.root1.simon.exceptions.IllegalRemoteObjectException;
 import org.junit.Test;
 
 /**
@@ -46,7 +45,7 @@ public class TestMarkAsRemote {
         try {
             Simon.markAsRemote(this);
             throw new AssertionError("Objects without interface are not allowed/useable!");
-        } catch (IllegalRemoteObjectException ex){
+        } catch (IllegalArgumentException ex){
 
         }
     }

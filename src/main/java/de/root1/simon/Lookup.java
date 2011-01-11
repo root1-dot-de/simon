@@ -59,11 +59,5 @@ public interface Lookup {
 
     Object lookup(String lookupString) throws LookupFailedException, EstablishConnectionFailed;
 
-    /**
-     * Releases are remote object. If provided object is null, method will simply return.
-     *
-     * @param remoteObject
-     * @return true, in case of a normal and clean release. false if remoteobject is already released
-     */
-    boolean release(Object remoteObject);
+    boolean release(Object proxyObject);
 }

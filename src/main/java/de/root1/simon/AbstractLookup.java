@@ -100,26 +100,22 @@ abstract class AbstractLookup implements Lookup {
 
         // release the proxy and get the related dispatcher
         Dispatcher dispatcher = proxy.getDispatcher();
-        boolean result;
-        if (dispatcher!=null) {
-            // get the list with listeners that have to be notified about the release and the followed close-event
-            List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
 
-            proxy.release();
+        // get the list with listeners that have to be notified about the release and the followed close-event
+        List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
 
-            if (removeClosedListenerList != null) {
-                // forward the release event to all listeners
-                for (ClosedListener closedListener : removeClosedListenerList) {
-                    closedListener.closed();
-                }
-                removeClosedListenerList.clear();
-                removeClosedListenerList = null;
+        proxy.release();
+
+        if (removeClosedListenerList != null) {
+            // forward the release event to all listeners
+            for (ClosedListener closedListener : removeClosedListenerList) {
+                closedListener.closed();
             }
-
-            result = AbstractLookup.releaseDispatcher(dispatcher);
-        } else {
-            result = false;
+            removeClosedListenerList.clear();
+            removeClosedListenerList = null;
         }
+
+        boolean result = AbstractLookup.releaseDispatcher(dispatcher);
         logger.debug("end");
         return result;
     }

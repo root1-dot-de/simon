@@ -33,8 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
-import de.root1.simon.exceptions.IllegalRemoteObjectException;
-import de.root1.simon.exceptions.SimonException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
@@ -284,38 +282,18 @@ public class Utils {
         }
         return remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
     }
-    
-    /**
-     * Checks whether the object is annotated with <code>SimonRemote</code> or not
-     * @param remoteObject the object to check
-     * @return true, if object is annotated, false if not
-     */
-    public static Class<?>[] getRemoteAnnotationValue(Object remoteObject) {
-        if (remoteObject == null) {
-            throw new IllegalArgumentException("Cannot check a null-argument. You have to provide a proxy object instance ...");
-        }
-        return remoteObject.getClass().getAnnotation(de.root1.simon.annotation.SimonRemote.class).value();
-    }
 
     /**
      * Checks if the given remote object is a valid remote object
      * @param remoteObject the object to check
      * @return true, if remote object is valid, false if not
-     * @throws IllegalRemoteObjectException thrown in case of a faulty remote object (ie. missing interfaces)
      */
     public static boolean isValidRemote(Object remoteObject) {
-        
-                
         if (remoteObject == null) {
             return false;
         }
         if (isRemoteAnnotated(remoteObject)) {
-            
-            if (remoteObject.getClass().getInterfaces().length>0 || getRemoteAnnotationValue(remoteObject).length>0) {
-                return true;
-            } else {
-                throw new IllegalRemoteObjectException("There is no interface with the remote object of type '"+remoteObject.getClass().getCanonicalName()+"' linked. Add a 'value' parameter with array of interfaces (at least one interface) to the SimonRemote annotation, or let the class implement an interface");
-            }
+            return true;
         }
         if (getMarker(remoteObject) != null) {
             return true;
