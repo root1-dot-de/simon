@@ -16,6 +16,8 @@ import java.util.logging.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 /**
  *
@@ -169,6 +171,58 @@ public class TestClientCallback {
                 e.printStackTrace();
                 System.out.println("Got exception: "+e+" --> SUCCESS");
             }
+
+            r.unbind("roi");
+            System.out.println("unbind of roi done");
+            r.stop();
+            System.out.println("registry stopped");
+
+            assert true;
+
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
+    }
+    
+    @Test
+    public void testClientCallbackEquals() {
+        try {
+
+            System.out.println("Begin testClientCallbackEquals ...");
+            RemoteObjectImpl roi = new RemoteObjectImpl();
+
+            Registry r = Simon.createRegistry(22222);
+            r.bind("roi", roi);
+
+            System.out.println("bound roi to registry ...");
+            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+
+            System.out.println("roi lookup done");
+
+            ClientCallbackImpl cci = new ClientCallbackImpl();
+//            boolean result = roiRemote.testEquals(cci);
+            System.out.println("Calling equals on local remoteobject");
+            boolean result = roiRemote.equals(roiRemote);
+            System.out.println("Calling equals *DONE*");
+            assertTrue("On clientside, a remote obejct must be equals to itself", result);
+            
+            System.out.println("Calling equals on server side");
+            result = roiRemote.testEquals(cci);
+            System.out.println("Calling equals *DONE*");
+            assertTrue("On serverside, a clientcallback-object must be equals to itself", result);
+            
+            
+            System.out.println("Calling equals on remote");
+            result = roiRemote.equals(cci);
+            System.out.println("Calling equals *DONE*");
+            assertFalse("On serverside, a clientcallback-object must be equals to the server remote object", result);
+            
+            System.out.println("Calling equals on remote with null");
+            result = roiRemote.equals(null);
+            System.out.println("Calling equals *DONE*");
+            assertFalse("On serverside, a null-object must not be equals to the server remote object", result);
 
             r.unbind("roi");
             System.out.println("unbind of roi done");
