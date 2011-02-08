@@ -31,4 +31,18 @@ public class RemoteObjectImpl implements RemoteObject {
     public void sendCallbackViaCallback() {
         callback.sayObjectHello(callback);
     }
+
+    @Override
+    public boolean testEquals(ClientCallback clientCallback) {
+        return clientCallback.equals(clientCallback);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        System.out.println("EQUALS ON "+this.getClass().getCanonicalName()+" CALLED!");
+        return super.equals(obj);
+    }
+    
+    
+
 }

@@ -104,27 +104,27 @@ public class SimonProxy implements InvocationHandler {
             // redirect invocation
             if (method.toString().equalsIgnoreCase(Statics.EQUALS_METHOD_SIGNATURE)) {
 
-                // check if object is an remote object which has to be looked up at the opposite ReadEventHandler
                 Object o = args[0];
-                if (Utils.isValidRemote(o)) {
+                if (Utils.isSimonProxy(o)) {
 
-                    o = new SimonRemoteInstance(session, args[0]);
+                    // if one tries to compare this proxy with another proxy: Do it locally here by comparing the string representation
+                    return o.toString().equals(this.toString());
 
-                } else { // else, it's a standard object
+                } else { // else, it's a standard object -> check for serializeable and do a remote-equals ...
 
                     // .. and if the standard object is not serializable, throw an exception
                     if (o != null && !(o instanceof Serializable)) {
                         throw new IllegalArgumentException("SIMON remote objects can only compared with objects that are serializable!");
                     }
 
+//                    // in case of 'null', the return value is false, we don't have to transport it to the remote...
+//                    if (o == null) {
+//                        return false;
+//                    }
+
+                    return remoteEquals(o);
                 }
 
-                // in case of 'null', the return value is false, we don't have to transport it to the remote...
-                if (o == null) {
-                    return false;
-                }
-
-                return remoteEquals(o);
             } else if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)) {
                 try {
                     return remoteHashCode();
