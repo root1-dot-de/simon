@@ -1346,6 +1346,7 @@ public class Simon {
      * @param a
      * @param b
      * @return boolean
+     * @since 1.2.0
      */
     public static boolean denoteSameRemoteObjekt(Object a, Object b) {
         
