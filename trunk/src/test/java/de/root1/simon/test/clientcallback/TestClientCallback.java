@@ -5,6 +5,8 @@
 
 package de.root1.simon.test.clientcallback;
 
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
@@ -24,6 +26,8 @@ import static org.junit.Assert.assertFalse;
  * @author achristian
  */
 public class TestClientCallback {
+    
+    private final Logger logger = LoggerFactory.getLogger(TestClientCallback.class);
 
     public TestClientCallback() {
     }
@@ -76,26 +80,26 @@ public class TestClientCallback {
 
         try {
 
-            System.out.println("Begin ...");
+            logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
 
-            System.out.println("bound roi to registry ...");
+            logger.info("bound roi to registry ...");
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
-            System.out.println("roi lookup done");
+            logger.info("roi lookup done");
 
             ClientCallbackImpl cci = new ClientCallbackImpl();
             roiRemote.setCallback(cci);
 
             r.unbind("roi");
-            System.out.println("unbind of roi done");
+            logger.info("unbind of roi done");
             r.stop();
-            System.out.println("registry stopped");
+            logger.info("registry stopped");
 
             assert true;
 
@@ -108,18 +112,18 @@ public class TestClientCallback {
     public void testGetCallbackBackFromRemote() {
         try {
 
-            System.out.println("Begin ...");
+            logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
 
-            System.out.println("bound roi to registry ...");
+            logger.info("bound roi to registry ...");
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
-            System.out.println("roi lookup done");
+            logger.info("roi lookup done");
 
             ClientCallbackImpl cci = new ClientCallbackImpl();
             roiRemote.setCallback(cci);
@@ -129,13 +133,13 @@ public class TestClientCallback {
                 throw new AssertionError("sending local endpoints should throw an exception");
             } catch (Exception e) {
                 e.printStackTrace();
-                System.out.println("Got exception: "+e+" --> SUCCESS");
+                logger.info("Got exception: "+e+" --> SUCCESS");
             }
             
             r.unbind("roi");
-            System.out.println("unbind of roi done");
+            logger.info("unbind of roi done");
             r.stop();
-            System.out.println("registry stopped");
+            logger.info("registry stopped");
 
             assert true;
 
@@ -148,18 +152,18 @@ public class TestClientCallback {
     public void testSendCallbackViaCallback() {
         try {
 
-            System.out.println("Begin ...");
+            logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
 
-            System.out.println("bound roi to registry ...");
+            logger.info("bound roi to registry ...");
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
-            System.out.println("roi lookup done");
+            logger.info("roi lookup done");
 
             ClientCallbackImpl cci = new ClientCallbackImpl();
             roiRemote.setCallback(cci);
@@ -169,13 +173,13 @@ public class TestClientCallback {
                 throw new AssertionError("sending local endpoints should throw an exception");
             } catch (Exception e) {
                 e.printStackTrace();
-                System.out.println("Got exception: "+e+" --> SUCCESS");
+                logger.info("Got exception: "+e+" --> SUCCESS");
             }
 
             r.unbind("roi");
-            System.out.println("unbind of roi done");
+            logger.info("unbind of roi done");
             r.stop();
-            System.out.println("registry stopped");
+            logger.info("registry stopped");
 
             assert true;
 
@@ -188,46 +192,46 @@ public class TestClientCallback {
     public void testClientCallbackEquals() {
         try {
 
-            System.out.println("Begin testClientCallbackEquals ...");
+            logger.info("Begin testClientCallbackEquals ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
 
-            System.out.println("bound roi to registry ...");
+            logger.info("bound roi to registry ...");
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
-            System.out.println("roi lookup done");
+            logger.info("roi lookup done");
 
             ClientCallbackImpl cci = new ClientCallbackImpl();
 //            boolean result = roiRemote.testEquals(cci);
-            System.out.println("Calling equals on local remoteobject");
+            logger.info("Calling equals on local remoteobject");
             boolean result = roiRemote.equals(roiRemote);
-            System.out.println("Calling equals *DONE*");
+            logger.info("Calling equals *DONE*");
             assertTrue("On clientside, a remote obejct must be equals to itself", result);
             
-            System.out.println("Calling equals on server side");
+            logger.info("Calling equals on server side");
             result = roiRemote.testEquals(cci);
-            System.out.println("Calling equals *DONE*");
+            logger.info("Calling equals *DONE*");
             assertTrue("On serverside, a clientcallback-object must be equals to itself", result);
             
             
-            System.out.println("Calling equals on remote");
+            logger.info("Calling equals on remote");
             result = roiRemote.equals(cci);
-            System.out.println("Calling equals *DONE*");
+            logger.info("Calling equals *DONE*");
             assertFalse("On serverside, a clientcallback-object must be equals to the server remote object", result);
             
-            System.out.println("Calling equals on remote with null");
+            logger.info("Calling equals on remote with null");
             result = roiRemote.equals(null);
-            System.out.println("Calling equals *DONE*");
+            logger.info("Calling equals *DONE*");
             assertFalse("On serverside, a null-object must not be equals to the server remote object", result);
 
             r.unbind("roi");
-            System.out.println("unbind of roi done");
+            logger.info("unbind of roi done");
             r.stop();
-            System.out.println("registry stopped");
+            logger.info("registry stopped");
 
             assert true;
 
