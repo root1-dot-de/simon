@@ -595,6 +595,12 @@ public class ProcessMessageRunnable implements Runnable {
 
         boolean equalsResult = false;
         try {
+            
+            if (objectToCompareWith instanceof SimonRemoteInstance) {
+                SimonRemoteInstance sri = (SimonRemoteInstance) objectToCompareWith;
+                logger.debug("Got a SimonRemoteInstance(ron='{}') to compare with, looking for real object...", sri.getRemoteObjectName());
+                objectToCompareWith = dispatcher.getLookupTable().getRemoteObjectContainer(sri.getRemoteObjectName()).getRemoteObject();
+            }
 
             Object tthis = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
             if (objectToCompareWith == null) {
