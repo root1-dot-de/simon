@@ -595,24 +595,21 @@ public class ProcessMessageRunnable implements Runnable {
 
         boolean equalsResult = false;
         try {
-
-            // if the object is a remote object, get the object out of the lookuptable
+            
             if (objectToCompareWith instanceof SimonRemoteInstance) {
-                logger.debug("Given argument is SimonRemoteInstance");
-
-                final String argumentRemoteObjectName = ((SimonRemoteInstance) objectToCompareWith).getRemoteObjectName();
-
-                objectToCompareWith = dispatcher.getLookupTable().getRemoteObjectContainer(argumentRemoteObjectName).getRemoteObject();
+                SimonRemoteInstance sri = (SimonRemoteInstance) objectToCompareWith;
+                logger.debug("Got a SimonRemoteInstance(ron='{}') to compare with, looking for real object...", sri.getRemoteObjectName());
+                objectToCompareWith = dispatcher.getLookupTable().getRemoteObjectContainer(sri.getRemoteObjectName()).getRemoteObject();
             }
 
-            Object remoteBinding = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName);
+            Object tthis = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
             if (objectToCompareWith == null) {
                 equalsResult = false;
             } else {
-                equalsResult = remoteBinding.toString().equals(objectToCompareWith.toString());
+                equalsResult = tthis.equals(objectToCompareWith);
             }
+            logger.debug("this='{}' objectToCompareWith='{}' equalsResult={}", new Object[]{tthis.toString(), (objectToCompareWith == null ? "NULL" : objectToCompareWith.toString()), equalsResult});
 
-            logger.debug("remoteBinding='{}' objectToCompareWith='{}' equalsResult={}", new Object[]{remoteBinding.toString(), (objectToCompareWith == null ? "NULL" : objectToCompareWith.toString()), equalsResult});
 
         } catch (LookupFailedException e) {
             // TODO Auto-generated catch block
