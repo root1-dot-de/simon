@@ -42,6 +42,7 @@ import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.Utils;
+import javax.rmi.CORBA.Util;
 
 /**
  * This is SIMONs core class which contains all the core functionality like
@@ -1328,5 +1329,46 @@ public class Simon {
         SimonRemoteMarker smr = new SimonRemoteMarker(o);
         Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, smr);
         return newProxyInstance;
+    }
+    
+    /**
+     * Tests if both objects denote the same remote object.
+     * Comparison is done on 
+     * <ul>
+     * <li>remote object name</li>
+     * <li>underlying IO session</li>
+     * </ul>
+     * 
+     * If both objects denote a remote object and the values match for both 
+     * objects, result will be true. In any other case, false is returned
+     * 
+     * 
+     * @param a
+     * @param b
+     * @return boolean
+     */
+    public static boolean denoteSameRemoteObjekt(Object a, Object b) {
+        
+        if (Utils.isSimonProxy(a)) {
+            
+            if (Utils.isSimonProxy(b)) {
+                
+                SimonProxy proxyA = Simon.getSimonProxy(a);
+                SimonProxy proxyB = Simon.getSimonProxy(b);
+                
+                if (proxyA.getRemoteObjectName().equals(proxyB.getRemoteObjectName()) &&
+                        proxyA.getIoSession().equals(proxyB.getIoSession())){
+                    return true;
+                }
+                
+            } else {
+                logger.debug("Object 'b' is not a SimonProxy instance");    
+            }
+            
+        } else {
+            logger.debug("Object 'a' is not a SimonProxy instance");
+        }
+        
+        return false;
     }
 }
