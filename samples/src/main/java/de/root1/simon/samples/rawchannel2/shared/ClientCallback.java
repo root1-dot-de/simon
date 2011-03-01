@@ -5,15 +5,13 @@
 
 package de.root1.simon.samples.rawchannel2.shared;
 
-import de.root1.simon.SimonRemote;
-import de.root1.simon.exceptions.SimonRemoteException;
 
 /**
  *
  * @author ACHR
  */
-public interface ClientCallback extends SimonRemote {
+public interface ClientCallback {
 
-    public int prepareFileTransfer(String fileName) throws SimonRemoteException;
+    public int prepareFileTransfer(String fileName);
 
 }

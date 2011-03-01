@@ -4,6 +4,7 @@
  */
 package de.root1.simon.samples.rawchannel.client;
 
+import de.root1.simon.Lookup;
 import de.root1.simon.RawChannel;
 import de.root1.simon.Simon;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
@@ -33,9 +34,9 @@ public class Client {
         createTestFile();
 
         try {
-
             // Get connection to server
-            RawChannelServer rcs = (RawChannelServer) Simon.lookup(InetAddress.getLocalHost(), 2000, RawChannelServer.BIND_NAME);
+            Lookup nameLookup = Simon.createNameLookup(InetAddress.getLocalHost(), 2000);
+            RawChannelServer rcs = (RawChannelServer) nameLookup.lookup(RawChannelServer.BIND_NAME);
 
             // get a RawChannel Token from server. This is needed to open the
             // RawChannel
@@ -72,7 +73,7 @@ public class Client {
             fileOutputStream.write(fileBytesReceived);
             fileOutputStream.close();
 
-            Simon.release(rcs);
+            nameLookup.release(rcs);
 
         } catch (UnknownHostException ex) {
             ex.printStackTrace();

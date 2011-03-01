@@ -5,11 +5,8 @@
 
 package de.root1.simon.samples.helloworld.shared;
 
-import de.root1.simon.SimonRemote;
-import de.root1.simon.exceptions.SimonRemoteException;
+public interface ClientCallbackInterface {
 
-public interface ClientCallbackInterface extends SimonRemote {
-
-   public void callback(String text) throws SimonRemoteException;
+   public void callback(String text);
 
 } 

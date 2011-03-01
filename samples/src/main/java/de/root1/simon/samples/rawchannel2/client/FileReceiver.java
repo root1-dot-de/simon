@@ -6,7 +6,6 @@
 package de.root1.simon.samples.rawchannel2.client;
 
 import de.root1.simon.RawChannelDataListener;
-import java.awt.geom.CubicCurve2D;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;

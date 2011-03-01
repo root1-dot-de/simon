@@ -6,15 +6,16 @@
 package de.root1.simon.samples.helloworld.server;
 
 import de.root1.simon.Simon;
-import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.annotation.SimonRemote;
 import de.root1.simon.samples.helloworld.shared.ClientCallbackInterface;
 import de.root1.simon.samples.helloworld.shared.ServerInterface;
 
+@SimonRemote(value={ServerInterface.class})
 public class ServerInterfaceImpl implements ServerInterface {
 
    private static final long serialVersionUID = 1L;
 
-   public void login(ClientCallbackInterface clientCallback) throws SimonRemoteException {
+   public void login(ClientCallbackInterface clientCallback) {
  
       clientCallback.callback("This is the callback. " +
          "Your address is "+
