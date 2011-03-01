@@ -5,6 +5,7 @@
 
 package de.root1.simon.samples.rawchannel2.client;
 
+import de.root1.simon.Lookup;
 import de.root1.simon.Simon;
 import de.root1.simon.SimonRemote;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
@@ -27,11 +28,13 @@ public class Client {
 
             ClientCallbackImpl clientCallback = new ClientCallbackImpl();
             System.out.println("Doing lookup ...");
-            MyServer myServer = (MyServer) Simon.lookup("localhost", 22222, "myServer");
+            Lookup nameLookup = Simon.createNameLookup("localhost", 22222);
+            
+            MyServer myServer = (MyServer) nameLookup.lookup("myServer");
             System.out.println("Requesting file: "+filename);
             myServer.requestFile(clientCallback, filename);
             System.out.println("File request completed, releasing remote object");
-            Simon.release(myServer);
+            nameLookup.release(myServer);
 
         } catch (SimonRemoteException ex) {
             ex.printStackTrace();

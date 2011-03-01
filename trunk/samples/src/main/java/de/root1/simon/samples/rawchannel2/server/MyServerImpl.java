@@ -7,6 +7,7 @@ package de.root1.simon.samples.rawchannel2.server;
 
 import de.root1.simon.RawChannel;
 import de.root1.simon.Simon;
+import de.root1.simon.annotation.SimonRemote;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.samples.rawchannel2.shared.ClientCallback;
 import de.root1.simon.samples.rawchannel2.shared.MyServer;
@@ -20,13 +21,14 @@ import java.nio.channels.FileChannel;
  *
  * @author ACHR
  */
+@SimonRemote(value={MyServer.class})
 public class MyServerImpl implements MyServer {
 
-    public void doSomething() throws SimonRemoteException {
+    public void doSomething() {
         System.out.println("Doing something on server ...");
     }
 
-   public void requestFile(ClientCallback clientCallback, String filename) throws SimonRemoteException {
+   public void requestFile(ClientCallback clientCallback, String filename) {
         
         int channelToken = clientCallback.prepareFileTransfer(filename+".received");
         RawChannel rawChannel = Simon.openRawChannel(channelToken, clientCallback);

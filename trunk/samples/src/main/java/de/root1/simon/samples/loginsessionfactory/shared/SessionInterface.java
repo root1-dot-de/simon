@@ -5,17 +5,15 @@
 
 package de.root1.simon.samples.loginsessionfactory.shared;
 
-import de.root1.simon.SimonRemote;
-import de.root1.simon.exceptions.SimonRemoteException;
 
 /**
  *
  * @author ACHR
  */
-public interface SessionInterface extends SimonRemote {
+public interface SessionInterface {
 
-    public void sessionMethodA() throws SimonRemoteException;
-    public void sessionMethodB() throws SimonRemoteException;
-    public void sessionMethodC() throws SimonRemoteException;
+    public void sessionMethodA();
+    public void sessionMethodB();
+    public void sessionMethodC();
 
 }
