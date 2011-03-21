@@ -146,14 +146,7 @@ public class LookupTable {
         } else {
             remotes = gcRemoteInstances.get(sessionId);
         }
-        /*
-         * if remote is not already known, add it to list
-         * This check is useful when you provide one and the same callback object to server many times.
-         * There the name is always the same. And when unreferencing the object get's unreferenced once.
-         */
-        if (!remotes.contains(remoteObjectName)) {
-            remotes.add(remoteObjectName);
-        }
+        remotes.add(remoteObjectName);
 
         putRemoteBinding(remoteObjectName, remoteObject);
 
@@ -300,7 +293,6 @@ public class LookupTable {
      *
      */
     protected void cleanup() {
-        logger.debug("begin");
         Simon.unregisterLookupTable(this);
 
         Iterator<Long> iterator = gcRemoteInstances.keySet().iterator();
@@ -311,7 +303,6 @@ public class LookupTable {
         bindings.clear();
         remoteObject_to_hashToMethod_Map.clear();
         cleanupDone = true;
-        logger.debug("end");
     }
 
     /**
@@ -343,10 +334,9 @@ public class LookupTable {
                 }
 
                 synchronized (bindings) {
-                    RemoteObjectContainer container = bindings.remove(remoteObjectName);
-                    logger.debug("sessionId={} RemoteObjectContainer to unreference: {}", id, container);
-                    
-                    Object remoteInstanceBindingToRemove = container.getRemoteObject();
+
+                    Object remoteInstanceBindingToRemove = bindings.remove(remoteObjectName).getRemoteObject();
+
                     logger.debug("sessionId={} simon remote to unreference: {}", id, remoteInstanceBindingToRemove);
 
                     removeRemoteObjectFromHashMap(remoteInstanceBindingToRemove);

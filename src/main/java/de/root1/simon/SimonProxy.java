@@ -127,7 +127,6 @@ public class SimonProxy implements InvocationHandler {
 
                 }
                 return remoteEquals(o);
-
             } else if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)) {
                 try {
                     return remoteHashCode();

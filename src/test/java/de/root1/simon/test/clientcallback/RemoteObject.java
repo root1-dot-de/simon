@@ -16,5 +16,5 @@ public interface RemoteObject {
     public void sendCallbackViaCallback();
     
     public boolean testEquals(ClientCallback clientCallback);
-
+    
 }
