@@ -22,8 +22,9 @@ public class UtilsTestCase {
 
         Class<?>[] annotatedInterfaces2 = Utils.findAllRemoteInterfaces(InterfaceWithRemoteannotationImpl2.class);
         assertNotNull("Class that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", annotatedInterfaces2);
-        assertEquals("Number of found interfaces do not meet the expectation 2", 1, annotatedInterfaces2.length);
-        assertEquals("Class that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", InterfaceWithRemoteannotation.class, annotatedInterfaces2[0]);
+        assertEquals("Number of found interfaces do not meet the expectation 2", 2, annotatedInterfaces2.length);
+        assertEquals("Class that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", ExtendedInterfaceWithRemoteannotation.class, annotatedInterfaces2[0]);
+        assertEquals("Class that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", InterfaceWithRemoteannotation.class, annotatedInterfaces2[1]);
     }
     
     @Test
