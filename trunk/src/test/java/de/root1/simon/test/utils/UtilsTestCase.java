@@ -11,11 +11,21 @@ public class UtilsTestCase {
 
     @Test
     public void testFindAllInterfaces() {
-        Class<?>[] interfases = Utils.findAllRemoteInterfaces(InhertedClass.class);
-        assertNotNull(interfases);
-        assertEquals(2, interfases.length);
-    }
+        Class<?>[] interfaces = Utils.findAllRemoteInterfaces(InhertedClass.class);
+        assertNotNull(interfaces);
+        assertEquals(1, interfaces.length);
 
+        Class<?>[] annotatedInterfaces = Utils.findAllRemoteInterfaces(InterfaceWithRemoteannotationImpl.class);
+        assertNotNull("Class that implements a SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", annotatedInterfaces);
+        assertEquals("Number of found interfaces do not meet the expectation", 1, annotatedInterfaces.length);
+        assertEquals("Class that implements a SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", InterfaceWithRemoteannotation.class, annotatedInterfaces[0]);
+
+        Class<?>[] annotatedInterfaces2 = Utils.findAllRemoteInterfaces(InterfaceWithRemoteannotationImpl2.class);
+        assertNotNull("Class that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", annotatedInterfaces2);
+        assertEquals("Number of found interfaces do not meet the expectation 2", 1, annotatedInterfaces2.length);
+        assertEquals("Class that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", InterfaceWithRemoteannotation.class, annotatedInterfaces2[0]);
+    }
+    
     @Test
     public void testIsValidRemote() {
 
@@ -26,6 +36,5 @@ public class UtilsTestCase {
         assertFalse("A SimonRemoteMarker instance normally is a valid simon remote", Utils.isValidRemote(this));
 
         assertTrue("A class that implements an interface that inherits SimonRemte IF must be a valid simon remote", Utils.isValidRemote(new BasisClass()));
-
     }
 }

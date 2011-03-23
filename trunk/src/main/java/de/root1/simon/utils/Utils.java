@@ -222,6 +222,62 @@ public class Utils {
         return interfaceSet.toArray(interfaces);
     }
 
+//    /**
+//     * Internal helper method for finding remote interfaces
+//     * @param clazz the class to analyse for remote interfaces
+//     * @return a set with remote interfaces
+//     */
+//    private static Set<Class<?>> doFindAllRemoteInterfaces(Class<?> clazz) {
+//        Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
+//
+//        // check for allowed remote interfaces
+//        Class[] remoteInterfaces = null;
+//
+//        SimonRemote annotation = clazz.getAnnotation(SimonRemote.class);
+//        if (annotation != null) {
+//            remoteInterfaces = annotation.value();
+//        }
+//
+//        // check for specified interfaces in annotation
+//        if (remoteInterfaces == null || remoteInterfaces.length == 0) {
+//            
+//            // annotation has no interfaces specified, or there's no annotation, go for the interface itself
+//            if (logger.isTraceEnabled()) {
+//                if (annotation == null) {
+//                    logger.trace("No SimonRemote annotation found for clazz {}. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
+//                } else {
+//                    logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
+//                }
+//            }
+//            
+//            //System.out.println("clazz "+ clazz.getName()+". Adding all known interfaces: "+ Arrays.toString(clazz.getInterfaces()));
+//            for (Class<?> interfaze : clazz.getInterfaces()) {
+//                //            if (SimonRemote.class.isAssignableFrom(interfaze)) {
+//                if (!interfaceSet.contains((Class<?>) interfaze)) {
+//                    interfaceSet.add((Class<?>) interfaze);
+//                }
+//                //            }
+//            }
+//
+//        } else { // annotation has interfaces specified
+//
+//            if (logger.isTraceEnabled()) {
+//                logger.trace("SimonRemote annotation found. Remote interfaces where explicitly specified: {}. Adding them...", Arrays.toString(remoteInterfaces));
+//            }
+//            for (Class<?> interfaze : remoteInterfaces) {
+//                interfaceSet.add((Class<?>) interfaze);
+//            }
+//
+//        }
+//
+//        // check also for superclasses
+//        if (clazz.getSuperclass() != null && !clazz.getSuperclass().equals(Object.class)) {
+//            interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
+//        }
+//        
+//        return interfaceSet;
+//    }
+    
     /**
      * Internal helper method for finding remote interfaces
      * @param clazz the class to analyse for remote interfaces
@@ -230,46 +286,71 @@ public class Utils {
     private static Set<Class<?>> doFindAllRemoteInterfaces(Class<?> clazz) {
         Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
 
-        // check for allowed remote interfaces
-        Class[] remoteInterfaces = null;
-
+        
+        // check for annotation in clazz
         SimonRemote annotation = clazz.getAnnotation(SimonRemote.class);
         if (annotation != null) {
-            remoteInterfaces = annotation.value();
-        }
-
-        if (remoteInterfaces == null || remoteInterfaces.length == 0) {
-
-            if (logger.isTraceEnabled()) {
-                if (annotation == null) {
-                    logger.trace("No SimonRemote annotation found for clazz {}. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
-                } else {
-                    logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
+            
+            logger.trace("SimonRemote annotation found for clazz {}", clazz.getName());
+            
+            // check for remote interfaces specified in the SimonRemote annotation
+            Class[] remoteInterfaces = annotation.value();
+            
+            if (remoteInterfaces!=null && remoteInterfaces.length>0) {
+                /*
+                 * found some specified remote interfaces in the annotation's value field. 
+                 * Use them and return
+                 */
+                logger.trace("SimonRemote annotation has remote interfaces specified. Adding: {}", Arrays.toString(remoteInterfaces));
+                for (Class<?> interfaze : remoteInterfaces) {
+                    interfaceSet.add((Class<?>) interfaze);
                 }
+                
+            } else { 
+                /*
+                 * there is no interfaces specified with the annotation's value field. 
+                 * Using all visible interfaces in from the initial class as a remote interface.
+                 * "All" means: All first-level interfaces, independant from any SimonRemote annotation or extension
+                 */
+                for (Class<?> interfaze : clazz.getInterfaces()) {
+                    interfaceSet.add((Class<?>) interfaze);
+                }
+                
             }
-            //System.out.println("clazz "+ clazz.getName()+". Adding all known interfaces: "+ Arrays.toString(clazz.getInterfaces()));
+            
+        } else { // deeper search
+            
+            logger.trace("No SimonRemote annotation found for clazz {}. Searching for interfaces that extend SimonRemote or use SimonRemote annotation.", clazz.getName());
+            /*
+             * There's no initial annotation
+             * Need to search for a Interface in any superclass/superinterface that extends SimonRemote
+             */
+            
+            // go through all interfaces
             for (Class<?> interfaze : clazz.getInterfaces()) {
-                //            if (SimonRemote.class.isAssignableFrom(interfaze)) {
-                interfaceSet.add((Class<?>) interfaze);
-                //            }
+                
+                // check interfaces for remote
+                if (interfaze.isAnnotationPresent(SimonRemote.class)) {
+                    // interface is annotated
+                    interfaceSet.add((Class<?>) interfaze);
+                    
+                } else if (de.root1.simon.SimonRemote.class.isAssignableFrom(interfaze)) {
+                    // interfaces extends SimonRemote marker interface
+                    interfaceSet.add((Class<?>) interfaze);
+                    
+                } else {
+                    // no remote interface found
+                    // checking for super interface
+                    interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));
+                }
+                
             }
-
-        } else {
-
-            if (logger.isTraceEnabled()) {
-                logger.trace("SimonRemote annotation found. Remote interfaces where explicitly specified: {}. Adding them...", Arrays.toString(remoteInterfaces));
+            
+            if (clazz.getSuperclass() != null && !clazz.getSuperclass().equals(Object.class)) {
+                interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
             }
-            for (Class<?> interfaze : remoteInterfaces) {
-                interfaceSet.add((Class<?>) interfaze);
-            }
-
+            
         }
-
-        if (clazz.getSuperclass() != null
-                && !clazz.getSuperclass().equals(Object.class)) {
-            interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
-        }
-
         return interfaceSet;
     }
 
