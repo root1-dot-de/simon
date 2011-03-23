@@ -219,6 +219,9 @@ public class Utils {
         Set<Class<?>> interfaceSet = doFindAllRemoteInterfaces(clazz);
 
         Class<?>[] interfaces = new Class[interfaceSet.size()];
+        if (logger.isTraceEnabled()) {
+            logger.trace("found interfaces: {}", Arrays.toString(interfaceSet.toArray(interfaces)));
+        }
         return interfaceSet.toArray(interfaces);
     }
 
@@ -286,12 +289,17 @@ public class Utils {
     private static Set<Class<?>> doFindAllRemoteInterfaces(Class<?> clazz) {
         Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
 
+        if (clazz==null) {
+            return interfaceSet;
+        }
+        
+        String type = (clazz.isInterface()?"interface":"class");
         
         // check for annotation in clazz
         SimonRemote annotation = clazz.getAnnotation(SimonRemote.class);
         if (annotation != null) {
             
-            logger.trace("SimonRemote annotation found for clazz {}", clazz.getName());
+            logger.trace("SimonRemote annotation found for {} {}", type, clazz.getName());
             
             // check for remote interfaces specified in the SimonRemote annotation
             Class[] remoteInterfaces = annotation.value();
@@ -320,7 +328,7 @@ public class Utils {
             
         } else { // deeper search
             
-            logger.trace("No SimonRemote annotation found for clazz {}. Searching for interfaces that extend SimonRemote or use SimonRemote annotation.", clazz.getName());
+            logger.trace("No SimonRemote annotation found for {} {}. Searching for interfaces that extend SimonRemote Marker or use SimonRemote Annotation.", type, clazz.getName());
             /*
              * There's no initial annotation
              * Need to search for a Interface in any superclass/superinterface that extends SimonRemote
@@ -346,8 +354,24 @@ public class Utils {
                 
             }
             
+            // check also super classes
             if (clazz.getSuperclass() != null && !clazz.getSuperclass().equals(Object.class)) {
                 interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
+            }
+            
+            // check all interfaces ...
+            Class<?>[] interfaces = clazz.getInterfaces();
+            for (Class<?> interfaze : interfaces) {
+                
+                // ... for annotation
+                if (interfaze.isAnnotationPresent(SimonRemote.class) || de.root1.simon.SimonRemote.class.isAssignableFrom(interfaze)) {
+                    interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze));
+                }
+                
+                // ... and superclasses
+                if (interfaze.getSuperclass()!=null) {
+                    interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));    
+                }
             }
             
         }
