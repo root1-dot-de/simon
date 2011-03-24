@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.IllegalRemoteObjectException;
-import de.root1.simon.exceptions.SimonException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
