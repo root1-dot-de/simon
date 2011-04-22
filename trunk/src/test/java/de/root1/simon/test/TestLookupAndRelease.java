@@ -99,6 +99,8 @@ public class TestLookupAndRelease {
             System.out.println("registry stopped");
 
             // ----------------
+            // Wait a few sec to give the OS soe time to really release the socket
+            Thread.sleep(5000);
 
             RemoteObjectImpl roi2 = new RemoteObjectImpl();
             Registry r2 = Simon.createRegistry(33333);
