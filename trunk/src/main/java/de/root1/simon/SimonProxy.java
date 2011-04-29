@@ -162,6 +162,7 @@ public class SimonProxy implements InvocationHandler {
             throw (Throwable) result;
         }
 
+        // TODO 20110429 Check if this block can be moved to ProcessMessageRunnable#processInvokeReturn()
         if (result instanceof SimonRemoteInstance) {
 
             // creating a proxy for the callback
