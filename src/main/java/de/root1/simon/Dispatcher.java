@@ -304,7 +304,8 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+//        final Monitor monitor = createMonitor(session, sequenceId);
+        final NewMonitor newMonitor = createNewMonitor(session, sequenceId);
 
         // register remote instance objects in the lookup-table
         if (args != null) {
@@ -336,7 +337,9 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-        waitForResult(session, monitor);
+//        waitForResult(session, monitor);
+        newWaitForResult(session, newMonitor);
+        
         MsgInvokeReturn result = (MsgInvokeReturn) getRequestResult(sequenceId);
         logger.debug("got answer for sequenceId={}", sequenceId);
 
@@ -509,6 +512,45 @@ public class Dispatcher implements IoHandler {
             }
         }
     }
+    
+    /**
+     * Waits at most one hour for the result of request described by the monitor.
+     * If result is not present within this time, a SimonRemoteException will be placed as the result.
+     * This is to ensure that the client cannot wait forever for a result.
+     *
+     * @param session the session on which the request was placed
+     * @param monitor the monitor related to the request
+     */
+    private void newWaitForResult(IoSession session, final NewMonitor monitor) {
+
+        int sequenceId = monitor.getSequenceId();
+        int counter = 0;
+
+        // wait for result
+//        synchronized (monitor) {
+            try {
+                long startWaiting = System.currentTimeMillis();
+                while (!isRequestResultPresent(sequenceId)) {
+
+                    // just make sure that the while-loop cannot wait forever for the result
+                    // 60min: 60min * 60sec * 1000ms = 3600000ms
+                    // 3600000ms / 200ms = 18000 loops with 200ms wait time
+                    if (counter++ == 18000) {
+                        putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
+                    }
+
+//                    monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
+                    if (monitor.waitForSignal()) {
+                        return;
+                    }
+
+                    logger.trace("still waiting for result for sequenceId={}. Waiting since {}ms.", sequenceId, (System.currentTimeMillis()-startWaiting));
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+//        }
+    }
 
     /**
      * This method is called from worker-threads which processed an invocation and have data
@@ -546,14 +588,24 @@ public class Dispatcher implements IoHandler {
 
         }
 
-        // retrieve monitor
-        Object monitor = requestMonitorAndResultMap.get(sequenceId);
-        // replace monitor with result
-        requestMonitorAndResultMap.put(sequenceId, o);
+        Object mon = requestMonitorAndResultMap.get(sequenceId);
+        
+        if (!(mon instanceof NewMonitor)) {
+            // retrieve monitor
+            Object monitor = requestMonitorAndResultMap.get(sequenceId);
+            // replace monitor with result
+            requestMonitorAndResultMap.put(sequenceId, o);
 
-        // notify monitor
-        synchronized (monitor) {
-            monitor.notify();
+            // notify monitor
+            synchronized (monitor) {
+                monitor.notify();
+            }
+        } else {
+            // retrieve monitor
+            NewMonitor monitor = (NewMonitor) requestMonitorAndResultMap.get(sequenceId);
+            // replace monitor with result
+            requestMonitorAndResultMap.put(sequenceId, o);
+            monitor.signal();
         }
         logger.debug("end");
     }
@@ -726,6 +778,7 @@ public class Dispatcher implements IoHandler {
     private boolean isRequestResultPresent(final int sequenceId) {
         boolean present = false;
         // if the contained object is NOT an instance of Monitor, present=true
+        logger.trace("result={}", requestMonitorAndResultMap.get(sequenceId));
         if (!(requestMonitorAndResultMap.get(sequenceId) instanceof Monitor)) {
             present = true;
         }
@@ -1105,5 +1158,32 @@ public class Dispatcher implements IoHandler {
      */
     protected List<ClosedListener> getClosedListenerList(String remoteObjectName) {
         return remoteObjectClosedListenersList.get(remoteObjectName);
+    }
+
+    private NewMonitor createNewMonitor(IoSession session, int sequenceId) {
+        logger.debug("begin");
+
+        final NewMonitor monitor = new NewMonitor(sequenceId);
+
+        synchronized (sessionHasRequestPlaced) {
+            // check if there is already a list with requests for this session
+            if (!sessionHasRequestPlaced.containsKey(session)) {
+                List<Integer> requestListForSession = new ArrayList<Integer>();
+                requestListForSession.add(sequenceId);
+                sessionHasRequestPlaced.put(session, requestListForSession);
+            } else {
+                // .. otherwise, get the list and add the sequenceId
+                sessionHasRequestPlaced.get(session).add(sequenceId);
+            }
+
+        }
+
+        // put the monitor in the result-map
+        requestMonitorAndResultMap.put(sequenceId, monitor);
+
+        logger.debug("created monitor for sequenceId={}", sequenceId);
+
+        logger.debug("end");
+        return monitor;
     }
 }
