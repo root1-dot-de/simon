@@ -304,8 +304,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-//        final Monitor monitor = createMonitor(session, sequenceId);
-        final NewMonitor newMonitor = createNewMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         // register remote instance objects in the lookup-table
         if (args != null) {
@@ -337,17 +336,9 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
-//        waitForResult(session, monitor);
-        newWaitForResult(session, newMonitor);
+        waitForResult(session, monitor);
         
         MsgInvokeReturn result = (MsgInvokeReturn) getRequestResult(sequenceId);
-        logger.debug("got answer for sequenceId={}", sequenceId);
-
-//		if (result.hasError()) {
-//			logger.debug("An error occured. Returning SimonRemoteException. Error: {}",result.getErrorMsg());
-//			logger.debug("end sequenceId={}", sequenceId);
-//			return new SimonRemoteException(result.getErrorMsg());
-//		}
 
         logger.debug("end sequenceId={}", sequenceId);
         return result.getReturnValue();
@@ -486,72 +477,30 @@ public class Dispatcher implements IoHandler {
      * @param monitor the monitor related to the request
      */
     private void waitForResult(IoSession session, final Monitor monitor) {
-
         int sequenceId = monitor.getSequenceId();
         int counter = 0;
 
         // wait for result
-        synchronized (monitor) {
-            try {
-                long startWaiting = System.currentTimeMillis();
-                while (!isRequestResultPresent(sequenceId)) {
+        long startWaiting = System.currentTimeMillis();
+        while (!isRequestResultPresent(sequenceId)) {
 
-                    // just make sure that the while-loop cannot wait forever for the result
-                    // 60min: 60min * 60sec * 1000ms = 3600000ms
-                    // 3600000ms / 200ms = 18000 loops with 200ms wait time
-                    if (counter++ == 18000) {
-                        putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
-                    }
+            // just make sure that the while-loop cannot wait forever for the result
+            // 60min: 60min * 60sec * 1000ms = 3600000ms
+            // 3600000ms / 200ms = 18000 loops with 200ms wait time
+            if (counter++ == 18000) {
+                putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
+            }
 
-                    monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
+            if (monitor.waitForSignal(Statics.MONITOR_WAIT_TIMEOUT)) {
+                return;
+            }
 
-                    logger.trace("still waiting for result for sequenceId={}. Waiting since {}ms.", sequenceId, (System.currentTimeMillis()-startWaiting));
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (logger.isTraceEnabled()) { // used IF to avoid calculating if no trace enabled
+                logger.trace("still waiting for result for sequenceId={}. Waiting since {}ms.", sequenceId, (System.currentTimeMillis()-startWaiting));
             }
         }
     }
     
-    /**
-     * Waits at most one hour for the result of request described by the monitor.
-     * If result is not present within this time, a SimonRemoteException will be placed as the result.
-     * This is to ensure that the client cannot wait forever for a result.
-     *
-     * @param session the session on which the request was placed
-     * @param monitor the monitor related to the request
-     */
-    private void newWaitForResult(IoSession session, final NewMonitor monitor) {
-
-        int sequenceId = monitor.getSequenceId();
-        int counter = 0;
-
-        // wait for result
-//        synchronized (monitor) {
-            try {
-                long startWaiting = System.currentTimeMillis();
-                while (!isRequestResultPresent(sequenceId)) {
-
-                    // just make sure that the while-loop cannot wait forever for the result
-                    // 60min: 60min * 60sec * 1000ms = 3600000ms
-                    // 3600000ms / 200ms = 18000 loops with 200ms wait time
-                    if (counter++ == 18000) {
-                        putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
-                    }
-
-//                    monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
-                    if (monitor.waitForSignal()) {
-                        return;
-                    }
-
-                    logger.trace("still waiting for result for sequenceId={}. Waiting since {}ms.", sequenceId, (System.currentTimeMillis()-startWaiting));
-                }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-//        }
-    }
-
     /**
      * This method is called from worker-threads which processed an invocation and have data
      * ready that has to be returned to the "caller".
@@ -588,25 +537,12 @@ public class Dispatcher implements IoHandler {
 
         }
 
-        Object mon = requestMonitorAndResultMap.get(sequenceId);
+        // retrieve monitor
+        Monitor monitor = (Monitor) requestMonitorAndResultMap.get(sequenceId);
+        // replace monitor with result
+        requestMonitorAndResultMap.put(sequenceId, o);
+        monitor.signal();
         
-        if (!(mon instanceof NewMonitor)) {
-            // retrieve monitor
-            Object monitor = requestMonitorAndResultMap.get(sequenceId);
-            // replace monitor with result
-            requestMonitorAndResultMap.put(sequenceId, o);
-
-            // notify monitor
-            synchronized (monitor) {
-                monitor.notify();
-            }
-        } else {
-            // retrieve monitor
-            NewMonitor monitor = (NewMonitor) requestMonitorAndResultMap.get(sequenceId);
-            // replace monitor with result
-            requestMonitorAndResultMap.put(sequenceId, o);
-            monitor.signal();
-        }
         logger.debug("end");
     }
 
@@ -617,35 +553,6 @@ public class Dispatcher implements IoHandler {
         return lookupTable;
     }
 
-//	/**
-//	 * 
-//	 * Removes the return type from the list of awaited result types for a specific request ID.
-//	 * 
-//	 * @param sequenceId the request id which was waiting for a result of the type saved in the list
-//	 * @return the return type which has been removed
-//	 */
-//	protected Class<?> removeRequestReturnType(int sequenceId) {
-//		
-//		synchronized (requestReturnType) {
-//			return requestReturnType.remove(sequenceId);
-//		}
-//		
-//	}
-//	/**
-//	 * 
-//	 * All received results are saved in a queue. With this method you can get the received result 
-//	 * by its sequenceId.
-//	 * <br/>
-//	 * <b>Attention:</b> Be sure that you only call this method if you were notified by the receiver! 
-//	 * 
-//	 * @param sequenceId the sequenceId which is related to the result
-//	 * @return the received result
-//	 */
-//	protected Object getResult(int sequenceId){
-//		synchronized (requestMonitorAndResultMap) {
-//			return getRequestResult(sequenceId);			
-//		}
-//	}
     /**
      *
      * Initiates a shutdown at the dispatcher and all related things
@@ -1160,30 +1067,4 @@ public class Dispatcher implements IoHandler {
         return remoteObjectClosedListenersList.get(remoteObjectName);
     }
 
-    private NewMonitor createNewMonitor(IoSession session, int sequenceId) {
-        logger.debug("begin");
-
-        final NewMonitor monitor = new NewMonitor(sequenceId);
-
-        synchronized (sessionHasRequestPlaced) {
-            // check if there is already a list with requests for this session
-            if (!sessionHasRequestPlaced.containsKey(session)) {
-                List<Integer> requestListForSession = new ArrayList<Integer>();
-                requestListForSession.add(sequenceId);
-                sessionHasRequestPlaced.put(session, requestListForSession);
-            } else {
-                // .. otherwise, get the list and add the sequenceId
-                sessionHasRequestPlaced.get(session).add(sequenceId);
-            }
-
-        }
-
-        // put the monitor in the result-map
-        requestMonitorAndResultMap.put(sequenceId, monitor);
-
-        logger.debug("created monitor for sequenceId={}", sequenceId);
-
-        logger.debug("end");
-        return monitor;
-    }
 }
