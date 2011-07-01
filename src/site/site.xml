@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="Simon">
+  <bannerLeft>
+    <name>Simon</name>
+    <src>./images/root1.de.png</src>
+    <href>http://dev.root1.de/</href>
+  </bannerLeft>
+  <bannerRight>
+    <src>./images/simon-small.gif</src>
+  </bannerRight>
+  <body>
+      
+  <menu name="SIMON">
+      <item name="Project Management" href="http://dev.root1.de/projects/show/simon" />
+      <!--<item name="Description" href="description.html" />-->
+
+      <!-- <item name="Introduction" href="index.html"/> -->
+      
+  </menu>
+
+  <menu ref="reports"/>
+  </body>
+</project>
