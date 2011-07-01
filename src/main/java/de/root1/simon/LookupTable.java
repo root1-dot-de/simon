@@ -153,13 +153,15 @@ public class LookupTable {
          */
         if (!remotes.contains(remoteObjectName)) {
             remotes.add(remoteObjectName);
+
+            putRemoteBinding(remoteObjectName, remoteObject);
+
+            logger.debug("session '{}' now has {} entries.", Utils.longToHexString(sessionId), remotes.size());
+
+            remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+        } else {
+            logger.debug("remoteObjectName={} already known. Skipping.", remoteObjectName);
         }
-
-        putRemoteBinding(remoteObjectName, remoteObject);
-
-        logger.debug("session '{}' now has {} entries.", Utils.longToHexString(sessionId), remotes.size());
-
-        remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
         logger.debug("end");
     }
 
