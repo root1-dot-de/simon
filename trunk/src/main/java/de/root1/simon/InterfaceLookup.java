@@ -121,7 +121,12 @@ public class InterfaceLookup extends AbstractLookup {
 
         } else {
 
-            Class<?>[] listenerInterfaces = msg.getInterfaces();
+            Class<?>[] listenerInterfaces=null;
+            try {
+                listenerInterfaces = (classLoader==null?msg.getInterfaces():msg.getInterfaces(classLoader));
+            } catch (ClassNotFoundException ex) {
+                throw new LookupFailedException("Not able to load remote interfaces. Maybe you need to specify a specific classloader via Lookup#setClassLoader()?",ex);
+            }
 
             for (Class<?> class1 : listenerInterfaces) {
                 logger.trace("iface: {}", class1.getName());

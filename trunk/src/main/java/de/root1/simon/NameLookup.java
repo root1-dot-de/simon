@@ -12,6 +12,7 @@ import de.root1.simon.utils.SimonClassLoaderHelper;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,12 @@ public class NameLookup extends AbstractLookup {
 
         } else {
 
-            Class<?>[] listenerInterfaces = msg.getInterfaces();
+            Class<?>[] listenerInterfaces=null;
+            try {
+                listenerInterfaces = (classLoader==null?msg.getInterfaces():msg.getInterfaces(classLoader));
+            } catch (ClassNotFoundException ex) {
+                throw new LookupFailedException("Not able to load remote interfaces. Maybe you need to specify a specific classloader via Lookup#setClassLoader()?",ex);
+            }
 
             for (Class<?> class1 : listenerInterfaces) {
                 logger.debug("iface: {}", class1.getName());

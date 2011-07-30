@@ -308,10 +308,14 @@ public class ProcessMessageRunnable implements Runnable {
         ret.setSequence(msg.getSequence());
         try {
             Class<?>[] interfaces = null;
-
             interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
 
-            ret.setInterfaces(interfaces);
+            String[] interfaceNames = new String[interfaces.length];
+            for(int i=0;i<interfaceNames.length;i++) {
+                interfaceNames[i] = interfaces[i].getCanonicalName();
+            }
+            
+            ret.setInterfaces(interfaceNames);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
             ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
@@ -339,7 +343,13 @@ public class ProcessMessageRunnable implements Runnable {
 
             RemoteObjectContainer container = dispatcher.getLookupTable().getRemoteObjectContainerByInterface(canonicalInterfaceName);
 
-            ret.setInterfaces(container.getRemoteObjectInterfaces());
+            Class<?>[] interfaces = container.getRemoteObjectInterfaces();
+            String[] interfaceNames = new String[interfaces.length];
+            for(int i=0;i<interfaceNames.length;i++) {
+                interfaceNames[i] = interfaces[i].getCanonicalName();
+            }
+            
+            ret.setInterfaces(interfaceNames);
             ret.setRemoteObjectName(container.getRemoteObjectName());
 
         } catch (LookupFailedException e) {
