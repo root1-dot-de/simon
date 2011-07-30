@@ -26,8 +26,12 @@ public class LookupFailedException extends Exception {
 		super(msg);
 	}
 
-	public LookupFailedException(Throwable result) {
-		super(result);
+	public LookupFailedException(Throwable cause) {
+		super(cause);
 	}
+        
+        public LookupFailedException(String msg, Throwable cause) {
+            super(msg, cause);
+        }
 
 }

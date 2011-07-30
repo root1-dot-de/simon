@@ -55,22 +55,24 @@ public class MsgNameLookupReturnDecoder extends AbstractMessageDecoder {
         try {
             int arraySize = in.getInt();
             logger.trace("trying to read interfaces value. num of interfaces: {}", arraySize);
-            Class<?>[] interfaces = new Class<?>[arraySize];
+            String[] interfaces = new String[arraySize];
             for (int i = 0; i < arraySize; i++) {
                 String iface = in.getPrefixedString(Charset.forName("UTF-8").newDecoder());
                 logger.trace("Loading interface: [{}]",iface);
-                interfaces[i] = Class.forName(iface);
-                logger.trace("got interface=[{}]", interfaces[i].getCanonicalName());
+                interfaces[i] = iface;
+                logger.trace("got interface=[{}]", iface);
             }
             m.setErrorMsg(in.getPrefixedString(Charset.forName("UTF-8").newDecoder()));
             m.setInterfaces(interfaces);
-        } catch (ClassNotFoundException e) {
-            MsgError error = new MsgError();
-            error.setErrorMessage("Error while decoding name lookup return: Not able to load interfaces due to ClassNotFoundException");
-            error.setRemoteObjectName(null);
-            error.setThrowable(e);
-            return error;
-        } catch (CharacterCodingException e) {
+        } 
+//        catch (ClassNotFoundException e) {
+//            MsgError error = new MsgError();
+//            error.setErrorMessage("Error while decoding name lookup return: Not able to load interfaces due to ClassNotFoundException");
+//            error.setRemoteObjectName(null);
+//            error.setThrowable(e);
+//            return error;
+//        } 
+        catch (CharacterCodingException e) {
             MsgError error = new MsgError();
             error.setErrorMessage("Error while decoding name lookup return: Not able to read interface names due to CharacterCodingException");
             error.setRemoteObjectName(null);
