@@ -60,7 +60,7 @@ public class Monitor {
      * Waits for a signal. if it becomes available within the given waiting 
      * time, true will be returned. Otherwise you will get false
      * 
-     * @param waiting time for signal to receive
+     * @param timeout timeout for signal to receive
      * @return true, if signal received, false if not
      * 
      */
