@@ -45,8 +45,17 @@ public class MsgErrorEncoder<T extends MsgError> extends AbstractMessageEncoder<
         logger.trace("begin. message=" + message);
         
         String remoteObjectName = message.getRemoteObjectName();
+        if (remoteObjectName==null) {
+            remoteObjectName="<NoRemoteObjectNameAvailable>";
+        }
         String errorMsg = message.getErrorMessage();
+        if (errorMsg==null) {
+            errorMsg="<NoErrorMsgAvailable>";
+        }
         Throwable throwable = message.getThrowable();
+        if (throwable==null) {
+            throwable = new Throwable("NoThrowableAvailable");
+        }
         int initSequenceId = message.getInitSequenceId();
         boolean isDecodeError = message.isDecodeError();
         
