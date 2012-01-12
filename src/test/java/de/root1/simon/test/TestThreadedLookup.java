@@ -1,17 +1,10 @@
 package de.root1.simon.test;
 
 import de.root1.simon.Lookup;
-import java.util.concurrent.Semaphore;
-
-import org.junit.Test;
-
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.logging.LogManager;
+import java.util.concurrent.Semaphore;
+import org.junit.Test;
 
 public class TestThreadedLookup {
 
@@ -23,30 +16,6 @@ public class TestThreadedLookup {
     public void testThreadedLookup() throws Exception {
 
         long start = System.currentTimeMillis();
-        File f = new File("target/test-classes/simon_logging.properties");
-        try {
-            FileInputStream is = new FileInputStream(f);
-            LogManager.getLogManager().readConfiguration(is);
-
-
-        } catch (FileNotFoundException e) {
-
-            System.err.println("File not found: " + f.getAbsolutePath() + ".\n"
-                    + "If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n"
-                    + "Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
-
-        } catch (SecurityException e) {
-
-            System.err.println("Security exception occured while trying to load " + f.getAbsolutePath() + "\n"
-                    + "Logging with SIMON not possible!.");
-
-        } catch (IOException e) {
-
-            System.err.println("Cannot load " + f.getAbsolutePath() + " ...\n"
-                    + "Please make sure that Java has access to that file.");
-
-        }
-
 
         RemoteObjectImpl roi = new RemoteObjectImpl();
 
