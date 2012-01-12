@@ -58,34 +58,6 @@ public class TestRawChannel {
 
     private Registry registry;
 
-    public TestRawChannel() {
-
-        File f = new File("target/test-classes/simon_logging.properties");
-        try {
-            FileInputStream is = new FileInputStream(f);
-            LogManager.getLogManager().readConfiguration(is);
-
-
-        } catch (FileNotFoundException e) {
-
-                System.err.println("File not found: "+f.getAbsolutePath()+".\n" +
-                                "If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
-                                "Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
-
-        } catch (SecurityException e) {
-
-                System.err.println("Security exception occured while trying to load "+f.getAbsolutePath()+"\n" +
-                                "Logging with SIMON not possible!.");
-
-        } catch (IOException e) {
-
-                System.err.println("Cannot load "+f.getAbsolutePath()+" ...\n" +
-                                "Please make sure that Java has access to that file.");
-
-        }
-
-    }
-
 //    @BeforeClass
 //    public static void setUpClass() throws Exception {
 //    }
