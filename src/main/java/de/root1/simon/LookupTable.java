@@ -206,7 +206,7 @@ public class LookupTable {
             removeRemoteObjectFromHashMap(remoteObject);
             remoteObject_to_hashToMethod_Map.remove(remoteObject);
         } else {
-            logger.debug("[{}] already removed or not available. nothing to do.");
+            logger.debug("[{}] already removed or not available. nothing to do.", name);
         }
 
         logger.debug("end");
