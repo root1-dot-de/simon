@@ -18,48 +18,22 @@
  */
 package de.root1.simon;
 
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.mina.core.service.IoHandler;
-import org.apache.mina.core.session.IdleStatus;
-import org.apache.mina.core.session.IoSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgCloseRawChannel;
-import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
-import de.root1.simon.codec.messages.MsgEquals;
-import de.root1.simon.codec.messages.MsgEqualsReturn;
-import de.root1.simon.codec.messages.MsgHashCode;
-import de.root1.simon.codec.messages.MsgHashCodeReturn;
-import de.root1.simon.codec.messages.MsgInterfaceLookup;
-import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
-import de.root1.simon.codec.messages.MsgInvoke;
-import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.MsgNameLookup;
-import de.root1.simon.codec.messages.MsgNameLookupReturn;
-import de.root1.simon.codec.messages.MsgOpenRawChannel;
-import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
-import de.root1.simon.codec.messages.MsgPing;
-import de.root1.simon.codec.messages.MsgPong;
-import de.root1.simon.codec.messages.MsgRawChannelData;
-import de.root1.simon.codec.messages.MsgToString;
-import de.root1.simon.codec.messages.MsgToStringReturn;
+import de.root1.simon.codec.messages.*;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.mina.core.service.IoHandler;
+import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is the "brain" of SIMON on server side, as well as on client side.

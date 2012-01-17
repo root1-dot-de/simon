@@ -202,7 +202,7 @@ public class LookupTable {
         // simonRemote may be null in case of multithreaded access
         // to Simon#unbind() and thus releaseRemoteBinding()
         if (remoteObject != null) {
-            logger.debug("cleaning up [{}]");
+            logger.debug("cleaning up [{}]", remoteObject);
             removeRemoteObjectFromHashMap(remoteObject);
             remoteObject_to_hashToMethod_Map.remove(remoteObject);
         } else {
