@@ -1,6 +1,6 @@
-h1. root1.de Commercial License
+root1.de Library Commercial License
 
-Version 1.1 (2011/01/26)
+Version 1.0 (2012/01/17)
 
 THIS DOCUMENT IS A LEGAL AGREEMENT (the "License Agreement") BETWEEN root1.de ("We," "Us") AND YOU OR THE ORGANIZATION ON WHOSE BEHALF YOU ARE UNDERTAKING THE LICENSE DESCRIBED BELOW ("You") IN RELATION TO root1.de SOFTWARE (THE "Software"), IN BOTH SOURCE AND OBJECT CODE FORM, AND/OR ALL RELATED MATERIALS. BY DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING THE SOFTWARE, YOU ACCEPT THE FOLLOWING TERMS AND CONDITIONS. IF YOU DO NOT AGREE WITH ANY OF THE TERMS OR CONDITIONS OF THIS LICENSE AGREEMENT, DO NOT PROCEED WITH THE DOWNLOADING, COPYING, INSTALLATION OR ANY OTHER USE OF THE SOFTWARE OR ANY PORTION THEREOF. THE SOFTWARE IS PROTECTED BY GERMAN COPYRIGHT LAWS AND INTERNATIONAL COPYRIGHT LAWS, AS WELL AS OTHER INTELLECTUAL PROPERTY LAWS AND TREATIES. THE SOFTWARE IS LICENSED, NOT SOLD.
 
@@ -17,69 +17,64 @@ a. Developer License
 Subject to the payment of the fee required for a Commercial Developer License and subject to the terms and conditions of this License Agreement, We grant to You a revocable, non-transferable and nonexclusive license
 
 (i) for a single developer within Your organization to install and use the Software on any workstations used exclusively by such developer and
-(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 3 and 4 below. This license is not sublicensable except as explicitly set forth herein.
+(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 2 and 3 below. This license is not sublicensable except as explicitly set forth herein.
 
 b. Team License
 
 Subject to the payment of the fee required for a Commercial Developer License and subject to the terms and conditions of this License Agreement, We grant to You a revocable, non-transferable and nonexclusive license
 
 (i) for up to five (5) developers within Your organization to install and use the Software on any workstations used exclusively by such developers and
-(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 3 and 4 below. This license is not sub-licensable except as explicitly set forth herein. 
+(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 2 and 3 below. This license is not sub-licensable except as explicitly set forth herein. 
 
 c. Workgroup License
 
 Subject to the payment of the fee required for a Commercial Developer License and subject to the terms and conditions of this License Agreement, We grant to You a revocable, non-transferable and nonexclusive license
 
 (i) for up to twenty five (25) developers within Your organization to install and use the Software on any workstations used exclusively by such developers and
-(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 3 and 4 below. This license is not sub-licensable except as explicitly set forth herein.
+(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 2 and 3 below. This license is not sub-licensable except as explicitly set forth herein.
 
 d. Enterprise License
 
 Subject to the payment of the fee required for a Commercial Developer License and subject to the terms and conditions of this License Agreement, We grant to You a revocable, non-transferable and nonexclusive license
 
 (i) for up to one hundred (100) developers within Your organization to install and use the Software on any workstations used exclusively by such developers and
-(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 3 and 4 below. This license is not sub-licensable except as explicitly set forth herein.
+(ii) for You to install and use the Software in connection with unlimited domains and sub-domains on unlimited servers, solely in connection with distribution of the Software in accordance with sections 2 and 3 below. This license is not sub-licensable except as explicitly set forth herein.
 
-2. PERMITTED USES, SOURCE CODE, MODIFICATIONS
+2. DISTRIBUTION
 
-We provide You with source code so that You can create Modifications of the original Software, where Modification means: 
-
-a) any addition to or deletion from the contents of a file included in the original Software or previous Modifications created by You, or 
-b) any new file that contains any part of the original Software or previous Modifications. While You retain all rights to any original work authored by You as part of the Modifications, We continue to own all copyright and other intellectual property rights in the Software.
-
-3. DISTRIBUTION
-
-You may distribute the Software in any applications, frameworks, or elements that you develop using the Software in accordance with this License Agreement, provided that such distribution does not violate the restrictions set forth in section 4 of this agreement. You must not remove, obscure or interfere with any copyright, acknowledgment, attribution, trademark, warning or disclaimer statement affixed to, incorporated in or otherwise applied in connection with the Software. You are required to ensure that the Software is not reused by or with any applications other than those with which You distribute it as permitted herein. For example, if You install the Software on a customer's server, that customer is not permitted to use the Software independently of Your application, and must be informed as such.
+You may distribute the Software in any applications, frameworks, or elements that you develop using the Software in accordance with this License Agreement, provided that such distribution does not violate the restrictions set forth in section 3 of this agreement. You must not remove, obscure or interfere with any copyright, acknowledgment, attribution, trademark, warning or disclaimer statement affixed to, incorporated in or otherwise applied in connection with the Software. You are required to ensure that the Software is not reused by or with any applications other than those with which You distribute it as permitted herein. For example, if You install the Software on a customer's server, that customer is not permitted to use the Software independently of Your application, and must be informed as such.
 You will not owe root1.de any royalties for Your distribution of the Software in accordance with this License Agreement.
 
 
-4. PROHIBITED USES
+3. PROHIBITED USES
 
-You may not, without prior written consent of root1.de, redistribute the Software or Modifications other than by including the Software or a portion thereof within Your own product, which must have substantially different functionality than the Software or Modifications and must not allow any third party to use the Software or Modifications, or any portions thereof, for software development purposes. You are explicitly not allowed to redistribute the Software or Modifications as part of any product that can be described as a development toolkit or library or is intended for use by software developers and not end-users. You are not allowed to redistribute any part of the Software documentation.
+You may not, without prior written consent of root1.de, redistribute the Software other than by including the Software or a portion thereof within Your own product, which must have substantially different functionality than the Software and must not allow any third party to use the Software, or any portions thereof, for software development purposes. You are explicitly not allowed to redistribute the Software as part of any product that can be described as a development toolkit or library or is intended for use by software developers and not end-users. You are not allowed to redistribute any part of the Software documentation.
 
 You may not: 
 
-a) use any part of the Software or Modifications or Your knowledge of the Software (or any information that You learn as a result of Your use of the Software) to create a product with the same or substantially the same functionality as the Software;
+a) use any part of the Software or Your knowledge of the Software (or any information that You learn as a result of Your use of the Software) to create a product with the same or substantially the same functionality as the Software;
 b) transfer, rent, lease, or sublicense the Software or Modifications, or any portions thereof; 
 c) change or remove the copyright notice from any of the files included in the Software or Modifications.
 
 UNDER NO CIRCUMSTANCES MAY YOU USE THE SOFTWARE (INCLUDING WITHOUT LIMITATION THE SOURCE CODE THEREOF) AS THE BASIS FOR OR IN CONNECTION WITH A PRODUCT THAT CONTAINS THE SAME, OR SUBSTANTIALLY THE SAME, FUNCTIONALITY AS THE SOFTWARE.
 
-5. TERMINATION
+4. TERMINATION
 
-This License Agreement and Your right to use the Software and Modifications will terminate immediately without notice if You fail to comply with the terms and conditions of this License Agreement. Upon termination, You agree to immediately cease using and destroy the Software or Modifications, including all accompanying documents. The provisions of sections 4, 5, 6, 7, and 8 will survive any termination of this License Agreement.
+This License Agreement and Your right to use the Software and Modifications will terminate immediately without notice if You fail to comply with the terms and conditions of this License Agreement. Upon termination, You agree to immediately cease using and destroy the Software or Modifications, including all accompanying documents. The provisions of sections 3, 4, 5, 6 and 7 will survive any termination of this License Agreement.
 
-6. DISCLAIMER OF WARRANTIES
+5. DISCLAIMER OF WARRANTIES
 
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, root1.de AND ITS SUPPLIERS DISCLAIM ALL WARRANTIES AND CONDITIONS, EITHER EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE AND NONINFRINGEMENT, WITH REGARD TO THE SOFTWARE. root1.de DOES NOT GUARANTEE THAT THE OPERATION OF THE SOFTWARE WILL BE UNINTERRUPTED OR ERRORFREE, AND YOU ACKNOWLEDGE THAT IT IS NOT TECHNICALLY PRACTICABLE FOR root1.de TO DO SO.
 
-7. LIMITATION OF LIABILITIES
+6. LIMITATION OF LIABILITIES
 
 TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL root1.de OR ITS SUPPLIERS BE LIABLE FOR ANY SPECIAL, INCIDENTAL, INDIRECT OR CONSEQUENTIAL DAMAGES WHATSOEVER (INCLUDING, WITHOUT LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, LOSS OF BUSINESS INFORMATION OR ANY OTHER PECUNIARY LAW) ARISING OUT OF THE USE OF OR INABILITY TO USE THE SOFTWARE, EVEN IF root1.de HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. IN ANY CASE, root1.de's ENTIRE LIABILITY UNDER ANY PROVISION OF THIS LICENSE AGREEMENT SHALL BE LIMITED TO THE GREATER OF THE AMOUNT ACTUALLY PAID BY YOU FOR THE SOFTWARE OR FIVE (€5.00) EURO.
 
-8. MISCELLANEOUS
+7. MISCELLANEOUS
 
 The license granted herein applies only to the version of the Software downloaded or installed in connection with the terms of this Agreement. Any previous or subsequent license granted to You for use of the Software shall be governed by the terms and conditions of the agreement entered in connection with downloading or installation of that version of the Software.
+
+You agree that, unless otherwise agreed, root1.de is allowed to mention you respectively your company as a reference on its websites and other media.
 
 You agree that you will comply with all applicable laws and regulations with respect to the Software, including without limitation all export and re-export control laws and regulations.
 
