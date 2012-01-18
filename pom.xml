@@ -17,7 +17,7 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  *
  -->
- <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.root1</groupId>
     <artifactId>simon</artifactId>
@@ -84,7 +84,7 @@
             <url>license.txt</url>
         </license>
         <license>
-            <name>root1.de Commercial License, Version 1.0</name>
+            <name>root1.de Library Commercial License, Version 1.0</name>
             <url>root1-license.txt</url>
         </license>
     </licenses>
@@ -94,48 +94,7 @@
         <url>http://svn.root1.de/svn/simon</url>
     </scm>
 
-    <reporting>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-project-info-reports-plugin</artifactId>
-                <!--<version>2.4</version>-->
-                <reportSets>
-                    <reportSet>
-                        <reports>
-                            <report>index</report>
-                            <report>dependencies</report>
-                            <report>project-team</report>
-                            <report>issue-tracking</report>
-                            <report>license</report>
-                            <report>scm</report>
-                        </reports>
-                    </reportSet>
-                </reportSets>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.5</version>
-            </plugin>
-        </plugins>
-    </reporting>
-
-    <!-- additional maven repositories to search in -->
-<!--	<repositories>
-                <repository>
-                        <id>root1-snapshot</id>
-                        <name>root1.de Snapshot Repository</name>
-                        <url>http://nexus.root1.de/content/repositories/root1-snapshot/</url>
-                </repository>
-                <repository>
-                        <id>root1-release</id>
-                        <name>root1.de Release Repository</name>
-                        <url>http://nexus.root1.de/content/repositories/root1-release/</url>
-                </repository>
-        </repositories> -->
-
-        <!-- upload informations for deploying the jar -->
+    <!-- upload informations for deploying the jar -->
     <distributionManagement>
         <repository>
             <id>root1-releases</id>
@@ -155,6 +114,37 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>3.0-beta-3</version>
+                <configuration>
+                    <reportPlugins>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-project-info-reports-plugin</artifactId>
+                            <version>2.2</version>
+                            <configuration>
+                                <dependencyDetailsEnabled>true</dependencyDetailsEnabled>
+                                <dependencyLocationsEnabled>true</dependencyLocationsEnabled>
+                            </configuration>
+                            <reports>
+                                <report>index</report>
+                                <report>dependencies</report>
+                                <report>project-team</report>
+                                <report>issue-tracking</report>
+                                <report>license</report>
+                                <report>scm</report>
+                            </reports>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-javadoc-plugin</artifactId>
+                            <version>2.7</version>
+                        </plugin>
+                    </reportPlugins>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
