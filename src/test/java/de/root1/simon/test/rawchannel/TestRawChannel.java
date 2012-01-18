@@ -18,32 +18,23 @@
  */
 package de.root1.simon.test.rawchannel;
 
-import de.root1.simon.NameLookup;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import de.root1.simon.Lookup;
-import de.root1.simon.RawChannel;
-import de.root1.simon.Registry;
-import de.root1.simon.Simon;
+import de.root1.simon.*;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonRemoteException;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Random;
 import org.junit.After;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
