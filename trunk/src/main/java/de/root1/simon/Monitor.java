@@ -32,7 +32,6 @@ public class Monitor {
 
     /**
      * Creates a monitor object
-     * @param sequenceId the associated sequence id
      */
     protected Monitor() {
         try {
