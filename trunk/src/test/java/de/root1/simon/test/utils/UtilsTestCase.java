@@ -6,11 +6,14 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import de.root1.simon.utils.Utils;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UtilsTestCase {
+    
+    private final Logger logger = LoggerFactory.getLogger(UtilsTestCase.class);
 
     @Test
     public void testFindAllInterfaces() {
@@ -28,7 +31,7 @@ public class UtilsTestCase {
         assertEquals("Number of found interfaces do not meet the expectation 2", 2, annotatedInterfaces2.length);
         List<Class<?>> asList = Arrays.asList(annotatedInterfaces2);
         
-        System.out.println("Found Interfaces: "+Arrays.toString(annotatedInterfaces2));
+        logger.info("Found Interfaces: "+Arrays.toString(annotatedInterfaces2));
         
         assertTrue("ExtendedInterfaceWithRemoteannotation that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", asList.contains(ExtendedInterfaceWithRemoteannotation.class));
         assertTrue("InterfaceWithRemoteannotation that implements a extended SimonRemote annotated interface, must be findable with 'findAllRemoteInterfaces()'", asList.contains(InterfaceWithRemoteannotation.class));

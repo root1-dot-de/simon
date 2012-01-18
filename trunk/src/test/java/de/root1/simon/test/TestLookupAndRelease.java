@@ -6,22 +6,22 @@
 package de.root1.simon.test;
 
 import de.root1.simon.Lookup;
+import de.root1.simon.NameLookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.logging.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author achristian
  */
 public class TestLookupAndRelease {
+    
+    private final Logger logger = LoggerFactory.getLogger(TestLookupAndRelease.class);
 
     public TestLookupAndRelease() {
     }
@@ -50,29 +50,33 @@ public class TestLookupAndRelease {
 
         try {
 
-            System.out.println("Begin ...");
+            logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(33333);
             r.bind("roi", roi);
 
-            System.out.println("bound roi to registry ...");
+            logger.info("bound roi to registry ...");
             Lookup lookup = Simon.createNameLookup("localhost", 33333);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
-            System.out.println("roi lookup done");
+            logger.info("roi lookup done");
 
             roiRemote.helloWorld();
-            System.out.println("method call done");
+            logger.info("method call done");
 
             lookup.release(roiRemote);
-            System.out.println("release of roi done");
+            logger.info("release of roi done");
+            
+            logger.info("Awaiting network connections shutdown");
+            ((NameLookup) lookup).awaitCompleteShutdown(30000);
+            logger.info("Awaiting network connections shutdown *done*");
 
             r.unbind("roi");
-            System.out.println("unbind of roi done");
+            logger.info("unbind of roi done");
             r.stop();
-            System.out.println("registry stopped");
+            logger.info("registry stopped");
 
             // ----------------
             // Wait a few sec to give the OS soe time to really release the socket
@@ -86,6 +90,11 @@ public class TestLookupAndRelease {
             RemoteObject roiRemote2 = (RemoteObject) lookup.lookup("roi2");
             roiRemote2.helloWorld();
             lookup2.release(roiRemote2);
+            
+            logger.info("Awaiting network connections shutdown");
+            ((NameLookup) lookup).awaitCompleteShutdown(30000);
+            logger.info("Awaiting network connections shutdown *done*");
+            
 
             r2.unbind("roi2");
             r2.stop();
