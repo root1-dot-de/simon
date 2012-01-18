@@ -8,13 +8,9 @@ package de.root1.simon.test.clientcallback;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import de.root1.simon.Lookup;
+import de.root1.simon.NameLookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.logging.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -152,11 +148,16 @@ public class TestClientCallback {
                 logger.info("Got exception: "+e+" --> SUCCESS");
             }
 
+            lookup.release(roiRemote);
+            logger.info("Awaiting network connections shutdown");
+            ((NameLookup)lookup).awaitCompleteShutdown(30000);
+            logger.info("Awaiting network connections shutdown *done*");
+            
             r.unbind("roi");
             logger.info("unbind of roi done");
             r.stop();
             logger.info("registry stopped");
-
+            
             assert true;
 
         } catch (Exception ex) {
@@ -204,6 +205,11 @@ public class TestClientCallback {
             logger.info("Calling equals *DONE*");
             assertFalse("On serverside, a null-object must not be equals to the server remote object", result);
 
+            lookup.release(roiRemote);
+            logger.info("Awaiting network connections shutdown");
+            ((NameLookup)lookup).awaitCompleteShutdown(30000);
+            logger.info("Awaiting network connections shutdown *done*");
+            
             r.unbind("roi");
             logger.info("unbind of roi done");
             r.stop();

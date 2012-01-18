@@ -201,7 +201,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgNameLookup msgNameLookup = new MsgNameLookup();
         msgNameLookup.setSequence(sequenceId);
@@ -237,7 +237,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgInterfaceLookup msgInterfaceLookup = new MsgInterfaceLookup();
         msgInterfaceLookup.setSequence(sequenceId);
@@ -278,7 +278,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         // register remote instance objects in the lookup-table
         if (args != null) {
@@ -336,7 +336,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgToString msgInvoke = new MsgToString();
         msgInvoke.setSequence(sequenceId);
@@ -377,7 +377,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgHashCode msgInvoke = new MsgHashCode();
         msgInvoke.setSequence(sequenceId);
@@ -418,7 +418,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgEquals msgEquals = new MsgEquals();
         msgEquals.setSequence(sequenceId);
@@ -450,7 +450,7 @@ public class Dispatcher implements IoHandler {
      * @param session the session on which the request was placed
      * @param monitor the monitor related to the request
      */
-    private void waitForResult(IoSession session, final Monitor monitor) {
+    private void waitForResult(IoSession session, final SequenceMonitor monitor) {
         int sequenceId = monitor.getSequenceId();
         int counter = 0;
 
@@ -512,7 +512,7 @@ public class Dispatcher implements IoHandler {
         }
 
         // retrieve monitor
-        Monitor monitor = (Monitor) requestMonitorAndResultMap.get(sequenceId);
+        SequenceMonitor monitor = (SequenceMonitor) requestMonitorAndResultMap.get(sequenceId);
         // replace monitor with result
         requestMonitorAndResultMap.put(sequenceId, o);
         monitor.signal();
@@ -602,10 +602,10 @@ public class Dispatcher implements IoHandler {
      * @param sequenceId
      * @return the monitor used for waiting for the result
      */
-    private Monitor createMonitor(final IoSession session, final int sequenceId) {
+    private SequenceMonitor createMonitor(final IoSession session, final int sequenceId) {
         logger.debug("begin");
 
-        final Monitor monitor = new Monitor(sequenceId);
+        final SequenceMonitor monitor = new SequenceMonitor(sequenceId);
 
         synchronized (sessionHasRequestPlaced) {
             // check if there is already a list with requests for this session
@@ -660,7 +660,7 @@ public class Dispatcher implements IoHandler {
         boolean present = false;
         // if the contained object is NOT an instance of Monitor, present=true
         logger.trace("result={}", requestMonitorAndResultMap.get(sequenceId));
-        if (!(requestMonitorAndResultMap.get(sequenceId) instanceof Monitor)) {
+        if (!(requestMonitorAndResultMap.get(sequenceId) instanceof SequenceMonitor)) {
             present = true;
         }
         logger.debug("Result for sequenceId={} present: {}", sequenceId, present);
@@ -853,7 +853,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgOpenRawChannel msgOpenRawChannel = new MsgOpenRawChannel();
         msgOpenRawChannel.setSequence(sequenceId);
@@ -968,7 +968,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgRawChannelData msgRawChannelData = new MsgRawChannelData();
         msgRawChannelData.setSequence(sequenceId);
@@ -1001,7 +1001,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final Monitor monitor = createMonitor(session, sequenceId);
+        final SequenceMonitor monitor = createMonitor(session, sequenceId);
 
         MsgCloseRawChannel msgCloseRawChannel = new MsgCloseRawChannel();
         msgCloseRawChannel.setSequence(sequenceId);

@@ -20,8 +20,6 @@ package de.root1.simon;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A simple monitor class whose instance can have a sequence id.
@@ -31,29 +29,16 @@ import java.util.logging.Logger;
 public class Monitor {
 
     private final Semaphore s = new Semaphore(1);
-    /**
-     * the associated sequence id
-     */
-    private final int sequenceId;
 
     /**
      * Creates a monitor object
      * @param sequenceId the associated sequence id
      */
-    protected Monitor(int sequenceId) {
-        this.sequenceId = sequenceId;
+    protected Monitor() {
         try {
             s.acquire();
         } catch (InterruptedException ex) {
         }
-    }
-
-    /**
-     * Returns the associated sequence id
-     * @return the id
-     */
-    protected int getSequenceId() {
-        return sequenceId;
     }
 
     /**
@@ -70,6 +55,7 @@ public class Monitor {
         } catch (InterruptedException ex) {
             return false;
         }
+        
     }
 
     /**
@@ -77,5 +63,11 @@ public class Monitor {
      */
     public void signal() {
         s.release();
+    }
+    
+    public void reset() {
+        if (s.availablePermits()==1) {
+            s.acquireUninterruptibly();
+        }
     }
 }

@@ -56,38 +56,47 @@ public class InterfaceLookup extends AbstractLookup {
         this.serverPort = serverPort;
     }
 
+    @Override
     public SslContextFactory getSslContextFactory() {
         return sslContextFactory;
     }
 
+    @Override
     public void setSslContextFactory(SslContextFactory sslContextFactory) {
         this.sslContextFactory = sslContextFactory;
     }
 
+    @Override
     public SimonProxyConfig getProxyConfig() {
         return proxyConfig;
     }
 
+    @Override
     public void setProxyConfig(SimonProxyConfig proxyConfig) {
         this.proxyConfig = proxyConfig;
     }
 
+    @Override
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
+    @Override
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
+    @Override
     public InetAddress getServerAddress() {
         return serverAddress;
     }
 
+    @Override
     public int getServerPort() {
         return serverPort;
     }
 
+    @Override
     public Object lookup(String canonicalInterfaceName) throws LookupFailedException, EstablishConnectionFailed {
         logger.debug("begin");
 
