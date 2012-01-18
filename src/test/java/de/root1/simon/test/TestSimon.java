@@ -5,6 +5,8 @@
 
 package de.root1.simon.test;
 
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
@@ -12,7 +14,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 /**
  *
@@ -20,6 +21,8 @@ import static org.junit.Assert.assertFalse;
  */
 public class TestSimon {
 
+    private final Logger logger = LoggerFactory.getLogger(TestSimon.class);
+    
     public TestSimon() {
     }
 

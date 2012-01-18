@@ -12,7 +12,6 @@ import de.root1.simon.utils.SimonClassLoaderHelper;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,34 +103,42 @@ public class NameLookup extends AbstractLookup {
         }
     }
 
+    @Override
     public SslContextFactory getSslContextFactory() {
         return sslContextFactory;
     }
 
+    @Override
     public void setSslContextFactory(SslContextFactory sslContextFactory) {
         this.sslContextFactory = sslContextFactory;
     }
 
+    @Override
     public SimonProxyConfig getProxyConfig() {
         return proxyConfig;
     }
 
+    @Override
     public void setProxyConfig(SimonProxyConfig proxyConfig) {
         this.proxyConfig = proxyConfig;
     }
 
+    @Override
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
+    @Override
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
+    @Override
     public InetAddress getServerAddress() {
         return serverAddress;
     }
 
+    @Override
     public int getServerPort() {
         return serverPort;
     }
