@@ -18,47 +18,24 @@
  */
 package de.root1.simon;
 
-import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.List;
-import org.apache.mina.core.future.CloseFuture;
-
-import org.apache.mina.core.session.IoSession;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgCloseRawChannel;
-import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
-import de.root1.simon.codec.messages.MsgEquals;
-import de.root1.simon.codec.messages.MsgEqualsReturn;
-import de.root1.simon.codec.messages.MsgError;
-import de.root1.simon.codec.messages.MsgHashCode;
-import de.root1.simon.codec.messages.MsgHashCodeReturn;
-import de.root1.simon.codec.messages.MsgInterfaceLookup;
-import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
-import de.root1.simon.codec.messages.MsgInvoke;
-import de.root1.simon.codec.messages.MsgInvokeReturn;
-import de.root1.simon.codec.messages.MsgNameLookup;
-import de.root1.simon.codec.messages.MsgNameLookupReturn;
-import de.root1.simon.codec.messages.MsgOpenRawChannel;
-import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
-import de.root1.simon.codec.messages.MsgRawChannelData;
-import de.root1.simon.codec.messages.MsgRawChannelDataReturn;
-import de.root1.simon.codec.messages.MsgToString;
-import de.root1.simon.codec.messages.MsgToStringReturn;
-import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.codec.messages.*;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.util.List;
+import org.apache.mina.core.future.CloseFuture;
+import org.apache.mina.core.session.IoSession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class is feed with all kind of messages (requests/invokes and returns)
@@ -75,6 +52,8 @@ import java.util.Arrays;
 public class ProcessMessageRunnable implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Logger invokeLogger = LoggerFactory.getLogger("de.root1.simon.InvokeLogger");
+
     private AbstractMessage abstractMessage;
     private IoSession session;
     private Dispatcher dispatcher;
@@ -448,6 +427,7 @@ public class ProcessMessageRunnable implements Runnable {
             // ------------
 
             logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
+            invokeLogger.debug("Invoke on remote object '{}': method='{}' args='{}'", new Object[]{remoteObjectName, method, arguments});
 
             Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
 
