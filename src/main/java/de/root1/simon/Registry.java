@@ -18,13 +18,18 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.NameBindingException;
+import de.root1.simon.ssl.SslContextFactory;
+import de.root1.simon.utils.Utils;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ExecutorService;
-
 import javax.net.ssl.SSLContext;
-
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
@@ -34,14 +39,6 @@ import org.apache.mina.filter.ssl.SslFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import de.root1.simon.codec.base.SimonProtocolCodecFactory;
-import de.root1.simon.exceptions.LookupFailedException;
-import de.root1.simon.exceptions.NameBindingException;
-import de.root1.simon.ssl.SslContextFactory;
-import de.root1.simon.utils.Utils;
-import java.net.ServerSocket;
-import java.nio.channels.ServerSocketChannel;
 
 /**
  * The SIMON server acts as a registry for remote objects. So, Registry is
@@ -56,28 +53,35 @@ public final class Registry {
      * TODO document me
      */
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    
     /**
      * The address in which the registry is listening
      */
     private InetAddress address;
+    
     /**
      * The port on which the registry is listening
      */
     private int port;
+    
     /**
      * The Distaptcher for all incoming connections
      */
     private Dispatcher dispatcher;
+    
     /**
      * the socket acceptor
      */
     private IoAcceptor acceptor;
+    
     /** The pool in which the dispatcher, acceptor and registry lives */
     private ExecutorService threadPool;
+    
     /**
      * A thread pool for the filterchain => more performance
      */
     private ExecutorService filterchainWorkerPool;
+    
     /**
      * Name of the protocol factory to use
      */
