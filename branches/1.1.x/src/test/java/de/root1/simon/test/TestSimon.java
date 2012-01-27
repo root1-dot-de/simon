@@ -47,11 +47,12 @@ public class TestSimon {
 
         try {
             Registry r = Simon.createRegistry(8888);
-//            Registry r2 = Simon.createRegistry(8888);
+            Registry r2 = Simon.createRegistry(8888);
             r.stop();
-//            r2.stop();
+            r2.stop();
+            throw new AssertionError("There should be a BindException in case of running a port is already in use.");
         } catch (Exception ex) {
-            throw new AssertionError(ex);
+            // expected!
         }
 
     }
