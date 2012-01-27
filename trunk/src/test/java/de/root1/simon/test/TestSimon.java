@@ -69,5 +69,20 @@ public class TestSimon {
         }
 
     }
+    
+    @Test
+    public void testCreateRegistryTwice() {
+
+
+        try {
+            Registry r = Simon.createRegistry(22224);
+            Registry r2 = Simon.createRegistry(22224);
+            r.stop();
+            r2.stop();
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
+
+    }
 
 }
