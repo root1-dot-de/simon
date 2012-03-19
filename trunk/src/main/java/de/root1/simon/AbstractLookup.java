@@ -97,6 +97,10 @@ abstract class AbstractLookup implements Lookup {
 
         // retrieve the proxy object
         SimonProxy proxy = Simon.getSimonProxy(proxyObject);
+        
+        if (!proxy.isRegularLookup()) {
+            throw new IllegalArgumentException("Provided proxy is callback object and is not releasable. Please release your lookup'ed object(s) instead.");
+        } 
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
 
