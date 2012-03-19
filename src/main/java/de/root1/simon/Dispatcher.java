@@ -705,7 +705,7 @@ public class Dispatcher implements IoHandler {
     public void exceptionCaught(IoSession session, Throwable throwable)
             throws Exception {
 
-        logger.error("exception Caught. session={}. Exception:\n {}", new Object[]{Utils.longToHexString(session.getId()), Utils.getStackTraceAsString(throwable)});
+        logger.error("exception Caught. thread={} session={}. Exception:\n {}", new Object[]{Thread.currentThread().getName(), Utils.longToHexString(session.getId()), Utils.getStackTraceAsString(throwable)});
             
         logger.debug("Closing the session now! session={}", Utils.longToHexString(session.getId()));
         session.close(true);
