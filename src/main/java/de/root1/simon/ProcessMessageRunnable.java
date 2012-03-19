@@ -419,7 +419,7 @@ public class ProcessMessageRunnable implements Runnable {
                         }
 
                         // re-implant the proxy object
-                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces));
+                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false));
                         logger.debug("proxy object for SimonCallback injected");
                     }
                 }
