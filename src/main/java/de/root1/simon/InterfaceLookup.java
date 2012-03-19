@@ -144,7 +144,7 @@ public class InterfaceLookup extends AbstractLookup {
             /*
              * Creates proxy for method-call-forwarding to server
              */
-            SimonProxy handler = new SimonProxy(dispatcher, session, msg.getRemoteObjectName(), listenerInterfaces);
+            SimonProxy handler = new SimonProxy(dispatcher, session, msg.getRemoteObjectName(), listenerInterfaces, true);
             logger.trace("proxy created");
 
             /*
