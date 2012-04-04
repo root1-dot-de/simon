@@ -31,11 +31,7 @@
 package de.root1.simon;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,7 +43,7 @@ import java.util.List;
 public class PublicationSearcher extends Thread {
 
     private static final int groupPort = 4446;
-    private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
+    private InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
     private long searchTime = 2000;
     private final List<SimonPublication> foundPublications;
     private boolean shutdown = false;
