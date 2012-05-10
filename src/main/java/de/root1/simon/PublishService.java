@@ -37,7 +37,7 @@ public final class PublishService extends Thread {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private MulticastSocket socket;
     private InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
-    private int groupPort = 4446;
+    private int groupPort = Simon.DEFAULT_PORT;
     private boolean shutdown;
     private List<SimonPublication> publishments;
 
