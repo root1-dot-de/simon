@@ -18,14 +18,9 @@
  */
 package de.root1.simon;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.Collections;
 import java.util.Enumeration;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
