@@ -5,17 +5,16 @@
 
 package de.root1.simon.test.clientcallback;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 import de.root1.simon.Lookup;
-import de.root1.simon.NameLookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import org.junit.After;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -24,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 public class TestClientCallback {
     
     private final Logger logger = LoggerFactory.getLogger(TestClientCallback.class);
+    private final int PORT = 4753;
 
     public TestClientCallback() {
     }
@@ -55,11 +55,11 @@ public class TestClientCallback {
             logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -87,11 +87,11 @@ public class TestClientCallback {
             logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -127,11 +127,11 @@ public class TestClientCallback {
             logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -148,16 +148,11 @@ public class TestClientCallback {
                 logger.info("Got exception: "+e+" --> SUCCESS");
             }
 
-            lookup.release(roiRemote);
-            logger.info("Awaiting network connections shutdown");
-            ((NameLookup)lookup).awaitCompleteShutdown(30000);
-            logger.info("Awaiting network connections shutdown *done*");
-            
             r.unbind("roi");
             logger.info("unbind of roi done");
             r.stop();
             logger.info("registry stopped");
-            
+
             assert true;
 
         } catch (Exception ex) {
@@ -172,11 +167,11 @@ public class TestClientCallback {
             logger.info("Begin testClientCallbackEquals ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -205,10 +200,45 @@ public class TestClientCallback {
             logger.info("Calling equals *DONE*");
             assertFalse("On serverside, a null-object must not be equals to the server remote object", result);
 
-            lookup.release(roiRemote);
-            logger.info("Awaiting network connections shutdown");
-            ((NameLookup)lookup).awaitCompleteShutdown(30000);
-            logger.info("Awaiting network connections shutdown *done*");
+            r.unbind("roi");
+            logger.info("unbind of roi done");
+            r.stop();
+            logger.info("registry stopped");
+
+            assert true;
+
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
+    }
+    
+    /**
+     * see: http://dev.root1.de/issues/102
+     */
+    @Test
+    public void testGetRemoteFromRemote() {
+        try {
+
+            logger.info("Begin ...");
+            RemoteObjectImpl roi = new RemoteObjectImpl();
+
+            Registry r = Simon.createRegistry(PORT);
+            r.bind("roi", roi);
+
+            logger.info("bound roi to registry ...");
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
+
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+
+            logger.info("roi lookup done");
+
+            try {
+                roiRemote.getRemoteObject();
+                throw new AssertionError("Getting bound remote objects via the remote itself should throw an Exception.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.info("Got exception: "+e+" --> SUCCESS");
+            }
             
             r.unbind("roi");
             logger.info("unbind of roi done");
