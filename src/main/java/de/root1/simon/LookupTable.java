@@ -158,7 +158,8 @@ public class LookupTable {
 
             logger.debug("session '{}' now has {} entries.", Utils.longToHexString(sessionId), remotes.size());
 
-            remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+            // removed 2nd "computeMethodHashMap" for remote object. See: http://dev.root1.de/issues/105
+            // remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
         } else {
             logger.debug("remoteObjectName={} already known. Skipping.", remoteObjectName);
         }
