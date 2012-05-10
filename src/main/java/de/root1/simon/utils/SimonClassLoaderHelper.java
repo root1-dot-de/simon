@@ -25,16 +25,8 @@ public class SimonClassLoaderHelper {
         return getClassLoader(c, null);
     }
 
-    /**
-     * Returns best possible classloader for the specified <code>caller</code> class.
-     * If <code>specialClassloader</code> is also specified, the CL search algorith starts the search with this one, instead of <code>caller</code>
-     * 
-     * @param caller
-     * @param specialClassLoader
-     * @return ClassLoader
-     */
-    public static ClassLoader getClassLoader(Class<?> caller, ClassLoader specialClassLoader) {
-        final ClassLoader callerClassLoader = (specialClassLoader != null ? specialClassLoader : caller.getClassLoader());
+    public static ClassLoader getClassLoader(Class<?> c, ClassLoader specialClassLoader) {
+        final ClassLoader callerClassLoader = (specialClassLoader != null ? specialClassLoader : c.getClassLoader());
         final ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
 
         ClassLoader result;

@@ -19,20 +19,24 @@
 package de.root1.simon.exceptions;
 
 /**
- * Thrown in case of any error when establishing a connection to the server
+ * TODO Documentation to be done
  *
  * @author achristian
- * @since 1.0.0
+ *
  */
 public class EstablishConnectionFailed extends Exception {
+	
+	/**
+	 * TODO Documentation to be done
+	 * 
+	 */
+	private static final long serialVersionUID = 5427579794488190977L;
 
-    private static final long serialVersionUID = 5427579794488190977L;
+	/**
+	 * TODO Documentation to be done
+	 */
+	public EstablishConnectionFailed(String msg) {
+		super(msg);
+	}
 
-    public EstablishConnectionFailed(String msg) {
-        super(msg);
-    }
-
-    public EstablishConnectionFailed(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

@@ -66,8 +66,6 @@ abstract class AbstractLookup implements Lookup {
      * This member has static access. So it's reachable from every lookup implementation class
      */
     static final Map<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
-    
-    static final Monitor monitorCompleteShutdown = new Monitor();
 
     /**
      * A simple container class that relates the dispatcher to a session
@@ -97,10 +95,6 @@ abstract class AbstractLookup implements Lookup {
 
         // retrieve the proxy object
         SimonProxy proxy = Simon.getSimonProxy(proxyObject);
-        
-        if (!proxy.isRegularLookup()) {
-            throw new IllegalArgumentException("Provided proxy is callback object and is not releasable. Please release your lookup'ed object(s) instead.");
-        } 
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
 
@@ -304,7 +298,7 @@ abstract class AbstractLookup implements Lookup {
                     dispatcher.shutdown();
                     filterchainWorkerPool.shutdown();
 
-                    throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ".", e);
+                    throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ". Error was: " + e + ": " + e.getMessage());
                 }
 
                 if (future.isConnected()) { // check if the connection succeeded
@@ -327,7 +321,6 @@ abstract class AbstractLookup implements Lookup {
                 ClientToServerConnection ctsc = new ClientToServerConnection(serverString, dispatcher, session, connector, filterchainWorkerPool);
                 ctsc.addRef();
                 serverDispatcherRelation.put(serverString, ctsc);
-                monitorCompleteShutdown.reset();
             }
         }
 
@@ -374,10 +367,6 @@ abstract class AbstractLookup implements Lookup {
                         public void operationComplete(IoFuture future) {
                             ctsc.getFilterchainWorkerPool().shutdown();
                             ctsc.getConnector().dispose();
-                            if (serverDispatcherRelation.isEmpty()) {
-                                logger.debug("serverDispatcherRelation map is empty. Signalling complete network connection shutdown now.");
-                                monitorCompleteShutdown.signal();
-                            }
                         }
                     });
                     result = true;
@@ -392,15 +381,6 @@ abstract class AbstractLookup implements Lookup {
 
         }
         return result;
-    }
-    
-    /**
-     * Awaits a complete network shutdown. Means: Waits until all network connections are closed or timeout occurs.
-     * @param timeout timeout for awaiting complete network shutdown
-     * @since 1.2.0
-     */
-    public void awaitCompleteShutdown(long timeout) {
-        monitorCompleteShutdown.waitForSignal(timeout);
     }
 
     /**

@@ -24,6 +24,7 @@ import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketTimeoutException;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +37,7 @@ public final class PublishService extends Thread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private MulticastSocket socket;
-    private InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
+    private InetAddress groupAddress = InetAddress.getByName("230.0.0.1");
     private int groupPort = 4446;
     private boolean shutdown;
     private List<SimonPublication> publishments;

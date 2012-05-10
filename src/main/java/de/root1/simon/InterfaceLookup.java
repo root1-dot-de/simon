@@ -56,47 +56,38 @@ public class InterfaceLookup extends AbstractLookup {
         this.serverPort = serverPort;
     }
 
-    @Override
     public SslContextFactory getSslContextFactory() {
         return sslContextFactory;
     }
 
-    @Override
     public void setSslContextFactory(SslContextFactory sslContextFactory) {
         this.sslContextFactory = sslContextFactory;
     }
 
-    @Override
     public SimonProxyConfig getProxyConfig() {
         return proxyConfig;
     }
 
-    @Override
     public void setProxyConfig(SimonProxyConfig proxyConfig) {
         this.proxyConfig = proxyConfig;
     }
 
-    @Override
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
-    @Override
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
-    @Override
     public InetAddress getServerAddress() {
         return serverAddress;
     }
 
-    @Override
     public int getServerPort() {
         return serverPort;
     }
 
-    @Override
     public Object lookup(String canonicalInterfaceName) throws LookupFailedException, EstablishConnectionFailed {
         logger.debug("begin");
 
@@ -130,12 +121,7 @@ public class InterfaceLookup extends AbstractLookup {
 
         } else {
 
-            Class<?>[] listenerInterfaces=null;
-            try {
-                listenerInterfaces = (classLoader==null?msg.getInterfaces():msg.getInterfaces(classLoader));
-            } catch (ClassNotFoundException ex) {
-                throw new LookupFailedException("Not able to load remote interfaces. Maybe you need to specify a specific classloader via Lookup#setClassLoader()?",ex);
-            }
+            Class<?>[] listenerInterfaces = msg.getInterfaces();
 
             for (Class<?> class1 : listenerInterfaces) {
                 logger.trace("iface: {}", class1.getName());
@@ -144,7 +130,7 @@ public class InterfaceLookup extends AbstractLookup {
             /*
              * Creates proxy for method-call-forwarding to server
              */
-            SimonProxy handler = new SimonProxy(dispatcher, session, msg.getRemoteObjectName(), listenerInterfaces, true);
+            SimonProxy handler = new SimonProxy(dispatcher, session, msg.getRemoteObjectName(), listenerInterfaces);
             logger.trace("proxy created");
 
             /*

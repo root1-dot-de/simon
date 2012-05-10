@@ -57,32 +57,10 @@ public interface Lookup {
 
     int getServerPort();
 
-    /**
-     * Tries to lookup a remote object on the server.
-     * A successful lookup includes:
-     * <ul>
-     * <li>established socket connection to server, if not already connected</li>
-     * <li>increased reference counter for this client-to-server connection by 1</li>
-     * <li>return of the requested remote object</li>
-     * </ul>
-     * To avoid leaks, ensure that remote objects are released after use. For releasing objects, please refer to
-     * {@link de.root1.simon.Lookup#release(java.lang.Object)}. 
-     * 
-     * @param lookupString
-     * @return the remote object
-     * @throws LookupFailedException
-     * @throws EstablishConnectionFailed 
-     */
     Object lookup(String lookupString) throws LookupFailedException, EstablishConnectionFailed;
 
     /**
      * Releases are remote object. If provided object is null, method will simply return.
-     * Releasing a remote objects leads to:
-     * <ul>
-     * <li>release of related SIMON resources (threads, ...)</li>
-     * <li>decrease reference counter for this client-to-server connection by 1</li>
-     * <li>if reference counter reaches 0, the client-to-server connection will be disconnected and cleaned up</li>
-     * </ul>
      *
      * @param remoteObject
      * @return true, in case of a normal and clean release. false if remoteobject is already released

@@ -2,9 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package de.root1.simon.samples.ssl;
 
-import de.root1.simon.Lookup;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -20,25 +20,24 @@ import de.root1.simon.samples.helloworld.client.ClientCallbackImpl;
 import de.root1.simon.samples.helloworld.shared.ServerInterface;
 import de.root1.simon.ssl.DefaultSslContextFactory;
 
-public class Client {
 
-    public static void main(String[] args) throws IOException, LookupFailedException, UnrecoverableKeyException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException, CertificateException, EstablishConnectionFailed {
+ public class Client {
 
-        // create a callback object
-        ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
-        
-        // 'lookup' the server object via SSL
-        Lookup nameLookup = Simon.createNameLookup(InetAddress.getByName("127.0.0.1"), 22222);
-        nameLookup.setSslContextFactory(new DefaultSslContextFactory("path_to_keystore/.clientkeystore", "MyKeyStorePass"));
-        ServerInterface server = (ServerInterface) nameLookup.lookup("server");
+     public static void main(String[] args) throws IOException, LookupFailedException, UnrecoverableKeyException, KeyManagementException, NoSuchAlgorithmException, KeyStoreException, CertificateException, EstablishConnectionFailed {
 
-        // use the serverobject as it would exist on your local machine
-        server.login(clientCallbackImpl);
+         // create a callback object
+         ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
 
-        // do some more stuff
-        // ...
+         // 'lookup' the server object via SSL
+         ServerInterface server = (ServerInterface) Simon.lookup(new DefaultSslContextFactory("path_to_keystore/.clientkeystore","MyKeyStorePass"), null, InetAddress.getByName("127.0.0.1"), 22222, "server");
 
-        // and finally 'release' the serverobject to release to connection to the server
-        nameLookup.release(server);
+         // use the serverobject as it would exist on your local machine
+         server.login(clientCallbackImpl);
+         
+         // do some more stuff
+         // ...
+
+           // and finally 'release' the serverobject to release to connection to the server
+         Simon.release(server);
     }
 }

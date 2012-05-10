@@ -146,7 +146,7 @@ public class LookupTable {
         } else {
             remotes = gcRemoteInstances.get(sessionId);
         }
-        /*
+                /*
          * if remote is not already known, add it to list
          * This check is useful when you provide one and the same callback object to server many times.
          * There the name is always the same. And when unreferencing the object get's unreferenced once.
@@ -158,8 +158,7 @@ public class LookupTable {
 
             logger.debug("session '{}' now has {} entries.", Utils.longToHexString(sessionId), remotes.size());
 
-            // removed 2nd "computeMethodHashMap" for remote object. See: http://dev.root1.de/issues/105
-            // remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+            remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
         } else {
             logger.debug("remoteObjectName={} already known. Skipping.", remoteObjectName);
         }
@@ -203,11 +202,11 @@ public class LookupTable {
         // simonRemote may be null in case of multithreaded access
         // to Simon#unbind() and thus releaseRemoteBinding()
         if (remoteObject != null) {
-            logger.debug("cleaning up [{}]", remoteObject);
+            logger.debug("cleaning up [{}]");
             removeRemoteObjectFromHashMap(remoteObject);
             remoteObject_to_hashToMethod_Map.remove(remoteObject);
         } else {
-            logger.debug("[{}] already removed or not available. nothing to do.", name);
+            logger.debug("[{}] already removed or not available. nothing to do.");
         }
 
         logger.debug("end");
@@ -303,7 +302,6 @@ public class LookupTable {
      *
      */
     protected void cleanup() {
-        logger.debug("begin");
         Simon.unregisterLookupTable(this);
 
         Iterator<Long> iterator = gcRemoteInstances.keySet().iterator();
@@ -314,7 +312,6 @@ public class LookupTable {
         bindings.clear();
         remoteObject_to_hashToMethod_Map.clear();
         cleanupDone = true;
-        logger.debug("end");
     }
 
     /**
@@ -379,7 +376,7 @@ public class LookupTable {
 //	}
 //	
     /**
-     * Returns the related Dispatcher
+     * TODO document me
      * @return related dispatcher
      */
     protected Dispatcher getDispatcher() {

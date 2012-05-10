@@ -32,36 +32,23 @@ public class MsgNameLookupReturn extends AbstractMessage {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final long serialVersionUID = 1L;
-    private String[] interfaces;
+    private Class<?>[] interfaces;
     private String errorMsg = Statics.NO_ERROR;
 
     public MsgNameLookupReturn() {
         super(SimonMessageConstants.MSG_NAME_LOOKUP_RETURN);
 
         // dummy init so that on case of an error no "null" has top be transferred
-//        interfaces = new Class<?>[1];
-//        interfaces[0] = Object.class;
-        interfaces = new String[1];
-        interfaces[0] = Object.class.getCanonicalName();
+        interfaces = new Class<?>[1];
+        interfaces[0] = Object.class;
         logger.trace("interfaces.length={}", interfaces.length);
     }
 
-    public Class<?>[] getInterfaces() throws ClassNotFoundException {
-        return getInterfaces(this.getClass().getClassLoader());
-    }
-    
-    public Class<?>[] getInterfaces(ClassLoader cl) throws ClassNotFoundException {
-        Class<?>[] interfaceClasses = new Class<?>[interfaces.length];
-        for (int i=0;i<interfaceClasses.length;i++) {
-            interfaceClasses[i]=Class.forName(interfaces[i], true, cl);
-        }
-        return interfaceClasses;
-    }
-    public String[] getInterfacesString(){
+    public Class<?>[] getInterfaces() {
         return interfaces;
     }
 
-    public void setInterfaces(String[] interfaces) {
+    public void setInterfaces(Class<?>[] interfaces) {
         this.interfaces = interfaces;
     }
 

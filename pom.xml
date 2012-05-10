@@ -17,12 +17,12 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  *
  -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+ <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>de.root1</groupId>
     <artifactId>simon</artifactId>
-    <name>SIMON ${project.version}</name>
-    <version>1.2.0-SNAPSHOT</version>
+    <name>SIMON ${version}</name>
+    <version>1.1.3</version>
     <description>SIMON (Simple Invocation of Methods Over Network) is a kind of RMI replacement which solves the most common problems many people complain about. It's fast, it's scalable, it's small and finally, easy to use.</description>
     <url>http://dev.root1.de/project-sites/simon/</url>
 
@@ -35,26 +35,26 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.1</version>
+            <version>1.5.8</version>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <version>1.6.1</version>
+            <version>1.5.8</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-core</artifactId>
-            <version>2.0.4</version>
+            <version>2.0.2</version>
         </dependency>
 
         <!-- dependencies only needed for junit tests -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
+            <version>4.6</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -84,7 +84,7 @@
             <url>license.txt</url>
         </license>
         <license>
-            <name>root1.de Library Commercial License, Version 1.0</name>
+            <name>root1.de Commercial License, Version 1.0</name>
             <url>root1-license.txt</url>
         </license>
     </licenses>
@@ -94,7 +94,47 @@
         <url>http://svn.root1.de/svn/simon</url>
     </scm>
 
-    <!-- upload informations for deploying the jar -->
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>index</report>
+                            <report>dependencies</report>
+                            <report>project-team</report>
+                            <report>issue-tracking</report>
+                            <report>license</report>
+                            <report>scm</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.5</version>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <!-- additional maven repositories to search in -->
+<!--	<repositories>
+                <repository>
+                        <id>root1-snapshot</id>
+                        <name>root1.de Snapshot Repository</name>
+                        <url>http://nexus.root1.de/content/repositories/root1-snapshot/</url>
+                </repository>
+                <repository>
+                        <id>root1-release</id>
+                        <name>root1.de Release Repository</name>
+                        <url>http://nexus.root1.de/content/repositories/root1-release/</url>
+                </repository>
+        </repositories> -->
+
+        <!-- upload informations for deploying the jar -->
     <distributionManagement>
         <repository>
             <id>root1-releases</id>
@@ -116,39 +156,7 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
-                <version>3.0-beta-3</version>
-                <configuration>
-                    <reportPlugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-project-info-reports-plugin</artifactId>
-                            <version>2.2</version>
-                            <configuration>
-                                <dependencyDetailsEnabled>true</dependencyDetailsEnabled>
-                                <dependencyLocationsEnabled>true</dependencyLocationsEnabled>
-                            </configuration>
-                            <reports>
-                                <report>index</report>
-                                <report>dependencies</report>
-                                <report>project-team</report>
-                                <report>issue-tracking</report>
-                                <report>license</report>
-                                <report>scm</report>
-                            </reports>
-                        </plugin>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-javadoc-plugin</artifactId>
-                            <version>2.7</version>
-                        </plugin>
-                    </reportPlugins>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.2</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -162,7 +170,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.7</version>
                 <executions>
                     <execution>
 
@@ -178,12 +185,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
+                <!--<version>2.0</version>-->
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
                     <encoding>UTF-8</encoding>
-                    <showDeprecation>true</showDeprecation>
                 </configuration>
             </plugin>
 
@@ -213,13 +219,10 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>changelog-maven-plugin</artifactId>
-                <version>2.0-beta-1</version>
             </plugin>
 
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.7.2</version>
                 <configuration>
                     <forkMode>pertest</forkMode>
                     <childDelegation>false</childDelegation>

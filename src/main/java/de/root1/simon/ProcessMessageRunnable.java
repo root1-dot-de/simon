@@ -52,8 +52,6 @@ import org.slf4j.LoggerFactory;
 public class ProcessMessageRunnable implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Logger invokeLogger = LoggerFactory.getLogger("de.root1.simon.InvokeLogger");
-
     private AbstractMessage abstractMessage;
     private IoSession session;
     private Dispatcher dispatcher;
@@ -287,14 +285,10 @@ public class ProcessMessageRunnable implements Runnable {
         ret.setSequence(msg.getSequence());
         try {
             Class<?>[] interfaces = null;
+
             interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
 
-            String[] interfaceNames = new String[interfaces.length];
-            for(int i=0;i<interfaceNames.length;i++) {
-                interfaceNames[i] = interfaces[i].getCanonicalName();
-            }
-            
-            ret.setInterfaces(interfaceNames);
+            ret.setInterfaces(interfaces);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
             ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
@@ -322,13 +316,7 @@ public class ProcessMessageRunnable implements Runnable {
 
             RemoteObjectContainer container = dispatcher.getLookupTable().getRemoteObjectContainerByInterface(canonicalInterfaceName);
 
-            Class<?>[] interfaces = container.getRemoteObjectInterfaces();
-            String[] interfaceNames = new String[interfaces.length];
-            for(int i=0;i<interfaceNames.length;i++) {
-                interfaceNames[i] = interfaces[i].getCanonicalName();
-            }
-            
-            ret.setInterfaces(interfaceNames);
+            ret.setInterfaces(container.getRemoteObjectInterfaces());
             ret.setRemoteObjectName(container.getRemoteObjectName());
 
         } catch (LookupFailedException e) {
@@ -419,7 +407,7 @@ public class ProcessMessageRunnable implements Runnable {
                         }
 
                         // re-implant the proxy object
-                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false));
+                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces));
                         logger.debug("proxy object for SimonCallback injected");
                     }
                 }
@@ -427,7 +415,6 @@ public class ProcessMessageRunnable implements Runnable {
             // ------------
 
             logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
-            invokeLogger.debug("Invoke on remote object '{}': method='{}' args='{}'", new Object[]{remoteObjectName, method, arguments});
 
             Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
 
@@ -477,11 +464,11 @@ public class ProcessMessageRunnable implements Runnable {
             if (Utils.isSimonProxy(result)) {
                 throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
             }
-            
+
             if (dispatcher.getLookupTable().isSimonRemoteRegistered(result)) {
                 throw new SimonException("Result of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
             }
-
+            
             if (method.getReturnType() == void.class) {
                 result = new SimonVoid();
             }

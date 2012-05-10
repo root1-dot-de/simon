@@ -43,17 +43,17 @@ public class MsgNameLookupReturnEncoder<T extends MsgNameLookupReturn> extends A
     protected void encodeBody(IoSession session, T message, IoBuffer out) {
         logger.trace("sending interfaces ...");
 
-        String[] interfaces = message.getInterfacesString();
+        Class<?>[] interfaces = message.getInterfaces();
         out.putInt(interfaces.length);
         logger.trace("interfaces to send: {}", interfaces.length);
-        for (String class1 : interfaces) {
+        for (Class<?> class1 : interfaces) {
             try {
-                logger.trace("interface={}", class1);
-                out.putPrefixedString(class1, Charset.forName("UTF-8").newEncoder());
+                logger.trace("interface={}", class1.getCanonicalName());
+                out.putPrefixedString(class1.getCanonicalName(), Charset.forName("UTF-8").newEncoder());
             } catch (CharacterCodingException e) {
                 MsgError error = new MsgError();
                 error.setEncodeError();
-                error.setErrorMessage("Error while encoding name lookup() return: Not able to write interface name '"+class1+"' due to CharacterCodingException.");
+                error.setErrorMessage("Error while encoding name lookup() return: Not able to write interface name '"+class1.getCanonicalName()+"' due to CharacterCodingException.");
                 error.setRemoteObjectName(null);
                 error.setInitSequenceId(message.getSequence());
                 error.setThrowable(e);

@@ -18,20 +18,22 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.utils.SimonClassLoaderHelper;
-import de.root1.simon.utils.Utils;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.SocketAddress;
-import java.util.Arrays;
-import java.util.List;
+
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.utils.SimonClassLoaderHelper;
+import de.root1.simon.utils.Utils;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * The InvocationHandler which redirects each method call over the network to the related dispatcher
@@ -55,9 +57,6 @@ public class SimonProxy implements InvocationHandler {
     /** the interfaces that the remote object has exported */
     Class<?>[] remoteInterfaces;
 
-    /** flag that indicates whether this simonproxy has been created via regular lookup, or during runtime as callback */
-    private final boolean regularLookup;
-
     /**
      *
      * Constructor which sets the reference to the dispatcher and the remote object name
@@ -67,13 +66,12 @@ public class SimonProxy implements InvocationHandler {
      * @param remoteObjectName name of the remote object
      * @param remoteInterfaces the interfaces that the remote object has exported
      */
-    protected SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName, Class<?>[] remoteInterfaces, boolean regularLookup) {
+    protected SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName, Class<?>[] remoteInterfaces) {
         this.dispatcher = dispatcher;
         this.session = session;
 
         this.remoteObjectName = remoteObjectName;
         this.remoteInterfaces = remoteInterfaces;
-        this.regularLookup = regularLookup;
     }
 
     /**
@@ -129,7 +127,6 @@ public class SimonProxy implements InvocationHandler {
 
                 }
                 return remoteEquals(o);
-
             } else if (method.toString().equalsIgnoreCase(Statics.HASHCODE_METHOD_SIGNATURE)) {
                 try {
                     return remoteHashCode();
@@ -164,7 +161,6 @@ public class SimonProxy implements InvocationHandler {
             throw (Throwable) result;
         }
 
-        // TODO 20110429 Check if this block can be moved to ProcessMessageRunnable#processInvokeReturn()
         if (result instanceof SimonRemoteInstance) {
 
             // creating a proxy for the callback
@@ -176,13 +172,12 @@ public class SimonProxy implements InvocationHandler {
                 listenerInterfaces[j]=Class.forName(interfaceNames.get(j));
             }
 
-            SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId(), new Class<?>[]{}, false);
+            SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId(), new Class<?>[]{});
 
             // reimplant the proxy object
             result = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler);
 
         }
-        
         logger.debug("end");
 
         // see: http://www.webreference.com/internet/reflection/4.html
@@ -321,14 +316,5 @@ public class SimonProxy implements InvocationHandler {
      */
     protected Dispatcher getDispatcher() {
         return dispatcher;
-    }
-    
-    /**
-     * Returns true if this proxy has been cerated in ciontext of a lookup-call.
-     * False in case of callback object
-     * @return boolean
-     */
-    protected boolean isRegularLookup() {
-        return regularLookup;
     }
 }

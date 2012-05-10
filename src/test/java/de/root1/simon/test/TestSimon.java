@@ -43,40 +43,11 @@ public class TestSimon {
     }
 
     @Test
-    public void testDenoteSameRemoteObject() {
-
-
-        try {
-            RemoteObjectImpl roi = new RemoteObjectImpl();
-
-            Registry r = Simon.createRegistry(22222);
-            r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
-
-            RemoteObject roiRemote1 = (RemoteObject) lookup.lookup("roi");
-            RemoteObject roiRemote2 = (RemoteObject) lookup.lookup("roi");
-
-            assertTrue("Two remote object instances of same remoteobject must be the same", Simon.denoteSameRemoteObjekt(roiRemote1, roiRemote2));
-
-            lookup.release(roiRemote1);
-            lookup.release(roiRemote2);
-            
-            r.unbind("roi");
-            r.stop();
-
-        } catch (Exception ex) {
-            throw new AssertionError(ex);
-        }
-
-    }
-    
-    @Test
     public void testCreateRegistryTwice() {
 
-
         try {
-            Registry r = Simon.createRegistry(22224);
-            Registry r2 = Simon.createRegistry(22224);
+            Registry r = Simon.createRegistry(8888);
+            Registry r2 = Simon.createRegistry(8888);
             r.stop();
             r2.stop();
             throw new AssertionError("There should be a BindException in case of running a port is already in use.");

@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
@@ -41,60 +42,17 @@ import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.Utils;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.logging.*;
 
 /**
  * This is SIMONs core class which contains all the core functionality like
  * setting up a SIMON server or lookup a remote object from the client side
  */
 public class Simon {
-    
+
     /**
      * The logger used for this class
      */
     private final static Logger logger = LoggerFactory.getLogger(Simon.class);
-    
-    static {
-        String property = System.getProperty("de.root1.simon.debug","false");
-        boolean debugEnabled = Boolean.parseBoolean(property);
-        
-        if (debugEnabled) {
-            System.out.println("ENABLING SIMON DEBUG LOG");
-            try {
-                File f = new File("de.root1.simon.debuglogging.properties");
-                if (!f.exists()) {
-                    System.out.println("SIMON debug logging properties does not exist. Creating default '"+f.getAbsolutePath()+"' ...");
-                    FileWriter fw = new FileWriter(f);
-                    fw.write("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler"+"\n");
-                    fw.write(".level= ALL"+"\n");
-                    fw.write("java.util.logging.FileHandler.pattern = de.root1.simon_debug.log"+"\n");
-                    fw.write("java.util.logging.FileHandler.limit = 500000"+"\n");
-                    fw.write("java.util.logging.FileHandler.count = 1"+"\n");
-                    fw.write("java.util.logging.FileHandler.formatter = de.root1.simon.utils.ConsoleLogFormatter"+"\n");
-                    fw.write("java.util.logging.ConsoleHandler.level = ALL"+"\n");
-                    fw.write("java.util.logging.ConsoleHandler.formatter = de.root1.simon.utils.ConsoleLogFormatter"+"\n");
-                    fw.write("de.root1.simon.level = ALL"+"\n");
-                    fw.write("org.apache.mina.filter.logging.LoggingFilter = INFO"+"\n");
-                    fw.close();
-                } else {
-                    System.out.println("Using existing debug logging properties: "+f.getAbsolutePath());
-                }
-                FileInputStream is = new FileInputStream(f);
-                LogManager.getLogManager().readConfiguration(is);
-                
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(Simon.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            
-            
-            System.out.println("ENABLING SIMON DEBUG LOG *DONE*");
-        }
-    }
-
 
     /**
      * The size of the used thread pool. -1 indicates a cached thread pool.
@@ -1370,47 +1328,5 @@ public class Simon {
         SimonRemoteMarker smr = new SimonRemoteMarker(o);
         Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, smr);
         return newProxyInstance;
-    }
-    
-    /**
-     * Tests if both objects denote the same remote object.
-     * Comparison is done on 
-     * <ul>
-     * <li>remote object name</li>
-     * <li>underlying IO session</li>
-     * </ul>
-     * 
-     * If both objects denote a remote object and the values match for both 
-     * objects, result will be true. In any other case, false is returned
-     * 
-     * 
-     * @param a
-     * @param b
-     * @return boolean
-     * @since 1.2.0
-     */
-    public static boolean denoteSameRemoteObjekt(Object a, Object b) {
-        
-        if (Utils.isSimonProxy(a)) {
-            
-            if (Utils.isSimonProxy(b)) {
-                
-                SimonProxy proxyA = Simon.getSimonProxy(a);
-                SimonProxy proxyB = Simon.getSimonProxy(b);
-                
-                if (proxyA.getRemoteObjectName().equals(proxyB.getRemoteObjectName()) &&
-                        proxyA.getIoSession().equals(proxyB.getIoSession())){
-                    return true;
-                }
-                
-            } else {
-                logger.debug("Object 'b' is not a SimonProxy instance");    
-            }
-            
-        } else {
-            logger.debug("Object 'a' is not a SimonProxy instance");
-        }
-        
-        return false;
     }
 }

@@ -5,23 +5,23 @@
 
 package de.root1.simon.test.interfacelookup;
 
-import de.root1.simon.InterfaceLookup;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.logging.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author achristian
  */
 public class TestInterfaceLookup {
-    
-    private final Logger logger = LoggerFactory.getLogger(TestInterfaceLookup.class);
 
     public TestInterfaceLookup() {
     }
@@ -50,36 +50,31 @@ public class TestInterfaceLookup {
 
         try {
 
-            logger.info("Begin interfaceLookupAndReleaseTwice...");
+            System.out.println("Begin interfaceLookupAndReleaseTwice...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
             r.bind("roi", roi);
 
-            logger.info("bound roi to registry ...");
+            System.out.println("bound roi to registry ...");
             Lookup lookup = Simon.createInterfaceLookup("localhost", 22222);
 
-            logger.info("canonical interface name: "+RemoteObject.class.getCanonicalName());
+            System.out.println("canonical interface name: "+RemoteObject.class.getCanonicalName());
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup(RemoteObject.class.getCanonicalName());
 
-            logger.info("roi lookup done");
+            System.out.println("roi lookup done");
 
             roiRemote.helloWorld();
-            logger.info("method call done");
+            System.out.println("method call done");
 
             lookup.release(roiRemote);
-            logger.info("release of roi done");
-            
-            lookup.release(roiRemote);
-            logger.info("Awaiting network connections shutdown");
-            ((InterfaceLookup)lookup).awaitCompleteShutdown(30000);
-            logger.info("Awaiting network connections shutdown *done*");
+            System.out.println("release of roi done");
 
             r.unbind("roi");
-            logger.info("unbind of roi done");
+            System.out.println("unbind of roi done");
             r.stop();
-            logger.info("registry stopped");
+            System.out.println("registry stopped");
 
             // ----------------
 
