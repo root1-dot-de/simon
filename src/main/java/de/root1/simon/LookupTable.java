@@ -377,18 +377,21 @@ public class LookupTable {
 //	
     /**
      * TODO document me
-     * @return related diuspatcher
+     * @return related dispatcher
      */
     protected Dispatcher getDispatcher() {
         return dispatcher;
     }
 
     /**
-     * TODO document me
+     * Chesk whether the provided object is registered in the remote object hashmap
      * @param simonRemote
      * @return true, if the given object is registered, false if not
      */
     protected boolean isSimonRemoteRegistered(Object simonRemote) {
+        if (simonRemote==null) {
+            return false;
+        }
         logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectHashMap);
         if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) {
             return true;

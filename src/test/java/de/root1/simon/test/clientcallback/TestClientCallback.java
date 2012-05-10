@@ -5,21 +5,16 @@
 
 package de.root1.simon.test.clientcallback;
 
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.logging.LogManager;
 import org.junit.After;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -28,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 public class TestClientCallback {
     
     private final Logger logger = LoggerFactory.getLogger(TestClientCallback.class);
+    private final int PORT = 4753;
 
     public TestClientCallback() {
     }
@@ -54,40 +50,16 @@ public class TestClientCallback {
     @Test
     public void passCallbackToServerTest() {
 
-        File f = new File("target/test-classes/simon_logging.properties");
-        try {
-            FileInputStream is = new FileInputStream(f);
-            LogManager.getLogManager().readConfiguration(is);
-
-
-        } catch (FileNotFoundException e) {
-
-                System.err.println("File not found: "+f.getAbsolutePath()+".\n" +
-                                "If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
-                                "Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
-
-        } catch (SecurityException e) {
-
-                System.err.println("Security exception occured while trying to load "+f.getAbsolutePath()+"\n" +
-                                "Logging with SIMON not possible!.");
-
-        } catch (IOException e) {
-
-                System.err.println("Cannot load "+f.getAbsolutePath()+" ...\n" +
-                                "Please make sure that Java has access to that file.");
-
-        }
-
         try {
 
             logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -115,11 +87,11 @@ public class TestClientCallback {
             logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -155,11 +127,11 @@ public class TestClientCallback {
             logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -195,11 +167,11 @@ public class TestClientCallback {
             logger.info("Begin testClientCallbackEquals ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -228,6 +200,46 @@ public class TestClientCallback {
             logger.info("Calling equals *DONE*");
             assertFalse("On serverside, a null-object must not be equals to the server remote object", result);
 
+            r.unbind("roi");
+            logger.info("unbind of roi done");
+            r.stop();
+            logger.info("registry stopped");
+
+            assert true;
+
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
+    }
+    
+    /**
+     * see: http://dev.root1.de/issues/102
+     */
+    @Test
+    public void testGetRemoteFromRemote() {
+        try {
+
+            logger.info("Begin ...");
+            RemoteObjectImpl roi = new RemoteObjectImpl();
+
+            Registry r = Simon.createRegistry(PORT);
+            r.bind("roi", roi);
+
+            logger.info("bound roi to registry ...");
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
+
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+
+            logger.info("roi lookup done");
+
+            try {
+                roiRemote.getRemoteObject();
+                throw new AssertionError("Getting bound remote objects via the remote itself should throw an Exception.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                logger.info("Got exception: "+e+" --> SUCCESS");
+            }
+            
             r.unbind("roi");
             logger.info("unbind of roi done");
             r.stop();
