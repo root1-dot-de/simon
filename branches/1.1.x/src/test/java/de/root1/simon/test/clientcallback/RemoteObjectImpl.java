@@ -42,4 +42,9 @@ public class RemoteObjectImpl implements RemoteObject {
         System.out.println("EQUALS ON "+this.getClass().getCanonicalName()+" CALLED! this="+this+" other="+obj);
         return super.equals(obj);
     }
+
+    @Override
+    public RemoteObject getRemoteObject() {
+        return this;
+    }
 }
