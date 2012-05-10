@@ -1,0 +1,256 @@
+<!--
+ * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ *
+ * This file is part of SIMON.
+ *
+ *   SIMON is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   SIMON is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ -->
+ <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>de.root1</groupId>
+    <artifactId>simon</artifactId>
+    <name>SIMON ${version}</name>
+    <version>1.1.3</version>
+    <description>SIMON (Simple Invocation of Methods Over Network) is a kind of RMI replacement which solves the most common problems many people complain about. It's fast, it's scalable, it's small and finally, easy to use.</description>
+    <url>http://dev.root1.de/project-sites/simon/</url>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- basic dependencies -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.5.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-jdk14</artifactId>
+            <version>1.5.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.mina</groupId>
+            <artifactId>mina-core</artifactId>
+            <version>2.0.2</version>
+        </dependency>
+
+        <!-- dependencies only needed for junit tests -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.6</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <issueManagement>
+        <system>Redmine on dev.root1.de</system>
+        <url>http://dev.root1.de/projects/simon/issues</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <id>achristian</id>
+            <name>Alexander Christian</name>
+            <email>info_NOSPAM_@root1.de</email>
+            <roles>
+                <role>Project Manager</role>
+                <role>Architect</role>
+            </roles>
+            <organization>root1.de</organization>
+            <timezone>+1</timezone>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>GNU GENERAL PUBLIC LICENSE, Version 3.0</name>
+            <url>license.txt</url>
+        </license>
+        <license>
+            <name>root1.de Commercial License, Version 1.0</name>
+            <url>root1-license.txt</url>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:svn:http://svn.root1.de/svn/simon/trunk</connection>
+        <url>http://svn.root1.de/svn/simon</url>
+    </scm>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>index</report>
+                            <report>dependencies</report>
+                            <report>project-team</report>
+                            <report>issue-tracking</report>
+                            <report>license</report>
+                            <report>scm</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.5</version>
+            </plugin>
+        </plugins>
+    </reporting>
+
+    <!-- additional maven repositories to search in -->
+<!--	<repositories>
+                <repository>
+                        <id>root1-snapshot</id>
+                        <name>root1.de Snapshot Repository</name>
+                        <url>http://nexus.root1.de/content/repositories/root1-snapshot/</url>
+                </repository>
+                <repository>
+                        <id>root1-release</id>
+                        <name>root1.de Release Repository</name>
+                        <url>http://nexus.root1.de/content/repositories/root1-release/</url>
+                </repository>
+        </repositories> -->
+
+        <!-- upload informations for deploying the jar -->
+    <distributionManagement>
+        <repository>
+            <id>root1-releases</id>
+            <name>internal releases</name>
+            <url>http://nexus.root1.de/content/repositories/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>root1-snapshots</id>
+            <name>internal snapshots</name>
+            <url>http://nexus.root1.de/content/repositories/snapshots/</url>
+        </snapshotRepository>
+        <site>
+            <id>simon.root1.de</id>
+            <url>scp://root1.de:33/var/www/virtual/dev.root1.de/htdocs/project-sites/simon</url>
+        </site>
+    </distributionManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <!--<version>2.0</version>-->
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.1</version>
+                <configuration>
+                    <descriptorRefs>
+                        <!-- <descriptorRef>project</descriptorRef> available with plugin version >= 2.2-->
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+
+                <!-- extend phase package to assembly the archives -->
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>changelog-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <forkMode>pertest</forkMode>
+                    <childDelegation>false</childDelegation>
+                    <useFile>true</useFile>
+                    <!--<includes>
+                        <include>**/*Test.*</include>
+                    </includes>-->
+                    <systemProperties>
+                        <property>
+                            <name>java.util.logging.config.file</name>
+                            <value>${basedir}/target/test-classes/simon_logging.properties</value>
+                        </property>
+                    </systemProperties>
+                </configuration>
+            </plugin>
+
+
+        </plugins>
+
+        <!-- add licensing informations to jar file -->
+        <resources>
+            <resource>
+                <filtering>true</filtering>
+                <directory>${basedir}</directory>
+                <includes>
+                    <include>*.txt</include>
+                </includes>
+            </resource>
+        </resources>
+    </build>
+</project>
