@@ -18,6 +18,14 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+import de.root1.simon.exceptions.*;
+import de.root1.simon.ssl.SslContextFactory;
+import de.root1.simon.utils.Utils;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
@@ -27,75 +35,66 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-
+import java.util.logging.Level;
+import java.util.logging.LogManager;
 import org.apache.mina.core.session.IdleStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import de.root1.simon.codec.base.SimonProtocolCodecFactory;
-import de.root1.simon.exceptions.EstablishConnectionFailed;
-import de.root1.simon.exceptions.IllegalRemoteObjectException;
-import de.root1.simon.exceptions.LookupFailedException;
-import de.root1.simon.exceptions.SimonException;
-import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.ssl.SslContextFactory;
-import de.root1.simon.utils.Utils;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.logging.*;
 
 /**
  * This is SIMONs core class which contains all the core functionality like
  * setting up a SIMON server or lookup a remote object from the client side
  */
 public class Simon {
-    
+
     /**
      * The logger used for this class
      */
     private final static Logger logger = LoggerFactory.getLogger(Simon.class);
-    
+    /**
+     * Official port assigned by IANA
+     *
+     * @see http://www.iana.org/assignments/service-names-port-numbers
+     * @since 1.2.0
+     */
+    public final static int DEFAULT_PORT = 4753;
+
     static {
-        String property = System.getProperty("de.root1.simon.debug","false");
+        String property = System.getProperty("de.root1.simon.debug", "false");
         boolean debugEnabled = Boolean.parseBoolean(property);
-        
+
         if (debugEnabled) {
             System.out.println("ENABLING SIMON DEBUG LOG");
             try {
                 File f = new File("de.root1.simon.debuglogging.properties");
                 if (!f.exists()) {
-                    System.out.println("SIMON debug logging properties does not exist. Creating default '"+f.getAbsolutePath()+"' ...");
+                    System.out.println("SIMON debug logging properties does not exist. Creating default '" + f.getAbsolutePath() + "' ...");
                     FileWriter fw = new FileWriter(f);
-                    fw.write("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler"+"\n");
-                    fw.write(".level= ALL"+"\n");
-                    fw.write("java.util.logging.FileHandler.pattern = de.root1.simon_debug.log"+"\n");
-                    fw.write("java.util.logging.FileHandler.limit = 500000"+"\n");
-                    fw.write("java.util.logging.FileHandler.count = 1"+"\n");
-                    fw.write("java.util.logging.FileHandler.formatter = de.root1.simon.utils.ConsoleLogFormatter"+"\n");
-                    fw.write("java.util.logging.ConsoleHandler.level = ALL"+"\n");
-                    fw.write("java.util.logging.ConsoleHandler.formatter = de.root1.simon.utils.ConsoleLogFormatter"+"\n");
-                    fw.write("de.root1.simon.level = ALL"+"\n");
-                    fw.write("org.apache.mina.filter.logging.LoggingFilter = INFO"+"\n");
+                    fw.write("handlers= java.util.logging.FileHandler, java.util.logging.ConsoleHandler" + "\n");
+                    fw.write(".level= ALL" + "\n");
+                    fw.write("java.util.logging.FileHandler.pattern = de.root1.simon_debug.log" + "\n");
+                    fw.write("java.util.logging.FileHandler.limit = 500000" + "\n");
+                    fw.write("java.util.logging.FileHandler.count = 1" + "\n");
+                    fw.write("java.util.logging.FileHandler.formatter = de.root1.simon.utils.ConsoleLogFormatter" + "\n");
+                    fw.write("java.util.logging.ConsoleHandler.level = ALL" + "\n");
+                    fw.write("java.util.logging.ConsoleHandler.formatter = de.root1.simon.utils.ConsoleLogFormatter" + "\n");
+                    fw.write("de.root1.simon.level = ALL" + "\n");
+                    fw.write("org.apache.mina.filter.logging.LoggingFilter = INFO" + "\n");
                     fw.close();
                 } else {
-                    System.out.println("Using existing debug logging properties: "+f.getAbsolutePath());
+                    System.out.println("Using existing debug logging properties: " + f.getAbsolutePath());
                 }
                 FileInputStream is = new FileInputStream(f);
                 LogManager.getLogManager().readConfiguration(is);
-                
+
             } catch (IOException ex) {
                 java.util.logging.Logger.getLogger(Simon.class.getName()).log(Level.SEVERE, null, ex);
             }
-            
-            
+
+
             System.out.println("ENABLING SIMON DEBUG LOG *DONE*");
         }
     }
-
-
     /**
      * The size of the used thread pool. -1 indicates a cached thread pool.
      */
@@ -113,7 +112,8 @@ public class Simon {
      */
     private static PublicationSearcher publicationSearcher;
     /**
-     * Identifies the class, that is used as SIMON's standard protocol codec factory
+     * Identifies the class, that is used as SIMON's standard protocol codec
+     * factory
      */
     protected static final String SIMON_STD_PROTOCOL_CODEC_FACTORY = de.root1.simon.codec.base.SimonProtocolCodecFactory.class.getName();
     /**
@@ -129,16 +129,27 @@ public class Simon {
      * Creates a registry listening on all interfaces with the last known worker
      * thread pool size set by {@link Simon#setWorkerThreadPoolSize}
      *
-     * @param port
-     *            the port on which SIMON listens for connections
+     * @param port the port on which SIMON listens for connections
      * @return the created registry object
-     * @throws UnknownHostException
-     *             if no IP address for the host could be found
-     * @throws IOException
-     *             if there is a problem with the networking layer
+     * @throws UnknownHostException if no IP address for the host could be found
+     * @throws IOException if there is a problem with the networking layer
      */
     public static Registry createRegistry(int port) throws UnknownHostException, IOException {
         return createRegistry(InetAddress.getByName("0.0.0.0"), port);
+    }
+
+    /**
+     * Creates a registry listening on all interfaces with the last known worker
+     * thread pool size set by {@link Simon#setWorkerThreadPoolSize} and the
+     * SIMON's default port {@link Simon#DEFAULT_PORT}.
+     *
+     * @return the created registry object
+     * @throws UnknownHostException if no IP address for the host could be found
+     * @throws IOException if there is a problem with the networking layer
+     * @since 1.2.0
+     */
+    public static Registry createRegistry() throws UnknownHostException, IOException {
+        return createRegistry(InetAddress.getByName("0.0.0.0"), DEFAULT_PORT);
     }
 
     /**
@@ -147,12 +158,12 @@ public class Simon {
      * connection/communication is possible. You have to create again a registry
      * to run server mode again.
      *
-     * @param registry
-     *            the registry to shut down
+     * @param registry the registry to shut down
      *
      * @throws IllegalStateException
-     * @deprecated You should call <code>stop()</code> on the registry to
-     *             shutdown the registry instead of using this method.
+     * @deprecated You should call
+     * <code>stop()</code> on the registry to shutdown the registry instead of
+     * using this method.
      */
     public static void shutdownRegistry(Registry registry) throws IllegalStateException {
         if (registry.isRunning()) {
@@ -161,15 +172,16 @@ public class Simon {
     }
 
     /**
-     * Creates a registry listening on a specific network interface,
-     * identified by the given {@link InetAddress} with the last known
-     * worker thread pool size set by {@link Simon#setWorkerThreadPoolSize}
+     * Creates a registry listening on a specific network interface, identified
+     * by the given {@link InetAddress} with the last known worker thread pool
+     * size set by {@link Simon#setWorkerThreadPoolSize}.
      *
      * @param address the {@link InetAddress} the registry is bind to
      * @param port the port the registry is bind to
      * @return the created registry
      * @throws IOException if there is a problem with the networking layer
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
      */
     public static Registry createRegistry(InetAddress address, int port) throws IOException, IllegalArgumentException {
         logger.debug("begin");
@@ -179,18 +191,39 @@ public class Simon {
     }
 
     /**
-     * Creates a registry listening on a specific network interface,
-     * identified by the given {@link InetAddress} with the last known
-     * worker thread pool size set by {@link Simon#setWorkerThreadPoolSize}.
-     * The communication is done via SSL encryption provided by the given
-     * SslContextFactory
+     * Creates a registry listening on a specific network interface, identified
+     * by the given {@link InetAddress} with the last known worker thread pool
+     * size set by {@link Simon#setWorkerThreadPoolSize} and the SIMON's default
+     * port {@link Simon#DEFAULT_PORT}
      *
-     * @param sslContextFactory the factory that provides the ssl context for the SSL powered registry
+     * @param address the {@link InetAddress} the registry is bind to
+     * @return the created registry
+     * @throws IOException if there is a problem with the networking layer
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
+     * @since 1.2.0
+     */
+    public static Registry createRegistry(InetAddress address) throws IOException, IllegalArgumentException {
+        logger.debug("begin");
+        Registry registry = new Registry(address, DEFAULT_PORT, getThreadPool(), protocolFactoryClassName);
+        logger.debug("end");
+        return registry;
+    }
+
+    /**
+     * Creates a registry listening on a specific network interface, identified
+     * by the given {@link InetAddress} with the last known worker thread pool
+     * size set by {@link Simon#setWorkerThreadPoolSize}. The communication is
+     * done via SSL encryption provided by the given SslContextFactory
+     *
+     * @param sslContextFactory the factory that provides the ssl context for
+     * the SSL powered registry
      * @param address the {@link InetAddress} the registry is bind to
      * @param port the port the registry is bind to
      * @return the created registry
      * @throws IOException if there is a problem with the networking layer
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
      */
     public static Registry createRegistry(SslContextFactory sslContextFactory, InetAddress address, int port) throws IOException, IllegalArgumentException {
         logger.debug("begin");
@@ -199,32 +232,52 @@ public class Simon {
         return registry;
     }
 
-   /**
+    /**
+     * Creates a registry listening on a specific network interface, identified
+     * by the given {@link InetAddress} with the last known worker thread pool
+     * size set by {@link Simon#setWorkerThreadPoolSize} and the SIMON's default
+     * port {@link Simon#DEFAULT_PORT}. The communication is done via SSL
+     * encryption provided by the given SslContextFactory
+     *
+     * @param sslContextFactory the factory that provides the ssl context for
+     * the SSL powered registry
+     * @param address the {@link InetAddress} the registry is bind to
+     * @param port the port the registry is bind to
+     * @return the created registry
+     * @throws IOException if there is a problem with the networking layer
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
+     * @since 1.2.0
+     */
+    public static Registry createRegistry(SslContextFactory sslContextFactory, InetAddress address) throws IOException, IllegalArgumentException {
+        logger.debug("begin");
+        Registry registry = new Registry(address, DEFAULT_PORT, getThreadPool(), protocolFactoryClassName, sslContextFactory);
+        logger.debug("end");
+        return registry;
+    }
+
+    /**
      *
      * Retrieves a remote object from the server. At least, it tries to retrieve
      * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
+     * connection could not be established.<br> <i>Note: If your are finished
+     * with the remote object, don't forget to call {@link Simon#release(Object)}
+     * to decrease the reference count and finally release the connection to the
+     * server</i>
      *
-     * @param host
-     *            hostname where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
+     * @param host hostname where the lookup takes place
+     * @param port port number of the simon remote registry
+     * @param remoteObjectName name of the remote object which is bind to the
+     * remote registry
      * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @throws SimonRemoteException if there's a problem with the simon
+     * communication
+     * @throws IOException if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed if its not possible to establish a
+     * connection to the remote registry
+     * @throws LookupFailedException if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
      * @deprecated Use Simon#createNameLookup() instead ...
      */
     public static SimonRemote lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
@@ -232,32 +285,28 @@ public class Simon {
         return (SimonRemote) nameLookup.lookup(remoteObjectName);
     }
 
-/**
+    /**
      *
      * Retrieves a remote object from the server. At least, it tries to retrieve
      * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
+     * connection could not be established.<br> <i>Note: If your are finished
+     * with the remote object, don't forget to call {@link Simon#release(Object)}
+     * to decrease the reference count and finally release the connection to the
+     * server</i>
      *
-     * @param host
-     *            host address where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
+     * @param host host address where the lookup takes place
+     * @param port port number of the simon remote registry
+     * @param remoteObjectName name of the remote object which is bind to the
+     * remote registry
      * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @throws SimonRemoteException if there's a problem with the simon
+     * communication
+     * @throws IOException if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed if its not possible to establish a
+     * connection to the remote registry
+     * @throws LookupFailedException if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
      * @deprecated Use Simon#createNameLookup() instead ...
      *
      */
@@ -266,38 +315,35 @@ public class Simon {
         return (SimonRemote) nameLookup.lookup(remoteObjectName);
     }
 
-/**
+    /**
      *
      * Retrieves a remote object from the server. At least, it tries to retrieve
      * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
+     * connection could not be established.<br> <i>Note: If your are finished
+     * with the remote object, don't forget to call {@link Simon#release(Object)}
+     * to decrease the reference count and finally release the connection to the
+     * server</i>
      *
-     * @param sslContextFactory
-     *            the factory for creating the ssl context. <b>No SSL is used if
-     *            <code>null</code> is given!</b>
-     * @param proxyConfig
-     *            configuration details for connecting via proxy. <b>No proxy is
-     *            used if <code>null</code> is given!</b>
-     * @param host
-     *            host address where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
+     * @param sslContextFactory the factory for creating the ssl context. <b>No
+     * SSL is used if
+     * <code>null</code> is given!</b>
+     * @param proxyConfig configuration details for connecting via proxy. <b>No
+     * proxy is used if
+     * <code>null</code> is given!</b>
+     * @param host host address where the lookup takes place
+     * @param port port number of the simon remote registry
+     * @param remoteObjectName name of the remote object which is bind to the
+     * remote registry
      * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used         *
+     * @throws SimonRemoteException if there's a problem with the simon
+     * communication
+     * @throws IOException if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed if its not possible to establish a
+     * connection to the remote registry
+     * @throws LookupFailedException if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
+     *
      * @deprecated Use Simon#createNameLookup() instead ...
      */
     public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
@@ -307,42 +353,37 @@ public class Simon {
         return (SimonRemote) nameLookup.lookup(remoteObjectName);
     }
 
-/**
+    /**
      *
      * Retrieves a remote object from the server. At least, it tries to retrieve
      * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
+     * connection could not be established.<br> <i>Note: If your are finished
+     * with the remote object, don't forget to call {@link Simon#release(Object)}
+     * to decrease the reference count and finally release the connection to the
+     * server</i>
      *
-     * @param sslContextFactory
-     *            the factory for creating the ssl context. <b>No SSL is used if
-     *            <code>null</code> is given!</b>
-     * @param proxyConfig
-     *            configuration details for connecting via proxy. <b>No proxy is
-     *            used if <code>null</code> is given!</b>
-     * @param host
-     *            host address where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
-     * @param listener
-     *            a listener that get's notified if the remote object's
-     *            connection is closed/released. <b>No listener is
-     *            used if <code>null</code> is given!</b>
+     * @param sslContextFactory the factory for creating the ssl context. <b>No
+     * SSL is used if
+     * <code>null</code> is given!</b>
+     * @param proxyConfig configuration details for connecting via proxy. <b>No
+     * proxy is used if
+     * <code>null</code> is given!</b>
+     * @param host host address where the lookup takes place
+     * @param port port number of the simon remote registry
+     * @param remoteObjectName name of the remote object which is bind to the
+     * remote registry
+     * @param listener a listener that get's notified if the remote object's
+     * connection is closed/released. <b>No listener is used if
+     * <code>null</code> is given!</b>
      * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @throws SimonRemoteException if there's a problem with the simon
+     * communication
+     * @throws IOException if there is a problem with the communication itself
+     * @throws EstablishConnectionFailed if its not possible to establish a
+     * connection to the remote registry
+     * @throws LookupFailedException if there's no such object on the server
+     * @throws IllegalArgumentException i.e. if specified protocol codec factory
+     * class cannot be used
      * @deprecated Use Simon#createNameLookup() instead ...
      */
     public static SimonRemote lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
@@ -353,30 +394,58 @@ public class Simon {
         return (SimonRemote) nameLookup.lookup(remoteObjectName);
     }
 
-
     /**
-     * Creates a interface lookup object that is used to lookup remote objects. <br>
-     * Lookup is made via a known interface of the remote object.
+     * Creates a interface lookup object that is used to lookup remote objects.
+     * <br> Lookup is made via a known interface of the remote object.
      *
      * @param host the name of the host on which the registry server runs
      * @param port the port on which the registry server is listening
      * @return the lookup object
      * @throws UnknownHostException if the specified hostname is unknown
+     * @since version 1.1.0
      */
     public static Lookup createInterfaceLookup(String host, int port) throws UnknownHostException {
-            return new InterfaceLookup(host, port);
+        return new InterfaceLookup(host, port);
     }
 
     /**
-     * Creates a interface lookup object that is used to lookup remote objects. <br>
-     * Lookup is made via a known interface of the remote object.
+     * Creates a interface lookup object that is used to lookup remote objects.
+     * <br> Lookup is made via a known interface of the remote object.
      *
      * @param address the address of the host on which the registry server runs
      * @param port the port on which the registry server is listening
      * @return the lookup object
+     * @since version 1.1.0
      */
     public static Lookup createInterfaceLookup(InetAddress address, int port) {
-            return new InterfaceLookup(address, port);
+        return new InterfaceLookup(address, port);
+    }
+
+    /**
+     * Creates a interface lookup object that is used to lookup remote objects.
+     * The connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.
+     * <br> Lookup is made via a known interface of the remote object.
+     *
+     * @param host the name of the host on which the registry server runs
+     * @return the lookup object
+     * @throws UnknownHostException if the specified hostname is unknown
+     * @since 1.2.0
+     */
+    public static Lookup createInterfaceLookup(String host) throws UnknownHostException {
+        return new InterfaceLookup(host, DEFAULT_PORT);
+    }
+
+    /**
+     * Creates a interface lookup object that is used to lookup remote objects.
+     * The connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.
+     * <br> Lookup is made via a known interface of the remote object.
+     *
+     * @param address the address of the host on which the registry server runs
+     * @return the lookup object
+     * @since 1.2.0
+     */
+    public static Lookup createInterfaceLookup(InetAddress address) {
+        return new InterfaceLookup(address, DEFAULT_PORT);
     }
 
     /**
@@ -390,7 +459,7 @@ public class Simon {
      * @since version 1.1.0
      */
     public static Lookup createNameLookup(String host, int port) throws UnknownHostException {
-            return new NameLookup(host, port);
+        return new NameLookup(host, port);
     }
 
     /**
@@ -407,351 +476,38 @@ public class Simon {
     }
 
     /**
+     * Creates a name lookup object that is used to lookup remote objects. The
+     * connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.<br>
+     * Lookup is made via a known name of the remote object.
      *
-     * Retrieves a remote object from the server. At least, it tries to retrieve
-     * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
-     *
-     * @param host
-     *            hostname where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
-     * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
+     * @param host the name of the host on which the registry server runs
+     * @return the lookup object
+     * @throws UnknownHostException if the specified hostname is unknown
+     * @since 1.2.0
      */
-//    public static Object lookup(String host, int port, String remoteObjectName) throws SimonRemoteException, IOException, EstablishConnectionFailed, LookupFailedException {
-//        return lookup(InetAddress.getByName(host), port, remoteObjectName);
-//    }
+    public static Lookup createNameLookup(String host) throws UnknownHostException {
+        return new NameLookup(host, DEFAULT_PORT);
+    }
 
     /**
+     * Creates a name lookup object that is used to lookup remote objects. The
+     * connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.<br>
+     * Lookup is made via a known name of the remote object.
      *
-     * Retrieves a remote object from the server. At least, it tries to retrieve
-     * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
-     *
-     * @param host
-     *            host address where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
-     * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
-     *
+     * @param address the address of the host on which the registry server runs
+     * @return the lookup object
+     * @since 1.2.0
      */
-//    public static Object lookup(InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-//        return lookup(null, null, host, port, remoteObjectName, null);
-//    }
-
-    /**
-     *
-     * Retrieves a remote object from the server. At least, it tries to retrieve
-     * it. This may fail if the named object is not available or if the
-     * connection could not be established.<br>
-     * <i>Note: If your are finished with the remote object, don't forget to
-     * call {@link Simon#release(Object)} to decrease the reference count and
-     * finally release the connection to the server</i>
-     *
-     * @param sslContextFactory
-     *            the factory for creating the ssl context. <b>No SSL is used if
-     *            <code>null</code> is given!</b>
-     * @param proxyConfig
-     *            configuration details for connecting via proxy. <b>No proxy is
-     *            used if <code>null</code> is given!</b>
-     * @param host
-     *            host address where the lookup takes place
-     * @param port
-     *            port number of the simon remote registry
-     * @param remoteObjectName
-     *            name of the remote object which is bind to the remote registry
-     * @return and instance of the remote object
-     * @throws SimonRemoteException
-     *             if there's a problem with the simon communication
-     * @throws IOException
-     *             if there is a problem with the communication itself
-     * @throws EstablishConnectionFailed
-     *             if its not possible to establish a connection to the remote
-     *             registry
-     * @throws LookupFailedException
-     *             if there's no such object on the server
-     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used         *
-     */
-//    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-//        return lookup(sslContextFactory, proxyConfig, host, port, remoteObjectName, null);
-//    }
-
-//    /**
-//     *
-//     * Retrieves a remote object from the server. At least, it tries to retrieve
-//     * it. This may fail if the named object is not available or if the
-//     * connection could not be established.<br>
-//     * <i>Note: If your are finished with the remote object, don't forget to
-//     * call {@link Simon#release(Object)} to decrease the reference count and
-//     * finally release the connection to the server</i>
-//     *
-//     * @param sslContextFactory
-//     *            the factory for creating the ssl context. <b>No SSL is used if
-//     *            <code>null</code> is given!</b>
-//     * @param proxyConfig
-//     *            configuration details for connecting via proxy. <b>No proxy is
-//     *            used if <code>null</code> is given!</b>
-//     * @param host
-//     *            host address where the lookup takes place
-//     * @param port
-//     *            port number of the simon remote registry
-//     * @param remoteObjectName
-//     *            name of the remote object which is bind to the remote registry
-//     * @param listener
-//     *            a listener that get's notified if the remote object's
-//     *            connection is closed/released. <b>No listener is
-//     *            used if <code>null</code> is given!</b>
-//     * @return and instance of the remote object
-//     * @throws SimonRemoteException
-//     *             if there's a problem with the simon communication
-//     * @throws IOException
-//     *             if there is a problem with the communication itself
-//     * @throws EstablishConnectionFailed
-//     *             if its not possible to establish a connection to the remote
-//     *             registry
-//     * @throws LookupFailedException
-//     *             if there's no such object on the server
-//     * @throws IllegalArgumentException i.e. if specified protocol codec factory class cannot be used
-//     */
-//    public static Object lookup(SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig, InetAddress host, int port, String remoteObjectName, ClosedListener listener) throws LookupFailedException, SimonRemoteException, IOException, EstablishConnectionFailed {
-//        logger.debug("begin");
-//
-//        // check if there is already an dispatcher and key for THIS server
-//        Object proxy = null;
-//        Dispatcher dispatcher = null;
-//        IoSession session = null;
-//
-//        String serverString = createServerString(host, port);
-//
-//        logger.debug("check if serverstring '{}' is already in the serverDispatcherRelation list", serverString);
-//
-//        synchronized (serverDispatcherRelation) {
-//
-//            if (serverDispatcherRelation.containsKey(serverString)) {
-//
-//                // retrieve the already stored connection
-//                ClientToServerConnection ctsc = serverDispatcherRelation.remove(serverString);
-//                ctsc.addRef();
-//                serverDispatcherRelation.put(serverString, ctsc);
-//                dispatcher = ctsc.getDispatcher();
-//                session = ctsc.getSession();
-//                logger.debug("Got ClientToServerConnection from list");
-//
-//
-//            } else {
-//
-//                logger.debug("No ClientToServerConnection in list. Creating new one.");
-//
-//                dispatcher = new Dispatcher(serverString, getThreadPool());
-//
-//                // an executor service for handling the message reading in a threadpool
-//                ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
-//
-//                IoConnector connector = new NioSocketConnector();
-//                connector.setHandler(dispatcher);
-//
-//                /* ******************************************
-//                 * Setup filterchain before connecting to get all events like session created
-//                 * and session opened within the filters
-//                 */
-//                DefaultIoFilterChainBuilder filterChain = connector.getFilterChain();
-//
-//                // create a list of used filters
-//                List<FilterEntry> filters = new ArrayList<FilterEntry>();
-//
-//
-//                // check for SSL
-//                if (sslContextFactory != null) {
-//                    SSLContext context = sslContextFactory.getSslContext();
-//
-//                    if (context != null) {
-//                        SslFilter sslFilter = new SslFilter(context);
-//                        sslFilter.setUseClientMode(true); // only on client side needed
-//                        filters.add(new FilterEntry(sslFilter.getClass().getName(), sslFilter));
-//
-//                        logger.debug("SSL ON");
-//                    } else {
-//                        logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
-//                    }
-//                }
-//
-//                if (logger.isTraceEnabled()) {
-//                    filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
-//                }
-//
-//                // don't use a threading model on filter level
-//                //filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
-//
-//                // add the simon protocol
-//                SimonProtocolCodecFactory protocolFactory = null;
-//                try {
-//
-//                    protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
-//
-//                } catch (ClassNotFoundException e) {
-//                    logger.error("ClassNotFoundException while preparing ProtocolFactory: {}", e.getMessage());
-//                    throw new IllegalArgumentException(e);
-//                } catch (InstantiationException e) {
-//                    logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
-//                    throw new IllegalArgumentException(e);
-//                } catch (IllegalAccessException e) {
-//                    logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
-//                    throw new IllegalArgumentException(e);
-//                }
-//
-//                protocolFactory.setup(false);
-//                filters.add(new FilterEntry(protocolFactory.getClass().getName(), new ProtocolCodecFilter(protocolFactory)));
-//
-//                // setup for proxy connection if necessary
-//                String connectionTarget;
-//                if (proxyConfig != null) {
-//
-//                    // create the proxy filter with reference to the filter list
-//                    // proxy filter will later on replace all proxy filters etc. with the ones from filter list
-//                    connectionTarget = proxyConfig.toString();
-//                    filterChain.addLast(SimonProxyFilter.class.getName(), new SimonProxyFilter(host.getHostName(), port, proxyConfig, filters));
-//                    logger.trace("prepared for proxy connection. chain is now: {}", filterChain);
-//
-//                } else {
-//
-//                    // add the filters from the list to the filter chain
-//                    connectionTarget = "Connection[" + host + ":" + port + "]";
-//                    for (FilterEntry relation : filters) {
-//                        filterChain.addLast(relation.name, relation.filter);
-//                    }
-//                }
-//                logger.debug("Using: {}", connectionTarget);
-//
-//                // now we can try to connect ...
-//                ConnectFuture future = null;
-//                try {
-//
-//                    // decide whether the connection goes via proxy or not
-//                    if (proxyConfig == null) {
-//                        future = connector.connect(new InetSocketAddress(host, port));
-//                    } else {
-//                        future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
-//                    }
-//                    future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
-//
-//
-//                } catch (Exception e) {
-//
-//                    if (session != null) {
-//                        logger.trace("session != null. closing it...");
-//                        session.close(true);
-//                    }
-//                    connector.dispose();
-//                    dispatcher.shutdown();
-//                    filterchainWorkerPool.shutdown();
-//
-//                    throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ". Error was: " + e + ": " + e.getMessage());
-//                }
-//
-//                if (future.isConnected()) { // check if the connection succeeded
-//
-//                    session = future.getSession(); // this cannot return null, because we waited uninterruptibly for the connect-process
-//                    logger.trace("connected with {}. remoteObjectName={}", connectionTarget, remoteObjectName);
-//
-//                } else {
-//                    connector.dispose();
-//                    dispatcher.shutdown();
-//                    filterchainWorkerPool.shutdown();
-//                    throw new EstablishConnectionFailed("Could not establish connection to " + connectionTarget + ". Maybe host or network is down?");
-//                }
-//
-//                // configure the session
-//                session.getConfig().setIdleTime(IdleStatus.BOTH_IDLE, Statics.DEFAULT_IDLE_TIME);
-//                session.getConfig().setWriteTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
-//
-//                // store this connection for later re-use
-//                ClientToServerConnection ctsc = new ClientToServerConnection(serverString, dispatcher, session, connector, filterchainWorkerPool);
-//                ctsc.addRef();
-//                serverDispatcherRelation.put(serverString, ctsc);
-//            }
-//        }
-//
-//        /*
-//         * Create array with interfaces the proxy should have
-//         * first contact server for lookup of interfaces
-//         * --> this request blocks!
-//         */
-//        MsgNameLookupReturn msg = dispatcher.invokeNameLookup(session, remoteObjectName);
-//
-//        if (msg.hasError()) {
-//
-//            logger.trace("Lookup failed. Releasing dispatcher.");
-//            releaseDispatcher(dispatcher);
-//            throw new LookupFailedException(msg.getErrorMsg());
-//
-//        } else {
-//
-//            Class<?>[] listenerInterfaces = msg.getInterfaces();
-//
-//            for (Class<?> class1 : listenerInterfaces) {
-//                logger.warn("iface: {}" + class1.getName());
-//            }
-//
-//            /*
-//             * Creates proxy for method-call-forwarding to server
-//             */
-//            SimonProxy handler = new SimonProxy(dispatcher, session, remoteObjectName);
-//            logger.trace("proxy created");
-//
-//            /*
-//             * Create the proxy-object with the needed interfaces
-//             */
-//            proxy = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(Simon.class), listenerInterfaces, handler);
-//
-//            // store closed listener
-//            if (listener != null) {
-//                addClosedListener(listener, proxy);
-//            }
-//
-//            logger.debug("end");
-//            return proxy;
-//
-//        }
-//    }
-
+    public static Lookup createNameLookup(InetAddress address) {
+        return new NameLookup(address, DEFAULT_PORT);
+    }
 
     /**
      *
      * Gets the InetSocketAddress used on the remote-side of the given proxy
      * object
      *
-     * @param proxyObject
-     *            the proxy object
+     * @param proxyObject the proxy object
      * @return the InetSocketAddress on the remote-side
      */
     public static InetSocketAddress getRemoteInetSocketAddress(Object proxyObject) {
@@ -763,12 +519,11 @@ public class Simon {
      * Gets the socket-inetaddress used on the remote-side of the given proxy
      * object
      *
-     * @param proxyObject
-     *            the proxy-object
+     * @param proxyObject the proxy-object
      * @return the InetAddress on the remote-side
      * @deprecated use
-     *             <code>Simon.getRemoteInetSocketAddress(Object).getAddress()</code>
-     *             instead!
+     * <code>Simon.getRemoteInetSocketAddress(Object).getAddress()</code>
+     * instead!
      */
     public static InetAddress getRemoteInetAddress(Object proxyObject) {
         return getRemoteInetSocketAddress(proxyObject).getAddress();
@@ -778,12 +533,11 @@ public class Simon {
      *
      * Gets the socket-port used on the remote-side of the given proxy object
      *
-     * @param proxyObject
-     *            the proxy-object
+     * @param proxyObject the proxy-object
      * @return the port on the remote-side
      * @deprecated use
-     *             <code> Simon.getRemoteInetSocketAddress(proxyObject).getPort()</code>
-     *             instead!
+     * <code> Simon.getRemoteInetSocketAddress(proxyObject).getPort()</code>
+     * instead!
      */
     public static int getRemotePort(Object proxyObject) {
         return getRemoteInetSocketAddress(proxyObject).getPort();
@@ -794,8 +548,7 @@ public class Simon {
      * Gets the InetSocketAddress used on the local-side of the given proxy
      * object
      *
-     * @param proxyObject
-     *            the proxy object
+     * @param proxyObject the proxy object
      * @return the InetSocketAddress on the local-side
      */
     public static InetSocketAddress getLocalInetSocketAddress(Object proxyObject) {
@@ -806,12 +559,11 @@ public class Simon {
      *
      * Gets the socket-port used on the local-side of the given proxy object
      *
-     * @param proxyObject
-     *            the proxy-object
+     * @param proxyObject the proxy-object
      * @return the port on the local-side
      * @deprecated use
-     *             <code>Simon.getLocalInetSocketAddress(proxyObject).getPort()</code>
-     *             instead!
+     * <code>Simon.getLocalInetSocketAddress(proxyObject).getPort()</code>
+     * instead!
      *
      */
     public static int getLocalPort(Object proxyObject) {
@@ -822,12 +574,10 @@ public class Simon {
      *
      * Retrieves {@link SimonProxy} invocation handler wrapped in a simple proxy
      *
-     * @param o
-     *            the object that holds the proxy
+     * @param o the object that holds the proxy
      * @return the extracted SimonProxy
-     * @throws IllegalArgumentException
-     *             if the object does not contain a SimonProxy invocation
-     *             handler
+     * @throws IllegalArgumentException if the object does not contain a
+     * SimonProxy invocation handler
      */
     protected static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
         if (o instanceof Proxy) {
@@ -860,107 +610,26 @@ public class Simon {
     }
 
     /**
-     * Sets the size of the worker thread pool.<br>
-     * This will setting only affect new pool that have to be created in future.
-     * If given size has value -1, a new pool will create new threads as needed,
-     * but will reuse previously constructed threads when they are available.
-     * This is the most common setting. Old, for 60 seconds unused threads will
-     * be removed. These pools will typically improve the performance of
-     * programs that execute many short-lived asynchronous tasks. See
-     * documentation of {@link Executors#newCachedThreadPool()}<br>
+     * Sets the size of the worker thread pool.<br> This will setting only
+     * affect new pool that have to be created in future. If given size has
+     * value -1, a new pool will create new threads as needed, but will reuse
+     * previously constructed threads when they are available. This is the most
+     * common setting. Old, for 60 seconds unused threads will be removed. These
+     * pools will typically improve the performance of programs that execute
+     * many short-lived asynchronous tasks. See documentation of {@link Executors#newCachedThreadPool()}<br>
      *
      * If size has value >=1, a new pool has a fixed size by the given value
      *
-     * @param size
-     *            the size of the used worker thread pool
+     * @param size the size of the used worker thread pool
      */
     public static void setWorkerThreadPoolSize(int size) {
         poolSize = size;
     }
 
-//    /**
-//     *
-//     * Releases an instance of a remote object. After this call, the remote
-//     * object will be destroyed and is no more usable. If there are no more
-//     * remote objects alive which are related to a specific server connection,
-//     * this connection will be closed, until a new
-//     * {@link Simon#lookup(String, int, String)} is called on the same server.
-//     *
-//     * @param proxyObject
-//     *            the object to release
-//     * @return true if the server connection is closed, false if there is still a
-//     *         reference pending
-//     */
-//    public static boolean release(Object proxyObject) {
-//        logger.debug("begin");
-//
-//        // retrieve the proxy object
-//        SimonProxy proxy = getSimonProxy(proxyObject);
-//
-//        logger.debug("releasing proxy {}", proxy.getDetailString());
-////		logger.debug("releasing proxy...");
-//
-//
-//        // release the proxy and get the related dispatcher
-//        Dispatcher dispatcher = proxy.getDispatcher();
-//
-//        // get the list with listeners that have to be notified about the release and the followed close-event
-//        List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
-//
-//        proxy.release();
-//
-//        if (removeClosedListenerList != null) {
-//            // forward the release event to all listeners
-//            for (ClosedListener closedListener : removeClosedListenerList) {
-//                closedListener.closed();
-//            }
-//            removeClosedListenerList.clear();
-//            removeClosedListenerList = null;
-//        }
-//
-//        boolean result = AbstractLookup.releaseDispatcher(dispatcher);
-//
-//        logger.debug("end");
-//        return result;
-//    }
-
-//    /**
-//     * Attaches a closed listener to the specified remote object
-//     * @param listener the listener to add
-//     * @param proxyObject the remote object to which the listener is attached to
-//     */
-//    public static void addClosedListener(ClosedListener listener, Object proxyObject) {
-//        // retrieve the proxy object
-//        SimonProxy proxy = getSimonProxy(proxyObject);
-//
-//
-//        Dispatcher dispatcher = proxy.getDispatcher();
-//        dispatcher.addClosedListener(listener, proxy.getRemoteObjectName());
-//    }
-
-//    /**
-//     * Removes an already attached closed listener from the specified remote object
-//     * @param listener the listener to remove
-//     * @param proxyObject the remote object from which the listener has to be removed
-//     * @return true, if listener was removed, false if there is no listener to remove
-//     */
-//    public static boolean removeClosedListener(ClosedListener listener, Object proxyObject) {
-//        // retrieve the proxy object
-//        SimonProxy proxy = getSimonProxy(proxyObject);
-//
-//        Dispatcher dispatcher = proxy.getDispatcher();
-//        return dispatcher.removeClosedListener(listener, proxy.getRemoteObjectName());
-//    }
-
-    
-
-    
-
     /**
      * Sets the DGC's interval time in milliseconds
      *
-     * @param milliseconds
-     *            time in milliseconds
+     * @param milliseconds time in milliseconds
      * @deprecated	use {@link Simon#setDefaultKeepAliveInterval(int)} instead!
      */
     public static void setDgcInterval(int milliseconds) {
@@ -978,11 +647,10 @@ public class Simon {
     }
 
     /**
-     * Sets the keep alive default interval time in seconds.
-     * This value is used as a default value for all new connections.
+     * Sets the keep alive default interval time in seconds. This value is used
+     * as a default value for all new connections.
      *
-     * @param seconds
-     *            time in seconds
+     * @param seconds time in seconds
      */
     public static void setDefaultKeepAliveInterval(int seconds) {
         logger.debug("setting default keep alive interval to {} sec.", seconds);
@@ -990,8 +658,8 @@ public class Simon {
     }
 
     /**
-     * Gets the default keep-alive interval time in seconds.
-     * This value is the used default value for all new connections.
+     * Gets the default keep-alive interval time in seconds. This value is the
+     * used default value for all new connections.
      *
      * @return the current set keep alive interval
      */
@@ -1000,11 +668,10 @@ public class Simon {
     }
 
     /**
-     * Sets the default keep alive timeout time in seconds.
-     * This value is used as a default value for all new connections.
+     * Sets the default keep alive timeout time in seconds. This value is used
+     * as a default value for all new connections.
      *
-     * @param seconds
-     *            time in seconds
+     * @param seconds time in seconds
      */
     public static void setDefaultKeepAliveTimeout(int seconds) {
         logger.debug("setting default keep alive timeout to {} sec.", seconds);
@@ -1012,8 +679,8 @@ public class Simon {
     }
 
     /**
-     * Gets the default network write timeout time in seconds.
-     * This value is the used default value for all new connections.
+     * Gets the default network write timeout time in seconds. This value is the
+     * used default value for all new connections.
      *
      * @return the current set network write timeout
      */
@@ -1022,12 +689,13 @@ public class Simon {
     }
 
     /**
-     * Sets the keep alive interval time in seconds for the specified remote object
+     * Sets the keep alive interval time in seconds for the specified remote
+     * object
      *
      * @param remoteObject
-     * @param seconds
-     *            time in seconds
-     * @throws IllegalArgumentException if the object is not a valid remote object
+     * @param seconds time in seconds
+     * @throws IllegalArgumentException if the object is not a valid remote
+     * object
      */
     public static void setKeepAliveInterval(Object remoteObject, int seconds) {
         logger.debug("setting keep alive interval on {} to {} sec.", remoteObject, seconds);
@@ -1039,19 +707,21 @@ public class Simon {
      *
      * @param remoteObject
      * @return current set keep alive interval of given remote object
-     * @throws IllegalArgumentException if the object is not a valid remote object
+     * @throws IllegalArgumentException if the object is not a valid remote
+     * object
      */
     public static int getKeepAliveInterval(Object remoteObject) {
         return getSimonProxy(remoteObject).getIoSession().getConfig().getIdleTime(IdleStatus.BOTH_IDLE);
     }
 
     /**
-     * Sets the keep alive timeout time in seconds for the specified remote object.
+     * Sets the keep alive timeout time in seconds for the specified remote
+     * object.
      *
-     * @param remoteObject 
-     * @param seconds
-     *            time in seconds
-     * @throws IllegalArgumentException if the object is not a valid remote object
+     * @param remoteObject
+     * @param seconds time in seconds
+     * @throws IllegalArgumentException if the object is not a valid remote
+     * object
      */
     public static void setKeepAliveTimeout(Object remoteObject, int seconds) {
         logger.debug("setting keep alive timeout on {} to {} sec.", remoteObject, seconds);
@@ -1063,7 +733,8 @@ public class Simon {
      *
      * @param remoteObject
      * @return current set keep alive timeout of given remote object
-     * @throws IllegalArgumentException if the object is not a valid remote object
+     * @throws IllegalArgumentException if the object is not a valid remote
+     * object
      */
     public static int getKeepAliveTimeout(Object remoteObject) throws IllegalArgumentException {
         return getSimonProxy(remoteObject).getIoSession().getConfig().getWriteTimeout();
@@ -1073,10 +744,9 @@ public class Simon {
      * Publishes a remote object. If not already done, publish service thread is
      * started.
      *
-     * @param simonPublication
-     *            the object to publish
-     * @throws IOException
-     *             if the publish service cannot be started due to IO problems
+     * @param simonPublication the object to publish
+     * @throws IOException if the publish service cannot be started due to IO
+     * problems
      */
     protected static void publish(SimonPublication simonPublication) throws IOException {
         if (publishments.isEmpty()) {
@@ -1091,8 +761,7 @@ public class Simon {
      * Unpublishs a already published {@link SimonPublication}. If there are no
      * more publications available, shutdown the publish service.
      *
-     * @param simonPublication
-     *            the publication to unpublish
+     * @param simonPublication the publication to unpublish
      * @return true, if elemet was present and is now removed, false if not
      */
     protected static boolean unpublish(SimonPublication simonPublication) {
@@ -1107,14 +776,12 @@ public class Simon {
      * Creates a background thread that searches for published remote objects on
      * the local network
      *
-     * @param listener
-     *            a {@link SearchProgressListener} implementation which is
-     *            informed about the current search progress
-     * @param searchTime
-     *            the time the background search thread spends for searching
-     *            published remote objects
+     * @param listener a {@link SearchProgressListener} implementation which is
+     * informed about the current search progress
+     * @param searchTime the time the background search thread spends for
+     * searching published remote objects
      * @return a {@link PublicationSearcher} which is used to access the search
-     *         result
+     * result
      */
     public static PublicationSearcher searchRemoteObjects(SearchProgressListener listener, int searchTime) {
         if (publicationSearcher == null || !publicationSearcher.isSearching()) {
@@ -1136,8 +803,8 @@ public class Simon {
      * <b><u>Be warned:</u> This method blocks until the search is finished or
      * the current thread is interrupted</b>
      *
-     * @param searchTime
-     *            the time that is spend to search for published remote objects
+     * @param searchTime the time that is spend to search for published remote
+     * objects
      * @return a {@link List} of {@link SimonPublication}s
      */
     public static List<SimonPublication> searchRemoteObjects(int searchTime) {
@@ -1160,30 +827,26 @@ public class Simon {
 
     /**
      * Sets class name for the protocol codec factory to use for all future
-     * <code>createRegistry()</code> or <code>lookup()</code> calls. <i>This
-     * does not affect already created registry or already established
-     * sessions.</i>
+     * <code>createRegistry()</code> or
+     * <code>lookup()</code> calls. <i>This does not affect already created
+     * registry or already established sessions.</i>
      *
-     * @param protocolFactoryClassName
-     *            a class name like
-     *            "com.mydomain.myproject.codec.mySimonProtocolCodecFactory"
-     *            which points to a class, that extends
-     *            {@link SimonProtocolCodecFactory}. <i>The important thing is,
-     *            that this class correctly overrides
-     *            {@link SimonProtocolCodecFactory#setup(boolean)}. For further
-     *            details, look at {@link SimonProtocolCodecFactory}!</i>
-     * @throws IllegalAccessException
-     *             if the class or its nullary constructor is not accessible.
-     * @throws InstantiationException
-     *             if this Class represents an abstract class, an interface, an
-     *             array class, a primitive type, or void; or if the class has
-     *             no nullary constructor; or if the instantiation fails for
-     *             some other reason.
-     * @throws ClassNotFoundException
-     *             if the class is not found by the classloader. if so, please
-     *             check your classpath.
-     * @throws ClassCastException
-     *             if the given class is no instance of
+     * @param protocolFactoryClassName a class name like
+     * "com.mydomain.myproject.codec.mySimonProtocolCodecFactory" which points
+     * to a class, that extends
+     *            {@link SimonProtocolCodecFactory}. <i>The important thing is, that this
+     * class correctly overrides
+     *            {@link SimonProtocolCodecFactory#setup(boolean)}. For further details,
+     * look at {@link SimonProtocolCodecFactory}!</i>
+     * @throws IllegalAccessException if the class or its nullary constructor is
+     * not accessible.
+     * @throws InstantiationException if this Class represents an abstract
+     * class, an interface, an array class, a primitive type, or void; or if the
+     * class has no nullary constructor; or if the instantiation fails for some
+     * other reason.
+     * @throws ClassNotFoundException if the class is not found by the
+     * classloader. if so, please check your classpath.
+     * @throws ClassCastException if the given class is no instance of
      *             {@link SimonProtocolCodecFactory}
      */
     public static void setProtocolCodecFactory(String protocolFactoryClassName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException {
@@ -1207,10 +870,9 @@ public class Simon {
      * Returns a object that lets you get some network related information on
      * the session of the given remote object (an instance of {@link SimonProxy}
      *
-     * @param remoteObject
-     *            the remote object that is asked for the statistics
+     * @param remoteObject the remote object that is asked for the statistics
      * @return an implementation of {@link SimonRemoteStatistics} that gives
-     *         access to the statistics data
+     * access to the statistics data
      */
     public static SimonRemoteStatistics getStatistics(Object remoteObject) {
         SimonProxy simonProxy = getSimonProxy(remoteObject);
@@ -1219,18 +881,18 @@ public class Simon {
 
     /**
      * Opens a raw channel to transfer data from the current station to the
-     * remote station described by the given <code>simonRemote</code>
+     * remote station described by the given
+     * <code>simonRemote</code>
      *
-     * @param channelToken
-     *            a token that identifies the already prepared raw channel from
-     *            the remote station. Those token can only be created on the
-     *            remote station. Thus a remote call which does the
-     *            {@link Simon#prepareRawChannel(RawChannelDataListener, Object)}
-     *            is needed in advance.
-     * @param simonRemote
-     *            the remote object which lives on the remote station which has
-     *            a prepared raw data channel, related to the
-     *            <code>channelToken</code>. Note: This <b>has to be</b> a remote object stub.
+     * @param channelToken a token that identifies the already prepared raw
+     * channel from the remote station. Those token can only be created on the
+     * remote station. Thus a remote call which does the
+     *            {@link Simon#prepareRawChannel(RawChannelDataListener, Object)} is needed
+     * in advance.
+     * @param simonRemote the remote object which lives on the remote station
+     * which has a prepared raw data channel, related to the
+     * <code>channelToken</code>. Note: This <b>has to be</b> a remote object
+     * stub.
      * @return the opened raw channel object
      * @throws SimonRemoteException
      */
@@ -1247,24 +909,19 @@ public class Simon {
     }
 
     /**
-     * Prepare <code>simonRemote</code>'s internal message dispatcher for
-     * receiving raw data.<br/> The result of this method is a token, which
-     * identifies the channel on both sides:
-     * <ul>
-     * <li>on the <i>receiving side</i> with the registered
-     * {@link RawChannelDataListener},</li>
-     * <li>and on the <i>sending side</i> for opening the {@link RawChannel} by
-     * calling {@link Simon#openRawChannel(int, Object)}.</li>
-     * </ul>
-     * <br>
-     * This method has to be called on the receiving side.
+     * Prepare
+     * <code>simonRemote</code>'s internal message dispatcher for receiving raw
+     * data.<br/> The result of this method is a token, which identifies the
+     * channel on both sides: <ul> <li>on the <i>receiving side</i> with the
+     * registered
+     * {@link RawChannelDataListener},</li> <li>and on the <i>sending side</i>
+     * for opening the {@link RawChannel} by calling {@link Simon#openRawChannel(int, Object)}.</li>
+     * </ul> <br> This method has to be called on the receiving side.
      *
-     * @param listener
-     *            the listener which gets all the received data related to this
-     *            channel
-     * @param simonRemote
-     *            a reference to the remote object whos {@link Dispatcher} is
-     *            prepared to receive raw data.
+     * @param listener the listener which gets all the received data related to
+     * this channel
+     * @param simonRemote a reference to the remote object whos {@link Dispatcher}
+     * is prepared to receive raw data.
      * @return a token that identifies the prepared channel
      * @throws SimonException
      */
@@ -1281,6 +938,7 @@ public class Simon {
 
     /**
      * TODO document me
+     *
      * @param lookupTable
      */
     protected synchronized static void registerLookupTable(LookupTable lookupTable) {
@@ -1290,6 +948,7 @@ public class Simon {
 
     /**
      * TODO document me
+     *
      * @param lookupTable
      */
     protected synchronized static void unregisterLookupTable(LookupTable lookupTable) {
@@ -1316,9 +975,11 @@ public class Simon {
 
     /**
      * Release a lookup'ed object
+     *
      * @param proxyObject
      * @return true, if object could be released, false if not
-     * @deprecated Use Simon#createNameLookup() and AbstractLookup#release() instead ...
+     * @deprecated Use Simon#createNameLookup() and AbstractLookup#release()
+     * instead ...
      */
     public static boolean release(Object proxyObject) {
         logger.debug("begin");
@@ -1327,8 +988,6 @@ public class Simon {
         SimonProxy proxy = Simon.getSimonProxy(proxyObject);
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
-//		logger.debug("releasing proxy...");
-
 
         // release the proxy and get the related dispatcher
         Dispatcher dispatcher = proxy.getDispatcher();
@@ -1359,58 +1018,55 @@ public class Simon {
      *
      * @param o the object to mark as an SimonRemote
      * @return a marked (proxy) class
-     * @throws IllegalRemoteObjectException thrown in case of missing interfaces of given object
+     * @throws IllegalRemoteObjectException thrown in case of missing interfaces
+     * of given object
      * @since 1.1.0
      */
     public static Object markAsRemote(Object o) {
         Class<?>[] interfaces = o.getClass().getInterfaces();
-        if (interfaces.length==0) {
+        if (interfaces.length == 0) {
             throw new IllegalRemoteObjectException("There need to be at least one interface to mark the given object as simon remote");
         }
         SimonRemoteMarker smr = new SimonRemoteMarker(o);
         Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, smr);
         return newProxyInstance;
     }
-    
+
     /**
-     * Tests if both objects denote the same remote object.
-     * Comparison is done on 
-     * <ul>
-     * <li>remote object name</li>
-     * <li>underlying IO session</li>
-     * </ul>
-     * 
-     * If both objects denote a remote object and the values match for both 
+     * Tests if both objects denote the same remote object. Comparison is done
+     * on <ul> <li>remote object name</li> <li>underlying IO session</li> </ul>
+     *
+     * If both objects denote a remote object and the values match for both
      * objects, result will be true. In any other case, false is returned
-     * 
-     * 
+     *
+     *
      * @param a
      * @param b
      * @return boolean
      * @since 1.2.0
      */
     public static boolean denoteSameRemoteObjekt(Object a, Object b) {
-        
+
         if (Utils.isSimonProxy(a)) {
-            
+
             if (Utils.isSimonProxy(b)) {
-                
+
                 SimonProxy proxyA = Simon.getSimonProxy(a);
                 SimonProxy proxyB = Simon.getSimonProxy(b);
-                
-                if (proxyA.getRemoteObjectName().equals(proxyB.getRemoteObjectName()) &&
-                        proxyA.getIoSession().equals(proxyB.getIoSession())){
+
+                if (proxyA.getRemoteObjectName().equals(proxyB.getRemoteObjectName())
+                        && proxyA.getIoSession().equals(proxyB.getIoSession())) {
                     return true;
                 }
-                
+
             } else {
-                logger.debug("Object 'b' is not a SimonProxy instance");    
+                logger.debug("Object 'b' is not a SimonProxy instance");
             }
-            
+
         } else {
             logger.debug("Object 'a' is not a SimonProxy instance");
         }
-        
+
         return false;
     }
 }
