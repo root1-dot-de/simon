@@ -42,7 +42,7 @@ import java.util.List;
  */
 public class PublicationSearcher extends Thread {
 
-    private static final int groupPort = 4446;
+    private static final int groupPort = Simon.DEFAULT_PORT;
     private InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
     private long searchTime = 2000;
     private final List<SimonPublication> foundPublications;
