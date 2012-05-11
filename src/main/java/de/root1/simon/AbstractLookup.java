@@ -201,7 +201,7 @@ abstract class AbstractLookup implements Lookup {
 
                 logger.debug("No ClientToServerConnection in list. Creating new one.");
 
-                dispatcher = new Dispatcher(serverString, Simon.getThreadPool());
+                dispatcher = new Dispatcher(serverString, getClassLoader(), Simon.getThreadPool());
 
                 // an executor service for handling the message reading in a threadpool
                 ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();

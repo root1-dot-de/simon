@@ -96,6 +96,11 @@ public class Dispatcher implements IoHandler {
     private final Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
 
     /**
+     * Classloader used to load remote interface classes
+     */
+    private final ClassLoader classLoader;
+
+    /**
      * Method used by the PingWatchdog for getting the current ping/keepalive timeout
      * @return the pingTimeOut
      */
@@ -169,7 +174,7 @@ public class Dispatcher implements IoHandler {
      * connected to. this must be set to <code>null</code> if this dispatcher is a server dispatcher.
      * @param threadPool the pool where the {@link ProcessMessageRunnable}'s run in
      */
-    public Dispatcher(String serverString, ExecutorService threadPool) {
+    public Dispatcher(String serverString, ClassLoader classLoader, ExecutorService threadPool) {
         logger.debug("begin");
 
         isRunning = true;
@@ -180,6 +185,8 @@ public class Dispatcher implements IoHandler {
         this.messageProcessorPool = threadPool;
 
         this.pingWatchdog = new PingWatchdog(this);
+        
+        this.classLoader = classLoader;
 
         logger.debug("end");
     }
@@ -218,7 +225,6 @@ public class Dispatcher implements IoHandler {
         logger.trace("end sequenceId={}", sequenceId);
 
         return result;
-
     }
 
     /**
@@ -1039,6 +1045,14 @@ public class Dispatcher implements IoHandler {
      */
     protected List<ClosedListener> getClosedListenerList(String remoteObjectName) {
         return remoteObjectClosedListenersList.get(remoteObjectName);
+    }
+    
+    /**
+     * Classloader used to load remote interface classes etc.
+     * @return 
+     */
+    ClassLoader getClassLoader(){
+        return classLoader;
     }
 
 }

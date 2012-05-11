@@ -87,6 +87,8 @@ public final class Registry {
      */
     private String protocolFactoryClassName;
     private SslContextFactory sslContextFactory;
+    
+    private ClassLoader classLoader = getClass().getClassLoader();
 
     /**
      * Creates a registry
@@ -140,7 +142,7 @@ public final class Registry {
 
         logger.debug("begin");
 
-        dispatcher = new Dispatcher(null, threadPool);
+        dispatcher = new Dispatcher(null, classLoader, threadPool);
         logger.debug("dispatcher created");
 
         acceptor = new NioSocketAcceptor();
@@ -422,5 +424,21 @@ public final class Registry {
      */
     protected Dispatcher getDispatcher() {
         return dispatcher;
+    }
+    
+    /**
+     * The classloader which is used to load remote interface classes (used in remote callbacks f.i.).
+     * @return ClassLoader
+     */
+    public ClassLoader getClassLoader(){
+        return classLoader;
+    }
+
+    /**
+     * Set the classloader which is used to load remote interface classes (used in remote callbacks f.i.)
+     * @param classLoader 
+     */
+    public void setClassLoader(ClassLoader classLoader){
+        this.classLoader = classLoader;
     }
 }
