@@ -58,7 +58,7 @@ public class MsgNameLookupReturn extends AbstractMessage {
             }
             return interfaceClasses;
         } catch (ClassNotFoundException ex) {
-            throw new ClassNotFoundException("Failed loading interface class(es) with classloader ["+cl+"].", ex);
+            throw new ClassNotFoundException("Failed loading remote interface class(es) with classloader ["+cl+"].", ex);
         }
     }
 
