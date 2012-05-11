@@ -173,7 +173,7 @@ public class SimonProxy implements InvocationHandler {
             List<String> interfaceNames = simonCallback.getInterfaceNames();
             Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
             for (int j=0;j<interfaceNames.size();j++){
-                listenerInterfaces[j]=Class.forName(interfaceNames.get(j));
+                listenerInterfaces[j]=Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
             }
 
             SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId(), new Class<?>[]{}, false);

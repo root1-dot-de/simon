@@ -206,13 +206,13 @@ public final class Registry {
             protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
 
         } catch (ClassNotFoundException e) {
-            logger.error("ClassNotFoundException while preparing ProtocolFactory: {}", e.getMessage());
+            logger.error("ClassNotFoundException while preparing ProtocolFactory", e);
             throw new IllegalArgumentException(e);
         } catch (InstantiationException e) {
-            logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
+            logger.error("InstantiationException while preparing ProtocolFactory", e);
             throw new IllegalArgumentException(e);
         } catch (IllegalAccessException e) {
-            logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
+            logger.error("IllegalAccessException while preparing ProtocolFactory", e);
             throw new IllegalArgumentException(e);
         }
 
