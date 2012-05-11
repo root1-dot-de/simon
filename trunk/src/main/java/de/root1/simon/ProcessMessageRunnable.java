@@ -415,7 +415,8 @@ public class ProcessMessageRunnable implements Runnable {
                             List<String> interfaceNames = simonCallback.getInterfaceNames();
                             Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
                             for (int j = 0; j < interfaceNames.size(); j++) {
-                                listenerInterfaces[j] = Class.forName(interfaceNames.get(j));
+                                listenerInterfaces[j] = Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
+//                                listenerInterfaces[j] = Class.forName(interfaceNames.get(j));
                             }
 
                             // re-implant the proxy object
@@ -424,7 +425,7 @@ public class ProcessMessageRunnable implements Runnable {
                         }
                     }
                 } catch (ClassNotFoundException ex) {
-                    throw new ClassNotFoundException("Callback interface class(es) not found with classloader [" + this.getClass().getClassLoader() + "].", ex);
+                    throw new ClassNotFoundException("Callback interface class(es) not found with classloader [" + dispatcher.getClassLoader() + "].", ex);
                 }
             }
             // ------------
