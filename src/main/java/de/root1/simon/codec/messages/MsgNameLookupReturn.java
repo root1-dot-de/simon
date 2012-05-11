@@ -49,15 +49,20 @@ public class MsgNameLookupReturn extends AbstractMessage {
     public Class<?>[] getInterfaces() throws ClassNotFoundException {
         return getInterfaces(this.getClass().getClassLoader());
     }
-    
+
     public Class<?>[] getInterfaces(ClassLoader cl) throws ClassNotFoundException {
-        Class<?>[] interfaceClasses = new Class<?>[interfaces.length];
-        for (int i=0;i<interfaceClasses.length;i++) {
-            interfaceClasses[i]=Class.forName(interfaces[i], true, cl);
+        try {
+            Class<?>[] interfaceClasses = new Class<?>[interfaces.length];
+            for (int i = 0; i < interfaceClasses.length; i++) {
+                interfaceClasses[i] = Class.forName(interfaces[i], true, cl);
+            }
+            return interfaceClasses;
+        } catch (ClassNotFoundException ex) {
+            throw new ClassNotFoundException("Failed loading interface class(es) with classloaded ["+cl+"].", ex);
         }
-        return interfaceClasses;
     }
-    public String[] getInterfacesString(){
+
+    public String[] getInterfacesString() {
         return interfaces;
     }
 
