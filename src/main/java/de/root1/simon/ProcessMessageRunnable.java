@@ -40,12 +40,12 @@ import org.slf4j.LoggerFactory;
 /**
  * This class is feed with all kind of messages (requests/invokes and returns)
  * and is then run on a thread pool.
- * 
- * The message gets then processed and answered. Either ProcessMessageRunnable 
- * invokes the requested method and returns the result to the remote, or it 
+ *
+ * The message gets then processed and answered. Either ProcessMessageRunnable
+ * invokes the requested method and returns the result to the remote, or it
  * passes the result to the dispatcher where then the requesting call is getting
  * answered.
- * 
+ *
  * @author achr
  *
  */
@@ -53,7 +53,6 @@ public class ProcessMessageRunnable implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Logger invokeLogger = LoggerFactory.getLogger("de.root1.simon.InvokeLogger");
-
     private AbstractMessage abstractMessage;
     private IoSession session;
     private Dispatcher dispatcher;
@@ -152,10 +151,10 @@ public class ProcessMessageRunnable implements Runnable {
             case SimonMessageConstants.MSG_PONG:
                 processPong();
                 break;
-                
+
             case SimonMessageConstants.MSG_ERROR:
                 processError();
-                break;                
+                break;
 
             default:
                 // FIXME what to do here ?!
@@ -290,10 +289,10 @@ public class ProcessMessageRunnable implements Runnable {
             interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
 
             String[] interfaceNames = new String[interfaces.length];
-            for(int i=0;i<interfaceNames.length;i++) {
+            for (int i = 0; i < interfaceNames.length; i++) {
                 interfaceNames[i] = interfaces[i].getCanonicalName();
             }
-            
+
             ret.setInterfaces(interfaceNames);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
@@ -324,10 +323,10 @@ public class ProcessMessageRunnable implements Runnable {
 
             Class<?>[] interfaces = container.getRemoteObjectInterfaces();
             String[] interfaceNames = new String[interfaces.length];
-            for(int i=0;i<interfaceNames.length;i++) {
+            for (int i = 0; i < interfaceNames.length; i++) {
                 interfaceNames[i] = interfaces[i].getCanonicalName();
             }
-            
+
             ret.setInterfaces(interfaceNames);
             ret.setRemoteObjectName(container.getRemoteObjectName());
 
@@ -403,25 +402,29 @@ public class ProcessMessageRunnable implements Runnable {
             // replace existing SimonRemote objects with proxy object
             if (arguments != null) {
 
-                for (int i = 0; i < arguments.length; i++) {
+                try {
+                    for (int i = 0; i < arguments.length; i++) {
 
-                    // search the arguments for remote instances
-                    if (arguments[i] instanceof SimonRemoteInstance) {
+                        // search the arguments for remote instances
+                        if (arguments[i] instanceof SimonRemoteInstance) {
 
-                        final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
+                            final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
 
-                        logger.debug("SimonCallback in args found. id={}", simonCallback.getId());
+                            logger.debug("SimonCallback in args found. id={}", simonCallback.getId());
 
-                        List<String> interfaceNames = simonCallback.getInterfaceNames();
-                        Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
-                        for (int j = 0; j < interfaceNames.size(); j++) {
-                            listenerInterfaces[j] = Class.forName(interfaceNames.get(j));
+                            List<String> interfaceNames = simonCallback.getInterfaceNames();
+                            Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
+                            for (int j = 0; j < interfaceNames.size(); j++) {
+                                listenerInterfaces[j] = Class.forName(interfaceNames.get(j));
+                            }
+
+                            // re-implant the proxy object
+                            arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false));
+                            logger.debug("proxy object for SimonCallback injected");
                         }
-
-                        // re-implant the proxy object
-                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false));
-                        logger.debug("proxy object for SimonCallback injected");
                     }
+                } catch (ClassNotFoundException ex) {
+                    throw new ClassNotFoundException("Callback interface class(es) not found with classloader [" + this.getClass().getClassLoader() + "].", ex);
                 }
             }
             // ------------
@@ -434,9 +437,9 @@ public class ProcessMessageRunnable implements Runnable {
             try {
                 result = method.invoke(remoteObject, arguments);
             } catch (IllegalArgumentException ex) {
-                logger.error("IllegalArgumentException while invoking remote method. Arguments obviously do not match the methods parameter types. Errormsg: "+ex.getMessage());
+                logger.error("IllegalArgumentException while invoking remote method. Arguments obviously do not match the methods parameter types. Errormsg: " + ex.getMessage());
                 logger.error("***** Analysis of arguments and paramtypes ... ron={} method={} ", remoteObjectName, method.getName());
-                if (arguments != null && arguments.length!=0) {
+                if (arguments != null && arguments.length != 0) {
                     for (int i = 0; i < arguments.length; i++) {
                         logger.error("***** arguments[" + i + "]: " + (arguments[i] == null ? "null" : arguments[i].getClass().getCanonicalName()) + " toString: " + (arguments[i] == null ? "null" : arguments[i].toString()));
 //                        if (arguments[i]!=null) {
@@ -450,7 +453,7 @@ public class ProcessMessageRunnable implements Runnable {
                 }
 
                 Class<?>[] paramType = method.getParameterTypes();
-                if (paramType != null && paramType.length!=0) {
+                if (paramType != null && paramType.length != 0) {
                     for (int i = 0; i < paramType.length; i++) {
 //                        logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getClass().getCanonicalName()));
                         logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getCanonicalName()));
@@ -458,11 +461,11 @@ public class ProcessMessageRunnable implements Runnable {
                 } else {
                     logger.error("***** no paramtypes available.");
                 }
-                
-                for (Method m : remoteObject.getClass().getMethods()){
-                    logger.error("***** remoteObject '{}' has method: {}",remoteObjectName, m);
+
+                for (Method m : remoteObject.getClass().getMethods()) {
+                    logger.error("***** remoteObject '{}' has method: {}", remoteObjectName, m);
                 }
-                
+
                 logger.error("***** method signature: {}", method.toString());
                 logger.error("***** generic method signature: {}", method.toGenericString());
                 logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
@@ -473,11 +476,11 @@ public class ProcessMessageRunnable implements Runnable {
 //                result = Utils.getRootCause(ex);
 //                System.err.println("undeclared throwable exception: root cause: "+result);
 //            }
-            
+
             if (Utils.isSimonProxy(result)) {
                 throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
             }
-            
+
             if (dispatcher.getLookupTable().isSimonRemoteRegistered(result)) {
                 throw new SimonException("Result of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
             }
@@ -506,8 +509,8 @@ public class ProcessMessageRunnable implements Runnable {
             } else {
                 result = e.getTargetException();
             }
-        } catch (Exception e) { 
-            SimonRemoteException sre = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to underlying exception: "+e.getClass());
+        } catch (Exception e) {
+            SimonRemoteException sre = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to underlying exception: " + e.getClass());
             sre.initCause(e);
             result = sre;
         }
@@ -517,7 +520,7 @@ public class ProcessMessageRunnable implements Runnable {
             logger.warn("Result '{}' is not serializable", result);
             result = new SimonRemoteException("Result of method '" + method + "' must be serializable and therefore implement 'java.io.Serializable' or 'de.root1.simon.SimonRemote'");
         }
-        
+
         MsgInvokeReturn returnMsg = new MsgInvokeReturn();
         returnMsg.setSequence(msg.getSequence());
 
@@ -589,7 +592,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         boolean equalsResult = false;
         try {
-            
+
             if (objectToCompareWith instanceof SimonRemoteInstance) {
                 SimonRemoteInstance sri = (SimonRemoteInstance) objectToCompareWith;
                 logger.debug("Got a SimonRemoteInstance(ron='{}') to compare with, looking for real object...", sri.getRemoteObjectName());
@@ -672,25 +675,25 @@ public class ProcessMessageRunnable implements Runnable {
         String errorMessage = msg.getErrorMessage();
         Throwable throwable = msg.getThrowable();
         boolean isDecodeError = msg.isDecodeError();
-        
+
         String exceptionMessage = "";
-        
+
         // if error happened on the local while reading a message
         if (isDecodeError) {
-            if (remoteObjectName!=null && remoteObjectName.length()>0) {
-                exceptionMessage = "An error occured while reading a message for remote object '"+remoteObjectName+"'. Error message: "+errorMessage;
+            if (remoteObjectName != null && remoteObjectName.length() > 0) {
+                exceptionMessage = "An error occured while reading a message for remote object '" + remoteObjectName + "'. Error message: " + errorMessage;
             } else {
-                exceptionMessage = "An error occured while reading a message. Error message: "+errorMessage;
+                exceptionMessage = "An error occured while reading a message. Error message: " + errorMessage;
             }
-        // if error happened on remote while writing a message
+            // if error happened on remote while writing a message
         } else {
-            if (remoteObjectName!=null && remoteObjectName.length()>0) {
-                exceptionMessage = "An error occured on remote while writing a message to remote object '"+remoteObjectName+"'. Error message: "+errorMessage;
+            if (remoteObjectName != null && remoteObjectName.length() > 0) {
+                exceptionMessage = "An error occured on remote while writing a message to remote object '" + remoteObjectName + "'. Error message: " + errorMessage;
             } else {
-                exceptionMessage = "An error occured on remote while writing a message. Error message: "+errorMessage;
+                exceptionMessage = "An error occured on remote while writing a message. Error message: " + errorMessage;
             }
         }
-        
+
         SimonException se = new SimonException(exceptionMessage);
         se.initCause(throwable);
         CloseFuture closeFuture = session.close(true);
