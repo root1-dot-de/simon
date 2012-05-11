@@ -88,6 +88,7 @@ public final class Registry {
     private String protocolFactoryClassName;
     private SslContextFactory sslContextFactory;
     
+    // See: http://dev.root1.de/issues/127
     private ClassLoader classLoader = getClass().getClassLoader();
 
     /**
@@ -429,6 +430,7 @@ public final class Registry {
     /**
      * The classloader which is used to load remote interface classes (used in remote callbacks f.i.).
      * @return ClassLoader
+     * @since 1.2.0
      */
     public ClassLoader getClassLoader(){
         return classLoader;
@@ -437,6 +439,7 @@ public final class Registry {
     /**
      * Set the classloader which is used to load remote interface classes (used in remote callbacks f.i.)
      * @param classLoader 
+     * @since 1.2.0
      */
     public void setClassLoader(ClassLoader classLoader){
         this.classLoader = classLoader;
