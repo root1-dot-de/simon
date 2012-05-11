@@ -174,7 +174,7 @@ public class Dispatcher implements IoHandler {
      * connected to. this must be set to <code>null</code> if this dispatcher is a server dispatcher.
      * @param threadPool the pool where the {@link ProcessMessageRunnable}'s run in
      */
-    public Dispatcher(String serverString, ClassLoader classLoader, ExecutorService threadPool) {
+    public Dispatcher(String serverString, /* See: http://dev.root1.de/issues/127 */ ClassLoader classLoader, ExecutorService threadPool) {
         logger.debug("begin");
 
         isRunning = true;
@@ -1049,7 +1049,8 @@ public class Dispatcher implements IoHandler {
     
     /**
      * Classloader used to load remote interface classes etc.
-     * @return 
+     * @return ClassLoader
+     * @since 1.2.0
      */
     ClassLoader getClassLoader(){
         return classLoader;

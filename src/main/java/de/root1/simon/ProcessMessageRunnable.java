@@ -415,8 +415,8 @@ public class ProcessMessageRunnable implements Runnable {
                             List<String> interfaceNames = simonCallback.getInterfaceNames();
                             Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
                             for (int j = 0; j < interfaceNames.size(); j++) {
+                                // See: http://dev.root1.de/issues/127
                                 listenerInterfaces[j] = Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
-//                                listenerInterfaces[j] = Class.forName(interfaceNames.get(j));
                             }
 
                             // re-implant the proxy object
