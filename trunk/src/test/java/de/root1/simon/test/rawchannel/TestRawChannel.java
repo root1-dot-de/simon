@@ -64,11 +64,11 @@ public class TestRawChannel {
             registry.bind(BIND_NAME, rcsi);
             logger.info("remote bound");
         } catch (UnknownHostException ex) {
-            throw new AssertionError("Unable to setup test", ex);
+            throw new AssertionError("Unable to setup test");
         } catch (IOException ex) {
-            throw new AssertionError("Unable to setup test", ex);
+            throw new AssertionError("Unable to setup test");
         } catch (NameBindingException ex) {
-            throw new AssertionError("Unable to setup test", ex);
+            throw new AssertionError("Unable to setup test");
         }
 
         logger.info("Generating test file ...");
@@ -88,9 +88,9 @@ public class TestRawChannel {
             logger.info("Generating test file ...*done*");
 
         } catch (FileNotFoundException ex) {
-            throw new AssertionError("Unable to setup test", ex);
+            throw new AssertionError("Unable to setup test");
         } catch (IOException ex) {
-            throw new AssertionError("Unable to setup test", ex);
+            throw new AssertionError("Unable to setup test");
         }
     }
 
@@ -168,15 +168,15 @@ public class TestRawChannel {
             logger.info("Awaiting network connections shutdown *done*");
 
         } catch (UnknownHostException ex) {
-            throw new AssertionError("An UnknownHostException occured which should not be the case with localhost comunication.", ex);
+            throw new AssertionError("An UnknownHostException occured which should not be the case with localhost comunication.");
         } catch (LookupFailedException ex) {
-            throw new AssertionError("A LookupFailedException occured which should not be the case in test case.", ex);
+            throw new AssertionError("A LookupFailedException occured which should not be the case in test case.");
         } catch (SimonRemoteException ex) {
-            throw new AssertionError("A unexcepted SimonRemoteException occured which should not be the case.", ex);
+            throw new AssertionError("A unexcepted SimonRemoteException occured which should not be the case.");
         } catch (IOException ex) {
-            throw new AssertionError("A unexcepted IOException occured which should not be the case in test case.", ex);
+            throw new AssertionError("A unexcepted IOException occured which should not be the case in test case.");
         } catch (EstablishConnectionFailed ex) {
-            throw new AssertionError("Establishing connection failed during test run ...", ex);
+            throw new AssertionError("Establishing connection failed during test run ...");
         }
         logger.info("test done");
     }
