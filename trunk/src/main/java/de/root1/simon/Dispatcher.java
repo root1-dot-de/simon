@@ -698,7 +698,7 @@ public class Dispatcher implements IoHandler {
         if (remove != null) {
             List<Integer> removeCopy = new ArrayList<Integer>(remove);
             for (Integer sequenceId : removeCopy) {
-                putResultToQueue(session, sequenceId, new SimonRemoteException("session was closed. sessionid="+Utils.longToHexString(session.getId())));
+                putResultToQueue(session, sequenceId, new SimonRemoteException("session was closed. sessionId="+Utils.longToHexString(session.getId())+" sequenceId="+sequenceId));
             }
         }
     }
