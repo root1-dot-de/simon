@@ -51,10 +51,11 @@ public class Simon {
      * The logger used for this class
      */
     private final static Logger logger = LoggerFactory.getLogger(Simon.class);
+
     /**
      * Official port assigned by IANA
      *
-     * @see http://www.iana.org/assignments/service-names-port-numbers
+     * @see <a href="http://www.iana.org/assignments/service-names-port-numbers">IANA Port Assignments</a>
      * @since 1.2.0
      */
     public final static int DEFAULT_PORT = 4753;
@@ -242,7 +243,6 @@ public class Simon {
      * @param sslContextFactory the factory that provides the ssl context for
      * the SSL powered registry
      * @param address the {@link InetAddress} the registry is bind to
-     * @param port the port the registry is bind to
      * @return the created registry
      * @throws IOException if there is a problem with the networking layer
      * @throws IllegalArgumentException i.e. if specified protocol codec factory
