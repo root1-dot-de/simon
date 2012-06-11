@@ -335,23 +335,34 @@ abstract class AbstractLookup implements Lookup {
     }
 
     /**
-     *
-     * Releases a reference for a {@link Dispatcher} identified by a specific
-     * server string (see: {@link AbstractLookup#createServerString(InetAddress, int)}}. If there is no more
+     * Awaits a complete network shutdown. Means: Waits until all network connections are closed or timeout occurs.
+     * @param timeout timeout for awaiting complete network shutdown
+     * @since 1.2.0
+     */
+    public void awaitCompleteShutdown(long timeout) {
+        monitorCompleteShutdown.waitForSignal(timeout);
+    }
+
+    
+    /**
+     * Releases a {@link Dispatcher}. If there is no more
      * server string referencing the Dispatcher, the Dispatcher will be
      * released/shutdown.
      *
-     * @param serverString
-     *            the identifier of the Dispatcher to release
+     * @param dispatcher
+     *            the iDispatcher to release
      * @return true if the Dispatcher is shut down, false if there's still a
      *         reference pending
      */
-    protected static boolean releaseServerDispatcherRelation(String serverString) {
-
+    protected static boolean releaseDispatcher(Dispatcher dispatcher) { 
+        
         boolean result = false;
 
         synchronized (serverDispatcherRelation) {
 
+            // get the serverstring the dispatcher is connected to
+            String serverString = dispatcher.getServerString();
+            
             // if there's an instance of this connection known ...
             if (serverDispatcherRelation.containsKey(serverString)) {
 
@@ -365,6 +376,7 @@ abstract class AbstractLookup implements Lookup {
                     // .. and shutdown the dispatcher if there's no further reference
                     logger.debug("refCount reached 0. shutting down session and all related stuff.");
                     ctsc.getDispatcher().shutdown();
+                    ctsc.getDispatcher().setReleased();
 
                     CloseFuture closeFuture = ctsc.getSession().close(false);
 
@@ -372,8 +384,12 @@ abstract class AbstractLookup implements Lookup {
 
                         @Override
                         public void operationComplete(IoFuture future) {
+                            
+                            // shutdown threads/executors in filterchain once the session has been closed
                             ctsc.getFilterchainWorkerPool().shutdown();
+                            // dispose the MINA connector
                             ctsc.getConnector().dispose();
+                            
                             if (serverDispatcherRelation.isEmpty()) {
                                 logger.debug("serverDispatcherRelation map is empty. Signalling complete network connection shutdown now.");
                                 monitorCompleteShutdown.signal();
@@ -391,32 +407,7 @@ abstract class AbstractLookup implements Lookup {
             }
 
         }
-        return result;
-    }
-    
-    /**
-     * Awaits a complete network shutdown. Means: Waits until all network connections are closed or timeout occurs.
-     * @param timeout timeout for awaiting complete network shutdown
-     * @since 1.2.0
-     */
-    public void awaitCompleteShutdown(long timeout) {
-        monitorCompleteShutdown.waitForSignal(timeout);
-    }
-
-    /**
-     *  Releases a {@link Dispatcher}. If there is no more
-     * server string referencing the Dispatcher, the Dispatcher will be
-     * released/shutdown.
-     *
-     * @param dispatcher
-     *            the iDispatcher to release
-     * @return true if the Dispatcher is shut down, false if there's still a
-     *         reference pending
-     */
-    protected static boolean releaseDispatcher(Dispatcher dispatcher) {
-        // get the serverstring the dispatcher is connected to
-        String serverString = dispatcher.getServerString();
-        boolean result = releaseServerDispatcherRelation(serverString);
+        
         return result;
     }
 

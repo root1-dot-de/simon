@@ -107,7 +107,7 @@ public class TestLookupAndRelease {
     }
     
     @Test
-    public void LookupAndReleasemMultipleWithoutSleep() {
+    public void LookupAndReleaseMultipleWithoutSleep() {
 
         logger.info("Begin ...");
         Registry r=null;
@@ -118,7 +118,10 @@ public class TestLookupAndRelease {
 
             for (int i=0;i<20;i++) {
                 
-                logger.info("********* Run: {}",i);
+                logger.info("\n"
+                        + "***********************************\n"
+                        + "********* Run:  {}\n"
+                        + "***********************************",i);
                 try {
 
 
