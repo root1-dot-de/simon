@@ -18,6 +18,7 @@ public class Client {
     
     public static void main(String[] args) throws UnknownHostException, LookupFailedException, EstablishConnectionFailed {
         
+        System.setProperty("de.root1.simon.debug", "true");
         
         ClientCallbackImpl cc = new ClientCallbackImpl();
         
@@ -26,7 +27,7 @@ public class Client {
         
         server.doSomething(cc);
         
-        lookup.release(server);
+//        lookup.release(server);
     }
     
 }
