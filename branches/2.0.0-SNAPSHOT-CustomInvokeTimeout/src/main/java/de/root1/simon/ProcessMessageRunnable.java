@@ -542,9 +542,8 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("processing MsgInvokeReturn...");
         MsgInvokeReturn msg = (MsgInvokeReturn) abstractMessage;
-        dispatcher.putResultToQueue(session, msg.getSequence(), msg);
-
         logger.debug("put result to queue={}", msg);
+        dispatcher.putResultToQueue(session, msg.getSequence(), msg);
 
         logger.debug("end");
     }
