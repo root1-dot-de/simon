@@ -543,6 +543,9 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("sequenceId={} msg={}", sequenceId, o);
 
+        
+        boolean isResultForOutstandingRequest=false;
+        
         // remove the sequenceId from the map/list of open requests
         synchronized (sessionHasRequestPlaced) {
 
@@ -551,26 +554,38 @@ public class Dispatcher implements IoHandler {
             // check if there is already a list with requests for this session
             List<Integer> requestListForSession = sessionHasRequestPlaced.get(session);
 
-            assert requestListForSession != null;
+            if (requestListForSession!=null) {
+                
+                synchronized (requestListForSession) {
+                    
+                    if (requestListForSession.contains(sequenceId)) {
+                        requestListForSession.remove((Integer) sequenceId);
 
-            synchronized (requestListForSession) {
-                assert requestListForSession.contains(sequenceId);
-                requestListForSession.remove((Integer) sequenceId);
-                // if there is no more request open, remove the session from the list
-                if (requestListForSession.isEmpty()) {
-                    sessionHasRequestPlaced.remove(session);
+                        // if there is no more request open, remove the session from the list
+                        if (requestListForSession.isEmpty()) {
+                            sessionHasRequestPlaced.remove(session);
+                        }
+                        isResultForOutstandingRequest=true;
+                    } else {
+                        logger.debug("Session {} and sequenceId {} do currently not wait for a result.", Utils.longToHexString(session.getId()), sequenceId);
+                    }
+                    
                 }
+                
+            } else {
+                logger.warn("Session {} has no outstanding requests. Result no longer awaited?", Utils.longToHexString(session.getId()));
             }
 
-
         }
-
-        // retrieve monitor
-        SequenceMonitor monitor = (SequenceMonitor) requestMonitorAndResultMap.get(sequenceId);
-        // replace monitor with result
-        requestMonitorAndResultMap.put(sequenceId, o);
-        monitor.signal();
-
+        if (isResultForOutstandingRequest) {
+            // retrieve monitor
+            SequenceMonitor monitor = (SequenceMonitor) requestMonitorAndResultMap.get(sequenceId);
+            // replace monitor with result
+            requestMonitorAndResultMap.put(sequenceId, o);
+            monitor.signal();
+        } else {
+            logger.warn("Result '{}' for session {} and sequenceId {} dropped.", new Object[]{o,Utils.longToHexString(session.getId()),sequenceId});
+        }
         logger.debug("end");
     }
 

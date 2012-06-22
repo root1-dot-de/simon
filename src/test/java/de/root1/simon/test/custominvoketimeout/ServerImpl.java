@@ -33,7 +33,7 @@ public class ServerImpl implements Server {
     }
     
     public static void main(String[] args) throws UnknownHostException, IOException, NameBindingException, NoSuchMethodException {
-        
+        System.setProperty("de.root1.simon.debug", "true");
         Simon.setCustomInvokeTimeout(ClientCallback.class.getDeclaredMethod("confirm", new Class[]{String.class}), 1000);
         
         ServerImpl si = new ServerImpl();
