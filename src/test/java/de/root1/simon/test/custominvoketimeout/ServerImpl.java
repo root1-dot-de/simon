@@ -7,6 +7,7 @@ package de.root1.simon.test.custominvoketimeout;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import de.root1.simon.annotation.SimonRemote;
+import de.root1.simon.exceptions.InvokeTimeoutException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import java.io.IOException;
@@ -25,7 +26,8 @@ public class ServerImpl implements Server {
         try {
             cc.confirm("Hallo Welt");
             System.out.println("doing something");
-        } catch (SimonRemoteException ex) {
+        } catch (InvokeTimeoutException ex) {
+            ex.printStackTrace();
             System.out.println("doing nothing, because client was too busy to answer my callback");
         }
     }

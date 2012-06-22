@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import de.root1.simon.codec.messages.*;
+import de.root1.simon.exceptions.InvokeTimeoutException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
@@ -515,7 +516,7 @@ public class Dispatcher implements IoHandler {
         while (!isRequestResultPresent(sequenceId)) {
 
             if (counter++ == waitLoopCount) {
-                putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
+                putResultToQueue(session, sequenceId, new InvokeTimeoutException("Waited too long for invocation result."));
             }
 
             if (monitor.waitForSignal(Statics.MONITOR_WAIT_TIMEOUT)) {
