@@ -8,13 +8,8 @@ package de.root1.simon.test.custominvoketimeout;
  *
  * @author achristian
  */
-public class A implements C {
+public interface ClientCallback {
     
-    public void helloWorld() {
-    }
-
-    @Override
-    public void halloWelt() {
-    }
+    boolean confirm(String msg);
     
 }
