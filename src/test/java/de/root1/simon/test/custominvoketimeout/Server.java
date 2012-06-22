@@ -8,10 +8,8 @@ package de.root1.simon.test.custominvoketimeout;
  *
  * @author achristian
  */
-public class B {
+public interface Server {
     
-    public void helloWorld() {
-        
-    }
+    void doSomething(ClientCallback cc);
     
 }
