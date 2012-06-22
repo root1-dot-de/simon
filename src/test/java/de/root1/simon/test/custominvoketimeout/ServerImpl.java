@@ -8,6 +8,7 @@ import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import de.root1.simon.annotation.SimonRemote;
 import de.root1.simon.exceptions.NameBindingException;
+import de.root1.simon.exceptions.SimonRemoteException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
@@ -20,7 +21,13 @@ public class ServerImpl implements Server {
 
     @Override
     public void doSomething(ClientCallback cc) {
-        cc.confirm("Hallo Welt");
+        
+        try {
+            cc.confirm("Hallo Welt");
+            System.out.println("doing something");
+        } catch (SimonRemoteException ex) {
+            System.out.println("doing nothing, because client was too busy to answer my callback");
+        }
     }
     
     public static void main(String[] args) throws UnknownHostException, IOException, NameBindingException, NoSuchMethodException {
