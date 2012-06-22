@@ -494,7 +494,7 @@ public class Dispatcher implements IoHandler {
     }
     
     /**
-     * Waits at most one hour for the result of request described by the
+     * Waits at most <code>timeout</code> ms for the result of request described by the
      * monitor. If result is not present within this time, a
      * SimonRemoteException will be placed as the result. This is to ensure that
      * the client cannot wait forever for a result.
