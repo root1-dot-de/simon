@@ -31,7 +31,7 @@ import java.util.logging.LogRecord;
  */
 public class ConsoleLogFormatter extends Formatter {
 
-    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-mm-dd HH:mm::ss.SSS");
+    private static final SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
     private static final String CRLF = "\r\n";
 
     /* (non-Javadoc)
