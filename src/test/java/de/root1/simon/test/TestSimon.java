@@ -77,6 +77,7 @@ public class TestSimon {
         try {
             Registry r = Simon.createRegistry(22224);
             Registry r2 = Simon.createRegistry(22224);
+            Thread.sleep(100000);
             r.stop();
             r2.stop();
             throw new AssertionError("There should be a BindException in case of running a port is already in use.");
