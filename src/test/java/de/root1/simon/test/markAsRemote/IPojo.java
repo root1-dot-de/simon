@@ -5,13 +5,11 @@
 
 package de.root1.simon.test.markAsRemote;
 
-import de.root1.simon.annotation.SimonRemote;
 
 /**
  *
  * @author achristian
  */
-@SimonRemote
 public interface IPojo {
 
     String getHelloName(String name);
