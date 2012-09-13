@@ -312,8 +312,9 @@ public final class Registry {
      */
     public void bind(String name, Object remoteObject) throws NameBindingException {
 
-        if (!Utils.isValidRemote(remoteObject))
+        if (!Utils.isValidRemote(remoteObject)) {
             throw new IllegalArgumentException("Provided remote object is not marked with SimonRemote or Remote annotation!");
+        }
 
         try {
             if (dispatcher.getLookupTable().getRemoteObjectContainer(name) != null) {
