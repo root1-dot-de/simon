@@ -1027,8 +1027,8 @@ public class Simon {
         if (interfaces.length == 0) {
             throw new IllegalRemoteObjectException("There need to be at least one interface to mark the given object as simon remote");
         }
-        SimonRemoteMarker smr = new SimonRemoteMarker(o);
-        Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, smr);
+        SimonRemoteMarker srm = new SimonRemoteMarker(o);
+        Object newProxyInstance = Proxy.newProxyInstance(Simon.class.getClassLoader(), interfaces, srm);
         return newProxyInstance;
     }
 
