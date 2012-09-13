@@ -285,24 +285,28 @@ public class ProcessMessageRunnable implements Runnable {
         MsgNameLookupReturn ret = new MsgNameLookupReturn();
         ret.setSequence(msg.getSequence());
         try {
-//            Class<?>[] interfaces = null;
-//            interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
-//
-//            String[] interfaceNames = new String[interfaces.length];
-//            for (int i = 0; i < interfaceNames.length; i++) {
-//                interfaceNames[i] = interfaces[i].getCanonicalName();
-//            }
-            
-            //--------
-            RemoteObjectContainer container = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName);
 
-            Class<?>[] interfaces = container.getRemoteObjectInterfaces();
-            String[] interfaceNames = new String[interfaces.length];
-            for (int i = 0; i < interfaceNames.length; i++) {
-                interfaceNames[i] = interfaces[i].getCanonicalName();
+            Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
+            SimonRemoteMarker marker = Utils.getMarker(remoteObject);
+            String[] interfaceNames;
+            if (marker != null) {
+                RemoteObjectContainer container = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName);
+
+                Class<?>[] interfaces = null;
+                interfaces = container.getRemoteObjectInterfaces();
+                interfaceNames = new String[interfaces.length];
+                for (int i = 0; i < interfaceNames.length; i++) {
+                    interfaceNames[i] = interfaces[i].getCanonicalName();
+                }
+            } else {
+                Class<?>[] interfaces = null;
+                interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
+
+                interfaceNames = new String[interfaces.length];
+                for (int i = 0; i < interfaceNames.length; i++) {
+                    interfaceNames[i] = interfaces[i].getCanonicalName();
+                }
             }
-            //--------
-
             ret.setInterfaces(interfaceNames);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
