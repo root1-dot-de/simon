@@ -16,25 +16,27 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon.test;
-
-import de.root1.simon.Simon;
+package de.root1.simon;
 
 /**
- *
+ * Enhances a thread with an session id
  * @author achristian
+ * @since 1.2.0
  */
-@de.root1.simon.annotation.SimonRemote
-public class RemoteObjectImpl implements RemoteObject {
+public class ProcessMessageThread extends Thread {
+    
+    private long sessionId = 0;
 
-    @Override
-    public void helloWorld(){
-        System.out.println("Hello World");
+    public ProcessMessageThread(Runnable target, String name) {
+        super(target, name);
     }
 
-    @Override
-    public void helloWorldArg(String s){
-        System.out.println("HelloWorldArg ["+s+"] on sessionID="+Simon.getSessionId());
+    public long getSessionId() {
+        return sessionId;
     }
 
+    public void setSessionId(long sessionId) {
+        this.sessionId = sessionId;
+    }
+    
 }

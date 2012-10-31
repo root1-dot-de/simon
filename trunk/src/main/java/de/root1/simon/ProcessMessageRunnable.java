@@ -67,7 +67,10 @@ public class ProcessMessageRunnable implements Runnable {
     public void run() {
 
         logger.debug("ProcessMessageRunnable: {} on sessionId {}", abstractMessage, Utils.longToHexString(session.getId()));
-
+        
+        ProcessMessageThread currentThread = (ProcessMessageThread) Thread.currentThread();
+        currentThread.setSessionId(session.getId());
+        
         int msgType = abstractMessage.getMsgType();
 
         switch (msgType) {
