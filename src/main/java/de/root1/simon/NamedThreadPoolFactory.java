@@ -52,7 +52,7 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 		sb.append(baseName);
 		sb.append(".#");
 		sb.append(i);
-		return new Thread(r,sb.toString());
+		return new ProcessMessageThread(r,sb.toString());
 	}
 
 }

@@ -1069,4 +1069,20 @@ public class Simon {
 
         return false;
     }
+    
+    /**
+     * Returns the SIMON internal session id of a current running remote call.
+     * This method only works if called within a remote call. Means: Don't use it 
+     * anywhere else than in the remote implementation. Be careful!
+     * @return SIMON internal session id
+     * @throws IllegalStateException if called from outside a remote call
+     */
+    public static long getSessionId() {
+        Thread currentThread = Thread.currentThread();
+        if (currentThread instanceof ProcessMessageThread) {
+            ProcessMessageThread thread = (ProcessMessageThread) currentThread;
+            return thread.getSessionId();
+        }
+        throw new IllegalStateException("Method must be invoked within a remote-call-implementation!");
+    }
 }
