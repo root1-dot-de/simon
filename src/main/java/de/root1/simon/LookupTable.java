@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.Utils;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * 
@@ -68,9 +70,10 @@ public class LookupTable {
      */
     private final Map<Object, Map<Long, Method>> remoteObject_to_hashToMethod_Map = new HashMap<Object, Map<Long, Method>>();
     /**
-     * Map with key='remote objects's hash value' and value='remote object instance'
+     * Set with remote object instances. Used to identify already registered remote objects
      */
-    private final HashMap<Integer, Object> remoteobjectHashMap = new HashMap<Integer, Object>();
+    private final Set<Object> remoteobjectSet = new HashSet<Object>();
+    
     private Dispatcher dispatcher;
     private boolean cleanupDone = false;
 
@@ -94,7 +97,7 @@ public class LookupTable {
 
         logger.debug("remoteObjectName={} object={}", remoteObjectName, remoteObject);
 
-        addRemoteObjectToHashMap(remoteObject);
+        addRemoteObjectToSet(remoteObject);
 
         RemoteObjectContainer roc = new RemoteObjectContainer(remoteObject, remoteObjectName, remoteObject.getClass().getInterfaces());
         bindings.put(remoteObjectName, roc);
@@ -107,9 +110,9 @@ public class LookupTable {
      * TODO document me
      * @param remoteObject
      */
-    private void addRemoteObjectToHashMap(Object remoteObject) {
+    private void addRemoteObjectToSet(Object remoteObject) {
         int hashCode = remoteObject.hashCode();
-        remoteobjectHashMap.put(hashCode, remoteObject);
+        remoteobjectSet.add(remoteObject);
         logger.trace("Adding simon remote {} with hash={}", remoteObject, hashCode);
     }
 
@@ -204,7 +207,7 @@ public class LookupTable {
         // to Simon#unbind() and thus releaseRemoteBinding()
         if (remoteObject != null) {
             logger.debug("cleaning up [{}]", remoteObject);
-            removeRemoteObjectFromHashMap(remoteObject);
+            removeRemoteObjectFromSet(remoteObject);
             remoteObject_to_hashToMethod_Map.remove(remoteObject);
         } else {
             logger.debug("[{}] already removed or not available. nothing to do.", name);
@@ -217,10 +220,10 @@ public class LookupTable {
      * TODO document me
      * @param simonRemote
      */
-    private void removeRemoteObjectFromHashMap(Object remoteObject) {
+    private void removeRemoteObjectFromSet(Object remoteObject) {
         int hashCode = remoteObject.hashCode();
-        logger.debug("remoteObject={} hash={} map={}", new Object[]{remoteObject, hashCode, remoteobjectHashMap});
-        remoteobjectHashMap.remove(hashCode);
+        logger.debug("remoteObject={} hash={} map={}", new Object[]{remoteObject, hashCode, remoteobjectSet});
+        remoteobjectSet.remove(remoteObject);
         logger.trace("Removed remote object with hash={}", hashCode);
     }
 
@@ -352,7 +355,7 @@ public class LookupTable {
                     Object remoteInstanceBindingToRemove = container.getRemoteObject();
                     logger.debug("sessionId={} simon remote to unreference: {}", id, remoteInstanceBindingToRemove);
 
-                    removeRemoteObjectFromHashMap(remoteInstanceBindingToRemove);
+                    removeRemoteObjectFromSet(remoteInstanceBindingToRemove);
 
                     remoteObject_to_hashToMethod_Map.remove(remoteInstanceBindingToRemove);
 
@@ -395,8 +398,9 @@ public class LookupTable {
         if (simonRemote==null) {
             return false;
         }
-        logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectHashMap);
-        if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) {
+        logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectSet);
+//        if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) {
+        if (remoteobjectSet.contains(simonRemote)) {
             return true;
         }
         return false;
