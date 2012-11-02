@@ -24,6 +24,19 @@
             </properties>
         </action>
         <action>
+            <actionName>CUSTOM-Build w/o Tests</actionName>
+            <displayName>Build w/o Tests</displayName>
+            <goals>
+                <goal>compile</goal>
+                <goal>install</goal>
+            </goals>
+            <properties>
+                <maven.test.skip>true</maven.test.skip>
+                <maven.javadoc.skip>true</maven.javadoc.skip>
+                <maven.assembly.skipAssembly>true</maven.assembly.skipAssembly>
+            </properties>
+        </action>
+        <action>
             <actionName>CUSTOM-Deploy</actionName>
             <displayName>Deploy</displayName>
             <goals>
