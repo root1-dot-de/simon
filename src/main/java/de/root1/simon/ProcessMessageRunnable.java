@@ -498,9 +498,9 @@ public class ProcessMessageRunnable implements Runnable {
             if (Utils.isSimonProxy(result)) {
                 throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
             }
-
+            
             if (dispatcher.getLookupTable().isSimonRemoteRegistered(result)) {
-                throw new SimonException("Result of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
+                throw new SimonException("Result '"+result+"' of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
             }
 
             if (method.getReturnType() == void.class) {
