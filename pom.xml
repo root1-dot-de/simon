@@ -117,14 +117,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-site-plugin</artifactId>
-                <version>3.2</version>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.maven.wagin</groupId>
-                        <artifactId>wagon-ssh</artifactId>
-                        <version>1.0</version>
-                    </dependency>
-                </dependencies>
+                <version>3.0-beta-33.2</version>
                 <configuration>
                     <reportPlugins>
                         <plugin>
