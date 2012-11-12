@@ -225,62 +225,6 @@ public class Utils {
         return interfaceSet.toArray(interfaces);
     }
 
-//    /**
-//     * Internal helper method for finding remote interfaces
-//     * @param clazz the class to analyse for remote interfaces
-//     * @return a set with remote interfaces
-//     */
-//    private static Set<Class<?>> doFindAllRemoteInterfaces(Class<?> clazz) {
-//        Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
-//
-//        // check for allowed remote interfaces
-//        Class[] remoteInterfaces = null;
-//
-//        SimonRemote annotation = clazz.getAnnotation(SimonRemote.class);
-//        if (annotation != null) {
-//            remoteInterfaces = annotation.value();
-//        }
-//
-//        // check for specified interfaces in annotation
-//        if (remoteInterfaces == null || remoteInterfaces.length == 0) {
-//            
-//            // annotation has no interfaces specified, or there's no annotation, go for the interface itself
-//            if (logger.isTraceEnabled()) {
-//                if (annotation == null) {
-//                    logger.trace("No SimonRemote annotation found for clazz {}. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
-//                } else {
-//                    logger.trace("SimonRemote annotation found for clazz {}, but no remote interfaces specified. Adding all known interfaces: {}", clazz.getName(), Arrays.toString(clazz.getInterfaces()));
-//                }
-//            }
-//            
-//            //System.out.println("clazz "+ clazz.getName()+". Adding all known interfaces: "+ Arrays.toString(clazz.getInterfaces()));
-//            for (Class<?> interfaze : clazz.getInterfaces()) {
-//                //            if (SimonRemote.class.isAssignableFrom(interfaze)) {
-//                if (!interfaceSet.contains((Class<?>) interfaze)) {
-//                    interfaceSet.add((Class<?>) interfaze);
-//                }
-//                //            }
-//            }
-//
-//        } else { // annotation has interfaces specified
-//
-//            if (logger.isTraceEnabled()) {
-//                logger.trace("SimonRemote annotation found. Remote interfaces where explicitly specified: {}. Adding them...", Arrays.toString(remoteInterfaces));
-//            }
-//            for (Class<?> interfaze : remoteInterfaces) {
-//                interfaceSet.add((Class<?>) interfaze);
-//            }
-//
-//        }
-//
-//        // check also for superclasses
-//        if (clazz.getSuperclass() != null && !clazz.getSuperclass().equals(Object.class)) {
-//            interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
-//        }
-//        
-//        return interfaceSet;
-//    }
-    
     /**
      * Internal helper method for finding remote interfaces
      * @param clazz the class to analyse for remote interfaces
@@ -391,9 +335,11 @@ public class Utils {
     }
     
     /**
-     * Checks whether the object is annotated with <code>SimonRemote</code> or not
-     * @param remoteObject the object to check
-     * @return true, if object is annotated, false if not
+     * Returns the value of the <code>SimonRemote</code> annotation.
+     * 
+     * @param remoteObject the object to query
+     * @return the annotation value
+     * @throws IllegalArgumentException in case of remoteObject==null
      */
     public static Class<?>[] getRemoteAnnotationValue(Object remoteObject) {
         if (remoteObject == null) {
@@ -403,14 +349,20 @@ public class Utils {
     }
 
     /**
-     * Checks if the given remote object is a valid remote object
+     * Checks if the given remote object is a valid remote object.
+     * Checks for:
+     * <ul>
+     * <li>SimonRemote annotation</li>
+     * <li>SimonRemoteMarker proxy</li>
+     * <li>implements SimonRemote</li>
+     * </ul>
+     * 
      * @param remoteObject the object to check
      * @return true, if remote object is valid, false if not
      * @throws IllegalRemoteObjectException thrown in case of a faulty remote object (ie. missing interfaces)
      */
     public static boolean isValidRemote(Object remoteObject) {
         
-                
         if (remoteObject == null) {
             return false;
         }
