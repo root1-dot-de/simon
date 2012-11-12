@@ -28,7 +28,6 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.mina.core.service.IoHandler;
 import org.apache.mina.core.session.IdleStatus;
@@ -111,6 +110,7 @@ public class Dispatcher implements IoHandler {
      */
     private final ClassLoader classLoader;
     private boolean released = false;
+    private final SimonRefQueue<SimonPhantomRef> simonRefQueue;
 
     /**
      * Method used by the PingWatchdog for getting the current ping/keepalive
@@ -201,6 +201,8 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin");
 
         isRunning = true;
+        
+        this.simonRefQueue = new SimonRefQueue<SimonPhantomRef>(this);
 
         this.serverString = serverString;
         this.lookupTable = new LookupTable(this);
@@ -313,17 +315,18 @@ public class Dispatcher implements IoHandler {
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
 
+                // prevent sending a client callback-proxy from server back to client
                 if (Utils.isSimonProxy(args[i])) {
                     throw new SimonException("Given method parameter no# " + (i + 1) + " is a local endpoint of a remote object. Endpoints can not be transferred.");
                 }
 
                 if (Utils.isValidRemote(args[i])) {
+                    
                     SimonRemoteInstance sri = new SimonRemoteInstance(session, args[i]);
 
                     logger.debug("SimonRemoteInstance found! id={}", sri.getId());
 
-                    lookupTable.putRemoteInstanceBinding(session.getId(), sri.getId(), args[i]);
-
+                    lookupTable.putRemoteInstance(session.getId(), sri, args[i]);
                     args[i] = sri; // overwrite arg with wrapped remote instance-interface
                 }
             }
@@ -870,7 +873,7 @@ public class Dispatcher implements IoHandler {
     }
 
     private void sendPing(IoSession session) throws SessionException {
-        checkForInvalidState(session, "ping()");
+        checkForInvalidState(session, "sendPing()");
         pingWatchdog.waitForPong(session);
 
         final int sequenceId = generateSequenceId();
@@ -886,7 +889,7 @@ public class Dispatcher implements IoHandler {
     }
 
     public void sendPong(IoSession session) throws SessionException {
-        checkForInvalidState(session, "pong()");
+        checkForInvalidState(session, "sendPong()");
 
         final int sequenceId = generateSequenceId();
 
@@ -1128,5 +1131,35 @@ public class Dispatcher implements IoHandler {
      */
     ClassLoader getClassLoader() {
         return classLoader;
+    }
+
+    void sendReleaseRef(IoSession session, String refId) throws SessionException {
+        checkForInvalidState(session, "sendReleaseRef()");
+        logger.info("#######################");
+        logger.info("#######################");
+        logger.info("#######################");
+        logger.info("########### ReleaseRef for {}", refId);
+        logger.info("#######################");
+        logger.info("#######################");
+        logger.info("#######################");
+
+        logger.debug("begin session={} refId={}", session, refId);
+
+        MsgReleaseRef msgReleaseRef = new MsgReleaseRef();
+        msgReleaseRef.setRefId(refId);
+        // we don't care about seq id in this case, but we need it for the protocol
+        msgReleaseRef.setSequence(generateSequenceId()); 
+
+        session.write(msgReleaseRef);
+
+        logger.debug("end. data send.");
+    }
+
+    /**
+     * TODO document me
+     * @return 
+     */
+    SimonRefQueue<SimonPhantomRef> getRefQueue() {
+        return simonRefQueue;
     }
 }

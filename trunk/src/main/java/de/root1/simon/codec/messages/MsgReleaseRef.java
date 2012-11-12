@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2012 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -18,52 +18,35 @@
  */
 package de.root1.simon.codec.messages;
 
-import java.lang.reflect.Method;
-
 /**
- * <code>INVOKE</code> message
+ * <code>Ping</code> message
  *
  * @author ACHR
+ * @since 1.2.0
  */
-public class MsgInvoke extends AbstractMessage {
+public class MsgReleaseRef extends AbstractMessage {
 	
     private static final long serialVersionUID = 1L;
 
-    private String remoteObjectName;
-    private Method method;
-    private Object[] args;
-    
-    public MsgInvoke() {
-    	super(SimonMessageConstants.MSG_INVOKE);
+    /** the ID of the reference to release. */
+    private String refId;
+
+    public MsgReleaseRef() {
+    	super(SimonMessageConstants.MSG_RELEASE_REF);
     }
 
-    public String getRemoteObjectName() {
-        return remoteObjectName;
-    }
-
-    public void setRemoteObjectName(String remoteObjectName) {
-        this.remoteObjectName = remoteObjectName;
-    }
-    
-    public void setArguments(Object[] args){
-    	this.args=args;
-    }
-    
     @Override
     public String toString() {
         // it is a good practice to create toString() method on message classes.
-        return getSequence() + ":MsgInvoke(ron=" + remoteObjectName + "|method=" + method + "|args=" + args + ")";
+        return getSequence() + ":MsgReleaseRef()";
     }
 
-    public void setMethod(Method method) {
-            this.method = method;
+    public String getRefId() {
+        return refId;
     }
 
-    public Method getMethod(){
-            return method;
+    public void setRefId(String refId) {
+        this.refId = refId;
     }
 
-    public Object[] getArguments(){
-            return args;
-    }
 }
