@@ -16,25 +16,27 @@
  *   You should have received a copy of the GNU General Public License
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
-package de.root1.simon.test;
+package de.root1.simon.test.phantomref;
 
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import org.junit.After;
-import org.junit.AfterClass;
+import static org.junit.Assert.assertTrue;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author achristian
  */
-public class TestNull {
+public class TestPhantomRef {
 
-    public TestNull() {
+    private final Logger logger = LoggerFactory.getLogger(TestPhantomRef.class);
+    
+    public TestPhantomRef() {
     }
 
     //@BeforeClass
@@ -54,33 +56,7 @@ public class TestNull {
     }
 
     @Test
-    public void testEqualsNull() {
-
-        
-        try {
-            RemoteObjectImpl roi = new RemoteObjectImpl();
-
-            Registry r = Simon.createRegistry(22222);
-            r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
-
-            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
-
-            roiRemote.equals(null);
-
-            lookup.release(roiRemote);
-
-            r.unbind("roi");
-            r.stop();
-        
-        } catch (Exception ex) {
-            throw new AssertionError(ex);
-        }
-
-    }
-
-    @Test
-    public void testArgNull() {
+    public void testPhantomRefRelease() {
 
 
         try {
@@ -91,18 +67,30 @@ public class TestNull {
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
-
-            roiRemote.helloWorldArg(null);
+            roiRemote.setCallback(new ClientCallbackImpl());
+            
+            Thread.sleep(2000);
+            
+            // kill casllback reference to give GC the chance to cleanup
+            roiRemote.setCallback(null);
+            
+            // ensure GC is running at least once
+            for (int i=0;i<10;i++){
+                System.gc();
+                Thread.sleep(500);
+            }
 
             lookup.release(roiRemote);
             
             r.unbind("roi");
             r.stop();
+            
+            // TODO how to very it worked?! Add JMX interface?
 
         } catch (Exception ex) {
             throw new AssertionError(ex);
         }
 
     }
-
+    
 }

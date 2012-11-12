@@ -41,7 +41,6 @@ import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-//import org.apache.mina.filter.executor.ExecutorFilter;
 import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.filter.ssl.SslFilter;

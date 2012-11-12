@@ -158,6 +158,10 @@ public class ProcessMessageRunnable implements Runnable {
             case SimonMessageConstants.MSG_ERROR:
                 processError();
                 break;
+                
+            case SimonMessageConstants.MSG_RELEASE_REF:
+                processReleaseRef();
+                break;
 
             default:
                 // FIXME what to do here ?!
@@ -437,7 +441,9 @@ public class ProcessMessageRunnable implements Runnable {
                             }
 
                             // re-implant the proxy object
-                            arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false));
+                            SimonProxy simonProxy = new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false);
+                            arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, simonProxy);
+                            dispatcher.getRefQueue().addRef(simonProxy);
                             logger.debug("proxy object for SimonCallback injected");
                         }
                     }
@@ -495,10 +501,12 @@ public class ProcessMessageRunnable implements Runnable {
 //                System.err.println("undeclared throwable exception: root cause: "+result);
 //            }
 
+            // check for re-transmitting callback
             if (Utils.isSimonProxy(result)) {
                 throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
             }
             
+            // check for normal remote objects?!
             if (dispatcher.getLookupTable().isSimonRemoteRegistered(result)) {
                 throw new SimonException("Result '"+result+"' of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
             }
@@ -512,10 +520,10 @@ public class ProcessMessageRunnable implements Runnable {
 
                 logger.debug("Result of method '{}' is SimonRemote: {}", method, result);
 
-                SimonRemoteInstance simonCallback = new SimonRemoteInstance(session, result);
+                SimonRemoteInstance sri = new SimonRemoteInstance(session, result);
 
-                dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), result);
-                result = simonCallback;
+                dispatcher.getLookupTable().putRemoteInstance(session.getId(), sri, result);
+                result = sri;
 
             }
 
@@ -718,5 +726,17 @@ public class ProcessMessageRunnable implements Runnable {
         closeFuture.awaitUninterruptibly();
         logger.debug("end");
         throw se;
+    }
+
+    private void processReleaseRef() {
+        logger.debug("begin");
+
+        logger.debug("processing MsgReleaseRef...");
+        MsgReleaseRef msg = (MsgReleaseRef) abstractMessage;
+
+        logger.debug("Removing ref for {} on session {}", msg.getRefId(), session.getId());
+        dispatcher.getLookupTable().removeCallbackRef(session.getId(), msg.getRefId());
+        
+        logger.debug("end");
     }
 }

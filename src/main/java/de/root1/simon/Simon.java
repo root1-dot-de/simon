@@ -957,16 +957,16 @@ public class Simon {
     }
 
     /**
-     * Searches the {@link LookupTable} for the given {@link SimonRemote} and
+     * Searches the {@link LookupTable} for the given remote object and
      * returns {@link Dispatcher} which is attached to this {@link LookupTable}.
      *
-     * @param simonRemote
-     * @return the related {@link Dispatcher}
+     * @param remoteObject
+     * @return the related {@link Dispatcher} or null, if no related dispatcher found
      */
-    private static Dispatcher getDispatcher(Object simonRemote) {
+    private static Dispatcher getDispatcher(Object remoteObject) {
         for (LookupTable lookupTable : lookupTableList) {
-            logger.debug("searching in LookupTable {} for simonRemote {}", lookupTable, simonRemote);
-            if (lookupTable.isSimonRemoteRegistered(simonRemote)) {
+            logger.debug("searching in LookupTable {} for remote object {}", lookupTable, remoteObject);
+            if (lookupTable.isSimonRemoteRegistered(remoteObject)) {
                 return lookupTable.getDispatcher();
             }
         }
