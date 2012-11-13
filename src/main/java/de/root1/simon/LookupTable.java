@@ -20,6 +20,7 @@ package de.root1.simon;
 
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.Utils;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -31,6 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +54,7 @@ import org.slf4j.LoggerFactory;
  * @author ACHR
  *
  */
-public class LookupTable {
+public class LookupTable implements LookupTableMBean {
 
     /**
      * the local logger
@@ -105,6 +112,29 @@ public class LookupTable {
     protected LookupTable(Dispatcher dispatcher) {
         this.dispatcher = dispatcher;
         Simon.registerLookupTable(this);
+            
+        try {
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            
+            ObjectName name = new ObjectName("de.root1.simon:type=LookupTable,dispatcher="+dispatcher.toString());
+            mbs.registerMBean(this, name);
+            
+        } catch (InstanceAlreadyExistsException ex) {
+            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
+        } catch (MBeanRegistrationException ex) {
+            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
+        } catch (NotCompliantMBeanException ex) {
+            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
+        } catch (MalformedObjectNameException ex) {
+            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
+        } catch (Throwable t) {
+            /*
+             * this additional "catch" is used to catch exception when running 
+             * on android, where the mbean server is not available.
+             */
+            logger.warn("Can't use JMX.", t);
+        }
+        
     }
 
     /**
@@ -620,5 +650,24 @@ public class LookupTable {
         }
 
         return foundContainer;
+    }
+    
+    /* *************************************
+     *              JMX Stuff
+     * *************************************/
+    
+    @Override
+    public int getNumberOfRemoteRefSessions() {
+        return sessionRefCount.size();
+    }
+
+    @Override
+    public Long[] getRemoteRefSessions() {
+        return sessionRefCount.keySet().toArray(new Long[0]);
+    }
+
+    @Override
+    public String[] getRefIdsForSession(long sessionId) {
+        return sessionRefCount.get(sessionId).keySet().toArray(new String[0]);
     }
 }
