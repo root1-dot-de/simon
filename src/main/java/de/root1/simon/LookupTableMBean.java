@@ -30,4 +30,10 @@ public interface LookupTableMBean {
     public String[] getRefIdsForSession(long sessionId);
     public int getRemoteRefCount(long sessionId, String refId);
     
+    /**
+     * Number of references for all sessions and all remote objects
+     * @return total ref count
+     */
+    public int getTotalRefCount();
+    
 }

@@ -5,7 +5,6 @@
 
 package de.root1.simon.test.phantomref;
 
-import de.root1.simon.test.clientcallback.*;
 import de.root1.simon.annotation.SimonRemote;
 
 /**
@@ -59,5 +58,10 @@ public class RemoteObjectImpl implements RemoteObject {
     @Override
     public RemoteObject getRemoteObject() {
         return this;
+    }
+
+    @Override
+    public ServerCallback getServerCallback() {
+        return new ServerCallbackImpl();
     }
 }

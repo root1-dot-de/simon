@@ -443,7 +443,6 @@ public class ProcessMessageRunnable implements Runnable {
                             // re-implant the proxy object
                             SimonProxy simonProxy = new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false);
                             arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, simonProxy);
-                            dispatcher.getRefQueue().addRef(simonProxy);
                             logger.debug("proxy object for SimonCallback injected");
                         }
                     }
