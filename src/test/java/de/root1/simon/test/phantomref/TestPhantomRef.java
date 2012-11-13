@@ -61,7 +61,7 @@ public class TestPhantomRef {
     public void tearDown() {
     }
 
-//    @Test
+    @Test
     public void testPhantomRefRelease() {
 
 
@@ -183,7 +183,7 @@ public class TestPhantomRef {
 //                assertTrue("Refcount must be 1 after setting callback", ltmbean.getRemoteRefCount(sessionId, refId)==1);
 //            }
             
-            Thread.sleep(20000000);
+            Thread.sleep(2000);
             
             lookup.release(roiRemote);
             
