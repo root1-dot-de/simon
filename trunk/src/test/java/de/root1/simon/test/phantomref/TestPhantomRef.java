@@ -69,10 +69,16 @@ public class TestPhantomRef {
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
             roiRemote.setCallback(new ClientCallbackImpl());
             
+            logger.info("1 ------------------------------------------------------");
+            
             Thread.sleep(2000);
+            
+            logger.info("2 ------------------------------------------------------");
             
             // kill casllback reference to give GC the chance to cleanup
             roiRemote.setCallback(null);
+            
+            logger.info("3 ------------------------------------------------------");
             
             // ensure GC is running at least once
             for (int i=0;i<10;i++){
@@ -80,6 +86,8 @@ public class TestPhantomRef {
                 Thread.sleep(500);
             }
 
+            logger.info("4 ------------------------------------------------------");
+            
             lookup.release(roiRemote);
             
             r.unbind("roi");
