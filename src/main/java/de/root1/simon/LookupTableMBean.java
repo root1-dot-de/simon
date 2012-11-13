@@ -28,5 +28,6 @@ public interface LookupTableMBean {
     public int getNumberOfRemoteRefSessions();
     public Long[] getRemoteRefSessions();
     public String[] getRefIdsForSession(long sessionId);
+    public int getRemoteRefCount(long sessionId, String refId);
     
 }

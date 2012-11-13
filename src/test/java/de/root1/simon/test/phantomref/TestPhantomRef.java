@@ -19,8 +19,15 @@
 package de.root1.simon.test.phantomref;
 
 import de.root1.simon.Lookup;
+import de.root1.simon.LookupTableMBean;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
+import java.lang.management.ManagementFactory;
+import java.util.Set;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.ObjectInstance;
+import javax.management.ObjectName;
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -71,6 +78,32 @@ public class TestPhantomRef {
             
             logger.info("1 ------------------------------------------------------");
             
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            Set<ObjectInstance> queryMBeans = mbs.queryMBeans(null, null);
+            
+            LookupTableMBean ltmbean = null;
+            long sessionId=-1;
+            String refId=null;
+            for (ObjectInstance objectInstance : queryMBeans) {
+                if (objectInstance.getObjectName().getDomain().equals("de.root1.simon") &&
+                        objectInstance.getObjectName().getKeyProperty("isServer").equals("false")) {
+                    System.out.println("Found it: "+objectInstance);
+                    
+                    ltmbean = (LookupTableMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, objectInstance.getObjectName(), LookupTableMBean.class, false);
+                    break;
+                }
+            }
+            if (ltmbean!=null) {
+                assertTrue("There must be one session with a ref: "+ltmbean.getNumberOfRemoteRefSessions(), ltmbean.getNumberOfRemoteRefSessions()==1);
+                
+                sessionId = ltmbean.getRemoteRefSessions()[0];
+                
+                assertTrue("There must be one ref on this session("+sessionId+")", ltmbean.getRefIdsForSession(sessionId).length==1);
+                
+                refId = ltmbean.getRefIdsForSession(sessionId)[0];
+                assertTrue("Refcount must be 1 after setting callback", ltmbean.getRemoteRefCount(sessionId, refId)==1);
+            }
+            
             Thread.sleep(2000);
             
             logger.info("2 ------------------------------------------------------");
@@ -85,6 +118,8 @@ public class TestPhantomRef {
                 System.gc();
                 Thread.sleep(500);
             }
+            
+            assertTrue("There must not be any remote ref after clearing the callback", ltmbean.getNumberOfRemoteRefSessions()==0);
 
             logger.info("4 ------------------------------------------------------");
             
