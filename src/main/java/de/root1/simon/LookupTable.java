@@ -150,7 +150,7 @@ public class LookupTable implements LookupTableMBean {
         logger.debug("remoteObjectName={} object={}", remoteObjectName, remoteObject);
 
         addRemoteObjectToSet(remoteObject);
-
+        
         RemoteObjectContainer roc = new RemoteObjectContainer(remoteObject, remoteObjectName, remoteObject.getClass().getInterfaces());
         bindings.put(remoteObjectName, roc);
 
@@ -258,6 +258,7 @@ public class LookupTable implements LookupTableMBean {
      */
     private void addCallbackRef(long sessionId, String refId, Object object) {
      
+        logger.debug("Adding {}", refId);
         synchronized(sessionRefCount) {
             Map<String, RemoteRef> sessionMap = sessionRefCount.get(sessionId);
             
@@ -284,11 +285,11 @@ public class LookupTable implements LookupTableMBean {
     /*
      * FIXME
      */
-    void removeCallbackRef(long sessionId, String refId) {
+    synchronized void removeCallbackRef(long sessionId, String refId) {
      
+        logger.debug("Releasing {}", refId);
         synchronized(sessionRefCount) {
             
-            releaseRemoteBinding(refId);
             Map<String, RemoteRef> sessionMap = sessionRefCount.get(sessionId);
             
             if (sessionMap==null) {
@@ -312,6 +313,14 @@ public class LookupTable implements LookupTableMBean {
                     }
                 } else {
                     logger.warn("Something went wrong: ref {} not found in sessionmap on session {}", refId, Utils.longToHexString(sessionId));
+                }
+            }
+            releaseRemoteBinding(refId);
+            synchronized (gcRemoteInstances) {
+                List<String> list = gcRemoteInstances.get(sessionId);
+                if(list!=null) {
+                    boolean remove = list.remove(refId);
+                    logger.debug("Removed {} from list of gcRemoteInstance for session {}", refId, sessionId);
                 }
             }
         }
@@ -340,12 +349,11 @@ public class LookupTable implements LookupTableMBean {
 
         logger.debug("sessionId={} sriRemoteObjectName={} remoteObject=", new Object[]{Utils.longToHexString(sessionId), sriRemoteObjectName, remoteObject});
 
-        
         addCallbackRef(sessionId, sriRemoteObjectName, remoteObject);
         
         // list ob remote object names that need to be GC'ed somewhen later
         List<String> remoteObjectNames;
-
+        
         // if there no list present, create one
         if (!gcRemoteInstances.containsKey(sessionId)) {
             logger.debug("session '{}' unknown, creating new remote instance list!", Utils.longToHexString(sessionId));
@@ -382,17 +390,19 @@ public class LookupTable implements LookupTableMBean {
      * @throws LookupFailedException if remote object is not available in lookup
      * table
      */
-    synchronized RemoteObjectContainer getRemoteObjectContainer(String remoteObjectName) throws LookupFailedException {
+    RemoteObjectContainer getRemoteObjectContainer(String remoteObjectName) throws LookupFailedException {
         logger.debug("begin");
-        if (!bindings.containsKey(remoteObjectName)) {
-            logger.debug("remote object name=[{}] not found in LookupTable!", remoteObjectName);
-            throw new LookupFailedException("remoteobject with name [" + remoteObjectName + "] not found in lookup table.");
+        synchronized (bindings) {
+            if (!bindings.containsKey(remoteObjectName)) {
+                logger.debug("remote object name=[{}] not found in LookupTable!", remoteObjectName);
+                throw new LookupFailedException("remoteobject with name [" + remoteObjectName + "] not found in lookup table.");
+            }
+
+            logger.debug("name={} resolves to object='{}'", remoteObjectName, bindings.get(remoteObjectName));
+
+            logger.debug("end");
+            return bindings.get(remoteObjectName);
         }
-
-        logger.debug("name={} resolves to object='{}'", remoteObjectName, bindings.get(remoteObjectName));
-
-        logger.debug("end");
-        return bindings.get(remoteObjectName);
     }
 
     /**
@@ -403,20 +413,27 @@ public class LookupTable implements LookupTableMBean {
      * @param name the remote object to free
      */
     synchronized void releaseRemoteBinding(String name) {
+        
+//        if (name.startsWith(SimonRemoteInstance.PREFIX)) {
+//            logger.debug("releasing {}", name);
+//        }
+        
         logger.debug("begin");
 
         logger.debug("name={}", name);
 
-        Object remoteObject = bindings.remove(name);
+        synchronized (bindings) {
+            Object remoteObject = bindings.remove(name);
 
-        // simonRemote may be null in case of multithreaded access
-        // to Simon#unbind() and thus releaseRemoteBinding()
-        if (remoteObject != null) {
-            logger.debug("cleaning up [{}]", remoteObject);
-            removeRemoteObjectFromSet(remoteObject);
-            remoteObject_to_hashToMethod_Map.remove(remoteObject);
-        } else {
-            logger.debug("[{}] already removed or not available. nothing to do.", name);
+            // simonRemote may be null in case of multithreaded access
+            // to Simon#unbind() and thus releaseRemoteBinding()
+            if (remoteObject != null) {
+                logger.debug("cleaning up [{}]", remoteObject);
+                removeRemoteObjectFromSet(remoteObject);
+                remoteObject_to_hashToMethod_Map.remove(remoteObject);
+            } else {
+                logger.debug("[{}] already removed or not available. nothing to do.", name);
+            }
         }
 
         logger.debug("end");
@@ -443,9 +460,13 @@ public class LookupTable implements LookupTableMBean {
      * @param methodHash the hash of the method
      * @return the method
      */
-    public Method getMethod(String remoteObject, long methodHash) {
+    public synchronized Method getMethod(String remoteObject, long methodHash) {
+        
+//        if (remoteObject.startsWith(SimonRemoteInstance.PREFIX)) {
+//            logger.debug("Searching for method {} for remote {}", methodHash, remoteObject);
+//        }
         logger.debug("begin");
-
+        
         Method m = remoteObject_to_hashToMethod_Map.get(bindings.get(remoteObject).getRemoteObject()).get(methodHash);
 
         logger.debug("hash={} resolves to method='{}'", methodHash, m);
@@ -567,20 +588,24 @@ public class LookupTable implements LookupTableMBean {
                     RemoteObjectContainer container = bindings.remove(remoteObjectName);
                     logger.debug("sessionId={} RemoteObjectContainer to unreference: {}", id, container);
 
-                    Object remoteInstanceBindingToRemove = container.getRemoteObject();
-                    logger.debug("sessionId={} simon remote to unreference: {}", id, remoteInstanceBindingToRemove);
+                    if (container!=null) {
+                        Object remoteInstanceBindingToRemove = container.getRemoteObject();
+                        logger.debug("sessionId={} simon remote to unreference: {}", id, remoteInstanceBindingToRemove);
 
-                    removeRemoteObjectFromSet(remoteInstanceBindingToRemove);
+                        removeRemoteObjectFromSet(remoteInstanceBindingToRemove);
 
-                    remoteObject_to_hashToMethod_Map.remove(remoteInstanceBindingToRemove);
+                        remoteObject_to_hashToMethod_Map.remove(remoteInstanceBindingToRemove);
 
-                    if (remoteInstanceBindingToRemove instanceof SimonUnreferenced) {
+                        if (remoteInstanceBindingToRemove instanceof SimonUnreferenced) {
 
-                        final SimonUnreferenced remoteBinding = (SimonUnreferenced) remoteInstanceBindingToRemove;
-                        remoteBinding.unreferenced();
+                            final SimonUnreferenced remoteBinding = (SimonUnreferenced) remoteInstanceBindingToRemove;
+                            remoteBinding.unreferenced();
 
-                        logger.debug("sessionId={} Called the unreferenced() method on {}", id, remoteInstanceBindingToRemove);
+                            logger.debug("sessionId={} Called the unreferenced() method on {}", id, remoteInstanceBindingToRemove);
 
+                        }
+                    } else {
+                        logger.debug("Container for {} no longer present?", remoteObjectName);
                     }
                 }
             }
