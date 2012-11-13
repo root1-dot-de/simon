@@ -116,7 +116,7 @@ public class LookupTable implements LookupTableMBean {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             
-            ObjectName name = new ObjectName("de.root1.simon:type=LookupTable,dispatcher="+dispatcher.toString());
+            ObjectName name = new ObjectName("de.root1.simon:type=LookupTable,dispatcher="+dispatcher.toString()+",isServer="+(dispatcher.getServerString()==null?"true":"false"));
             mbs.registerMBean(this, name);
             
         } catch (InstanceAlreadyExistsException ex) {
@@ -264,7 +264,7 @@ public class LookupTable implements LookupTableMBean {
                 // session not yet known
                 sessionMap = new HashMap<String, RemoteRef>();
                 sessionMap.put(refId, new RemoteRef(object));
-                logger.debug("Added RefCounter for {}.", refId);
+                logger.debug("Added RefCounter for {}. {}", refId, toString());
                 sessionRefCount.put(sessionId, sessionMap);
             } else {
                 RemoteRef ref = sessionMap.get(refId);
@@ -658,6 +658,7 @@ public class LookupTable implements LookupTableMBean {
     
     @Override
     public int getNumberOfRemoteRefSessions() {
+        logger.debug("{}", toString());
         return sessionRefCount.size();
     }
 
@@ -669,5 +670,10 @@ public class LookupTable implements LookupTableMBean {
     @Override
     public String[] getRefIdsForSession(long sessionId) {
         return sessionRefCount.get(sessionId).keySet().toArray(new String[0]);
+    }
+    
+    @Override
+    public int getRemoteRefCount(long sessionId, String refId) {
+        return sessionRefCount.get(sessionId).get(refId).getRefCount();
     }
 }
