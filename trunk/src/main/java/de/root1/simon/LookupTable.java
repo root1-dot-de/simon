@@ -268,8 +268,13 @@ public class LookupTable implements LookupTableMBean {
                 sessionRefCount.put(sessionId, sessionMap);
             } else {
                 RemoteRef ref = sessionMap.get(refId);
-                int newCount = ref.addRef();
-                logger.debug("RefCount for {} is now: ", refId, newCount);
+                if (ref==null) {
+                    ref = new RemoteRef(object);
+                    sessionMap.put(refId, ref);
+                } else {
+                    ref.addRef();
+                }
+                logger.debug("RefCount for {} is now: ", refId, ref.getRefCount());
                 
             }
         }
