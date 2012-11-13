@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class SimonRemoteInstance implements Serializable {
 
     private static final long serialVersionUID = 1;
+    static final String PREFIX = "SimonRemoteInstance";
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
     /** Name of the interface that is used to implement the remote object */
     private List<String> interfaceNames = new ArrayList<String>();
@@ -70,10 +71,11 @@ public class SimonRemoteInstance implements Serializable {
         }
 
         String IP = session.getRemoteAddress().toString();
-        long sessionId = session.getId();
+        sessionId = session.getId();
 
         StringBuilder sb = new StringBuilder();
 
+        sb.append(PREFIX);
         sb.append("[");
         sb.append(remoteObject.getClass().getName());
         sb.append("|ip=");
@@ -81,7 +83,9 @@ public class SimonRemoteInstance implements Serializable {
         sb.append(";sessionID=");
         sb.append(sessionId);
         sb.append(";remoteObjectHash=");
-        sb.append(remoteObject.hashCode());
+//        sb.append(remoteObject.hashCode());
+//        sb.append(Utils.hash(remoteObject));
+        sb.append(System.identityHashCode(remoteObject));
         sb.append("]");
 
         this.id = sb.toString();

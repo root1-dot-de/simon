@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.utils.Utils;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
 import org.apache.mina.core.session.IoSession;
@@ -45,10 +46,10 @@ public class SimonPhantomRef<T extends SimonProxy> extends PhantomReference<T> {
     IoSession getSession() {
         return session;
     }
-    
+
     @Override
     public String toString() {
-        return "SimonPhantomRef{" + "refId=" + refId + '}';
+        return "SimonPhantomRef{" + "refId=" + refId + ", session=" + session + '}';
     }
     
 }

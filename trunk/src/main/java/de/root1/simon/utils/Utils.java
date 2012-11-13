@@ -53,7 +53,7 @@ import org.xml.sax.SAXException;
  * @author ACHR
  */
 public class Utils {
-
+    
     private final static Logger logger = LoggerFactory.getLogger(Utils.class);
     /**
      * if this flag is set to TRUE, SIMON tries to load the java.util.logging properties and enabled the debug-mode
@@ -488,6 +488,30 @@ public class Utils {
       }
 
       return th;
+    }
+    
+    /**
+     * Retrieve object hash code and applies a supplemental hash function to the
+     * result hash, which defends against poor quality hash functions.  This is
+     * critical because HashMap uses power-of-two length hash tables, that
+     * otherwise encounter collisions for hashCodes that do not differ
+     * in lower bits. Note: Null keys always map to hash 0, thus index 0.
+     */
+    public static final int hash(Object object) {
+        
+        if (object==null) {
+            return 0;
+        }
+        
+        int hash = 0;
+        
+        hash ^= object.hashCode();
+
+        // This function ensures that hashCodes that differ only by
+        // constant multiples at each bit position have a bounded
+        // number of collisions (approximately 8 at default load factor).
+        hash ^= (hash >>> 20) ^ (hash >>> 12);
+        return hash ^ (hash >>> 7) ^ (hash >>> 4);
     }
 
 }
