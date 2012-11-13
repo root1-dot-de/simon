@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -523,6 +524,7 @@ public class LookupTable implements LookupTableMBean {
 
         bindings.clear();
         remoteObject_to_hashToMethod_Map.clear();
+        sessionRefCount.clear();
         cleanupDone = true;
         logger.debug("end");
     }
@@ -542,6 +544,9 @@ public class LookupTable implements LookupTableMBean {
         List<String> list;
         synchronized (gcRemoteInstances) {
             list = gcRemoteInstances.remove(sessionId);
+        }
+        synchronized (sessionRefCount) {
+            sessionRefCount.remove(sessionId);
         }
 
         if (list != null) {
@@ -680,5 +685,22 @@ public class LookupTable implements LookupTableMBean {
     @Override
     public int getRemoteRefCount(long sessionId, String refId) {
         return sessionRefCount.get(sessionId).get(refId).getRefCount();
+    }
+    
+    @Override
+    public int getTotalRefCount() {
+        int i=0;
+        synchronized(sessionRefCount) {
+            Iterator<Long> sessionIter = sessionRefCount.keySet().iterator();
+            while (sessionIter.hasNext()) {
+                Long sessionId = sessionIter.next();
+                Map<String, RemoteRef> refMap = sessionRefCount.get(sessionId);
+                Collection<RemoteRef> values = refMap.values();
+                for (RemoteRef remoteRef : values) {
+                    i += remoteRef.getRefCount();
+                }
+            }
+        }
+        return i;
     }
 }

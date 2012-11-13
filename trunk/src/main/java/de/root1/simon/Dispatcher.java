@@ -1135,13 +1135,9 @@ public class Dispatcher implements IoHandler {
 
     void sendReleaseRef(IoSession session, String refId) throws SessionException {
         checkForInvalidState(session, "sendReleaseRef()");
-        logger.info("#######################");
-        logger.info("#######################");
-        logger.info("#######################");
-        logger.info("########### ReleaseRef for {}", refId);
-        logger.info("#######################");
-        logger.info("#######################");
-        logger.info("#######################");
+        logger.debug("#######################");
+        logger.debug("########### ReleaseRef for {}", refId);
+        logger.debug("#######################");
 
         logger.debug("begin session={} refId={}", session, refId);
 
