@@ -18,6 +18,8 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.exceptions.SimonException;
+import de.root1.simon.utils.Utils;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
@@ -48,7 +50,7 @@ public class SimonRefQueue <T extends SimonPhantomRef> extends ReferenceQueue<T>
 
     public void addRef(SimonProxy simonProxy) {
         Reference ref = new SimonPhantomRef(simonProxy, this);
-        logger.debug("Adding ref for: {}", ref);
+        logger.debug("Adding ref: {}", ref);
         refs.add(ref);
         logger.debug("Ref count after add: {}",refs.size());
     }
@@ -59,11 +61,15 @@ public class SimonRefQueue <T extends SimonPhantomRef> extends ReferenceQueue<T>
             try {
                 SimonPhantomRef ref = (SimonPhantomRef) remove(REMOVE_TIMEOUT);
                 if (ref != null) {
-                    logger.debug("Got ref for GC: {}",ref);
+                    logger.debug("Releasing: {}",ref);
                     refs.remove(ref);
                     ref.clear();
                     logger.debug("Ref count after remove: {}", refs.size());
-                    dispatcher.sendReleaseRef(ref.getSession(), ref.getRefId());
+                    try {
+                        dispatcher.sendReleaseRef(ref.getSession(), ref.getRefId());
+                    } catch (SimonException ex) {
+                        logger.warn("Not able to send a 'release ref' for {}", ref);
+                    }
                 } else {
                     // FIXME remove GC call here ...
                     if (logger.isTraceEnabled()) {
