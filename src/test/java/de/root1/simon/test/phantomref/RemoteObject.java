@@ -34,4 +34,6 @@ public interface RemoteObject {
     
     public boolean testEquals(ClientCallback clientCallback);
     
+    public ServerCallback getServerCallback();
+    
 }

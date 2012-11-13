@@ -74,6 +74,9 @@ public class SimonProxy implements InvocationHandler {
         this.remoteObjectName = remoteObjectName;
         this.remoteInterfaces = remoteInterfaces;
         this.regularLookup = regularLookup;
+        
+        // register phantom reference for releasing remote object on gc'ed proxy object
+        dispatcher.getRefQueue().addRef(this);
     }
 
     /**
@@ -180,7 +183,6 @@ public class SimonProxy implements InvocationHandler {
 
             // reimplant the proxy object
             result = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler);
-
         }
         
         logger.debug("end");
