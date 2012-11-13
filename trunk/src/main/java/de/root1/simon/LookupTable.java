@@ -287,6 +287,8 @@ public class LookupTable implements LookupTableMBean {
     void removeCallbackRef(long sessionId, String refId) {
      
         synchronized(sessionRefCount) {
+            
+            releaseRemoteBinding(refId);
             Map<String, RemoteRef> sessionMap = sessionRefCount.get(sessionId);
             
             if (sessionMap==null) {
