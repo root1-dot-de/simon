@@ -76,7 +76,10 @@ public class SimonProxy implements InvocationHandler {
         this.regularLookup = regularLookup;
         
         // register phantom reference for releasing remote object on gc'ed proxy object
-        dispatcher.getRefQueue().addRef(this);
+        // only for callbacks!
+        if (remoteObjectName.startsWith(SimonRemoteInstance.PREFIX)) {
+            dispatcher.getRefQueue().addRef(this);
+        }
     }
 
     /**
