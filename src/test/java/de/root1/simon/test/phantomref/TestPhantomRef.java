@@ -82,7 +82,7 @@ public class TestPhantomRef {
             logger.info("1 ------------------------------------------------------");
             
             // seems to take some time until JMX is able to retrieve the results we want?!
-//            Thread.sleep(500);
+            Thread.sleep(2000);
             
             logger.info("Querying JMX ...");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
