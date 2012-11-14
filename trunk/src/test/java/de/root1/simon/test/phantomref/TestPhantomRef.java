@@ -85,7 +85,7 @@ public class TestPhantomRef {
             String refId=null;
             for (ObjectInstance objectInstance : queryMBeans) {
                 if (objectInstance.getObjectName().getDomain().equals("de.root1.simon") &&
-                        objectInstance.getObjectName().getKeyProperty("isServer").equals("false")) {
+                        objectInstance.getObjectName().getKeyProperty("subType").equals(LookupTableMBean.MBEAN_SUBTYPE_CLIENT)) {
                     System.out.println("Found it: "+objectInstance);
                     
                     ltmbean = (LookupTableMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, objectInstance.getObjectName(), LookupTableMBean.class, false);
@@ -138,7 +138,6 @@ public class TestPhantomRef {
     @Test
     public void testPhantomRefReleaseServerCallback() {
 
-
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
@@ -147,13 +146,13 @@ public class TestPhantomRef {
             Lookup lookup = Simon.createNameLookup("127.0.0.1");
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
-            
             for(int i=0;i<1;i++) {
                 ServerCallback serverCallback = roiRemote.getServerCallback();
                 serverCallback.sayHelloToServer();
                 System.gc();
-//                Thread.sleep(10);
             }
+
+            Thread.sleep(1000);
             
             logger.info("1 ------------------------------------------------------");
 //            

@@ -84,8 +84,8 @@ public class SimonRemoteInstance implements Serializable {
         sb.append(sessionId);
         sb.append(";remoteObjectHash=");
 //        sb.append(remoteObject.hashCode());
-//        sb.append(Utils.hash(remoteObject));
-        sb.append(System.identityHashCode(remoteObject));
+//        sb.append(System.identityHashCode(remoteObject));
+        sb.append(Utils.hash(remoteObject));
         sb.append("]");
 
         this.id = sb.toString();
