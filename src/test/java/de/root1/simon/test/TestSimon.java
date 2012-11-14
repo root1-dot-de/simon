@@ -24,6 +24,7 @@ import de.root1.simon.Simon;
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,13 +85,15 @@ public class TestSimon {
     }
     
     @Test
+    @Ignore // ignored temporarily due to JVM Bug: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7179799
     public void testCreateRegistryTwice() {
 
 
         try {
             Registry r = Simon.createRegistry(22224);
+            Thread.sleep(2000);
             Registry r2 = Simon.createRegistry(22224);
-            Thread.sleep(100000);
+            Thread.sleep(500);
             r.stop();
             r2.stop();
             throw new AssertionError("There should be a BindException in case of running a port is already in use.");

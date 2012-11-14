@@ -27,6 +27,7 @@ import java.util.Set;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectInstance;
+import javax.management.ObjectName;
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -72,11 +73,18 @@ public class TestPhantomRef {
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost");
 
+//            ClientCallback ccb = new ClientCallbackImpl();
+            
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+//            roiRemote.setCallback(ccb);
             roiRemote.setCallback(new ClientCallbackImpl());
             
             logger.info("1 ------------------------------------------------------");
             
+            // seems to take some time until JMX is able to retrieve the results we want?!
+//            Thread.sleep(500);
+            
+            logger.info("Querying JMX ...");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             Set<ObjectInstance> queryMBeans = mbs.queryMBeans(null, null);
             
@@ -84,8 +92,9 @@ public class TestPhantomRef {
             long sessionId=-1;
             String refId=null;
             for (ObjectInstance objectInstance : queryMBeans) {
-                if (objectInstance.getObjectName().getDomain().equals("de.root1.simon") &&
-                        objectInstance.getObjectName().getKeyProperty("subType").equals(LookupTableMBean.MBEAN_SUBTYPE_CLIENT)) {
+                ObjectName objectName = objectInstance.getObjectName();
+                if (objectName.getDomain().equals("de.root1.simon") &&
+                        objectName.getKeyProperty("subType").equals(LookupTableMBean.MBEAN_SUBTYPE_CLIENT)) {
                     System.out.println("Found it: "+objectInstance);
                     
                     ltmbean = (LookupTableMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, objectInstance.getObjectName(), LookupTableMBean.class, false);
@@ -102,12 +111,14 @@ public class TestPhantomRef {
                 refId = ltmbean.getRefIdsForSession(sessionId)[0];
                 assertTrue("Refcount must be 1 after setting callback", ltmbean.getRemoteRefCount(sessionId, refId)==1);
             }
+            logger.info("Querying JMX ...*DONE*");
             
             Thread.sleep(2000);
             
             logger.info("2 ------------------------------------------------------");
             
-            // kill casllback reference to give GC the chance to cleanup
+            // kill callback reference to give GC the chance to cleanup
+//            ccb = null;
             roiRemote.setCallback(null);
             
             logger.info("3 ------------------------------------------------------");
