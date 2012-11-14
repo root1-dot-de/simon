@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2012 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -18,17 +18,19 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
-import de.root1.simon.utils.Utils;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * A ReferenceQueue that tracks lifetime of SimonProxy objects. If proxy is
+ * GC'ed, a message is sent to remote to signal that the reference-count can be
+ * decreased by 1.
  *
  * @author achristian
  * @since 1.2.0
@@ -48,7 +50,10 @@ public class SimonRefQueue <T extends SimonPhantomRef> extends ReferenceQueue<T>
         refCleanerThread.start();
     }
 
-    public void addRef(SimonProxy simonProxy) {
+    public synchronized void addRef(SimonProxy simonProxy) {
+        if (!refCleanerThread.isAlive() || refCleanerThread.isInterrupted()) {
+            throw new IllegalStateException("refCleanerThread not longer active. Shutdown in progress?");
+        }
         Reference ref = new SimonPhantomRef(simonProxy, this);
         logger.debug("Adding ref: {}", ref);
         refs.add(ref);
@@ -65,17 +70,13 @@ public class SimonRefQueue <T extends SimonPhantomRef> extends ReferenceQueue<T>
                     refs.remove(ref);
                     ref.clear();
                     logger.debug("Ref count after remove: {}", refs.size());
-                    try {
-                        dispatcher.sendReleaseRef(ref.getSession(), ref.getRefId());
-                    } catch (SimonException ex) {
-                        logger.warn("Not able to send a 'release ref' for {}", ref);
-                    }
+                    sendRelease(ref);
                 } else {
                     // FIXME remove GC call here ...
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("********** Trigger GC! **********");
-                        System.gc();
-                    }
+//                    if (logger.isTraceEnabled()) {
+//                        logger.trace("********** Trigger GC! **********");
+//                        System.gc();
+//                    }
                 }
             } catch (InterruptedException ex) {
                 refCleanerThread.interrupt();
@@ -83,5 +84,29 @@ public class SimonRefQueue <T extends SimonPhantomRef> extends ReferenceQueue<T>
         }
         
         logger.debug(Thread.currentThread().getName()+" terminated");
+    }
+
+    synchronized void cleanup() {
+        logger.debug("Stopping refCleanerThread");
+        refCleanerThread.interrupt();
+        
+        logger.debug("Sending release for {} refs", refs.size());
+        while (!refs.isEmpty()) {
+            // remove one by one until list is empty
+            SimonPhantomRef ref = (SimonPhantomRef) refs.remove(0);
+            sendRelease(ref);
+        }
+        // ensure it is cleared
+        refs.clear();
+    }
+
+    private void sendRelease(SimonPhantomRef ref) {
+        try {
+            dispatcher.sendReleaseRef(ref.getSession(), ref.getRefId());
+        } catch (SimonException ex) {
+            logger.warn("Not able to send a 'release ref' for "+ref, ex);
+        } catch (SessionException ex) {
+            logger.warn("Not able to send a 'release ref' for "+ref, ex);
+        }
     }
 }

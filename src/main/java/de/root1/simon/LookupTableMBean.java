@@ -18,12 +18,18 @@
  */
 package de.root1.simon;
 
+import java.util.List;
+
 /**
  * JMX Interface for LookupTable
  * @author achristian
  * @since 1.2.0
  */
 public interface LookupTableMBean {
+    
+    public static final String MBEAN_SUBTYPE_SERVER = "server";
+    public static final String MBEAN_SUBTYPE_CLIENT = "client";
+    public static final String MBEAN_TYPE = "LookupTable";
     
     public int getNumberOfRemoteRefSessions();
     public Long[] getRemoteRefSessions();
@@ -35,5 +41,7 @@ public interface LookupTableMBean {
      * @return total ref count
      */
     public int getTotalRefCount();
+    
+    public List<String> getCallbackRefList();
     
 }

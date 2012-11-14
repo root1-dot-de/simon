@@ -18,6 +18,8 @@
  */
 package de.root1.simon.utils;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -37,9 +39,10 @@ public class ConsoleLogFormatter extends Formatter {
     /* (non-Javadoc)
      * @see java.util.logging.Formatter#format(java.util.logging.LogRecord)
      */
+    @Override
     public String format(LogRecord record) {
 
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
 
         output.append(simpleDateFormat.format(new Date(record.getMillis())));
 //        output.append(" [");
@@ -64,7 +67,13 @@ public class ConsoleLogFormatter extends Formatter {
         output.append(record.getSourceMethodName());
         output.append(": ");
         output.append(record.getMessage());
+        Throwable thrown = record.getThrown();
+        if (thrown!=null) {
+            output.append(CRLF);
+            output.append(Utils.getStackTraceAsString(thrown));
+        }
         output.append(CRLF);
+        
 
         return output.toString();
     }
