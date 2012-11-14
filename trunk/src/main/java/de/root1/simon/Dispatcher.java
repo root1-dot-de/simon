@@ -635,8 +635,10 @@ public class Dispatcher implements IoHandler {
         if (shutdownInProgress && isRunning) {
             throw new SessionException("Cannot handle method call \"" + method + "\" while shutdown.");
         }
-        if (!isRunning || session.isClosing()) {
-            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed session.");
+        if (!isRunning ) {
+            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed Dispatcher for Session "+Utils.longToHexString(session.getId())+".");
+        } else if (session.isClosing()) {
+            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed Session("+Utils.longToHexString(session.getId())+").");
         }
     }
 
