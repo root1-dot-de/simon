@@ -18,11 +18,16 @@
  */
 package de.root1.simon.test.phantomref;
 
+import de.root1.simon.Dispatcher;
 import de.root1.simon.Lookup;
+import de.root1.simon.LookupTable;
 import de.root1.simon.LookupTableMBean;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
+import de.root1.simon.SimonProxy;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.Set;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerInvocationHandler;
@@ -73,34 +78,45 @@ public class TestPhantomRef {
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost");
 
-//            ClientCallback ccb = new ClientCallbackImpl();
-            
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
-//            roiRemote.setCallback(ccb);
             roiRemote.setCallback(new ClientCallbackImpl());
             
             logger.info("1 ------------------------------------------------------");
             
-            // seems to take some time until JMX is able to retrieve the results we want?!
-            Thread.sleep(2000);
+            logger.info("Querying LookupTable ...");
             
-            logger.info("Querying JMX ...");
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            Set<ObjectInstance> queryMBeans = mbs.queryMBeans(null, null);
+            // access via reflection
+            SimonProxy proxy = (SimonProxy) Proxy.getInvocationHandler(roiRemote);;
+
+            Field dispatcherField = SimonProxy.class.getDeclaredField("dispatcher");
+            dispatcherField.setAccessible(true);
             
-            LookupTableMBean ltmbean = null;
+            Dispatcher dispatcher = (Dispatcher) dispatcherField.get(proxy);
+            
+            Field lookupTableField = dispatcher.getClass().getDeclaredField("lookupTable");
+            lookupTableField.setAccessible(true);
+            
+            LookupTableMBean ltmbean = (LookupTableMBean) lookupTableField.get(dispatcher);
+            
+            
+            
             long sessionId=-1;
             String refId=null;
-            for (ObjectInstance objectInstance : queryMBeans) {
-                ObjectName objectName = objectInstance.getObjectName();
-                if (objectName.getDomain().equals("de.root1.simon") &&
-                        objectName.getKeyProperty("subType").equals(LookupTableMBean.MBEAN_SUBTYPE_CLIENT)) {
-                    System.out.println("Found it: "+objectInstance);
-                    
-                    ltmbean = (LookupTableMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, objectInstance.getObjectName(), LookupTableMBean.class, false);
-                    break;
-                }
-            }
+            
+            // access via JMX --> good for jconsole, but not "reliable" for junit test?
+//            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+//            Set<ObjectInstance> queryMBeans = mbs.queryMBeans(null, null);
+//            
+//            LookupTableMBean ltmbean = null;
+//            for (ObjectInstance objectInstance : queryMBeans) {
+//                ObjectName objectName = objectInstance.getObjectName();
+//                if (objectName.getDomain().equals("de.root1.simon") &&
+//                        objectName.getKeyProperty("subType").equals(LookupTableMBean.MBEAN_SUBTYPE_CLIENT)) {
+//                    System.out.println("Found it: "+objectInstance);
+//                    ltmbean = (LookupTableMBean) MBeanServerInvocationHandler.newProxyInstance(mbs, objectInstance.getObjectName(), LookupTableMBean.class, false);
+//                    break;
+//                }
+//            }
             if (ltmbean!=null) {
                 assertTrue("There must be one session with a ref: "+ltmbean.getNumberOfRemoteRefSessions(), ltmbean.getNumberOfRemoteRefSessions()==1);
                 
@@ -111,9 +127,7 @@ public class TestPhantomRef {
                 refId = ltmbean.getRefIdsForSession(sessionId)[0];
                 assertTrue("Refcount must be 1 after setting callback", ltmbean.getRemoteRefCount(sessionId, refId)==1);
             }
-            logger.info("Querying JMX ...*DONE*");
-            
-            Thread.sleep(2000);
+            logger.info("Querying LookuTable ...*DONE*");
             
             logger.info("2 ------------------------------------------------------");
             
@@ -126,7 +140,7 @@ public class TestPhantomRef {
             // ensure GC is running at least once
             for (int i=0;i<10;i++){
                 System.gc();
-                Thread.sleep(500);
+                Thread.sleep(50);
             }
             
             assertTrue("There must not be any remote ref after clearing the callback", ltmbean.getNumberOfRemoteRefSessions()==0);
