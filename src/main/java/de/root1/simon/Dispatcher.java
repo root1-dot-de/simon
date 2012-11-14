@@ -569,6 +569,9 @@ public class Dispatcher implements IoHandler {
      */
     public void shutdown() {
         logger.debug("begin");
+        
+        // need to be done before shutdown-status is set
+        simonRefQueue.cleanup();
 
         shutdownInProgress = true;
         messageProcessorPool.shutdown();
@@ -581,6 +584,7 @@ public class Dispatcher implements IoHandler {
                 // nothing to do
             }
         }
+        
         lookupTable.cleanup();
         isRunning = false;
         logger.debug("shutdown completed");
@@ -628,11 +632,11 @@ public class Dispatcher implements IoHandler {
      * process and no further remote call can be made
      */
     private void checkForInvalidState(IoSession session, String method) throws SessionException {
-        if (shutdownInProgress) {
+        if (shutdownInProgress && isRunning) {
             throw new SessionException("Cannot handle method call \"" + method + "\" while shutdown.");
         }
         if (!isRunning || session.isClosing()) {
-            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed session. isRunning=" + isRunning + " isClosing=" + session.isClosing());
+            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed session.");
         }
     }
 

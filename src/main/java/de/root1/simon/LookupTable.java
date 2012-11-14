@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
@@ -92,14 +91,14 @@ public class LookupTable implements LookupTableMBean {
 //    private final Set<Object> remoteobjectSet = new HashSet<Object>();
     private final Set<Object> remoteobjectSet = new HashSet<Object>();
     
-    /**
-     * Stores remoteinstance-id <-> remote object pairs.<br/>
-     * <code>
-     * &lt;SessionID, Map&lt;ID, RemoteObject&gt;&gt;
-     * </code>
-     * @since 1.2.0
-     */
-    private final Map<Long, Map<String, Object>> remoteinstanceMap = new HashMap<Long, Map<String, Object>>();
+//    /**
+//     * Stores remoteinstance-id <-> remote object pairs.<br/>
+//     * <code>
+//     * &lt;SessionID, Map&lt;ID, RemoteObject&gt;&gt;
+//     * </code>
+//     * @since 1.2.0
+//     */
+//    private final Map<Long, Map<String, Object>> remoteinstanceMap = new HashMap<Long, Map<String, Object>>();
     
     private Dispatcher dispatcher;
     private boolean cleanupDone = false;
@@ -117,7 +116,13 @@ public class LookupTable implements LookupTableMBean {
         try {
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             
-            ObjectName name = new ObjectName("de.root1.simon:type=LookupTable,dispatcher="+dispatcher.toString()+",isServer="+(dispatcher.getServerString()==null?"true":"false"));
+            ObjectName name = new ObjectName("de.root1.simon:"
+                    + "type="+MBEAN_TYPE
+                    + ","
+                    + "subType="+(dispatcher.getServerString()==null?MBEAN_SUBTYPE_SERVER:MBEAN_SUBTYPE_CLIENT)
+                    + ","
+                    + "instance="+MBEAN_TYPE+"@"+hashCode()
+                    );
             mbs.registerMBean(this, name);
             
         } catch (InstanceAlreadyExistsException ex) {
@@ -172,6 +177,7 @@ public class LookupTable implements LookupTableMBean {
         logger.trace("Adding simon remote {} with hash={}", remoteObject, hashCode);
     }
 
+
 //    /*
 //     * FIXME
 //     */
@@ -225,33 +231,8 @@ public class LookupTable implements LookupTableMBean {
     /**
      * Container class to count references
      */
-    class RemoteRef {
-        
-        private final AtomicInteger refCount = new AtomicInteger(1);
-        private final Object object;
-
-        RemoteRef(Object object) {
-            this.object = object;
-        }
-
-        public int getRefCount() {
-            return refCount.get();
-        }
-        
-        public int addRef() {
-            return refCount.incrementAndGet();
-        }
-        
-        public int removeRef() {
-            return refCount.decrementAndGet();
-        }
-
-        public Object getObject() {
-            return object;
-        }
-    }
     
-    private final Map<Long, Map<String, RemoteRef>> sessionRefCount = new HashMap<Long, Map<String, RemoteRef>>();
+    private final Map<Long, Map<String, RemoteRefContainer>> sessionRefCount = new HashMap<Long, Map<String, RemoteRefContainer>>();
     
     /*
      * FIXME
@@ -260,18 +241,18 @@ public class LookupTable implements LookupTableMBean {
      
         logger.debug("Adding {}", refId);
         synchronized(sessionRefCount) {
-            Map<String, RemoteRef> sessionMap = sessionRefCount.get(sessionId);
+            Map<String, RemoteRefContainer> sessionMap = sessionRefCount.get(sessionId);
             
             if (sessionMap==null) {
                 // session not yet known
-                sessionMap = new HashMap<String, RemoteRef>();
-                sessionMap.put(refId, new RemoteRef(object));
+                sessionMap = new HashMap<String, RemoteRefContainer>();
+                sessionMap.put(refId, new RemoteRefContainer(object));
                 logger.debug("Added RefCounter for {}. {}", refId, toString());
                 sessionRefCount.put(sessionId, sessionMap);
             } else {
-                RemoteRef ref = sessionMap.get(refId);
+                RemoteRefContainer ref = sessionMap.get(refId);
                 if (ref==null) {
-                    ref = new RemoteRef(object);
+                    ref = new RemoteRefContainer(object);
                     sessionMap.put(refId, ref);
                 } else {
                     ref.addRef();
@@ -290,12 +271,12 @@ public class LookupTable implements LookupTableMBean {
         logger.debug("Releasing {}", refId);
         synchronized(sessionRefCount) {
             
-            Map<String, RemoteRef> sessionMap = sessionRefCount.get(sessionId);
+            Map<String, RemoteRefContainer> sessionMap = sessionRefCount.get(sessionId);
             
             if (sessionMap==null) {
                 logger.debug("No session {} has no refs available. Something went wrong! Ref to release: {}", Utils.longToHexString(sessionId), refId);
             } else {
-                RemoteRef ref = sessionMap.get(refId);
+                RemoteRefContainer ref = sessionMap.get(refId);
                 
                 if (ref!=null) {
                     int newCount = ref.removeRef();
@@ -545,6 +526,8 @@ public class LookupTable implements LookupTableMBean {
             unreference(iterator.next());
         }
 
+        sessionRefCount.clear();
+        
         bindings.clear();
         remoteObject_to_hashToMethod_Map.clear();
         sessionRefCount.clear();
@@ -721,13 +704,35 @@ public class LookupTable implements LookupTableMBean {
             Iterator<Long> sessionIter = sessionRefCount.keySet().iterator();
             while (sessionIter.hasNext()) {
                 Long sessionId = sessionIter.next();
-                Map<String, RemoteRef> refMap = sessionRefCount.get(sessionId);
-                Collection<RemoteRef> values = refMap.values();
-                for (RemoteRef remoteRef : values) {
+                Map<String, RemoteRefContainer> refMap = sessionRefCount.get(sessionId);
+                Collection<RemoteRefContainer> values = refMap.values();
+                for (RemoteRefContainer remoteRef : values) {
                     i += remoteRef.getRefCount();
                 }
             }
         }
         return i;
     }
+    
+    @Override
+    public List<String> getCallbackRefList() {
+        
+        List<String> list = new ArrayList<String>();
+        
+        synchronized(sessionRefCount) {
+            Iterator<Long> sessionIter = sessionRefCount.keySet().iterator();
+            while (sessionIter.hasNext()) {
+                Long sessionId = sessionIter.next();
+                Map<String, RemoteRefContainer> refMap = sessionRefCount.get(sessionId);
+                Collection<RemoteRefContainer> values = refMap.values();
+                for (RemoteRefContainer remoteRef : values) {
+                    list.add("Session: "+Utils.longToHexString(sessionId)+" -> "+remoteRef.toString());
+                }
+            }
+        }
+        
+        return list;
+        
+    }
+
 }
