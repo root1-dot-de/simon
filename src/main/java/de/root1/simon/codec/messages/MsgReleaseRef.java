@@ -19,7 +19,7 @@
 package de.root1.simon.codec.messages;
 
 /**
- * <code>Ping</code> message
+ * <code>ReleaseRef</code> message
  *
  * @author ACHR
  * @since 1.2.0
