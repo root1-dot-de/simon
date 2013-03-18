@@ -19,7 +19,6 @@
 package de.root1.simon.codec.base;
 
 import de.root1.simon.codec.messages.AbstractMessage;
-import de.root1.simon.codec.messages.MsgPing;
 import de.root1.simon.codec.messages.MsgReleaseRef;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import java.nio.charset.CharacterCodingException;
@@ -32,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link MessageDecoder} that decodes {@link MsgPing}.
+ * A {@link MessageDecoder} that decodes {@link MsgReleaseRef}.
  *
  * @author ACHR
  */
