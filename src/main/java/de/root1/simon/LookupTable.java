@@ -63,7 +63,7 @@ public class LookupTable implements LookupTableMBean {
     
     /**
      * Maps the remote object name to the remote object. Only Objects wich have
-     * been registered with the Registry.bin() method are added to this map.
+     * been registered with the Registry.bind() method are added to this map.
      *
      */
     private final HashMap<String, RemoteObjectContainer> bindings = new HashMap<String, RemoteObjectContainer>();
@@ -72,7 +72,9 @@ public class LookupTable implements LookupTableMBean {
      * A Map that holds a list of remote object names for each socket connection.
      * The names are used to clean up upon DGC / session close
      *
-     * <Session-ID, List<remoteObjectName>>
+     * <pre>
+     * &lt;Session-ID, List&lt;remoteObjectName&gt;&gt;
+     * </pre>
      */
     private final Map<Long, List<String>> gcRemoteInstances = new HashMap<Long, List<String>>();
     
@@ -88,17 +90,16 @@ public class LookupTable implements LookupTableMBean {
      *
      * @since 1.2.0
      */
-//    private final Set<Object> remoteobjectSet = new HashSet<Object>();
     private final Set<Object> remoteobjectSet = new HashSet<Object>();
     
-//    /**
-//     * Stores remoteinstance-id <-> remote object pairs.<br/>
-//     * <code>
-//     * &lt;SessionID, Map&lt;ID, RemoteObject&gt;&gt;
-//     * </code>
-//     * @since 1.2.0
-//     */
-//    private final Map<Long, Map<String, Object>> remoteinstanceMap = new HashMap<Long, Map<String, Object>>();
+    /**
+     * Container for callback references
+     * <pre>
+     * &lt;sessionId, &lt;refId, RemoteRefContainer&gt;&gt;
+     * </pre>
+     */
+    private final Map<Long, Map<String, RemoteRefContainer>> sessionRefCount = new HashMap<Long, Map<String, RemoteRefContainer>>();
+    
     
     private Dispatcher dispatcher;
     private boolean cleanupDone = false;
@@ -177,65 +178,12 @@ public class LookupTable implements LookupTableMBean {
         logger.trace("Adding simon remote {} with hash={}", remoteObject, hashCode);
     }
 
-
-//    /*
-//     * FIXME
-//     */
-//    private void addRemoteInstanceToMap(SimonRemoteInstance sri, Object object) {
-//        
-//        synchronized(remoteinstanceMap) {
-//            Map<String, Object> remoteInstancePair = remoteinstanceMap.get(sri.getSessionID());
-//            
-//            if (remoteInstancePair==null) {
-//                // session not yet known
-//                remoteInstancePair = new HashMap<String, Object>();
-//                remoteInstancePair.put(sri.getId(), object);
-//                remoteinstanceMap.put(sri.getSessionID(), remoteInstancePair);
-//            } else {
-//                // session already known
-//                remoteInstancePair.put(sri.getId(), object);
-//            }
-//        }
-//    }
-    
-//    private void removeRemoteInstanceFromMap(SimonRemoteInstance sri) {
-//        synchronized(remoteinstanceMap) {
-//            Map<String, Object> remoteInstancePair = remoteinstanceMap.get(sri.getSessionID());
-//            if (remoteInstancePair!=null) {
-//                remoteInstancePair.remove(sri.getId());
-//                if (remoteInstancePair.isEmpty()) {
-//                    remoteinstanceMap.remove(sri.getSessionID());
-//                }
-//            }
-//        }
-//    }
-    
-//    /**
-//     * Returns a RemoteInstance object.
-//     * 
-//     * @param sessionId the session in which the object lives
-//     * @param sriId the SimonRemoteInstance ID for this object
-//     * @return the object
-//     */
-//    private Object getRemoteobjectFromRemoteInstanceMap(long sessionId, String sriId) {
-//        synchronized(remoteinstanceMap) {
-//            Map<String, Object> remoteInstancePair = remoteinstanceMap.get(sessionId);
-//            if (remoteInstancePair!=null) {
-//                Object o = remoteInstancePair.get(sriId);
-//                return o;
-//            }
-//        }
-//        return null;
-//    }
     
     /**
-     * Container class to count references
-     */
-    
-    private final Map<Long, Map<String, RemoteRefContainer>> sessionRefCount = new HashMap<Long, Map<String, RemoteRefContainer>>();
-    
-    /*
-     * FIXME
+     * Adds a callback reference to the internal reference storage
+     * @param sessionId the related session id
+     * @param refId the reference if for the object to reference
+     * @param object the object to reference
      */
     private void addCallbackRef(long sessionId, String refId, Object object) {
      
@@ -244,7 +192,7 @@ public class LookupTable implements LookupTableMBean {
             Map<String, RemoteRefContainer> sessionMap = sessionRefCount.get(sessionId);
             
             if (sessionMap==null) {
-                // session not yet known
+                // session not yet known, creating new ref container
                 sessionMap = new HashMap<String, RemoteRefContainer>();
                 sessionMap.put(refId, new RemoteRefContainer(object));
                 logger.debug("Added RefCounter for {}. {}", refId, toString());
@@ -252,9 +200,11 @@ public class LookupTable implements LookupTableMBean {
             } else {
                 RemoteRefContainer ref = sessionMap.get(refId);
                 if (ref==null) {
+                    // session known, but no ref container yet
                     ref = new RemoteRefContainer(object);
                     sessionMap.put(refId, ref);
                 } else {
+                    // session+ref known, increase ref counter
                     ref.addRef();
                 }
                 logger.debug("RefCount for {} is now: ", refId, ref.getRefCount());
@@ -263,8 +213,10 @@ public class LookupTable implements LookupTableMBean {
         }
     }
     
-    /*
-     * FIXME
+    /**
+     * Removes a callback reference from the internal reference storage
+     * @param sessionId the related session id
+     * @param refId the reference id of the callback
      */
     synchronized void removeCallbackRef(long sessionId, String refId) {
      
@@ -274,7 +226,7 @@ public class LookupTable implements LookupTableMBean {
             Map<String, RemoteRefContainer> sessionMap = sessionRefCount.get(sessionId);
             
             if (sessionMap==null) {
-                logger.debug("No session {} has no refs available. Something went wrong! Ref to release: {}", Utils.longToHexString(sessionId), refId);
+                logger.debug("Session {} has no refs available. Something went wrong! Ref to release: {}", Utils.longToHexString(sessionId), refId);
             } else {
                 RemoteRefContainer ref = sessionMap.get(refId);
                 
@@ -389,24 +341,19 @@ public class LookupTable implements LookupTableMBean {
     /**
      *
      * Frees a saved remote object. After a remote object is freed, it cannot be
-     * looked up again until it's bind again.
+     * looked up again until it's bound again.
      *
      * @param name the remote object to free
      */
     synchronized void releaseRemoteBinding(String name) {
         
-//        if (name.startsWith(SimonRemoteInstance.PREFIX)) {
-//            logger.debug("releasing {}", name);
-//        }
-        
         logger.debug("begin");
-
         logger.debug("name={}", name);
 
         synchronized (bindings) {
             Object remoteObject = bindings.remove(name);
 
-            // simonRemote may be null in case of multithreaded access
+            // remoteObject may be null in case of multithreaded access
             // to Simon#unbind() and thus releaseRemoteBinding()
             if (remoteObject != null) {
                 logger.debug("cleaning up [{}]", remoteObject);
@@ -421,9 +368,9 @@ public class LookupTable implements LookupTableMBean {
     }
 
     /**
-     * TODO document me
+     * Removes the given object from the set of remote objects
      *
-     * @param simonRemote
+     * @param remoteObject object to remove
      */
     private void removeRemoteObjectFromSet(Object remoteObject) {
         int hashCode = remoteObject.hashCode();
@@ -443,9 +390,6 @@ public class LookupTable implements LookupTableMBean {
      */
     public synchronized Method getMethod(String remoteObject, long methodHash) {
         
-//        if (remoteObject.startsWith(SimonRemoteInstance.PREFIX)) {
-//            logger.debug("Searching for method {} for remote {}", methodHash, remoteObject);
-//        }
         logger.debug("begin");
         
         Method m = remoteObject_to_hashToMethod_Map.get(bindings.get(remoteObject).getRemoteObject()).get(methodHash);
@@ -480,10 +424,6 @@ public class LookupTable implements LookupTableMBean {
 
                 logger.debug("examin superclass' interface='{}'", intf);
 
-//                if (SimonRemote.class.isAssignableFrom(intf)) {
-
-//                    logger.debug("SimonRemote is assignable from '{}'", intf);
-
                 for (Method method : intf.getMethods()) {
 
                     final Method m = method;
@@ -505,7 +445,6 @@ public class LookupTable implements LookupTableMBean {
                     logger.debug("computing hash: method='{}' hash={}", m, methodHash);
 
                 }
-//                }
             }
         }
 
@@ -596,14 +535,6 @@ public class LookupTable implements LookupTableMBean {
         logger.debug("end. sessionId={} ", id);
     }
 
-//	/**
-//	 * TODO document me
-//	 * @param dispatcher
-//	 */
-//	protected void setDispatcher(Dispatcher dispatcher){
-//		this.dispatcher=dispatcher;
-//	}
-//	
     /**
      * Returns the related Dispatcher
      *
@@ -614,19 +545,18 @@ public class LookupTable implements LookupTableMBean {
     }
 
     /**
-     * Chesk whether the provided object is registered in the remote object
+     * Checks whether the provided object is registered in the remote object
      * hashmap
      *
-     * @param simonRemote
+     * @param remoteObject
      * @return true, if the given object is registered, false if not
      */
-    boolean isSimonRemoteRegistered(Object simonRemote) {
-        if (simonRemote == null) {
+    boolean isSimonRemoteRegistered(Object remoteObject) {
+        if (remoteObject == null) {
             return false;
         }
-        logger.trace("searching hash {} in {}", simonRemote.hashCode(), remoteobjectSet);
-//        if (remoteobjectHashMap.containsKey(simonRemote.hashCode())) {
-        if (remoteobjectSet.contains(simonRemote)) {
+        logger.trace("searching hash {} in {}", remoteObject.hashCode(), remoteobjectSet);
+        if (remoteobjectSet.contains(remoteObject)) {
             return true;
         }
         return false;

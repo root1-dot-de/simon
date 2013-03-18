@@ -18,7 +18,6 @@
  */
 package de.root1.simon.codec.base;
 
-import de.root1.simon.codec.messages.MsgPing;
 import de.root1.simon.codec.messages.MsgReleaseRef;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -29,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A {@link MessageEncoder} that encodes {@link MsgPing}.
+ * A {@link MessageEncoder} that encodes {@link MsgReleaseRef}.
  *
  * @author ACHR
  */

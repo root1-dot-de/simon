@@ -29,32 +29,59 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 class RemoteRefContainer {
         
-        private final AtomicInteger refCount = new AtomicInteger(1);
-        private final Object object;
+    /**
+     * reference counter. increased with each new reference, decreased with each gc'ed reference
+     */
+    private final AtomicInteger refCount = new AtomicInteger(1);
+    
+    /**
+     * the referenced object
+     */
+    private final Object object;
 
-        RemoteRefContainer(Object object) {
-            this.object = object;
-        }
-
-        public int getRefCount() {
-            return refCount.get();
-        }
-        
-        public int addRef() {
-            return refCount.incrementAndGet();
-        }
-        
-        public int removeRef() {
-            return refCount.decrementAndGet();
-        }
-
-        public Object getObject() {
-            return object;
-        }
-
-        @Override
-        public String toString() {
-            return "RemoteRef{" + "refCount=" + refCount + ", object=" + object + '}';
-        }
-        
+    /**
+     * Constructs a new container
+     * @param object 
+     */
+    RemoteRefContainer(Object object) {
+        this.object = object;
     }
+
+    /**
+     * returns current reference count
+     * @return reference count
+     */
+    public int getRefCount() {
+        return refCount.get();
+    }
+
+    /**
+     * Increases reference counter by 1
+     * @return new reference count
+     */
+    public int addRef() {
+        return refCount.incrementAndGet();
+    }
+
+    /**
+     * Decreases reference counter by 1
+     * @return new reference count
+     */
+    public int removeRef() {
+        return refCount.decrementAndGet();
+    }
+
+    /**
+     * Returns the references object
+     * @return referenced object
+     */
+    public Object getObject() {
+        return object;
+    }
+
+    @Override
+    public String toString() {
+        return "RemoteRef{" + "refCount=" + refCount + ", object=" + object + '}';
+    }
+        
+}
