@@ -86,6 +86,7 @@ public class TestInterfaceLookup {
 
             RemoteObjectImpl roi2 = new RemoteObjectImpl();
             Registry r2 = Simon.createRegistry(22222);
+            r2.start();
             r2.bind("roi2", roi2);
             Lookup lookup2 = Simon.createInterfaceLookup("localhost", 22222);
 
