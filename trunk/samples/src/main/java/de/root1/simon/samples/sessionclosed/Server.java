@@ -23,6 +23,7 @@ public class Server {
 
       // create the server's registry ...
       Registry registry = Simon.createRegistry(22222);
+      registry.start();
 
       // ... where we can bind the serverobject to
       registry.bind("server", serverImpl);
