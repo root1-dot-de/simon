@@ -64,6 +64,7 @@ public class TestSimon {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
+            r.start();
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost", 22222);
 
@@ -91,8 +92,10 @@ public class TestSimon {
 
         try {
             Registry r = Simon.createRegistry(22224);
+            r.start();
             Thread.sleep(2000);
             Registry r2 = Simon.createRegistry(22224);
+            r2.start();
             Thread.sleep(500);
             r.stop();
             r2.stop();

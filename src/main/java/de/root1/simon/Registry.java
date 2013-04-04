@@ -90,6 +90,10 @@ public final class Registry {
     
     // See: http://dev.root1.de/issues/127
     private ClassLoader classLoader = getClass().getClassLoader();
+    
+    private CustomEncryption customEncryption;
+    private boolean started;
+    private boolean stopped;
 
     /**
      * Creates a registry
@@ -127,111 +131,132 @@ public final class Registry {
         this.threadPool = threadPool;
         this.protocolFactoryClassName = protocolFactoryClassName;
         this.sslContextFactory = sslContextFactory;
-        start();
         logger.debug("end");
     }
 
     /**
-     * Starts the registry thread
+     * Starts the registry thread. After stopping, a registry cannot start again. 
+     * One need to create a new registry.
      *
      * @throws IOException
      *             if there's a problem getting a selector for the non-blocking
      *             network communication, or if the
      * @throws IllegalArgumentException if specified protocol codec cannot be used
+     * @throws IllegalStateException if registry is already started or has been stopped.
      */
-    private void start() throws IOException {
+    public void start() throws IOException {
 
-        logger.debug("begin");
+        if (stopped) {
+            throw new IllegalStateException("Stopped registry cannot start again.");
+        }
+        if (started) {
+            throw new IllegalStateException("Registry already started.");
+        }
+        try {
+            started = true;
+            logger.debug("begin");
 
-        dispatcher = new Dispatcher(null, classLoader, threadPool);
-        logger.debug("dispatcher created");
+            dispatcher = new Dispatcher(null, classLoader, threadPool);
+            logger.debug("dispatcher created");
 
-        acceptor = new NioSocketAcceptor();
+            acceptor = new NioSocketAcceptor();
 
-        // currently this check is senseless. But in future we may provide more acceptor types?!
-        if (acceptor instanceof NioSocketAcceptor) {
-            NioSocketAcceptor nioSocketAcceptor = (NioSocketAcceptor) acceptor;
+            // currently this check is senseless. But in future we may provide more acceptor types?!
+            if (acceptor instanceof NioSocketAcceptor) {
+                NioSocketAcceptor nioSocketAcceptor = (NioSocketAcceptor) acceptor;
 
-            logger.debug("setting 'TcpNoDelay' on NioSocketAcceptor");
-            nioSocketAcceptor.getSessionConfig().setTcpNoDelay(true);
+                logger.debug("setting 'TcpNoDelay' on NioSocketAcceptor");
+                nioSocketAcceptor.getSessionConfig().setTcpNoDelay(true);
 
-            logger.debug("setting 'ReuseAddress' on NioSocketAcceptor");
-            nioSocketAcceptor.setReuseAddress(true);
+                logger.debug("setting 'ReuseAddress' on NioSocketAcceptor");
+                nioSocketAcceptor.setReuseAddress(true);
 
-            // FIXME workaround for http://dev.root1.de/issues/show/77
-            try {
-                ServerSocketChannel channel = ServerSocketChannel.open();
-                channel.configureBlocking(false);
-                ServerSocket socket = channel.socket();
-                int receiveBufferSize = socket.getReceiveBufferSize();
-                try {socket.close(); channel.close();} catch (Exception e) {} // close the temporary socket and channel and ignore all errors
-                logger.debug("setting 'ReceiveBufferSize' on NioSocketAcceptor to {}", receiveBufferSize);
-                nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
-            } catch (IOException ex) {
-                logger.debug("Not able to get readbuffersize from a default NIO socket. Error: {}", ex.getMessage());
-                if (nioSocketAcceptor.getSessionConfig().getReadBufferSize()==1024 && System.getProperty("os.name").equals("Windows 7")) {
-                    logger.warn("Server may have a drastic performance loss. Please consult 'http://dev.root1.de/issues/show/77' for more details.");
+                // FIXME workaround for http://dev.root1.de/issues/show/77
+                try {
+                    ServerSocketChannel channel = ServerSocketChannel.open();
+                    channel.configureBlocking(false);
+                    ServerSocket socket = channel.socket();
+                    int receiveBufferSize = socket.getReceiveBufferSize();
+                    try {socket.close(); channel.close();} catch (Exception e) {} // close the temporary socket and channel and ignore all errors
+                    logger.debug("setting 'ReceiveBufferSize' on NioSocketAcceptor to {}", receiveBufferSize);
+                    nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
+                } catch (IOException ex) {
+                    logger.debug("Not able to get readbuffersize from a default NIO socket. Error: {}", ex.getMessage());
+                    if (nioSocketAcceptor.getSessionConfig().getReadBufferSize()==1024 && System.getProperty("os.name").equals("Windows 7")) {
+                        logger.warn("Server may have a drastic performance loss. Please consult 'http://dev.root1.de/issues/show/77' for more details.");
+                    }
+                }
+                // end of workaround
+            }
+
+
+
+            if (sslContextFactory != null) {
+                SSLContext context = sslContextFactory.getSslContext();
+
+                if (context != null) {
+                    SslFilter sslFilter = new SslFilter(context);
+                    acceptor.getFilterChain().addLast("sslFilter", sslFilter);
+                    logger.debug("SSL ON");
+                } else {
+                    logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
                 }
             }
-            // end of workaround
-        }
 
-
-
-        if (sslContextFactory != null) {
-            SSLContext context = sslContextFactory.getSslContext();
-
-            if (context != null) {
-                SslFilter sslFilter = new SslFilter(context);
-                acceptor.getFilterChain().addLast("sslFilter", sslFilter);
-                logger.debug("SSL ON");
-            } else {
-                logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
+            // only add the logging filter if trace is enabled
+            if (logger.isTraceEnabled()) {
+                acceptor.getFilterChain().addLast("logger", new LoggingFilter());
             }
-        }
 
-        // only add the logging filter if trace is enabled
-        if (logger.isTraceEnabled()) {
-            acceptor.getFilterChain().addLast("logger", new LoggingFilter());
-        }
+            // add encryption filter if available
+            if (getCustomEncryption()!=null) {
+                acceptor.getFilterChain().addLast("customencryption", new CustomEncryptionFilter(getCustomEncryption()));
+            }
 
-        filterchainWorkerPool = new OrderedThreadPoolExecutor();
-        // don't use a threading model on filter level
-        //acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
-
-
-        SimonProtocolCodecFactory protocolFactory = null;
-        try {
-
-            protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
-
-        } catch (ClassNotFoundException e) {
-            logger.error("ClassNotFoundException while preparing ProtocolFactory", e);
-            throw new IllegalArgumentException(e);
-        } catch (InstantiationException e) {
-            logger.error("InstantiationException while preparing ProtocolFactory", e);
-            throw new IllegalArgumentException(e);
-        } catch (IllegalAccessException e) {
-            logger.error("IllegalAccessException while preparing ProtocolFactory", e);
-            throw new IllegalArgumentException(e);
-        }
-
-        protocolFactory.setup(true);
-        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
+            // don't use a threading model on filter level
+            //filterchainWorkerPool = new OrderedThreadPoolExecutor();
+            //acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
 
 
-        acceptor.setHandler(dispatcher);
-        logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec", Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
-        setKeepAliveInterval(Statics.DEFAULT_IDLE_TIME);
-        setKeepAliveTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+            SimonProtocolCodecFactory protocolFactory = null;
+            try {
+
+                protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
+
+            } catch (ClassNotFoundException e) {
+                logger.error("ClassNotFoundException while preparing ProtocolFactory", e);
+                throw new IllegalArgumentException(e);
+            } catch (InstantiationException e) {
+                logger.error("InstantiationException while preparing ProtocolFactory", e);
+                throw new IllegalArgumentException(e);
+            } catch (IllegalAccessException e) {
+                logger.error("IllegalAccessException while preparing ProtocolFactory", e);
+                throw new IllegalArgumentException(e);
+            }
+
+            protocolFactory.setup(true);
+            acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
 
 
-        logger.trace("Listening on {} on port {}", address, port);
-        acceptor.bind(new InetSocketAddress(address, port));
+            acceptor.setHandler(dispatcher);
+            logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec", Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
+            setKeepAliveInterval(Statics.DEFAULT_IDLE_TIME);
+            setKeepAliveTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
 
 
-        logger.debug("acceptor thread created and started");
-        logger.debug("end");
+            logger.trace("Listening on {} on port {}", address, port);
+            acceptor.bind(new InetSocketAddress(address, port));
+
+
+            logger.debug("acceptor thread created and started");
+            logger.debug("end");
+        } catch (RuntimeException e) {
+            started = false;
+            throw e;
+        } catch (IOException e) {
+            started = false;
+            throw e;
+        } 
     }
 
     /**
@@ -277,11 +302,12 @@ public final class Registry {
 
     /**
      * Stops the registry. This clears the {@link LookupTable} in the dispatcher, stops the
-     * acceptor and the {@link Dispatcher}. After running this method, no
+     * acceptor and the {@link Dispatcher}. After stopping this registry, no
      * further connection/communication is possible with this registry.
      *
      */
     public void stop() {
+        stopped = true;
         logger.trace("begin");
 
         logger.trace("Unbind Acceptor ...");
@@ -293,8 +319,10 @@ public final class Registry {
         logger.trace("Dispose Acceptor ...");
         acceptor.dispose();
 
-        logger.trace("Shutdown FilterchainWorkerPool ...");
-        filterchainWorkerPool.shutdown();
+        if (filterchainWorkerPool!=null) {
+            logger.trace("Shutdown FilterchainWorkerPool ...");
+            filterchainWorkerPool.shutdown();
+        }
 
         logger.trace("end");
     }
@@ -406,7 +434,7 @@ public final class Registry {
      * @return boolean
      */
     public boolean isRunning() {
-        return (dispatcher.isRunning() || acceptor.isActive() || !filterchainWorkerPool.isTerminated());
+        return (dispatcher.isRunning() || acceptor.isActive() || (filterchainWorkerPool!=null && !filterchainWorkerPool.isTerminated()));
     }
 
     /**
@@ -445,4 +473,13 @@ public final class Registry {
     public void setClassLoader(ClassLoader classLoader){
         this.classLoader = classLoader;
     }
+
+    public void setCustomEncryption(CustomEncryption customEncryption) {
+        this.customEncryption = customEncryption;
+    }
+
+    public CustomEncryption getCustomEncryption() {
+        return customEncryption;
+    }
+    
 }

@@ -49,6 +49,7 @@ public class TestIllegalRemoteObject {
             Server server = new Server();
 
             registry = Simon.createRegistry(22222);
+            registry.start();
             registry.bind("server", server);
             logger.info("Server ready.");
 
