@@ -48,6 +48,7 @@ public class TestAnnotation {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22223);
+            r.start();
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost", 22223);
 
@@ -74,6 +75,7 @@ public class TestAnnotation {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22224);
+            r.start();
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost", 22224);
 

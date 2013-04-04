@@ -30,6 +30,7 @@ public class TestMarkAsRemote {
             Pojo p = new Pojo();
             IPojo markedAsRemote = (IPojo) Simon.markAsRemote(p);
             Registry registry = Simon.createRegistry();
+            registry.start();
 
             registry.bind("test", markedAsRemote);
             Lookup lookup = Simon.createNameLookup("localhost");
@@ -61,6 +62,7 @@ public class TestMarkAsRemote {
             Pojo p = new Pojo();
             IPojo markedAsRemote = (IPojo) Simon.markAsRemote(p);
             Registry registry = Simon.createRegistry();
+            registry.start();
 
             registry.bind("test", markedAsRemote);
             InterfaceLookup lookup = (InterfaceLookup) Simon.createInterfaceLookup("localhost");

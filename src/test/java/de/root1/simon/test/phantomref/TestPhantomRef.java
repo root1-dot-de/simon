@@ -75,6 +75,7 @@ public class TestPhantomRef {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry();
+            r.start();
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("localhost");
 
@@ -167,6 +168,7 @@ public class TestPhantomRef {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry();
+            r.start();
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("127.0.0.1");
 

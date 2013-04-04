@@ -67,6 +67,8 @@ abstract class AbstractLookup implements Lookup {
     static final Map<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
     
     static final Monitor monitorCompleteShutdown = new Monitor();
+    
+    private CustomEncryption customEncryption;
 
     /**
      * A simple container class that relates the dispatcher to a session
@@ -203,7 +205,8 @@ abstract class AbstractLookup implements Lookup {
                 dispatcher = new Dispatcher(serverString, getClassLoader(), Simon.getThreadPool());
 
                 // an executor service for handling the message reading in a threadpool
-                ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
+                ExecutorService filterchainWorkerPool = null;
+//                filterchainWorkerPool = new OrderedThreadPoolExecutor();
 
                 IoConnector connector = new NioSocketConnector();
                 connector.setHandler(dispatcher);
@@ -235,6 +238,11 @@ abstract class AbstractLookup implements Lookup {
 
                 if (logger.isTraceEnabled()) {
                     filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
+                }
+                
+                // add encryption filter if available
+                if (getCustomEncryption()!=null) {
+                    filters.add(new FilterEntry("customencryption", new CustomEncryptionFilter(getCustomEncryption())));
                 }
 
                 // don't use a threading model on filter level
@@ -301,7 +309,9 @@ abstract class AbstractLookup implements Lookup {
                     }
                     connector.dispose();
                     dispatcher.shutdown();
-                    filterchainWorkerPool.shutdown();
+                    if (filterchainWorkerPool!=null) {
+                        filterchainWorkerPool.shutdown();
+                    }
 
                     throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ".", e);
                 }
@@ -314,7 +324,9 @@ abstract class AbstractLookup implements Lookup {
                 } else {
                     connector.dispose();
                     dispatcher.shutdown();
-                    filterchainWorkerPool.shutdown();
+                    if (filterchainWorkerPool!=null) {
+                        filterchainWorkerPool.shutdown();
+                    }
                     throw new EstablishConnectionFailed("Could not establish connection to " + connectionTarget + ". Maybe host or network is down?");
                 }
 
@@ -385,7 +397,9 @@ abstract class AbstractLookup implements Lookup {
                         public void operationComplete(IoFuture future) {
                             
                             // shutdown threads/executors in filterchain once the session has been closed
-                            ctsc.getFilterchainWorkerPool().shutdown();
+                            if (ctsc.getFilterchainWorkerPool()!=null) {
+                                ctsc.getFilterchainWorkerPool().shutdown();
+                            }
                             // dispose the MINA connector
                             ctsc.getConnector().dispose();
                             
@@ -409,5 +423,13 @@ abstract class AbstractLookup implements Lookup {
         
         return result;
     }
+    
+    public void setCustomEncryption(CustomEncryption ce) {
+        this.customEncryption = ce;
+    }
 
+    public CustomEncryption getCustomEncryption() {
+        return customEncryption;
+    }
+    
 }

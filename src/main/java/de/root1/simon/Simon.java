@@ -856,7 +856,7 @@ public class Simon {
         // if the above worked, save the class' name
         Simon.protocolFactoryClassName = protocolFactoryClassName;
     }
-
+    
     /**
      * Returns the current set class name for the protocol codec factory
      *

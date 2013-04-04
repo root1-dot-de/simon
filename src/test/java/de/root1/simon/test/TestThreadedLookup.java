@@ -24,6 +24,7 @@ public class TestThreadedLookup {
 
         logger.info("Creating registry");
         registry = Simon.createRegistry(22223);
+        registry.start();
         registry.bind("roi", roi);
 
         Thread[] threads = new Thread[TESTING_THREADS];

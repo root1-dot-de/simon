@@ -88,4 +88,7 @@ public interface Lookup {
      * @return true, in case of a normal and clean release. false if remoteobject is already released
      */
     boolean release(Object remoteObject);
+    
+    public void setCustomEncryption(CustomEncryption ce);
+    public CustomEncryption getCustomEncryption();
 }

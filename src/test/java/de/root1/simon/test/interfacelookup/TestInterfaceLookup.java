@@ -54,6 +54,7 @@ public class TestInterfaceLookup {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(22222);
+            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
