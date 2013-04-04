@@ -92,7 +92,17 @@ public final class Registry {
     private ClassLoader classLoader = getClass().getClassLoader();
     
     private CustomEncryption customEncryption;
+    
+    /**
+     * started flag
+     * @since 1.2.0
+     */
     private boolean started;
+    
+    /**
+     * stopped flag
+     * @since 1.2.0
+     */
     private boolean stopped;
 
     /**
@@ -105,13 +115,7 @@ public final class Registry {
      * @throws IOException if there are problems with creating the mina socketserver
      */
     protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
-        logger.debug("begin");
-        this.address = address;
-        this.port = port;
-        this.threadPool = threadPool;
-        this.protocolFactoryClassName = protocolFactoryClassName;
-        start();
-        logger.debug("end");
+        this(address, port, threadPool, protocolFactoryClassName, null);
     }
 
     /**
