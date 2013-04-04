@@ -56,6 +56,7 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
+            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -88,6 +89,7 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
+            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -128,6 +130,7 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
+            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -168,6 +171,7 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
+            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -223,6 +227,7 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
+            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");

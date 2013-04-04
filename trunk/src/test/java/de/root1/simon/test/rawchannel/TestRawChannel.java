@@ -59,6 +59,7 @@ public class TestRawChannel {
     public void setUp() {
         try {
             registry = Simon.createRegistry(InetAddress.getLocalHost(), 2000);
+            registry.start();
             logger.info("Registry created");
             RawChannelServerImpl rcsi = new RawChannelServerImpl();
             registry.bind(BIND_NAME, rcsi);

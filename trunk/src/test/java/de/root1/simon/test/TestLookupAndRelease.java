@@ -54,6 +54,7 @@ public class TestLookupAndRelease {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(33333);
+            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -114,6 +115,7 @@ public class TestLookupAndRelease {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
             r = Simon.createRegistry();
+            r.start();
             r.bind("roi", roi);
 
             for (int i=0;i<20;i++) {
