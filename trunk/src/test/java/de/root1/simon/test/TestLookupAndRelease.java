@@ -85,6 +85,7 @@ public class TestLookupAndRelease {
 
             RemoteObjectImpl roi2 = new RemoteObjectImpl();
             Registry r2 = Simon.createRegistry(33333);
+            r2.start();
             r2.bind("roi2", roi2);
             Lookup lookup2 = Simon.createNameLookup("localhost", 33333);
 
