@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package de.root1.simon.samples.rawchannelstream.server;
 
 import de.root1.simon.Registry;
@@ -11,10 +6,6 @@ import de.root1.simon.exceptions.NameBindingException;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
-/**
- *
- * @author ACHR
- */
 public class Server {
 
     public static void main(String[] args) {

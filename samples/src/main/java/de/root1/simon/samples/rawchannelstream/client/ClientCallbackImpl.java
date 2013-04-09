@@ -1,23 +1,11 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package de.root1.simon.samples.rawchannelstream.client;
 
 import de.root1.simon.RawChannelInputStream;
 import de.root1.simon.Simon;
 import de.root1.simon.annotation.SimonRemote;
 import de.root1.simon.samples.rawchannelstream.shared.ClientCallback;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-/**
- *
- * @author ACHR
- */
 @SimonRemote(value={ClientCallback.class})
 public class ClientCallbackImpl implements ClientCallback {
 
