@@ -1,8 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package de.root1.simon.samples.rawchannelstream.client;
 
 import de.root1.simon.Lookup;
@@ -13,10 +8,6 @@ import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.samples.rawchannelstream.shared.MyServer;
 import java.io.IOException;
 
-/**
- *
- * @author ACHR
- */
 public class Client {
 
     public static void main(String[] args) {
