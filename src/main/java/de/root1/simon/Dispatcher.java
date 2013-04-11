@@ -317,7 +317,15 @@ public class Dispatcher implements IoHandler {
 
                 // prevent sending a client callback-proxy from server back to client
                 if (Utils.isSimonProxy(args[i])) {
-                    throw new SimonException("Given method parameter no# " + (i + 1) + " is a local endpoint of a remote object. Endpoints can not be transferred.");
+  
+                    // issue #94
+                    SimonProxy sp = (SimonProxy) args[i];
+                    SimonEndpointReference ser = new SimonEndpointReference(sp);
+                    logger.debug("Argument {} is a SimonProxy/Local Endpoint. Sending: {}", i, ser);
+                    args[i] = ser;
+                    
+                    // old (<1.2.0) behavior
+//                    throw new SimonException("Given method parameter no# " + (i + 1) + " is a local endpoint of a remote object. Endpoints can not be transferred.");
                 }
 
                 if (Utils.isValidRemote(args[i])) {
