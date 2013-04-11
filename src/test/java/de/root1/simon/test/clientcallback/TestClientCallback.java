@@ -103,11 +103,17 @@ public class TestClientCallback {
             roiRemote.setCallback(cci);
             
             try {
-                roiRemote.getCallback();
-                throw new AssertionError("sending local endpoints should throw an exception");
+                ClientCallback callback = roiRemote.getCallback();
+                logger.info(">>>>>>>>>>>>>>>>>>>> Saying Hello");
+                System.out.flush();
+                callback.sayHello();
+                System.out.flush();
+                logger.info("<<<<<<<<<<<<<<<<<<<< Saying Hello *DONE*");
+                logger.info("Got callback back from server --> SUCCESS");
+                        
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.info("Got exception: "+e+" --> SUCCESS");
+                throw new AssertionError("sending local endpoints should work");
             }
             
             r.unbind("roi");

@@ -385,7 +385,7 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     /**
-     * This method is processed on the remote end that finally calls the method
+     * This method is processed on the remote end (where the object to call lives) that finally calls the method
      * and returns the result to the calling end.
      */
     private void processInvoke() {
@@ -426,6 +426,16 @@ public class ProcessMessageRunnable implements Runnable {
                 try {
                     for (int i = 0; i < arguments.length; i++) {
 
+                        // search the arguments for remote endpoint references
+                        if (arguments[i] instanceof SimonEndpointReference) {
+                            
+                            SimonEndpointReference ser = (SimonEndpointReference) arguments[i];
+                            logger.debug("SimonEndpointReference in args found: ", ser);
+                            arguments[i] = dispatcher.getLookupTable().getRemoteObjectContainer(ser.getRemoteObjectName()).getRemoteObject();
+                            logger.debug("Original object for SimonEndpointReference injected: "+arguments[i]);
+                            
+                        }
+                        
                         // search the arguments for remote instances
                         if (arguments[i] instanceof SimonRemoteInstance) {
 
@@ -465,11 +475,6 @@ public class ProcessMessageRunnable implements Runnable {
                 if (arguments != null && arguments.length != 0) {
                     for (int i = 0; i < arguments.length; i++) {
                         logger.error("***** arguments[" + i + "]: " + (arguments[i] == null ? "null" : arguments[i].getClass().getCanonicalName()) + " toString: " + (arguments[i] == null ? "null" : arguments[i].toString()));
-//                        if (arguments[i]!=null) {
-//                            for (Method m : arguments[i].getClass().getMethods()){
-//                                logger.error("***** arguments[" + i + "] has method: {}",m);
-//                            }
-//                        }
                     }
                 } else {
                     logger.error("***** no arguments available.");
@@ -478,7 +483,6 @@ public class ProcessMessageRunnable implements Runnable {
                 Class<?>[] paramType = method.getParameterTypes();
                 if (paramType != null && paramType.length != 0) {
                     for (int i = 0; i < paramType.length; i++) {
-//                        logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getClass().getCanonicalName()));
                         logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getCanonicalName()));
                     }
                 } else {
@@ -491,18 +495,20 @@ public class ProcessMessageRunnable implements Runnable {
 
                 logger.error("***** method signature: {}", method.toString());
                 logger.error("***** generic method signature: {}", method.toGenericString());
+                logger.error("***** Error stacktrace:\n{}",Utils.getStackTraceAsString(ex));
                 logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
-                ex.printStackTrace();
                 throw ex;
             }
-//            catch (Throwable ex) {
-//                result = Utils.getRootCause(ex);
-//                System.err.println("undeclared throwable exception: root cause: "+result);
-//            }
 
             // check for re-transmitting callback
             if (Utils.isSimonProxy(result)) {
-                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
+
+                
+                SimonProxy sp = Simon.getSimonProxy(result);
+                SimonEndpointReference ser = new SimonEndpointReference(sp);
+                logger.debug("Result of method is SimonProxy/Local Endpoint. Sending: {}", ser);
+                result = ser;
+//                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
             }
             
             // check for normal remote objects?!

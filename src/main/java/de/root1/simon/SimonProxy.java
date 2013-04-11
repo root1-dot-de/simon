@@ -170,6 +170,14 @@ public class SimonProxy implements InvocationHandler {
             throw (Throwable) result;
         }
 
+        if (result instanceof SimonEndpointReference) {
+            
+            SimonEndpointReference ser = (SimonEndpointReference) result;
+            result = dispatcher.getLookupTable().getRemoteObjectContainer(ser.getRemoteObjectName()).getRemoteObject();
+            logger.debug("Result of method {} is a {}. Injecting original object: {}", new Object[]{method, ser, result});
+            
+        }
+        else
         // TODO 20110429 Check if this block can be moved to ProcessMessageRunnable#processInvokeReturn()
         if (result instanceof SimonRemoteInstance) {
 
