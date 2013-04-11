@@ -129,6 +129,49 @@ public class TestClientCallback {
     }
     
     @Test
+    public void testSendCallbackBackToRemote() {
+        try {
+
+            logger.info("Begin ...");
+            RemoteObjectImpl roi = new RemoteObjectImpl();
+
+            Registry r = Simon.createRegistry(PORT);
+            r.start();
+            r.bind("roi", roi);
+
+            logger.info("bound roi to registry ...");
+            Lookup lookup = Simon.createNameLookup("localhost", PORT);
+
+            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
+
+            try {
+                logger.info("roi lookup done");
+                Session sessionObject = roiRemote.getSessionObject();
+                logger.info("Client got session from server: session#{}",sessionObject.getId());
+                logger.info(">>>>>>>>>>>>>>>>>>>> sending session back");
+                System.out.flush();
+                roiRemote.setSessionObject(sessionObject);
+                System.out.flush();
+                logger.info("<<<<<<<<<<<<<<<<<<<< sending session back *DONE*");
+            
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw new AssertionError("sending local endpoints should work", e);
+            }
+            
+            r.unbind("roi");
+            logger.info("unbind of roi done");
+            r.stop();
+            logger.info("registry stopped");
+
+            assert true;
+
+        } catch (Exception ex) {
+            throw new AssertionError(ex);
+        }
+    }
+    
+    @Test
     public void testSendCallbackViaCallback() {
         try {
 
@@ -151,10 +194,10 @@ public class TestClientCallback {
             
             try {
                 roiRemote.sendCallbackViaCallback();
-                throw new AssertionError("sending local endpoints should throw an exception");
+                logger.info("sendCallbackViaCallback --> SUCCESS");
             } catch (Exception e) {
                 e.printStackTrace();
-                logger.info("Got exception: "+e+" --> SUCCESS");
+                throw new AssertionError("sending local endpoints should not throw an exception");
             }
 
             r.unbind("roi");

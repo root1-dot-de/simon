@@ -17,6 +17,9 @@ public interface RemoteObject {
     
     public RemoteObject getRemoteObject();
     
+    public Session getSessionObject();
+    public void setSessionObject(Session s);
+    
     public boolean testEquals(ClientCallback clientCallback);
     
 }
