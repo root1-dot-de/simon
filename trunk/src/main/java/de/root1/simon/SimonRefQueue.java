@@ -20,6 +20,7 @@ package de.root1.simon;
 
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
+import de.root1.simon.utils.Utils;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;
@@ -102,7 +103,11 @@ public class SimonRefQueue <T extends SimonPhantomRef> extends ReferenceQueue<T>
 
     private void sendRelease(SimonPhantomRef ref) {
         try {
-            dispatcher.sendReleaseRef(ref.getSession(), ref.getRefId());
+            if (ref.getSession().isConnected()) {
+                dispatcher.sendReleaseRef(ref.getSession(), ref.getRefId());
+            } else {
+                logger.debug("Sending release for ref {} not possible due to closed session {}.", ref, Utils.longToHexString(ref.getSession().getId()));
+            }
         } catch (SimonException ex) {
             logger.warn("Not able to send a 'release ref' for "+ref, ex);
         } catch (SessionException ex) {
