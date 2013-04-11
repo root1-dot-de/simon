@@ -319,7 +319,7 @@ public class LookupTable implements LookupTableMBean {
      * name
      *
      * @param remoteObjectName the name of the object we are interested in
-     * @return the remote object
+     * @return the remote object container
      * @throws LookupFailedException if remote object is not available in lookup
      * table
      */
