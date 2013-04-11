@@ -319,7 +319,7 @@ public class Dispatcher implements IoHandler {
                 if (Utils.isSimonProxy(args[i])) {
   
                     // issue #94
-                    SimonProxy sp = (SimonProxy) args[i];
+                    SimonProxy sp = Simon.getSimonProxy(args[i]);
                     SimonEndpointReference ser = new SimonEndpointReference(sp);
                     logger.debug("Argument {} is a SimonProxy/Local Endpoint. Sending: {}", i, ser);
                     args[i] = ser;
