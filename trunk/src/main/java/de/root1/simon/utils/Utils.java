@@ -36,7 +36,9 @@ import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.IllegalRemoteObjectException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -47,30 +49,35 @@ import java.util.Stack;
 import org.xml.sax.SAXException;
 
 /**
- * 
+ *
  * A class with some static helper-methods
- * 
+ *
  * @author ACHR
  */
 public class Utils {
-    
+
     private final static Logger logger = LoggerFactory.getLogger(Utils.class);
     /**
-     * if this flag is set to TRUE, SIMON tries to load the java.util.logging properties and enabled the debug-mode
-     * @deprecated use JVM argument "java.util.logging.config.file=./log/mylogconfig.properties"
+     * if this flag is set to TRUE, SIMON tries to load the java.util.logging
+     * properties and enabled the debug-mode
+     *
+     * @deprecated use JVM argument
+     * "java.util.logging.config.file=./log/mylogconfig.properties"
      */
     public static boolean DEBUG = false;
     /**
-     * A map that memories some method hashes so that they need not to be re-generated each time the hash is used.
-     * If memory is getting short, some entries are gc'ed so that more memory is available. There is no need to
+     * A map that memories some method hashes so that they need not to be
+     * re-generated each time the hash is used. If memory is getting short, some
+     * entries are gc'ed so that more memory is available. There is no need to
      * clear the map ourselves.
      */
     private static final WeakHashMap<Method, Long> methodHashes = new WeakHashMap<Method, Long>();
 
     /**
      * Compute the "method hash" of a remote method. The method hash is a long
-     * containing the first 64 bits of the SHA digest from the bytes representing
-     * the complete method signature.
+     * containing the first 64 bits of the SHA digest from the bytes
+     * representing the complete method signature.
+     *
      * @param m the method for which the hash has to be computed
      * @return the computed hash
      */
@@ -123,28 +130,24 @@ public class Utils {
     /**
      * Loads a protocol codec factory by a given classname
      *
-     * @param protocolFactory
-     *            a class name like
-     *            "com.mydomain.myproject.codec.mySimonProtocolCodecFactory"
-     *            which points to a class, that extends
-     *            {@link SimonProtocolCodecFactory}. <i>The important thing is,
-     *            that this class correctly overrides
-     *            {@link SimonProtocolCodecFactory#setup(boolean)}. For further
-     *            details, look at {@link SimonProtocolCodecFactory}!</i>
-     * @return the protocolcodecfactory instance according to the given protocol factory class name
-     * @throws IllegalAccessException
-     *             if the class or its nullary constructor is not accessible.
-     * @throws InstantiationException
-     *             if this Class represents an abstract class, an interface, an
-     *             array class, a primitive type, or void; or if the class has
-     *             no nullary constructor; or if the instantiation fails for
-     *             some other reason.
-     * @throws ClassNotFoundException
-     *             if the class is not found by the classloader. if so, please
-     *             check your classpath.
-     * @throws ClassCastException
-     *             if the given class is no instance of
-     *             {@link SimonProtocolCodecFactory}
+     * @param protocolFactory a class name like
+     * "com.mydomain.myproject.codec.mySimonProtocolCodecFactory" which points
+     * to a class, that extends {@link SimonProtocolCodecFactory}. <i>The
+     * important thing is, that this class correctly overrides
+     * {@link SimonProtocolCodecFactory#setup(boolean)}. For further details,
+     * look at {@link SimonProtocolCodecFactory}!</i>
+     * @return the protocolcodecfactory instance according to the given protocol
+     * factory class name
+     * @throws IllegalAccessException if the class or its nullary constructor is
+     * not accessible.
+     * @throws InstantiationException if this Class represents an abstract
+     * class, an interface, an array class, a primitive type, or void; or if the
+     * class has no nullary constructor; or if the instantiation fails for some
+     * other reason.
+     * @throws ClassNotFoundException if the class is not found by the
+     * classloader. if so, please check your classpath.
+     * @throws ClassCastException if the given class is no instance of
+     * {@link SimonProtocolCodecFactory}
      */
     public static SimonProtocolCodecFactory getProtocolFactoryInstance(String protocolFactory)
             throws ClassNotFoundException, InstantiationException,
@@ -182,6 +185,7 @@ public class Utils {
 
     /**
      * Converts a boolean value to a byte value.
+     *
      * @param bool
      * @return 0xFF if true, 0x00 if false
      */
@@ -210,12 +214,14 @@ public class Utils {
     }
 
     /**
-     * Method that returns an Class<?> array containing all remote interfaces of a given class
+     * Method that returns an Class<?> array containing all remote interfaces of
+     * a given class
+     *
      * @param clazz the class to analyse for remote interfaces
      * @return the array with all known remote interfaces
      */
     public static Class<?>[] findAllRemoteInterfaces(Class<?> clazz) {
-        
+
         Set<Class<?>> interfaceSet = doFindAllRemoteInterfaces(clazz);
 
         Class<?>[] interfaces = new Class[interfaceSet.size()];
@@ -227,28 +233,29 @@ public class Utils {
 
     /**
      * Internal helper method for finding remote interfaces
+     *
      * @param clazz the class to analyse for remote interfaces
      * @return a set with remote interfaces
      */
     private static Set<Class<?>> doFindAllRemoteInterfaces(Class<?> clazz) {
         Set<Class<?>> interfaceSet = new HashSet<Class<?>>();
 
-        if (clazz==null) {
+        if (clazz == null) {
             return interfaceSet;
         }
-        
-        String type = (clazz.isInterface()?"interface":"class");
-        
+
+        String type = (clazz.isInterface() ? "interface" : "class");
+
         // check for annotation in clazz
         SimonRemote annotation = clazz.getAnnotation(SimonRemote.class);
         if (annotation != null) {
-            
+
             logger.trace("SimonRemote annotation found for {} {}", type, clazz.getName());
-            
+
             // check for remote interfaces specified in the SimonRemote annotation
             Class[] remoteInterfaces = annotation.value();
-            
-            if (remoteInterfaces!=null && remoteInterfaces.length>0) {
+
+            if (remoteInterfaces != null && remoteInterfaces.length > 0) {
                 /*
                  * found some specified remote interfaces in the annotation's value field. 
                  * Use them and return
@@ -257,8 +264,8 @@ public class Utils {
                 for (Class<?> interfaze : remoteInterfaces) {
                     interfaceSet.add((Class<?>) interfaze);
                 }
-                
-            } else { 
+
+            } else {
                 /*
                  * there is no interfaces specified with the annotation's value field. 
                  * Using all visible interfaces in from the initial class as a remote interface.
@@ -267,63 +274,65 @@ public class Utils {
                 for (Class<?> interfaze : clazz.getInterfaces()) {
                     interfaceSet.add((Class<?>) interfaze);
                 }
-                
+
             }
-            
+
         } else { // deeper search
-            
+
             logger.trace("No SimonRemote annotation found for {} {}. Searching for interfaces that extend SimonRemote Marker or use SimonRemote Annotation.", type, clazz.getName());
             /*
              * There's no initial annotation
              * Need to search for a Interface in any superclass/superinterface that extends SimonRemote
              */
-            
+
             // go through all interfaces
             for (Class<?> interfaze : clazz.getInterfaces()) {
-                
+
                 // check interfaces for remote
                 if (interfaze.isAnnotationPresent(SimonRemote.class)) {
                     // interface is annotated
                     interfaceSet.add((Class<?>) interfaze);
-                    
+
                 } else if (de.root1.simon.SimonRemote.class.isAssignableFrom(interfaze)) {
                     // interfaces extends SimonRemote marker interface
                     interfaceSet.add((Class<?>) interfaze);
-                    
+
                 } else {
                     // no remote interface found
                     // checking for super interface
                     interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));
                 }
-                
+
             }
-            
+
             // check also super classes
             if (clazz.getSuperclass() != null && !clazz.getSuperclass().equals(Object.class)) {
                 interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
             }
-            
+
             // check all interfaces ...
             Class<?>[] interfaces = clazz.getInterfaces();
             for (Class<?> interfaze : interfaces) {
-                
+
                 // ... for annotation
                 if (interfaze.isAnnotationPresent(SimonRemote.class) || de.root1.simon.SimonRemote.class.isAssignableFrom(interfaze)) {
                     interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze));
                 }
-                
+
                 // ... and superclasses
-                if (interfaze.getSuperclass()!=null) {
-                    interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));    
+                if (interfaze.getSuperclass() != null) {
+                    interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));
                 }
             }
-            
+
         }
         return interfaceSet;
     }
 
     /**
-     * Checks whether the object is annotated with <code>SimonRemote</code> or not
+     * Checks whether the object is annotated with
+     * <code>SimonRemote</code> or not
+     *
      * @param remoteObject the object to check
      * @return true, if object is annotated, false if not
      */
@@ -333,10 +342,11 @@ public class Utils {
         }
         return remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
     }
-    
+
     /**
-     * Returns the value of the <code>SimonRemote</code> annotation.
-     * 
+     * Returns the value of the
+     * <code>SimonRemote</code> annotation.
+     *
      * @param remoteObject the object to query
      * @return the annotation value
      * @throws IllegalArgumentException in case of remoteObject==null
@@ -349,29 +359,29 @@ public class Utils {
     }
 
     /**
-     * Checks if the given remote object is a valid remote object.
-     * Checks for:
+     * Checks if the given remote object is a valid remote object. Checks for:
      * <ul>
      * <li>SimonRemote annotation</li>
      * <li>SimonRemoteMarker proxy</li>
      * <li>implements SimonRemote</li>
      * </ul>
-     * 
+     *
      * @param remoteObject the object to check
      * @return true, if remote object is valid, false if not
-     * @throws IllegalRemoteObjectException thrown in case of a faulty remote object (ie. missing interfaces)
+     * @throws IllegalRemoteObjectException thrown in case of a faulty remote
+     * object (ie. missing interfaces)
      */
     public static boolean isValidRemote(Object remoteObject) {
-        
+
         if (remoteObject == null) {
             return false;
         }
         if (isRemoteAnnotated(remoteObject)) {
-            
-            if (remoteObject.getClass().getInterfaces().length>0 || getRemoteAnnotationValue(remoteObject).length>0) {
+
+            if (remoteObject.getClass().getInterfaces().length > 0 || getRemoteAnnotationValue(remoteObject).length > 0) {
                 return true;
             } else {
-                throw new IllegalRemoteObjectException("There is no interface with the remote object of type '"+remoteObject.getClass().getCanonicalName()+"' linked. Add a 'value' parameter with array of interfaces (at least one interface) to the SimonRemote annotation, or let the class implement an interface");
+                throw new IllegalRemoteObjectException("There is no interface with the remote object of type '" + remoteObject.getClass().getCanonicalName() + "' linked. Add a 'value' parameter with array of interfaces (at least one interface) to the SimonRemote annotation, or let the class implement an interface");
             }
         }
         if (getMarker(remoteObject) != null) {
@@ -382,10 +392,10 @@ public class Utils {
         }
         return false;
     }
-    
+
     /**
      * Checks if given object is a simon proxy.
-     * 
+     *
      * @param o object to check
      * @return true, if object is a simon proxy, false if not
      */
@@ -396,16 +406,18 @@ public class Utils {
             if (invocationHandler instanceof SimonProxy) {
                 logger.trace("Yeeha. It's a SimonProxy ...");
                 return true;
-            } 
-        } 
+            }
+        }
         return false;
     }
 
     /**
-     * Returns the related instance of {@link SimonRemoteMarker} of the given object.
-     * if the specified object isn't marked, null is returned.
+     * Returns the related instance of {@link SimonRemoteMarker} of the given
+     * object. if the specified object isn't marked, null is returned.
+     *
      * @param o
-     * @return the related instance of {@link SimonRemoteMarker}, or null if given object is not marked
+     * @return the related instance of {@link SimonRemoteMarker}, or null if
+     * given object is not marked
      */
     public static SimonRemoteMarker getMarker(Object o) {
         if (o instanceof Proxy) {
@@ -418,7 +430,9 @@ public class Utils {
     }
 
     /**
-     * Small helper method that pushes all interfaces of the specified class to the specified stack
+     * Small helper method that pushes all interfaces of the specified class to
+     * the specified stack
+     *
      * @param stack
      * @param clazz
      */
@@ -430,7 +444,9 @@ public class Utils {
     }
 
     /**
-     * Reads all interfaces and subinterfaces of the given object and add the names to the provided interface name list
+     * Reads all interfaces and subinterfaces of the given object and add the
+     * names to the provided interface name list
+     *
      * @param object the object to search for interfaces
      * @param interfaceNames the list to which found interfaces names are added
      */
@@ -449,8 +465,8 @@ public class Utils {
     }
 
     /**
-     * Returns the stacktrace of the given throwable as a string.
-     * String will be the same as "e.printStackTrace();" woulld print to console
+     * Returns the stacktrace of the given throwable as a string. String will be
+     * the same as "e.printStackTrace();" woulld print to console
      *
      * @param e
      * @return the exceptions stacktrace as a string
@@ -463,48 +479,47 @@ public class Utils {
     }
 
     /**
-     * Looks up and returns the root cause of an exception. If none is found, returns
-     * supplied Throwable object unchanged. If root is found, recursively "unwraps" it,
-     * and returns the result to the caller.
-     * 
+     * Looks up and returns the root cause of an exception. If none is found,
+     * returns supplied Throwable object unchanged. If root is found,
+     * recursively "unwraps" it, and returns the result to the caller.
+     *
      * @param th
-     * @return the exceptions root-cause, if available, otherwise th will be returned unchanged
+     * @return the exceptions root-cause, if available, otherwise th will be
+     * returned unchanged
      */
     public static Throwable getRootCause(Throwable th) {
         if (th instanceof SAXException) {
-          SAXException sax = (SAXException) th;
-          if (sax.getException() != null) {
-              return getRootCause(sax.getException());
-          }
-      }
-      else if (th instanceof SQLException) {
-          SQLException sql = (SQLException) th;
-          if (sql.getNextException() != null) {
-              return getRootCause(sql.getNextException());
-          }
-      }
-      else if (th.getCause() != null) {
-          return getRootCause(th.getCause());
-      }
+            SAXException sax = (SAXException) th;
+            if (sax.getException() != null) {
+                return getRootCause(sax.getException());
+            }
+        } else if (th instanceof SQLException) {
+            SQLException sql = (SQLException) th;
+            if (sql.getNextException() != null) {
+                return getRootCause(sql.getNextException());
+            }
+        } else if (th.getCause() != null) {
+            return getRootCause(th.getCause());
+        }
 
-      return th;
+        return th;
     }
-    
+
     /**
      * Retrieve object hash code and applies a supplemental hash function to the
-     * result hash, which defends against poor quality hash functions.  This is
+     * result hash, which defends against poor quality hash functions. This is
      * critical because HashMap uses power-of-two length hash tables, that
-     * otherwise encounter collisions for hashCodes that do not differ
-     * in lower bits. Note: Null keys always map to hash 0, thus index 0.
+     * otherwise encounter collisions for hashCodes that do not differ in lower
+     * bits. Note: Null keys always map to hash 0, thus index 0.
      */
     public static final int hash(Object object) {
-        
-        if (object==null) {
+
+        if (object == null) {
             return 0;
         }
-        
+
         int hash = 0;
-        
+
         hash ^= object.hashCode();
 
         // This function ensures that hashCodes that differ only by
@@ -514,4 +529,61 @@ public class Utils {
         return hash ^ (hash >>> 7) ^ (hash >>> 4);
     }
 
+    /**
+     * Check whether the current VM is a Android DalvikVM or not
+     *
+     * @return true, is applications runs on Androids DalvikVM, false if not
+     */
+    private static boolean isDalvikVM() {
+
+        // java.vm.specification.name=Dalvik Virtual Machine Specification
+        // AND
+        // java.vm.vendor=The Android Project
+
+        if (System.getProperty("java.vm.specification.name", "").equals("Dalvik Virtual Machine Specification")
+                && System.getProperty("java.vm.vendor", "").equals("The Android Project")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * see MBeanServer#registerMBean(Object, ObjectName)
+     * This is a workaround to be able to run the code also on android, where the MBeanServer is not available
+     * @return true, if registration succeeds, false if not
+     */
+    public static boolean registerMBean(Object o, String objectNameOfMBean) {
+
+        if (isDalvikVM()) {
+            logger.info("Running on Android. Skipping registration on MBeanServer for [{}]", objectNameOfMBean);
+            return false;
+        }
+
+        try {
+            // ManagementFactory#getPlatformMBeanServer()
+            String cnManagementFactory = "java.lang.management.ManagementFactory";
+            String mnGetPlatformMBeanServer = "getPlatformMBeanServer";
+            Class<?> cManagementFactory = Class.forName(cnManagementFactory);
+            Method mGetPlatformMBeanServer = cManagementFactory.getDeclaredMethod(mnGetPlatformMBeanServer);
+            Object oMBeanServer = mGetPlatformMBeanServer.invoke(null);
+
+            // create ObjectName object
+            String cnObjectName = "javax.management.ObjectName";
+            Class<?> cObjectName = Class.forName(cnObjectName);
+            Constructor<?> constructor = cObjectName.getConstructor(new Class<?>[]{String.class});
+            Object oObjectName = constructor.newInstance(objectNameOfMBean);
+
+            // MBeanServer#registerMBean(this, ObjectName)
+            String cnMBeanServer = "javax.management.MBeanServer";
+            String mnRegisterMBean = "registerMBean";
+            Class<?> cMBeanServer = Class.forName(cnMBeanServer);
+            Method mRegisterMBean = cMBeanServer.getMethod(mnRegisterMBean, new Class<?>[]{Object.class, cObjectName});
+            mRegisterMBean.invoke(oMBeanServer, new Object[]{o, oObjectName});
+            return true;
+        } catch (Throwable t) {
+            logger.warn("Cannot register ["+objectNameOfMBean+"] on MBeanServer.", t);
+            return false;
+        }
+    }
 }
