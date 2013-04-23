@@ -20,7 +20,8 @@ package de.root1.simon;
 
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.utils.Utils;
-import java.lang.management.ManagementFactory;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -32,12 +33,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,37 +108,16 @@ public class LookupTable implements LookupTableMBean {
     protected LookupTable(Dispatcher dispatcher) {
         this.dispatcher = dispatcher;
         Simon.registerLookupTable(this);
-            
-        try {
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            
-            ObjectName name = new ObjectName("de.root1.simon:"
-                    + "type="+MBEAN_TYPE
-                    + ","
-                    + "subType="+(dispatcher.getServerString()==null?MBEAN_SUBTYPE_SERVER:MBEAN_SUBTYPE_CLIENT)
-                    + ","
-                    + "instance="+MBEAN_TYPE+"@"+hashCode()
-                    );
-            mbs.registerMBean(this, name);
-            
-        } catch (InstanceAlreadyExistsException ex) {
-            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
-        } catch (MBeanRegistrationException ex) {
-            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
-        } catch (NotCompliantMBeanException ex) {
-            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
-        } catch (MalformedObjectNameException ex) {
-            logger.warn("This instance of LookupTable is already registerd with JMX: "+toString(), ex);
-        } catch (Throwable t) {
-            /*
-             * this additional "catch" is used to catch exception when running 
-             * on android, where the mbean server is not available.
-             */
-            logger.warn("Can't use JMX.", t);
-        }
-        
+           
+        String objectNameOfMBean = "de.root1.simon:"
+                + "type="+MBEAN_TYPE
+                + ","
+                + "subType="+(dispatcher.getServerString()==null?MBEAN_SUBTYPE_SERVER:MBEAN_SUBTYPE_CLIENT)
+                + ","
+                + "instance="+MBEAN_TYPE+"@"+hashCode();
+        Utils.registerMBean(this, objectNameOfMBean);
     }
-
+    
     /**
      * Saves a remote object in the lookup table for later reference
      *
@@ -664,5 +638,7 @@ public class LookupTable implements LookupTableMBean {
         return list;
         
     }
+
+
 
 }
