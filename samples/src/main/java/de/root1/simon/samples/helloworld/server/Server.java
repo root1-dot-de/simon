@@ -5,7 +5,7 @@
 
 package de.root1.simon.samples.helloworld.server;
 
-import de.root1.jasypt.test.JasypSimon;
+import de.root1.simon.jasypt.JasyptSimonPBE;
 import java.io.IOException;
 import java.net.UnknownHostException;
 
@@ -24,7 +24,7 @@ public class Server {
       // create the server's registry ...
       Registry registry = Simon.createRegistry(22222);
       registry.start();
-      registry.setCustomEncryption(new JasypSimon("DonaldDuck"));
+      registry.setCustomEncryption(new JasyptSimonPBE("DonaldDuck"));
       
       registry.start();
 
