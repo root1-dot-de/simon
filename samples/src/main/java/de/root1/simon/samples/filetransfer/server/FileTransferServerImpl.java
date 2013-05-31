@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.root1.simon.samples.filetransfer.server;
 
 import de.root1.simon.filetransmit.DefaultFileReceiver;
@@ -17,16 +13,9 @@ import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author achristian
- */
 @SimonRemote(value = {FileTransferServer.class})
 public class FileTransferServerImpl implements FileTransferServer {
     
-        /**
-     * The logger used for this class
-     */
     private final static Logger logger = LoggerFactory.getLogger(FileTransferServerImpl.class);
 
 
@@ -36,6 +25,8 @@ public class FileTransferServerImpl implements FileTransferServer {
         
         ft = new DefaultFileReceiver();
         ft.setDownloadFolder(new File("/home/achristian/Downloads"));
+        
+        // optional step, can be skipped if you don't want to track the progress
         ft.addProgressListener(new FileReceiverProgressListener() {
 
             @Override
