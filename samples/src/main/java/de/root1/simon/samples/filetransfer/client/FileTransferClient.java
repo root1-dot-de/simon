@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package de.root1.simon.samples.filetransfer.client;
 
 import de.root1.simon.filetransmit.DefaultFileSender;
@@ -31,7 +27,7 @@ public class FileTransferClient {
         // connect file sender with file receiver
         DefaultFileSender fs = new DefaultFileSender(fileReceiver);
         
-        
+        // optional step, can be skipped if you don't want to track the progress
         fs.addProgressListener(new FileSenderProgressListener() {
 
             @Override
