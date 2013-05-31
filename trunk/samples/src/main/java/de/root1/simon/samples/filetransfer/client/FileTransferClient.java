@@ -17,15 +17,8 @@ import java.net.UnknownHostException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- *
- * @author achristian
- */
 public class FileTransferClient {
     
-    /**
-     * The logger used for this class
-     */
     private final static Logger logger = LoggerFactory.getLogger(FileTransferClient.class);
     
     
@@ -35,7 +28,7 @@ public class FileTransferClient {
         System.out.println("Connected");
         FileReceiver fileReceiver = server.getFileReceiver();
         
-        
+        // connect file sender with file receiver
         DefaultFileSender fs = new DefaultFileSender(fileReceiver);
         
         
@@ -68,6 +61,7 @@ public class FileTransferClient {
         fs.sendFile(new File("/home/achristian/Arbeitsfläche/xyz.dat"), true);
         System.out.println("done");
         
+        // dont't forget to close, otherwise the send-thread will continue idle'ing around
         fs.close();
         
                 
