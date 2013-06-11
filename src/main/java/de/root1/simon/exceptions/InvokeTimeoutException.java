@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2013 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -21,6 +21,7 @@ package de.root1.simon.exceptions;
 /**
  * Exception thrown when an invoke-request takes too much time and exceeds the invoke timeout
  * @author achristian
+ * @since 1.2.0
  */
 public class InvokeTimeoutException extends SimonRemoteException {
 
