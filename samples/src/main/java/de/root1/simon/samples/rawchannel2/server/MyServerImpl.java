@@ -9,6 +9,7 @@ import de.root1.simon.RawChannel;
 import de.root1.simon.Simon;
 import de.root1.simon.annotation.SimonRemote;
 import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.exceptions.RawChannelException;
 import de.root1.simon.samples.rawchannel2.shared.ClientCallback;
 import de.root1.simon.samples.rawchannel2.shared.MyServer;
 import java.io.FileInputStream;
@@ -51,6 +52,8 @@ public class MyServerImpl implements MyServer {
         } catch (FileNotFoundException ex) {
             ex.printStackTrace();
         } catch (IOException ex) {
+            ex.printStackTrace();
+        } catch (RawChannelException ex) {
             ex.printStackTrace();
         }
     }
