@@ -35,6 +35,7 @@ public class FileReceiver implements RawChannelDataListener {
 
 
 
+    @Override
     public void write(ByteBuffer data) {
         try {
             System.out.println("   received file data: "+data);
@@ -44,6 +45,7 @@ public class FileReceiver implements RawChannelDataListener {
         }
     }
 
+    @Override
     public void close() {
         try {
             fc.close();

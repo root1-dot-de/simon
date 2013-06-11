@@ -18,17 +18,20 @@
  */
 package de.root1.simon.test.rawchannel;
 
+import de.root1.simon.RawChannel;
 import de.root1.simon.*;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.exceptions.RawChannelException;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Random;
+import java.util.logging.Level;
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -177,6 +180,10 @@ public class TestRawChannel {
         } catch (IOException ex) {
             throw new AssertionError("A unexcepted IOException occured which should not be the case in test case.");
         } catch (EstablishConnectionFailed ex) {
+            throw new AssertionError("Establishing connection failed during test run ...");
+        } catch (IllegalStateException ex) {
+            throw new AssertionError("Establishing connection failed during test run ...");
+        } catch (RawChannelException ex) {
             throw new AssertionError("Establishing connection failed during test run ...");
         }
         logger.info("test done");

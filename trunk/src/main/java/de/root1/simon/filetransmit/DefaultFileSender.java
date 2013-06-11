@@ -125,15 +125,15 @@ public class DefaultFileSender {
                 for (FileSenderProgressListener listener : getListenersCopy()) {
                     listener.completed(id, f);
                 }
+                if (rawChannel != null) {
+                    rawChannel.close();
+                }
 
             } catch (Exception ex) {
                 for (FileSenderProgressListener listener : getListenersCopy()) {
                     listener.aborted(id, f, ex);
                 }
             } finally {
-                if (rawChannel != null) {
-                    rawChannel.close();
-                }
             }
             logger.debug("ID={} Sending done", id);
         }

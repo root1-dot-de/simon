@@ -18,9 +18,14 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.exceptions.RawChannelException;
+import de.root1.simon.RawChannel;
+import de.root1.simon.exceptions.SimonRemoteException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * OutputStream wrapper for SIMON RawChannel
@@ -41,17 +46,29 @@ public class RawChannelOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        rawChannel.write(ByteBuffer.wrap(new byte[]{(byte)b}));
+        try {
+            rawChannel.write(ByteBuffer.wrap(new byte[]{(byte)b}));         
+        } catch (SimonRemoteException | RawChannelException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        rawChannel.write(ByteBuffer.wrap(b));
+        try {
+            rawChannel.write(ByteBuffer.wrap(b));
+        } catch (SimonRemoteException | RawChannelException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        rawChannel.write(ByteBuffer.wrap(b, off, len));
+        try {
+            rawChannel.write(ByteBuffer.wrap(b, off, len));
+        } catch (SimonRemoteException | RawChannelException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -61,7 +78,11 @@ public class RawChannelOutputStream extends OutputStream {
 
     @Override
     public void close() throws IOException {
-        rawChannel.close();
+        try {
+            rawChannel.close();
+        } catch (SimonRemoteException | RawChannelException ex) {
+            throw new IOException(ex);
+        }
     }
     
 }
