@@ -27,12 +27,15 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -59,6 +62,11 @@ public class Simon {
      * @since 1.2.0
      */
     public final static int DEFAULT_PORT = 4753;
+    
+    /**
+     * Map holding custom invoke timeouts for specific remote methods (including callbacks).
+     */
+    private static final Map<Method, Integer> customInvokeTimeoutMap = new HashMap<Method, Integer>();
 
     static {
         String property = System.getProperty("de.root1.simon.debug", "false");
@@ -1085,4 +1093,33 @@ public class Simon {
         }
         throw new IllegalStateException("Method must be invoked within a remote-call-implementation!");
     }
+   
+    /**
+     * Sets a custom invoke timeout for a remote method
+     * 
+     * @param method Method for which the custom timeout should be set
+     * @param timeout timeout in milliseconds. A value &lt;= 0 resets to default.
+     */
+    public static void setCustomInvokeTimeout(Method method, int timeout) {
+        if (timeout>0) {
+            customInvokeTimeoutMap.put(method, timeout);
+        } else {
+            customInvokeTimeoutMap.remove(method);
+        }
+    }
+    
+    /**
+     * Returns custom invoke timeout for specific remote method.
+     * 
+     * @param method remote method
+     * @return value &gt; 0 defines custome timeout in milliseconds, value &lt;=0 defines default timeout
+     */
+    static int getCustomInvokeTimeout(Method method) {
+        Integer customTimeout = customInvokeTimeoutMap.get(method);
+        if (customTimeout==null || customTimeout.intValue()<=0)
+            return 0;
+        
+        return customTimeout.intValue();
+    }
+
 }
