@@ -19,6 +19,7 @@
 package de.root1.simon;
 
 import de.root1.simon.codec.messages.*;
+import de.root1.simon.exceptions.InvokeTimeoutException;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
 import de.root1.simon.exceptions.SimonException;
@@ -349,8 +350,13 @@ public class Dispatcher implements IoHandler {
         session.write(msgInvoke);
 
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
-
-        waitForResult(session, monitor);
+        int customWaitTimeout = Simon.getCustomInvokeTimeout(method);
+        
+        if (customWaitTimeout>0) {
+            waitForResult(session, monitor, customWaitTimeout);
+        } else {        
+            waitForResult(session, monitor);
+        }
 
         MsgInvokeReturn result = (MsgInvokeReturn) getRequestResult(sequenceId);
 
@@ -494,18 +500,35 @@ public class Dispatcher implements IoHandler {
      * @param monitor the monitor related to the request
      */
     private void waitForResult(IoSession session, final SequenceMonitor monitor) {
+        // wait at most 1hr
+        // 60min: 60min * 60sec * 1000ms = 3600000ms
+        waitForResult(session, monitor, 3600000);
+    }
+    
+    /**
+     * Waits at most <code>timeout</code> ms for the result of request described by the
+     * monitor. If result is not present within this time, a
+     * SimonRemoteException will be placed as the result. This is to ensure that
+     * the client cannot wait forever for a result.
+     *
+     * @param session the session on which the request was placed
+     * @param monitor the monitor related to the request
+     * @param timeout timeout for waiting for result
+     */
+    private void waitForResult(IoSession session, final SequenceMonitor monitor, int timeout) {
         int sequenceId = monitor.getSequenceId();
         int counter = 0;
 
         // wait for result
         long startWaiting = System.currentTimeMillis();
+        
+        // just make sure that the while-loop cannot wait forever for the result
+        long waitLoopCount = timeout / Statics.MONITOR_WAIT_TIMEOUT;
+        
         while (!isRequestResultPresent(sequenceId)) {
 
-            // just make sure that the while-loop cannot wait forever for the result
-            // 60min: 60min * 60sec * 1000ms = 3600000ms
-            // 3600000ms / 200ms = 18000 loops with 200ms wait time
-            if (counter++ == 18000) {
-                putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
+            if (counter++ == waitLoopCount) {
+                putResultToQueue(session, sequenceId, new InvokeTimeoutException("Waited too long for invocation result."));
             }
 
             if (monitor.waitForSignal(Statics.MONITOR_WAIT_TIMEOUT)) {
@@ -532,6 +555,9 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("sequenceId={} msg={}", sequenceId, o);
 
+        
+        boolean isResultForOutstandingRequest=false;
+        
         // remove the sequenceId from the map/list of open requests
         synchronized (sessionHasRequestPlaced) {
 
@@ -540,26 +566,38 @@ public class Dispatcher implements IoHandler {
             // check if there is already a list with requests for this session
             List<Integer> requestListForSession = sessionHasRequestPlaced.get(session);
 
-            assert requestListForSession != null;
+            if (requestListForSession!=null) {
+                
+                synchronized (requestListForSession) {
+                    
+                    if (requestListForSession.contains(sequenceId)) {
+                        requestListForSession.remove((Integer) sequenceId);
 
-            synchronized (requestListForSession) {
-                assert requestListForSession.contains(sequenceId);
-                requestListForSession.remove((Integer) sequenceId);
-                // if there is no more request open, remove the session from the list
-                if (requestListForSession.isEmpty()) {
-                    sessionHasRequestPlaced.remove(session);
+                        // if there is no more request open, remove the session from the list
+                        if (requestListForSession.isEmpty()) {
+                            sessionHasRequestPlaced.remove(session);
+                        }
+                        isResultForOutstandingRequest=true;
+                    } else {
+                        logger.debug("Session {} and sequenceId {} do currently not wait for a result.", Utils.longToHexString(session.getId()), sequenceId);
+                    }
+                    
                 }
+                
+            } else {
+                logger.warn("Session {} has no outstanding requests. Result no longer awaited?", Utils.longToHexString(session.getId()));
             }
 
-
         }
-
-        // retrieve monitor
-        SequenceMonitor monitor = (SequenceMonitor) requestMonitorAndResultMap.get(sequenceId);
-        // replace monitor with result
-        requestMonitorAndResultMap.put(sequenceId, o);
-        monitor.signal();
-
+        if (isResultForOutstandingRequest) {
+            // retrieve monitor
+            SequenceMonitor monitor = (SequenceMonitor) requestMonitorAndResultMap.get(sequenceId);
+            // replace monitor with result
+            requestMonitorAndResultMap.put(sequenceId, o);
+            monitor.signal();
+        } else {
+            logger.warn("Result '{}' for session {} and sequenceId {} dropped.", new Object[]{o,Utils.longToHexString(session.getId()),sequenceId});
+        }
         logger.debug("end");
     }
 
