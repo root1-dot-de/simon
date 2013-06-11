@@ -18,6 +18,8 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.exceptions.RawChannelException;
+import de.root1.simon.Dispatcher;
 import java.nio.ByteBuffer;
 
 import org.apache.mina.core.session.IoSession;
@@ -103,8 +105,9 @@ public class RawChannel {
      *
      * @throws IllegalStateException if the channel is already closed.
      * @throws SimonRemoteException
+     * @throws RawChannelException if the remote {@link RawChannelDataListener#write(java.nio.ByteBuffer)} has problems writing.
      */
-    public void write(ByteBuffer byteBuffer) throws IllegalStateException, SimonRemoteException {
+    public void write(ByteBuffer byteBuffer) throws IllegalStateException, SimonRemoteException, RawChannelException {
         if (channelOpen) {
             logger.trace("token={}. channel open. forwarding to dispatcher ...", channelToken);
             dispatcher.writeRawData(session, channelToken, byteBuffer);
@@ -119,8 +122,9 @@ public class RawChannel {
      * also closes the raw channel. So after calling this method, each write()
      * call fails!
      * @throws SimonRemoteException
+     * @throws RawChannelException if the remote {@link RawChannelDataListener#close()} has problems closing.
      */
-    public void close() throws SimonRemoteException {
+    public void close() throws SimonRemoteException, RawChannelException {
         dispatcher.closeRawChannel(session, channelToken);
         channelOpen = false;
     }

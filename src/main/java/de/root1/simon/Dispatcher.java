@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.exceptions.RawChannelException;
 import de.root1.simon.codec.messages.*;
 import de.root1.simon.exceptions.InvokeTimeoutException;
 import de.root1.simon.exceptions.LookupFailedException;
@@ -995,6 +996,10 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("got answer for sequenceId={}", sequenceId);
         logger.debug("end sequenceId={}", sequenceId);
+        
+        if (result.hasError()) {
+            throw new SimonRemoteException(result.getErrorMsg());
+        }
 
         if (result.getReturnValue() == true) {
             logger.debug("Creating RawChannel object with token={}", channelToken);
@@ -1074,7 +1079,7 @@ public class Dispatcher implements IoHandler {
      *
      * @param channelToken
      */
-    protected void unprepareRawChannel(int channelToken) {
+    protected void unprepareRawChannel(int channelToken) throws RawChannelException {
         logger.debug("token={}", channelToken);
         releaseToken(channelToken);
         synchronized (rawChannelMap) {
@@ -1091,7 +1096,7 @@ public class Dispatcher implements IoHandler {
      * @param byteBuffer
      * @throws SimonRemoteException
      */
-    protected void writeRawData(IoSession session, int channelToken, ByteBuffer byteBuffer) throws SimonRemoteException {
+    protected void writeRawData(IoSession session, int channelToken, ByteBuffer byteBuffer) throws SimonRemoteException, RawChannelException {
         checkForInvalidState(session, "writeRawData()");
 
         final int sequenceId = generateSequenceId();
@@ -1111,8 +1116,13 @@ public class Dispatcher implements IoHandler {
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
         waitForResult(session, monitor);
-//		MsgRawChannelDataReturn result = (MsgRawChannelDataReturn) getRequestResult(sequenceId);			
-        getRequestResult(sequenceId); //retrieve the return msg to remove the monitor etc.
+
+        //retrieve the return msg to remove the monitor etc.
+        MsgRawChannelDataReturn requestResult = (MsgRawChannelDataReturn) getRequestResult(sequenceId); 
+        
+        if (requestResult.hasError()) {
+            throw new RawChannelException(requestResult.getErrorMsg());
+        }
 
         logger.debug("end. got ack for data send for sequenceId={} and channelToken={}", sequenceId, channelToken);
     }
@@ -1123,7 +1133,7 @@ public class Dispatcher implements IoHandler {
      * @param session the related IoSession
      * @param channelToken the related channel token
      */
-    protected void closeRawChannel(IoSession session, int channelToken) throws SimonRemoteException {
+    protected void closeRawChannel(IoSession session, int channelToken) throws SimonRemoteException, RawChannelException {
         checkForInvalidState(session, "closeRawChannel()");
 
         final int sequenceId = generateSequenceId();
@@ -1148,11 +1158,15 @@ public class Dispatcher implements IoHandler {
         logger.debug("got answer for sequenceId={}", sequenceId);
         logger.debug("end sequenceId={}", sequenceId);
 
+        if (result.hasError()) {
+            throw new RawChannelException(result.getErrorMsg());
+        }
+        
         if (result.getReturnValue() == true) {
             return;
         }
 
-        throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
+        throw new SimonRemoteException("channel could not be closed. Maybe token was wrong?!");
     }
 
     /**

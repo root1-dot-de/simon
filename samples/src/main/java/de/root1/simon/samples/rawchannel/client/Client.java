@@ -10,6 +10,7 @@ import de.root1.simon.Simon;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.exceptions.RawChannelException;
 import de.root1.simon.samples.rawchannel.shared.RawChannelServer;
 import java.io.File;
 import java.io.FileInputStream;
@@ -84,6 +85,8 @@ public class Client {
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (EstablishConnectionFailed ex) {
+            ex.printStackTrace();
+        } catch (RawChannelException ex) {
             ex.printStackTrace();
         }
 

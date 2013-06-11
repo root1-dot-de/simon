@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import de.root1.simon.exceptions.RawChannelException;
 import de.root1.simon.codec.messages.*;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
@@ -32,6 +33,7 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.logging.Level;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -67,10 +69,10 @@ public class ProcessMessageRunnable implements Runnable {
     public void run() {
 
         logger.debug("ProcessMessageRunnable: {} on sessionId {}", abstractMessage, Utils.longToHexString(session.getId()));
-        
+
         ProcessMessageThread currentThread = (ProcessMessageThread) Thread.currentThread();
         currentThread.setSessionId(session.getId());
-        
+
         int msgType = abstractMessage.getMsgType();
 
         switch (msgType) {
@@ -158,7 +160,7 @@ public class ProcessMessageRunnable implements Runnable {
             case SimonMessageConstants.MSG_ERROR:
                 processError();
                 break;
-                
+
             case SimonMessageConstants.MSG_RELEASE_REF:
                 processReleaseRef();
                 break;
@@ -230,19 +232,24 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     private void processCloseRawChannel() {
-        logger.debug("begin");
-
-        logger.debug("processing MsgCloseRawChannel...");
-        MsgCloseRawChannel msg = (MsgCloseRawChannel) abstractMessage;
-
-        dispatcher.unprepareRawChannel(msg.getChannelToken());
-
         MsgCloseRawChannelReturn returnMsg = new MsgCloseRawChannelReturn();
-        returnMsg.setSequence(msg.getSequence());
-        returnMsg.setReturnValue(true);
-        session.write(returnMsg);
+        try {
+            logger.debug("begin");
 
-        logger.debug("end");
+            logger.debug("processing MsgCloseRawChannel...");
+            MsgCloseRawChannel msg = (MsgCloseRawChannel) abstractMessage;
+
+            dispatcher.unprepareRawChannel(msg.getChannelToken());
+
+            returnMsg.setSequence(msg.getSequence());
+            returnMsg.setReturnValue(true);
+        } catch (RawChannelException ex) {
+            logger.warn("Error occured during RawChannelDataListener#close()", ex);
+            returnMsg.setErrorMsg(ex.getMessage());
+        } finally {
+            session.write(returnMsg);
+            logger.debug("end");
+        }
     }
 
     private void processCloseRawChannelReturn() {
@@ -255,26 +262,32 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     private void processRawChannelData() {
-        logger.debug("begin");
+        MsgRawChannelDataReturn returnMsg = new MsgRawChannelDataReturn();
+        try {
+            logger.debug("begin");
 
-        logger.debug("processing MsgRawChannelData...");
-        MsgRawChannelData msg = (MsgRawChannelData) abstractMessage;
+            logger.debug("processing MsgRawChannelData...");
+            MsgRawChannelData msg = (MsgRawChannelData) abstractMessage;
 
-        RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
-        if (rawChannelDataListener != null) {
-            logger.debug("writing data to {} for token {}.", rawChannelDataListener, msg.getChannelToken());
-            ByteBuffer data = msg.getData();
-            data.flip();
-            rawChannelDataListener.write(data);
-            logger.debug("data forwarded to listener for token {}", msg.getChannelToken());
-            MsgRawChannelDataReturn returnMsg = new MsgRawChannelDataReturn();
-            returnMsg.setSequence(msg.getSequence());
+            RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
+            if (rawChannelDataListener != null) {
+                logger.debug("writing data to {} for token {}.", rawChannelDataListener, msg.getChannelToken());
+                ByteBuffer data = msg.getData();
+                data.flip();
+                rawChannelDataListener.write(data);
+                logger.debug("data forwarded to listener for token {}", msg.getChannelToken());
+                returnMsg.setSequence(msg.getSequence());
+            } else {
+                logger.error("trying to forward data to a not registered or already closed listener: token={} data={}", msg.getChannelToken(), msg.getData());
+            }
+
+        } catch (RawChannelException ex) {
+            logger.warn("Error occured during RawChannelDataListener#write()", ex);
+            returnMsg.setErrorMsg(ex.getMessage());
+        } finally {
             session.write(returnMsg);
-        } else {
-            logger.error("trying to forward data to a not registered or already closed listener: token={} data={}", msg.getChannelToken(), msg.getData());
+            logger.debug("end");
         }
-
-        logger.debug("end");
     }
 
     /**
@@ -385,8 +398,9 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     /**
-     * This method is processed on the remote end (where the object to call lives) that finally calls the method
-     * and returns the result to the calling end.
+     * This method is processed on the remote end (where the object to call
+     * lives) that finally calls the method and returns the result to the
+     * calling end.
      */
     private void processInvoke() {
         logger.debug("begin");
@@ -428,14 +442,14 @@ public class ProcessMessageRunnable implements Runnable {
 
                         // search the arguments for remote endpoint references
                         if (arguments[i] instanceof SimonEndpointReference) {
-                            
+
                             SimonEndpointReference ser = (SimonEndpointReference) arguments[i];
                             logger.debug("SimonEndpointReference in args found: ", ser);
                             arguments[i] = dispatcher.getLookupTable().getRemoteObjectContainer(ser.getRemoteObjectName()).getRemoteObject();
-                            logger.debug("Original object for SimonEndpointReference injected: "+arguments[i]);
-                            
+                            logger.debug("Original object for SimonEndpointReference injected: " + arguments[i]);
+
                         }
-                        
+
                         // search the arguments for remote instances
                         if (arguments[i] instanceof SimonRemoteInstance) {
 
@@ -495,7 +509,7 @@ public class ProcessMessageRunnable implements Runnable {
 
                 logger.error("***** method signature: {}", method.toString());
                 logger.error("***** generic method signature: {}", method.toGenericString());
-                logger.error("***** Error stacktrace:\n{}",Utils.getStackTraceAsString(ex));
+                logger.error("***** Error stacktrace:\n{}", Utils.getStackTraceAsString(ex));
                 logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
                 throw ex;
             }
@@ -503,17 +517,17 @@ public class ProcessMessageRunnable implements Runnable {
             // check for re-transmitting callback
             if (Utils.isSimonProxy(result)) {
 
-                
+
                 SimonProxy sp = Simon.getSimonProxy(result);
                 SimonEndpointReference ser = new SimonEndpointReference(sp);
                 logger.debug("Result of method is SimonProxy/Local Endpoint. Sending: {}", ser);
                 result = ser;
 //                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
             }
-            
+
             // check for normal remote objects?!
             if (dispatcher.getLookupTable().isSimonRemoteRegistered(result)) {
-                throw new SimonException("Result '"+result+"' of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
+                throw new SimonException("Result '" + result + "' of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
             }
 
             if (method.getReturnType() == void.class) {
@@ -740,7 +754,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("Removing ref for {} on session {}", msg.getRefId(), session.getId());
         dispatcher.getLookupTable().removeCallbackRef(session.getId(), msg.getRefId());
-        
+
         logger.debug("end");
     }
 }
