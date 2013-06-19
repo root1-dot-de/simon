@@ -191,7 +191,7 @@ public class TestLookupAndRelease {
                         server.helloWorldArg(Thread.currentThread().getName());
                         logger.info("Thread {} called method", name);
                         try {
-                            long sleeptime = ii*10000;
+                            long sleeptime = ii*2000;
                             logger.info("Thread {} sleeping for {} ms ...", name, sleeptime);
                             Thread.sleep(sleeptime);
                         } catch (InterruptedException ex) {
