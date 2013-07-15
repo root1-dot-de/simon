@@ -31,7 +31,6 @@ import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.utils.SimonClassLoaderHelper;
-import de.root1.simon.utils.Utils;
 
 /**
  * A {@link MessageDecoder} that decodes {@link MsgInvokeReturn}.

@@ -26,9 +26,18 @@ public class SimonClassLoaderHelper {
     }
 
     /**
-     * Returns best possible classloader for the specified <code>caller</code> class.
-     * If <code>specialClassloader</code> is also specified, the CL search algorith starts the search with this one, instead of <code>caller</code>
-     * 
+     * Returns best possible classloader for the specified
+     * <code>caller</code> class. Best means:
+     *
+     * Ensure that the returning CL is the CL at the best possible bottom, so
+     * that class loading requests wil be processed from absolut bottom to the
+     * absolute top (system CL). This guarantees that no CL is cut off in CL hierarchie
+     *
+     * If
+     * <code>specialClassloader</code> is also specified, the CL search algorith
+     * starts the search with this one, instead of
+     * <code>caller</code>
+     *
      * @param caller
      * @param specialClassLoader
      * @return ClassLoader

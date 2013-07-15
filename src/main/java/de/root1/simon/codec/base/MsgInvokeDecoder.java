@@ -19,11 +19,13 @@
 package de.root1.simon.codec.base;
 
 import de.root1.simon.LookupTable;
+import de.root1.simon.Simon;
 import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgError;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.SimonMessageConstants;
+import de.root1.simon.utils.SimonClassLoaderHelper;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import org.apache.mina.core.buffer.IoBuffer;
@@ -71,7 +73,7 @@ public class MsgInvokeDecoder extends AbstractMessageDecoder {
             Object[] args = new Object[argsLength];
             for (int i = 0; i < argsLength; i++) {
                 try {
-                    args[i] = in.getObject();
+                    args[i] = in.getObject(SimonClassLoaderHelper.getClassLoader(Simon.class));
                 } catch (Exception ex) {
                     Exception ex1 = new Exception("Problem reading method argument. Maybe argument isn't serializable?!");
                     ex1.initCause(ex.getCause());
