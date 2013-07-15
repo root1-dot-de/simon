@@ -18,12 +18,13 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.utils.Utils;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
 import org.apache.mina.core.session.IoSession;
 
 /**
+ * Phantom Reference for SIMON callback remote objects. With help of that, user
+ * must not release callback object. This is done automatically.
  *
  * @author achristian
  * @since 1.2.0
@@ -32,13 +33,13 @@ public class SimonPhantomRef<T extends SimonProxy> extends PhantomReference<T> {
 
     private String refId;
     private final IoSession session;
-    
+
     public SimonPhantomRef(T referent, ReferenceQueue<? super T> q) {
         super(referent, q);
         refId = referent.getRemoteObjectName();
         session = referent.getIoSession();
     }
-    
+
     String getRefId() {
         return refId;
     }
@@ -51,5 +52,4 @@ public class SimonPhantomRef<T extends SimonProxy> extends PhantomReference<T> {
     public String toString() {
         return "SimonPhantomRef{" + "refId=" + refId + ", session=" + session + '}';
     }
-    
 }
