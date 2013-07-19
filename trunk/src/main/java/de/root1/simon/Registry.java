@@ -341,14 +341,15 @@ public final class Registry {
      * @throws NameBindingException
      *             if there are problems binding the remoteobject to the
      *             registry
+     * @throws IllegalStateException if registry is not yet started or already stopped
      */
     public void bind(String name, Object remoteObject) throws NameBindingException {
         
         if (!started) {
-            throw new IllegalArgumentException("Registry not yet started.");
+            throw new IllegalStateException("Registry not yet started.");
         }
         if (stopped) {
-            throw new IllegalArgumentException("Registry already stopped.");
+            throw new IllegalStateException("Registry already stopped.");
         }
         
         if (!Utils.isValidRemote(remoteObject)) {
