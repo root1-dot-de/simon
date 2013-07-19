@@ -18,6 +18,8 @@
  */
 package de.root1.simon;
 
+import java.util.Arrays;
+
 /**
  *
  * A simple class that builds a 3-tupel of
@@ -81,6 +83,39 @@ public class RemoteObjectContainer {
         this.remoteObjectInterfaces = remoteObjectInterfaces;
     }
 
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + (this.remoteObject != null ? this.remoteObject.hashCode() : 0);
+        hash = 97 * hash + (this.remoteObjectName != null ? this.remoteObjectName.hashCode() : 0);
+        hash = 97 * hash + Arrays.deepHashCode(this.remoteObjectInterfaces);
+        return hash;
+    }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final RemoteObjectContainer other = (RemoteObjectContainer) obj;
+        if (this.remoteObject != other.remoteObject && (this.remoteObject == null || !this.remoteObject.equals(other.remoteObject))) {
+            return false;
+        }
+        if ((this.remoteObjectName == null) ? (other.remoteObjectName != null) : !this.remoteObjectName.equals(other.remoteObjectName)) {
+            return false;
+        }
+        if (!Arrays.deepEquals(this.remoteObjectInterfaces, other.remoteObjectInterfaces)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return "RemoteObjectContainer{" + "remoteObject=" + remoteObject + ", remoteObjectName=" + remoteObjectName + ", remoteObjectInterfaces=" + remoteObjectInterfaces + "}@"+hashCode();
+    }
 
 }

@@ -134,7 +134,11 @@ public class LookupTable implements LookupTableMBean {
         RemoteObjectContainer roc = new RemoteObjectContainer(remoteObject, remoteObjectName, remoteObject.getClass().getInterfaces());
         bindings.put(remoteObjectName, roc);
 
-        remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+        logger.debug("Put {} to remoteObject_to_hashToMethod_Map", remoteObject);
+        Map<Long, Method> put = remoteObject_to_hashToMethod_Map.put(remoteObject, computeMethodHashMap(remoteObject.getClass()));
+        if (put!=null) {
+            logger.error("remoteobject {} already existed int remoteObject_to_hashToMethod_Map");
+        }
         logger.debug("end");
     }
 
@@ -149,7 +153,7 @@ public class LookupTable implements LookupTableMBean {
     private void addRemoteObjectToSet(Object remoteObject) {
         int hashCode = remoteObject.hashCode();
         remoteobjectSet.add(remoteObject);
-        logger.trace("Adding simon remote {} with hash={}", remoteObject, hashCode);
+        logger.trace("Adding remote object {} with hash={}", remoteObject, hashCode);
     }
 
     
@@ -205,9 +209,10 @@ public class LookupTable implements LookupTableMBean {
                 RemoteRefContainer ref = sessionMap.get(refId);
                 
                 if (ref!=null) {
+                    int oldCount = ref.getRefCount();;
                     int newCount = ref.removeRef();
                     
-                    logger.debug("new count for ref {} is: {}", refId, newCount);
+                    logger.debug("new count for ref {} is: {}; was: {}", new Object[]{refId, newCount, oldCount});
                     
                     if (newCount==0) {
                         sessionMap.remove(refId);
@@ -325,14 +330,19 @@ public class LookupTable implements LookupTableMBean {
         logger.debug("name={}", name);
 
         synchronized (bindings) {
-            Object remoteObject = bindings.remove(name);
+            RemoteObjectContainer remoteObjectContainer = bindings.remove(name);
 
             // remoteObject may be null in case of multithreaded access
             // to Simon#unbind() and thus releaseRemoteBinding()
-            if (remoteObject != null) {
+            if (remoteObjectContainer != null) {
+                Object remoteObject = remoteObjectContainer.getRemoteObject();
                 logger.debug("cleaning up [{}]", remoteObject);
                 removeRemoteObjectFromSet(remoteObject);
-                remoteObject_to_hashToMethod_Map.remove(remoteObject);
+                logger.debug("Removing {} from remoteObject_to_hashToMethod_Map", remoteObject);
+                Map<Long, Method> remove = remoteObject_to_hashToMethod_Map.remove(remoteObject);
+                if (remove==null) {
+                    logger.error("Object {} NOT removed from remoteObject_to_hashToMethod_Map. ROC={}", remoteObject, remoteObjectContainer);
+                }
             } else {
                 logger.debug("[{}] already removed or not available. nothing to do.", name);
             }
@@ -349,8 +359,12 @@ public class LookupTable implements LookupTableMBean {
     private void removeRemoteObjectFromSet(Object remoteObject) {
         int hashCode = remoteObject.hashCode();
         logger.debug("remoteObject={} hash={} map={}", new Object[]{remoteObject, hashCode, remoteobjectSet});
-        remoteobjectSet.remove(remoteObject);
-        logger.trace("Removed remote object with hash={}", hashCode);
+        boolean removed = remoteobjectSet.remove(remoteObject);
+        assert removed;
+        if (!removed) {
+            logger.error("Object NOT removed!");
+        }
+        logger.trace("Removed remote object {} with hash={}; removed={}", new Object[]{remoteObject, hashCode, removed});
     }
 
     /**
