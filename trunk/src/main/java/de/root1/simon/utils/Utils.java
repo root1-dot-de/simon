@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2013 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -36,9 +36,9 @@ import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.IllegalRemoteObjectException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -72,6 +72,8 @@ public class Utils {
      * clear the map ourselves.
      */
     private static final WeakHashMap<Method, Long> methodHashes = new WeakHashMap<Method, Long>();
+    
+    private static final String SIMON_REMOTE_ANNOTATION_CLASSNAME = de.root1.simon.annotation.SimonRemote.class.getName();
 
     /**
      * Compute the "method hash" of a remote method. The method hash is a long
@@ -340,7 +342,25 @@ public class Utils {
         if (remoteObject == null) {
             throw new IllegalArgumentException("Cannot check a null-argument. You have to provide a proxy object instance ...");
         }
-        return remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
+        boolean isRemoteAnnotated = remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
+        
+        // if annotation is not found via current CL, try again with remoteobject's CL (but only if it's not the Bootstrap-CL (which means null)
+        // see: http://dev.root1.de/issues/173
+        if (!isRemoteAnnotated) {
+            
+            // get CL only once, as getting CL requires a native call --> avoid too many JNI calls
+            ClassLoader remoteObjectCL = remoteObject.getClass().getClassLoader();
+            
+            if (remoteObjectCL!=null) {
+                try {
+                    isRemoteAnnotated = remoteObject.getClass().isAnnotationPresent(
+                            (Class<? extends Annotation>) remoteObjectCL.loadClass(SIMON_REMOTE_ANNOTATION_CLASSNAME));
+                } catch (ClassNotFoundException ex) {
+                    // simply ignore
+                }
+            }
+        }
+        return isRemoteAnnotated;
     }
 
     /**
@@ -549,8 +569,10 @@ public class Utils {
     }
 
     /**
-     * see MBeanServer#registerMBean(Object, ObjectName)
-     * This is a workaround to be able to run the code also on android, where the MBeanServer is not available
+     * see MBeanServer#registerMBean(Object, ObjectName) This is a workaround to
+     * be able to run the code also on android, where the MBeanServer is not
+     * available
+     *
      * @return true, if registration succeeds, false if not
      */
     public static boolean registerMBean(Object o, String objectNameOfMBean) {
@@ -582,7 +604,7 @@ public class Utils {
             mRegisterMBean.invoke(oMBeanServer, new Object[]{o, oObjectName});
             return true;
         } catch (Throwable t) {
-            logger.warn("Cannot register ["+objectNameOfMBean+"] on MBeanServer.", t);
+            logger.warn("Cannot register [" + objectNameOfMBean + "] on MBeanServer.", t);
             return false;
         }
     }
