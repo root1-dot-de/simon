@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008 Alexander Christian <alex(at)root1.de>. All rights reserved.
+ * Copyright (C) 2013 Alexander Christian <alex(at)root1.de>. All rights reserved.
  * 
  * This file is part of SIMON.
  *
@@ -34,9 +34,9 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
 import de.root1.simon.exceptions.IllegalRemoteObjectException;
-import de.root1.simon.exceptions.SimonException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
@@ -67,6 +67,8 @@ public class Utils {
      * clear the map ourselves.
      */
     private static final WeakHashMap<Method, Long> methodHashes = new WeakHashMap<Method, Long>();
+
+    private static final String SIMON_REMOTE_ANNOTATION_CLASSNAME = de.root1.simon.annotation.SimonRemote.class.getName();
 
     /**
      * Compute the "method hash" of a remote method. The method hash is a long
@@ -274,7 +276,9 @@ public class Utils {
     }
 
     /**
-     * Checks whether the object is annotated with <code>SimonRemote</code> or not
+     * Checks whether the object is annotated with
+     * <code>SimonRemote</code> or not
+     *
      * @param remoteObject the object to check
      * @return true, if object is annotated, false if not
      */
@@ -282,7 +286,25 @@ public class Utils {
         if (remoteObject == null) {
             throw new IllegalArgumentException("Cannot check a null-argument. You have to provide a proxy object instance ...");
         }
-        return remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
+        boolean isRemoteAnnotated = remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
+        
+        // if annotation is not found via current CL, try again with remoteobject's CL (but only if it's not the Bootstrap-CL (which means null)
+        // see: http://dev.root1.de/issues/173
+        if (!isRemoteAnnotated) {
+            
+            // get CL only once, as getting CL requires a native call --> avoid too many JNI calls
+            ClassLoader remoteObjectCL = remoteObject.getClass().getClassLoader();
+            
+            if (remoteObjectCL!=null) {
+                try {
+                    isRemoteAnnotated = remoteObject.getClass().isAnnotationPresent(
+                            (Class<? extends Annotation>) remoteObjectCL.loadClass(SIMON_REMOTE_ANNOTATION_CLASSNAME));
+                } catch (ClassNotFoundException ex) {
+                    // simply ignore
+                }
+            }
+        }
+        return isRemoteAnnotated;
     }
     
     /**
