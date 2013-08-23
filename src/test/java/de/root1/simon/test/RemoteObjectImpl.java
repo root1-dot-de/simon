@@ -18,8 +18,6 @@
  */
 package de.root1.simon.test;
 
-import de.root1.simon.Simon;
-
 /**
  *
  * @author achristian
@@ -29,12 +27,12 @@ public class RemoteObjectImpl implements RemoteObject {
 
     @Override
     public void helloWorld(){
-        System.out.println("Hello World");
+//        System.out.println("Hello World");
     }
 
     @Override
     public void helloWorldArg(String s){
-        System.out.println("HelloWorldArg ["+s+"] on sessionID="+Simon.getSessionId());
+//        System.out.println("Hello WorldArg ["+s+"]");
     }
 
 }

@@ -15,7 +15,6 @@ import de.root1.simon.annotation.SimonRemote;
 public class RemoteObjectImpl implements RemoteObject {
 
     ClientCallback callback;
-    private int i;
     
     @Override
     public void setCallback(ClientCallback clientCallback) {
@@ -47,17 +46,5 @@ public class RemoteObjectImpl implements RemoteObject {
     @Override
     public RemoteObject getRemoteObject() {
         return this;
-    }
-
-    @Override
-    public Session getSessionObject() {
-        int id = i++;
-        System.out.println("Created session#"+id);
-        return new SessionImpl(id);
-    }
-
-    @Override
-    public void setSessionObject(Session s) {
-        System.out.println("got Session #"+s.getId()+" back from client");
     }
 }

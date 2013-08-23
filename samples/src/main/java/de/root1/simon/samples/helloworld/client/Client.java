@@ -2,10 +2,9 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package de.root1.simon.samples.helloworld.client;
 
-import de.root1.simon.jasypt.JasyptSimonPBE;
-import de.root1.simon.Lookup;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import java.io.IOException;
 
@@ -15,24 +14,21 @@ import de.root1.simon.samples.helloworld.shared.ServerInterface;
 
 public class Client {
 
-    public static void main(String[] args) throws IOException, LookupFailedException, EstablishConnectionFailed {
+   public static void main(String[] args) throws IOException, LookupFailedException, EstablishConnectionFailed {
 
-        // create a callback object
-        ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
-        
-        // 'lookup' the server object
-        Lookup nameLookup = Simon.createNameLookup("127.0.0.1", 22222);
-        nameLookup.setCustomEncryption(new JasyptSimonPBE("DonaldDuck"));
-        
-        ServerInterface server = (ServerInterface) nameLookup.lookup("server");
+      // create a callback object
+      ClientCallbackImpl clientCallbackImpl = new ClientCallbackImpl();
 
-        // use the serverobject as it would exist on your local machine
-        server.login(clientCallbackImpl);
+      // 'lookup' the server object
+      ServerInterface server = (ServerInterface) Simon.lookup("127.0.0.1", 22222, "server");
 
-        // do some more stuff
-        // ...
+      // use the serverobject as it would exist on your local machine
+      server.login(clientCallbackImpl);
 
-        // and finally 'release' the serverobject to release to connection to the server
-        nameLookup.release(server);
-    }
+      // do some more stuff
+      // ...
+
+      // and finally 'release' the serverobject to release to connection to the server
+      Simon.release(server);
+   }
 }

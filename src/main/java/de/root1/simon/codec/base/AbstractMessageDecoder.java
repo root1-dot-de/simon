@@ -106,18 +106,17 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
             out.write(m);
             return MessageDecoderResult.OK;
         } catch (Throwable t) {
-            logger.trace("Error while decoding message. Forwarding/returning error.", t);
+            
             // gather all available information an inform the remote side about the problem
             MsgError m = new MsgError();
             m.setErrorMessage("Error while decoding message. sequence="+sequence+" bodySize="+bodysize+" type="+(msgType==-1?"{unknown}":msgType));
             m.setRemoteObjectName(null);
             m.setThrowable(t);
-//            try {
-//                session.write(m);
-//            } catch (Throwable tt) {
-//                logger.warn("Not able to send error message to remote: "+m);
-//            }
-            out.write(m);
+            try {
+                session.write(m);
+            } catch (Throwable tt) {
+                logger.warn("Not able to send error message to remote: "+m);
+            }
             
         }
         

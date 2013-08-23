@@ -18,18 +18,13 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.codec.base.SimonProtocolCodecFactory;
-import de.root1.simon.exceptions.LookupFailedException;
-import de.root1.simon.exceptions.NameBindingException;
-import de.root1.simon.ssl.SslContextFactory;
-import de.root1.simon.utils.Utils;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ExecutorService;
+
 import javax.net.ssl.SSLContext;
+
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
@@ -39,6 +34,14 @@ import org.apache.mina.filter.ssl.SslFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.NameBindingException;
+import de.root1.simon.ssl.SslContextFactory;
+import de.root1.simon.utils.Utils;
+import java.net.ServerSocket;
+import java.nio.channels.ServerSocketChannel;
 
 /**
  * The SIMON server acts as a registry for remote objects. So, Registry is
@@ -53,57 +56,33 @@ public final class Registry {
      * TODO document me
      */
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
     /**
      * The address in which the registry is listening
      */
     private InetAddress address;
-    
     /**
      * The port on which the registry is listening
      */
     private int port;
-    
     /**
      * The Distaptcher for all incoming connections
      */
     private Dispatcher dispatcher;
-    
     /**
      * the socket acceptor
      */
     private IoAcceptor acceptor;
-    
     /** The pool in which the dispatcher, acceptor and registry lives */
     private ExecutorService threadPool;
-    
     /**
      * A thread pool for the filterchain => more performance
      */
     private ExecutorService filterchainWorkerPool;
-    
     /**
      * Name of the protocol factory to use
      */
     private String protocolFactoryClassName;
     private SslContextFactory sslContextFactory;
-    
-    // See: http://dev.root1.de/issues/127
-    private ClassLoader classLoader = getClass().getClassLoader();
-    
-    private CustomEncryption customEncryption;
-    
-    /**
-     * started flag
-     * @since 1.2.0
-     */
-    private boolean started;
-    
-    /**
-     * stopped flag
-     * @since 1.2.0
-     */
-    private boolean stopped;
 
     /**
      * Creates a registry
@@ -115,7 +94,13 @@ public final class Registry {
      * @throws IOException if there are problems with creating the mina socketserver
      */
     protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
-        this(address, port, threadPool, protocolFactoryClassName, null);
+        logger.debug("begin");
+        this.address = address;
+        this.port = port;
+        this.threadPool = threadPool;
+        this.protocolFactoryClassName = protocolFactoryClassName;
+        start();
+        logger.debug("end");
     }
 
     /**
@@ -135,132 +120,111 @@ public final class Registry {
         this.threadPool = threadPool;
         this.protocolFactoryClassName = protocolFactoryClassName;
         this.sslContextFactory = sslContextFactory;
+        start();
         logger.debug("end");
     }
 
     /**
-     * Starts the registry thread. After stopping, a registry cannot start again. 
-     * One need to create a new registry.
+     * Starts the registry thread
      *
      * @throws IOException
      *             if there's a problem getting a selector for the non-blocking
      *             network communication, or if the
      * @throws IllegalArgumentException if specified protocol codec cannot be used
-     * @throws IllegalStateException if registry is already started or has been stopped.
      */
-    public void start() throws IOException {
+    private void start() throws IOException {
 
-        if (stopped) {
-            throw new IllegalStateException("Stopped registry cannot start again.");
-        }
-        if (started) {
-            throw new IllegalStateException("Registry already started.");
-        }
-        try {
-            started = true;
-            logger.debug("begin");
+        logger.debug("begin");
 
-            dispatcher = new Dispatcher(null, classLoader, threadPool);
-            logger.debug("dispatcher created");
+        dispatcher = new Dispatcher(null, threadPool);
+        logger.debug("dispatcher created");
 
-            acceptor = new NioSocketAcceptor();
+        acceptor = new NioSocketAcceptor();
 
-            // currently this check is senseless. But in future we may provide more acceptor types?!
-            if (acceptor instanceof NioSocketAcceptor) {
-                NioSocketAcceptor nioSocketAcceptor = (NioSocketAcceptor) acceptor;
+        // currently this check is senseless. But in future we may provide more acceptor types?!
+        if (acceptor instanceof NioSocketAcceptor) {
+            NioSocketAcceptor nioSocketAcceptor = (NioSocketAcceptor) acceptor;
 
-                logger.debug("setting 'TcpNoDelay' on NioSocketAcceptor");
-                nioSocketAcceptor.getSessionConfig().setTcpNoDelay(true);
+            logger.debug("setting 'TcpNoDelay' on NioSocketAcceptor");
+            nioSocketAcceptor.getSessionConfig().setTcpNoDelay(true);
 
-                logger.debug("setting 'ReuseAddress' on NioSocketAcceptor");
-                nioSocketAcceptor.setReuseAddress(true);
+            logger.debug("setting 'ReuseAddress' on NioSocketAcceptor");
+            nioSocketAcceptor.setReuseAddress(true);
 
-                // FIXME workaround for http://dev.root1.de/issues/show/77
-                try {
-                    ServerSocketChannel channel = ServerSocketChannel.open();
-                    channel.configureBlocking(false);
-                    ServerSocket socket = channel.socket();
-                    int receiveBufferSize = socket.getReceiveBufferSize();
-                    try {socket.close(); channel.close();} catch (Exception e) {} // close the temporary socket and channel and ignore all errors
-                    logger.debug("setting 'ReceiveBufferSize' on NioSocketAcceptor to {}", receiveBufferSize);
-                    nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
-                } catch (IOException ex) {
-                    logger.debug("Not able to get readbuffersize from a default NIO socket. Error: {}", ex.getMessage());
-                    if (nioSocketAcceptor.getSessionConfig().getReadBufferSize()==1024 && System.getProperty("os.name").equals("Windows 7")) {
-                        logger.warn("Server may have a drastic performance loss. Please consult 'http://dev.root1.de/issues/show/77' for more details.");
-                    }
-                }
-                // end of workaround
-            }
-
-
-
-            if (sslContextFactory != null) {
-                SSLContext context = sslContextFactory.getSslContext();
-
-                if (context != null) {
-                    SslFilter sslFilter = new SslFilter(context);
-                    acceptor.getFilterChain().addLast("sslFilter", sslFilter);
-                    logger.debug("SSL ON");
-                } else {
-                    logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
-                }
-            }
-
-            // only add the logging filter if trace is enabled
-            if (logger.isTraceEnabled()) {
-                acceptor.getFilterChain().addLast("logger", new LoggingFilter());
-            }
-
-            // add encryption filter if available
-            if (getCustomEncryption()!=null) {
-                acceptor.getFilterChain().addLast("customencryption", new CustomEncryptionFilter(getCustomEncryption()));
-            }
-
-            // don't use a threading model on filter level
-            //filterchainWorkerPool = new OrderedThreadPoolExecutor();
-            //acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
-
-
-            SimonProtocolCodecFactory protocolFactory = null;
+            // FIXME workaround for http://dev.root1.de/issues/show/77
             try {
-
-                protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
-
-            } catch (ClassNotFoundException e) {
-                logger.error("ClassNotFoundException while preparing ProtocolFactory", e);
-                throw new IllegalArgumentException(e);
-            } catch (InstantiationException e) {
-                logger.error("InstantiationException while preparing ProtocolFactory", e);
-                throw new IllegalArgumentException(e);
-            } catch (IllegalAccessException e) {
-                logger.error("IllegalAccessException while preparing ProtocolFactory", e);
-                throw new IllegalArgumentException(e);
+                ServerSocketChannel channel = ServerSocketChannel.open();
+                channel.configureBlocking(false);
+                ServerSocket socket = channel.socket();
+                int receiveBufferSize = socket.getReceiveBufferSize();
+                try {socket.close(); channel.close();} catch (Exception e) {} // close the temporary socket and channel and ignore all errors
+                logger.debug("setting 'ReceiveBufferSize' on NioSocketAcceptor to {}", receiveBufferSize);
+                nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
+            } catch (IOException ex) {
+                logger.debug("Not able to get readbuffersize from a default NIO socket. Error: {}", ex.getMessage());
+                if (nioSocketAcceptor.getSessionConfig().getReadBufferSize()==1024 && System.getProperty("os.name").equals("Windows 7")) {
+                    logger.warn("Server may have a drastic performance loss. Please consult 'http://dev.root1.de/issues/show/77' for more details.");
+                }
             }
-
-            protocolFactory.setup(true);
-            acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
-
-
-            acceptor.setHandler(dispatcher);
-            logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec", Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
-            setKeepAliveInterval(Statics.DEFAULT_IDLE_TIME);
-            setKeepAliveTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+            // end of workaround
+        }
 
 
-            logger.trace("Listening on {} on port {}", address, port);
-            acceptor.bind(new InetSocketAddress(address, port));
+
+        if (sslContextFactory != null) {
+            SSLContext context = sslContextFactory.getSslContext();
+
+            if (context != null) {
+                SslFilter sslFilter = new SslFilter(context);
+                acceptor.getFilterChain().addLast("sslFilter", sslFilter);
+                logger.debug("SSL ON");
+            } else {
+                logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
+            }
+        }
+
+        // only add the logging filter if trace is enabled
+        if (logger.isTraceEnabled()) {
+            acceptor.getFilterChain().addLast("logger", new LoggingFilter());
+        }
+
+        filterchainWorkerPool = new OrderedThreadPoolExecutor();
+        // don't use a threading model on filter level
+        //acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
 
 
-            logger.debug("acceptor thread created and started");
-            logger.debug("end");
-        } catch (RuntimeException e) {
-            started = false;
-            throw e;
-        } catch (IOException e) {
-            started = false;
-            throw e;
-        } 
+        SimonProtocolCodecFactory protocolFactory = null;
+        try {
+
+            protocolFactory = Utils.getProtocolFactoryInstance(protocolFactoryClassName);
+
+        } catch (ClassNotFoundException e) {
+            logger.error("ClassNotFoundException while preparing ProtocolFactory: {}", e.getMessage());
+            throw new IllegalArgumentException(e);
+        } catch (InstantiationException e) {
+            logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
+            throw new IllegalArgumentException(e);
+        } catch (IllegalAccessException e) {
+            logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
+            throw new IllegalArgumentException(e);
+        }
+
+        protocolFactory.setup(true);
+        acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
+
+
+        acceptor.setHandler(dispatcher);
+        logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec", Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
+        setKeepAliveInterval(Statics.DEFAULT_IDLE_TIME);
+        setKeepAliveTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
+
+
+        logger.trace("Listening on {} on port {}", address, port);
+        acceptor.bind(new InetSocketAddress(address, port));
+
+
+        logger.debug("acceptor thread created and started");
+        logger.debug("end");
     }
 
     /**
@@ -306,12 +270,11 @@ public final class Registry {
 
     /**
      * Stops the registry. This clears the {@link LookupTable} in the dispatcher, stops the
-     * acceptor and the {@link Dispatcher}. After stopping this registry, no
+     * acceptor and the {@link Dispatcher}. After running this method, no
      * further connection/communication is possible with this registry.
      *
      */
     public void stop() {
-        stopped = true;
         logger.trace("begin");
 
         logger.trace("Unbind Acceptor ...");
@@ -323,10 +286,8 @@ public final class Registry {
         logger.trace("Dispose Acceptor ...");
         acceptor.dispose();
 
-        if (filterchainWorkerPool!=null) {
-            logger.trace("Shutdown FilterchainWorkerPool ...");
-            filterchainWorkerPool.shutdown();
-        }
+        logger.trace("Shutdown FilterchainWorkerPool ...");
+        filterchainWorkerPool.shutdown();
 
         logger.trace("end");
     }
@@ -341,20 +302,11 @@ public final class Registry {
      * @throws NameBindingException
      *             if there are problems binding the remoteobject to the
      *             registry
-     * @throws IllegalStateException if registry is not yet started or already stopped
      */
     public void bind(String name, Object remoteObject) throws NameBindingException {
-        
-        if (!started) {
-            throw new IllegalStateException("Registry not yet started.");
-        }
-        if (stopped) {
-            throw new IllegalStateException("Registry already stopped.");
-        }
-        
-        if (!Utils.isValidRemote(remoteObject)) {
+
+        if (!Utils.isValidRemote(remoteObject))
             throw new IllegalArgumentException("Provided remote object is not marked with SimonRemote or Remote annotation!");
-        }
 
         try {
             if (dispatcher.getLookupTable().getRemoteObjectContainer(name) != null) {
@@ -446,7 +398,7 @@ public final class Registry {
      * @return boolean
      */
     public boolean isRunning() {
-        return (dispatcher.isRunning() || acceptor.isActive() || (filterchainWorkerPool!=null && !filterchainWorkerPool.isTerminated()));
+        return (dispatcher.isRunning() || acceptor.isActive() || !filterchainWorkerPool.isTerminated());
     }
 
     /**
@@ -467,31 +419,4 @@ public final class Registry {
     protected Dispatcher getDispatcher() {
         return dispatcher;
     }
-    
-    /**
-     * The classloader which is used to load remote interface classes (used in remote callbacks f.i.).
-     * @return ClassLoader
-     * @since 1.2.0
-     */
-    public ClassLoader getClassLoader(){
-        return classLoader;
-    }
-
-    /**
-     * Set the classloader which is used to load remote interface classes (used in remote callbacks f.i.)
-     * @param classLoader 
-     * @since 1.2.0
-     */
-    public void setClassLoader(ClassLoader classLoader){
-        this.classLoader = classLoader;
-    }
-
-    public void setCustomEncryption(CustomEncryption customEncryption) {
-        this.customEncryption = customEncryption;
-    }
-
-    public CustomEncryption getCustomEncryption() {
-        return customEncryption;
-    }
-
 }

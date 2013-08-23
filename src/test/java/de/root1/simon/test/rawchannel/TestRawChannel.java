@@ -18,26 +18,32 @@
  */
 package de.root1.simon.test.rawchannel;
 
+import de.root1.simon.Lookup;
 import de.root1.simon.RawChannel;
-import de.root1.simon.*;
+import de.root1.simon.Registry;
+import de.root1.simon.Simon;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.exceptions.RawChannelException;
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Random;
 import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 import org.junit.After;
-import static org.junit.Assert.assertTrue;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static org.junit.Assert.*;
 
 /**
  *
@@ -45,37 +51,66 @@ import org.slf4j.LoggerFactory;
  */
 public class TestRawChannel {
 
-    private final Logger logger = LoggerFactory.getLogger(TestRawChannel.class);
     private static final String BIND_NAME = "RawChannelTest";
-    private static final String TEMPDIR = System.getProperty("java.io.tmpdir") + System.getProperty("file.separator");
+    private static final String TEMPDIR = System.getProperty("java.io.tmpdir")+System.getProperty("file.separator");
     private static final String TESTFILE_RECEIVER = TEMPDIR + "TestFileForReceiver.dat";
     private static final String TESTFILE_SENDER = TEMPDIR + "TestFile.dat";
+
     private Registry registry;
+
+    public TestRawChannel() {
+
+        File f = new File("target/test-classes/simon_logging.properties");
+        try {
+            FileInputStream is = new FileInputStream(f);
+            LogManager.getLogManager().readConfiguration(is);
+
+
+        } catch (FileNotFoundException e) {
+
+                System.err.println("File not found: "+f.getAbsolutePath()+".\n" +
+                                "If you don't want to debug SIMON, leave 'Utils.DEBUG' with false-value.\n" +
+                                "Otherwise you have to provide a Java Logging API conform properties-file like mentioned.");
+
+        } catch (SecurityException e) {
+
+                System.err.println("Security exception occured while trying to load "+f.getAbsolutePath()+"\n" +
+                                "Logging with SIMON not possible!.");
+
+        } catch (IOException e) {
+
+                System.err.println("Cannot load "+f.getAbsolutePath()+" ...\n" +
+                                "Please make sure that Java has access to that file.");
+
+        }
+
+    }
 
 //    @BeforeClass
 //    public static void setUpClass() throws Exception {
 //    }
+
 //    @AfterClass
 //    public static void tearDownClass() throws Exception {
 //    }
+
     @Before
     public void setUp() {
         try {
             registry = Simon.createRegistry(InetAddress.getLocalHost(), 2000);
-            registry.start();
-            logger.info("Registry created");
-            RawChannelServerImpl rcsi = new RawChannelServerImpl();
-            registry.bind(BIND_NAME, rcsi);
-            logger.info("remote bound");
+            System.out.println("Registry created");
+            RawChannelServerImpl rcsi = new RawChannelServerImpl() ;
+            registry.bind( BIND_NAME, rcsi);
+            System.out.println("remote bound");
         } catch (UnknownHostException ex) {
-            throw new AssertionError("Unable to setup test");
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
-            throw new AssertionError("Unable to setup test");
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NameBindingException ex) {
-            throw new AssertionError("Unable to setup test");
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        logger.info("Generating test file ...");
+        System.out.println("Generating test file ...");
         try {
             FileChannel fc = new FileOutputStream(new File(TESTFILE_SENDER)).getChannel();
 
@@ -84,17 +119,18 @@ public class TestRawChannel {
             byte[] data = new byte[1024]; // 1KiB
 
 
-            for (int i = 0; i < 10; i++) { // 10 x 1KiB = 10 MiB
+            for (int i=0;i<10;i++){ // 10 x 1KiB = 10 MiB
                 r.nextBytes(data);
                 fc.write(ByteBuffer.wrap(data));
             }
             fc.close();
-            logger.info("Generating test file ...*done*");
+            System.out.println("Generating test file ...*done*");
 
         } catch (FileNotFoundException ex) {
-            throw new AssertionError("Unable to setup test");
+            // cannot occur as we create this file...
+            ex.printStackTrace();
         } catch (IOException ex) {
-            throw new AssertionError("Unable to setup test");
+            ex.printStackTrace();
         }
     }
 
@@ -110,32 +146,34 @@ public class TestRawChannel {
         f2.delete();
     }
 
+    
     @Test
     public void openTransferAndClose() {
         try {
 
-            logger.info("Doing lookup ...");
+            System.out.println("Doing lookup ...");
             Lookup lookup = Simon.createNameLookup(InetAddress.getLocalHost(), 2000);
-            RawChannelServer rcs = (RawChannelServer) lookup.lookup(BIND_NAME);
-            logger.info("Doing lookup ... *done*");
+            RawChannelServer rcs;
+                rcs = (RawChannelServer) lookup.lookup(BIND_NAME);
+            System.out.println("Doing lookup ... *done*");
 
-            assertTrue("looked up remote must not be null", rcs != null);
+            assertTrue("looked up remote must not be null", rcs!=null);
 
             int token = rcs.openFileChannel(TESTFILE_RECEIVER);
 
-            logger.info("open raw channel on server ...");
+            System.out.println("open raw channel on server ...");
             RawChannel rawChannel = Simon.openRawChannel(token, rcs);
-            logger.info("open raw channel on server ... *done*");
+            System.out.println("open raw channel on server ... *done*");
 
             File f = new File(TESTFILE_SENDER);
 
             long fileLength = f.length();
 
-            logger.info("Test file size: " + fileLength + " bytes");
+            System.out.println("Test file size: "+fileLength+" bytes");
 
             DataInputStream dis = new DataInputStream(new FileInputStream(f));
 
-            byte[] fileBytesToBeSend = new byte[(int) fileLength];
+            byte[] fileBytesToBeSend = new byte[(int)fileLength];
 
             dis.readFully(fileBytesToBeSend);
             dis.close();
@@ -143,49 +181,51 @@ public class TestRawChannel {
             FileChannel fc = new FileInputStream(f).getChannel();
 
             ByteBuffer data = ByteBuffer.allocate(512);
-            logger.info("Transfering file to server ...");
+            System.out.println("Transfering file to server ...");
             while (fc.read(data) != -1) {
-                logger.info("   transfering data: {}", data);
+                System.out.println("   transfering data: "+data);
                 rawChannel.write(data);
                 data.clear();
             }
-            logger.info("Transfering file to server ... *done*");
+            System.out.println("Transfering file to server ... *done*");
             fc.close();
             rawChannel.close();
 
-            logger.info("Receiving sent file from server ...");
+            System.out.println("Receiving sent file from server ...");
             byte[] fileBytesReceived = rcs.getFileBytes(TESTFILE_RECEIVER);
-            logger.info("Receiving sent file from server ... *done*");
+            System.out.println("Receiving sent file from server ... *done*");
 
-            assertTrue("Received filesize must match set filesize", fileBytesReceived.length == fileBytesToBeSend.length);
+            assertTrue("Received filesize must match set filesize", fileBytesReceived.length==fileBytesToBeSend.length);
 
             boolean byteMatch = false;
-            logger.info("Comparing sent file with received file ...");
-            for (int i = 0; i < fileBytesToBeSend.length; i++) {
-                assertTrue("sent byte no. " + i + " must match received byte no. " + i, fileBytesToBeSend[i] == fileBytesReceived[i]);
+            System.out.println("Comparing sent file with received file ...");
+            for (int i=0;i<fileBytesToBeSend.length;i++) {
+                assertTrue("sent byte no. "+i+" must match received byte no. "+i, fileBytesToBeSend[i]==fileBytesReceived[i]);
             }
-            logger.info("Comparing sent file with received file ... *done*");
+            System.out.println("Comparing sent file with received file ... *done*");
             lookup.release(rcs);
 
-            logger.info("Awaiting network connections shutdown");
-            ((NameLookup) lookup).awaitCompleteShutdown(30000);
-            logger.info("Awaiting network connections shutdown *done*");
-
         } catch (UnknownHostException ex) {
-            throw new AssertionError("An UnknownHostException occured which should not be the case with localhost comunication.");
+            System.out.println("UnknownHostException occured!");
+            new AssertionError("An UnknownHostException occured which should not be the case with localhost comunication.");
         } catch (LookupFailedException ex) {
-            throw new AssertionError("A LookupFailedException occured which should not be the case in test case.");
+            System.out.println("Lookup failed!");
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            new AssertionError("A LookupFailedException occured which should not be the case in test case.");
         } catch (SimonRemoteException ex) {
-            throw new AssertionError("A unexcepted SimonRemoteException occured which should not be the case.");
+            System.out.println("SRE occured!");
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            new AssertionError("A unexcepted SimonRemoteException occured which should not be the case.");
         } catch (IOException ex) {
-            throw new AssertionError("A unexcepted IOException occured which should not be the case in test case.");
+            System.out.println("IOE occured!");
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            new AssertionError("A unexcepted IOException occured which should not be the case in test case.");
         } catch (EstablishConnectionFailed ex) {
-            throw new AssertionError("Establishing connection failed during test run ...");
-        } catch (IllegalStateException ex) {
-            throw new AssertionError("Establishing connection failed during test run ...");
-        } catch (RawChannelException ex) {
-            throw new AssertionError("Establishing connection failed during test run ...");
+            Logger.getLogger(TestRawChannel.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
+            new AssertionError("Establishing connection failed during test run ..."+ex.getMessage());
         }
-        logger.info("test done");
+        System.out.println("test done");
     }
+
 }

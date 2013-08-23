@@ -18,55 +18,32 @@
  */
 package de.root1.simon;
 
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
 /**
  * A simple monitor class whose instance can have a sequence id.
  * @author achr
  *
  */
 public class Monitor {
+	
+	/**
+	 * the associated sequence id
+	 */
+	private final int sequenceId;
 
-    private final Semaphore s = new Semaphore(1);
+	/**
+	 * Creates a monitor object
+	 * @param sequenceId the associated sequence id
+	 */
+	protected Monitor(int sequenceId) {
+		this.sequenceId = sequenceId;
+	}
+	
+	/**
+	 * Returns the associated sequence id
+	 * @return the id
+	 */
+	protected int getSequenceId() {
+		return sequenceId;
+	}
 
-    /**
-     * Creates a monitor object
-     */
-    protected Monitor() {
-        try {
-            s.acquire();
-        } catch (InterruptedException ex) {
-        }
-    }
-
-    /**
-     * Waits for a signal. if it becomes available within the given waiting 
-     * time, true will be returned. Otherwise you will get false
-     * 
-     * @param timeout timeout for signal to receive
-     * @return true, if signal received, false if not
-     * 
-     */
-    public boolean waitForSignal(long timeout) {
-        try {
-            return s.tryAcquire(timeout, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException ex) {
-            return false;
-        }
-        
-    }
-
-    /**
-     * Provide the signal
-     */
-    public void signal() {
-        s.release();
-    }
-    
-    public void reset() {
-        if (s.availablePermits()==1) {
-            s.acquireUninterruptibly();
-        }
-    }
 }

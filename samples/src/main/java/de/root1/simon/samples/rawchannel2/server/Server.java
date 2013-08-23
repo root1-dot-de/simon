@@ -22,7 +22,6 @@ public class Server {
             System.out.println("Server started ...");
             MyServerImpl myServerImpl = new MyServerImpl();
             Registry registry = Simon.createRegistry(22222);
-            registry.start();
             System.out.println("Registry created");
             registry.bind("myServer", myServerImpl);
             System.out.println("Remote Object bound ...");

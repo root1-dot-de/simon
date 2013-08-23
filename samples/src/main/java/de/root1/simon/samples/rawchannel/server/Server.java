@@ -20,7 +20,7 @@ public class Server {
         try {
 
             Registry registry = Simon.createRegistry(InetAddress.getByName("0.0.0.0"), 2000);
-            registry.start();
+
 
             RawChannelServerImpl rcsi = new RawChannelServerImpl() ;
             registry.bind( RawChannelServer.BIND_NAME, rcsi);

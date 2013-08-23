@@ -63,8 +63,6 @@ public final class SimonMessageConstants {
     public static final byte MSG_INTERFACE_LOOKUP_RETURN = 0x13;
     
     public static final byte MSG_ERROR = 0x14;
-    
-    public static final byte MSG_RELEASE_REF = 0x15;
 	
     private SimonMessageConstants() {
     }

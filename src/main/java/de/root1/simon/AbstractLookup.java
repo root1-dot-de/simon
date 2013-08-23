@@ -41,6 +41,8 @@ import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
+//import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.filter.ssl.SslFilter;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
@@ -64,10 +66,6 @@ abstract class AbstractLookup implements Lookup {
      * This member has static access. So it's reachable from every lookup implementation class
      */
     static final Map<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
-    
-    static final Monitor monitorCompleteShutdown = new Monitor();
-    
-    private CustomEncryption customEncryption;
 
     /**
      * A simple container class that relates the dispatcher to a session
@@ -97,10 +95,6 @@ abstract class AbstractLookup implements Lookup {
 
         // retrieve the proxy object
         SimonProxy proxy = Simon.getSimonProxy(proxyObject);
-        
-        if (!proxy.isRegularLookup()) {
-            throw new IllegalArgumentException("Provided proxy is callback object and is not manually releasable. Please release your lookup'ed object(s) instead or wait for GC to release it.");
-        } 
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
 
@@ -201,11 +195,10 @@ abstract class AbstractLookup implements Lookup {
 
                 logger.debug("No ClientToServerConnection in list. Creating new one.");
 
-                dispatcher = new Dispatcher(serverString, getClassLoader(), Simon.getThreadPool());
+                dispatcher = new Dispatcher(serverString, Simon.getThreadPool());
 
                 // an executor service for handling the message reading in a threadpool
-                ExecutorService filterchainWorkerPool = null;
-//                filterchainWorkerPool = new OrderedThreadPoolExecutor();
+                ExecutorService filterchainWorkerPool = new OrderedThreadPoolExecutor();
 
                 IoConnector connector = new NioSocketConnector();
                 connector.setHandler(dispatcher);
@@ -237,11 +230,6 @@ abstract class AbstractLookup implements Lookup {
 
                 if (logger.isTraceEnabled()) {
                     filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
-                }
-                
-                // add encryption filter if available
-                if (getCustomEncryption()!=null) {
-                    filters.add(new FilterEntry("customencryption", new CustomEncryptionFilter(getCustomEncryption())));
                 }
 
                 // don't use a threading model on filter level
@@ -308,11 +296,9 @@ abstract class AbstractLookup implements Lookup {
                     }
                     connector.dispose();
                     dispatcher.shutdown();
-                    if (filterchainWorkerPool!=null) {
-                        filterchainWorkerPool.shutdown();
-                    }
+                    filterchainWorkerPool.shutdown();
 
-                    throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ".", e);
+                    throw new EstablishConnectionFailed("Exception occured while connection/getting session for " + connectionTarget + ". Error was: " + e + ": " + e.getMessage());
                 }
 
                 if (future.isConnected()) { // check if the connection succeeded
@@ -323,9 +309,7 @@ abstract class AbstractLookup implements Lookup {
                 } else {
                     connector.dispose();
                     dispatcher.shutdown();
-                    if (filterchainWorkerPool!=null) {
-                        filterchainWorkerPool.shutdown();
-                    }
+                    filterchainWorkerPool.shutdown();
                     throw new EstablishConnectionFailed("Could not establish connection to " + connectionTarget + ". Maybe host or network is down?");
                 }
 
@@ -337,7 +321,6 @@ abstract class AbstractLookup implements Lookup {
                 ClientToServerConnection ctsc = new ClientToServerConnection(serverString, dispatcher, session, connector, filterchainWorkerPool);
                 ctsc.addRef();
                 serverDispatcherRelation.put(serverString, ctsc);
-                monitorCompleteShutdown.reset();
             }
         }
 
@@ -345,34 +328,23 @@ abstract class AbstractLookup implements Lookup {
     }
 
     /**
-     * Awaits a complete network shutdown. Means: Waits until all network connections are closed or timeout occurs.
-     * @param timeout timeout for awaiting complete network shutdown
-     * @since 1.2.0
-     */
-    public void awaitCompleteShutdown(long timeout) {
-        monitorCompleteShutdown.waitForSignal(timeout);
-    }
-
-    
-    /**
-     * Releases a {@link Dispatcher}. If there is no more
+     *
+     * Releases a reference for a {@link Dispatcher} identified by a specific
+     * server string (see: {@link AbstractLookup#createServerString(InetAddress, int)}}. If there is no more
      * server string referencing the Dispatcher, the Dispatcher will be
      * released/shutdown.
      *
-     * @param dispatcher
-     *            the iDispatcher to release
+     * @param serverString
+     *            the identifier of the Dispatcher to release
      * @return true if the Dispatcher is shut down, false if there's still a
      *         reference pending
      */
-    protected static boolean releaseDispatcher(Dispatcher dispatcher) { 
-        
+    protected static boolean releaseServerDispatcherRelation(String serverString) {
+
         boolean result = false;
 
         synchronized (serverDispatcherRelation) {
 
-            // get the serverstring the dispatcher is connected to
-            String serverString = dispatcher.getServerString();
-            
             // if there's an instance of this connection known ...
             if (serverDispatcherRelation.containsKey(serverString)) {
 
@@ -386,7 +358,6 @@ abstract class AbstractLookup implements Lookup {
                     // .. and shutdown the dispatcher if there's no further reference
                     logger.debug("refCount reached 0. shutting down session and all related stuff.");
                     ctsc.getDispatcher().shutdown();
-                    ctsc.getDispatcher().setReleased();
 
                     CloseFuture closeFuture = ctsc.getSession().close(false);
 
@@ -394,18 +365,8 @@ abstract class AbstractLookup implements Lookup {
 
                         @Override
                         public void operationComplete(IoFuture future) {
-                            
-                            // shutdown threads/executors in filterchain once the session has been closed
-                            if (ctsc.getFilterchainWorkerPool()!=null) {
-                                ctsc.getFilterchainWorkerPool().shutdown();
-                            }
-                            // dispose the MINA connector
+                            ctsc.getFilterchainWorkerPool().shutdown();
                             ctsc.getConnector().dispose();
-                            
-                            if (serverDispatcherRelation.isEmpty()) {
-                                logger.debug("serverDispatcherRelation map is empty. Signalling complete network connection shutdown now.");
-                                monitorCompleteShutdown.signal();
-                            }
                         }
                     });
                     result = true;
@@ -419,16 +380,24 @@ abstract class AbstractLookup implements Lookup {
             }
 
         }
-        
         return result;
     }
-    
-    public void setCustomEncryption(CustomEncryption ce) {
-        this.customEncryption = ce;
+
+    /**
+     *  Releases a {@link Dispatcher}. If there is no more
+     * server string referencing the Dispatcher, the Dispatcher will be
+     * released/shutdown.
+     *
+     * @param dispatcher
+     *            the iDispatcher to release
+     * @return true if the Dispatcher is shut down, false if there's still a
+     *         reference pending
+     */
+    protected static boolean releaseDispatcher(Dispatcher dispatcher) {
+        // get the serverstring the dispatcher is connected to
+        String serverString = dispatcher.getServerString();
+        boolean result = releaseServerDispatcherRelation(serverString);
+        return result;
     }
 
-    public CustomEncryption getCustomEncryption() {
-        return customEncryption;
-    }
-    
 }

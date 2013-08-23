@@ -55,15 +55,15 @@ public class MsgInvoke extends AbstractMessage {
         return getSequence() + ":MsgInvoke(ron=" + remoteObjectName + "|method=" + method + "|args=" + args + ")";
     }
 
-    public void setMethod(Method method) {
-            this.method = method;
-    }
-
-    public Method getMethod(){
-            return method;
-    }
-
-    public Object[] getArguments(){
-            return args;
-    }
+	public void setMethod(Method method) {
+		this.method = method;
+	}
+	
+	public Method getMethod(){
+		return method;
+	}
+	
+	public Object[] getArguments(){
+		return args;
+	}
 }

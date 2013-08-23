@@ -18,8 +18,9 @@
  */
 package de.root1.simon.codec.messages;
 
-import de.root1.simon.Statics;
 import java.io.Serializable;
+
+import de.root1.simon.Statics;
 
 /**
  * A base message for SIMON protocol messages.

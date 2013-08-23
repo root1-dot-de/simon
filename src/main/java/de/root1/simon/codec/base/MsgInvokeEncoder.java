@@ -18,18 +18,20 @@
  */
 package de.root1.simon.codec.base;
 
+import java.nio.charset.Charset;
+
+import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.session.IoSession;
+import org.apache.mina.filter.codec.demux.MessageEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import de.root1.simon.Dispatcher;
 import de.root1.simon.Statics;
 import de.root1.simon.codec.messages.MsgInvoke;
 import de.root1.simon.codec.messages.MsgInvokeReturn;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.Utils;
-import java.nio.charset.Charset;
-import org.apache.mina.core.buffer.IoBuffer;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.codec.demux.MessageEncoder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link MessageEncoder} that encodes {@link MsgInvoke}.

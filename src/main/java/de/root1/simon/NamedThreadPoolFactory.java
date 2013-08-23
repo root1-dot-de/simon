@@ -46,14 +46,13 @@ public class NamedThreadPoolFactory implements ThreadFactory {
 	 * (non-Javadoc)
 	 * @see java.util.concurrent.ThreadFactory#newThread(java.lang.Runnable)
 	 */
-        @Override
 	public Thread newThread(Runnable r) {
 		if ((i++)==Long.MAX_VALUE) i=0;
-                StringBuilder sb = new StringBuilder();
+                StringBuffer sb = new StringBuffer();
 		sb.append(baseName);
 		sb.append(".#");
 		sb.append(i);
-		return new ProcessMessageThread(r,sb.toString());
+		return new Thread(r,sb.toString());
 	}
 
 }

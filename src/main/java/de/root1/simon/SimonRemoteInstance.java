@@ -22,6 +22,7 @@ import de.root1.simon.utils.Utils;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,6 @@ import org.slf4j.LoggerFactory;
 public class SimonRemoteInstance implements Serializable {
 
     private static final long serialVersionUID = 1;
-    static final String PREFIX = "SimonRemoteInstance";
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
     /** Name of the interface that is used to implement the remote object */
     private List<String> interfaceNames = new ArrayList<String>();
@@ -44,7 +44,6 @@ public class SimonRemoteInstance implements Serializable {
     private String id = null;
     /** the remote object name of the simon proxy to which the SimonRemote belongs */
     private String remoteObjectName = null;
-    private long sessionId;
 
     /**
      *
@@ -56,8 +55,6 @@ public class SimonRemoteInstance implements Serializable {
     protected SimonRemoteInstance(IoSession session, Object remoteObject) {
         logger.debug("begin");
 
-        this.sessionId = session.getId();
-        
         /*
          * try to get an name for this object.
          * The name is used by the equals-method in ProcessMessageRunnable to get an instance to compare with.
@@ -71,11 +68,10 @@ public class SimonRemoteInstance implements Serializable {
         }
 
         String IP = session.getRemoteAddress().toString();
-        sessionId = session.getId();
+        long sessionId = session.getId();
 
         StringBuilder sb = new StringBuilder();
 
-        sb.append(PREFIX);
         sb.append("[");
         sb.append(remoteObject.getClass().getName());
         sb.append("|ip=");
@@ -83,9 +79,7 @@ public class SimonRemoteInstance implements Serializable {
         sb.append(";sessionID=");
         sb.append(sessionId);
         sb.append(";remoteObjectHash=");
-//        sb.append(remoteObject.hashCode());
-//        sb.append(System.identityHashCode(remoteObject));
-        sb.append(Utils.hash(remoteObject));
+        sb.append(remoteObject.hashCode());
         sb.append("]");
 
         this.id = sb.toString();
@@ -184,7 +178,7 @@ public class SimonRemoteInstance implements Serializable {
      *
      * @return the remote object's interface
      */
-    List<String> getInterfaceNames() {
+    protected List<String> getInterfaceNames() {
         return interfaceNames;
     }
 
@@ -195,7 +189,7 @@ public class SimonRemoteInstance implements Serializable {
      *
      * @return a unique ID for the remote object
      */
-    String getId() {
+    protected String getId() {
         return id;
     }
 
@@ -204,15 +198,7 @@ public class SimonRemoteInstance implements Serializable {
      * This method is used by {@link ProcessMessageRunnable#processEquals() } to get an instance of this object from lookup table for comparison. 
      * @return the remote object name
      */
-    String getRemoteObjectName() {
+    protected String getRemoteObjectName() {
         return remoteObjectName;
-    }
-
-    /**
-     * Returns the underlying socket session id
-     * @return session id
-     */
-    long getSessionID() {
-        return sessionId;
     }
 }

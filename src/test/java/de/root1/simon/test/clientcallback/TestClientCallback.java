@@ -56,7 +56,6 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
-            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -89,7 +88,6 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
-            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -103,60 +101,11 @@ public class TestClientCallback {
             roiRemote.setCallback(cci);
             
             try {
-                ClientCallback callback = roiRemote.getCallback();
-                logger.info(">>>>>>>>>>>>>>>>>>>> Saying Hello");
-                System.out.flush();
-                callback.sayHello();
-                System.out.flush();
-                logger.info("<<<<<<<<<<<<<<<<<<<< Saying Hello *DONE*");
-                logger.info("Got callback back from server --> SUCCESS");
-                        
+                roiRemote.getCallback();
+                throw new AssertionError("sending local endpoints should throw an exception");
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new AssertionError("sending local endpoints should work");
-            }
-            
-            r.unbind("roi");
-            logger.info("unbind of roi done");
-            r.stop();
-            logger.info("registry stopped");
-
-            assert true;
-
-        } catch (Exception ex) {
-            throw new AssertionError(ex);
-        }
-    }
-    
-    @Test
-    public void testSendCallbackBackToRemote() {
-        try {
-
-            logger.info("Begin ...");
-            RemoteObjectImpl roi = new RemoteObjectImpl();
-
-            Registry r = Simon.createRegistry(PORT);
-            r.start();
-            r.bind("roi", roi);
-
-            logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", PORT);
-
-            RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
-
-            try {
-                logger.info("roi lookup done");
-                Session sessionObject = roiRemote.getSessionObject();
-                logger.info("Client got session from server: session#{}",sessionObject.getId());
-                logger.info(">>>>>>>>>>>>>>>>>>>> sending session back");
-                System.out.flush();
-                roiRemote.setSessionObject(sessionObject);
-                System.out.flush();
-                logger.info("<<<<<<<<<<<<<<<<<<<< sending session back *DONE*");
-            
-            } catch (Exception e) {
-                e.printStackTrace();
-                throw new AssertionError("sending local endpoints should work", e);
+                logger.info("Got exception: "+e+" --> SUCCESS");
             }
             
             r.unbind("roi");
@@ -179,7 +128,6 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
-            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -194,10 +142,10 @@ public class TestClientCallback {
             
             try {
                 roiRemote.sendCallbackViaCallback();
-                logger.info("sendCallbackViaCallback --> SUCCESS");
+                throw new AssertionError("sending local endpoints should throw an exception");
             } catch (Exception e) {
                 e.printStackTrace();
-                throw new AssertionError("sending local endpoints should not throw an exception");
+                logger.info("Got exception: "+e+" --> SUCCESS");
             }
 
             r.unbind("roi");
@@ -220,7 +168,6 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
-            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
@@ -276,7 +223,6 @@ public class TestClientCallback {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
-            r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");

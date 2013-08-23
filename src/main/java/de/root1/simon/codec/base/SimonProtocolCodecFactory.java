@@ -17,6 +17,9 @@
  *   along with SIMON.  If not, see <http://www.gnu.org/licenses/>.
  */
 package de.root1.simon.codec.base;
+import org.apache.mina.filter.codec.ProtocolCodecFactory;
+import org.apache.mina.filter.codec.demux.DemuxingProtocolCodecFactory;
+
 import de.root1.simon.codec.messages.MsgCloseRawChannel;
 import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
 import de.root1.simon.codec.messages.MsgEquals;
@@ -36,11 +39,8 @@ import de.root1.simon.codec.messages.MsgPing;
 import de.root1.simon.codec.messages.MsgPong;
 import de.root1.simon.codec.messages.MsgRawChannelData;
 import de.root1.simon.codec.messages.MsgRawChannelDataReturn;
-import de.root1.simon.codec.messages.MsgReleaseRef;
 import de.root1.simon.codec.messages.MsgToString;
 import de.root1.simon.codec.messages.MsgToStringReturn;
-import org.apache.mina.filter.codec.ProtocolCodecFactory;
-import org.apache.mina.filter.codec.demux.DemuxingProtocolCodecFactory;
 
 /**
  * A {@link ProtocolCodecFactory} that provides a protocol codec for
@@ -208,16 +208,6 @@ public class SimonProtocolCodecFactory extends DemuxingProtocolCodecFactory {
             super.addMessageEncoder(MsgError.class, MsgErrorEncoder.class);
             // incoming error
             super.addMessageDecoder(MsgErrorDecoder.class);
-            
-            /*
-             * DGC handling
-             */
-            
-            // outgoing release ref
-            super.addMessageEncoder(MsgReleaseRef.class, MsgReleaseRefEncoder.class);
-            // incoming release ref
-            super.addMessageDecoder(MsgReleaseRefDecoder.class);
-            
 
 	}
 }

@@ -4,13 +4,11 @@
  */
 package de.root1.simon.samples.rawchannel.client;
 
-import de.root1.simon.Lookup;
 import de.root1.simon.RawChannel;
 import de.root1.simon.Simon;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.exceptions.RawChannelException;
 import de.root1.simon.samples.rawchannel.shared.RawChannelServer;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,9 +33,9 @@ public class Client {
         createTestFile();
 
         try {
+
             // Get connection to server
-            Lookup nameLookup = Simon.createNameLookup(InetAddress.getLocalHost(), 2000);
-            RawChannelServer rcs = (RawChannelServer) nameLookup.lookup(RawChannelServer.BIND_NAME);
+            RawChannelServer rcs = (RawChannelServer) Simon.lookup(InetAddress.getLocalHost(), 2000, RawChannelServer.BIND_NAME);
 
             // get a RawChannel Token from server. This is needed to open the
             // RawChannel
@@ -74,7 +72,7 @@ public class Client {
             fileOutputStream.write(fileBytesReceived);
             fileOutputStream.close();
 
-            nameLookup.release(rcs);
+            Simon.release(rcs);
 
         } catch (UnknownHostException ex) {
             ex.printStackTrace();
@@ -85,8 +83,6 @@ public class Client {
         } catch (IOException ex) {
             ex.printStackTrace();
         } catch (EstablishConnectionFailed ex) {
-            ex.printStackTrace();
-        } catch (RawChannelException ex) {
             ex.printStackTrace();
         }
 

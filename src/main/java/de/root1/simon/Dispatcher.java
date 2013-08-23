@@ -18,106 +18,111 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.exceptions.RawChannelException;
-import de.root1.simon.codec.messages.*;
-import de.root1.simon.exceptions.InvokeTimeoutException;
-import de.root1.simon.exceptions.LookupFailedException;
-import de.root1.simon.exceptions.SessionException;
-import de.root1.simon.exceptions.SimonException;
-import de.root1.simon.exceptions.SimonRemoteException;
-import de.root1.simon.utils.Utils;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.mina.core.service.IoHandler;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.root1.simon.codec.messages.AbstractMessage;
+import de.root1.simon.codec.messages.MsgCloseRawChannel;
+import de.root1.simon.codec.messages.MsgCloseRawChannelReturn;
+import de.root1.simon.codec.messages.MsgEquals;
+import de.root1.simon.codec.messages.MsgEqualsReturn;
+import de.root1.simon.codec.messages.MsgHashCode;
+import de.root1.simon.codec.messages.MsgHashCodeReturn;
+import de.root1.simon.codec.messages.MsgInterfaceLookup;
+import de.root1.simon.codec.messages.MsgInterfaceLookupReturn;
+import de.root1.simon.codec.messages.MsgInvoke;
+import de.root1.simon.codec.messages.MsgInvokeReturn;
+import de.root1.simon.codec.messages.MsgNameLookup;
+import de.root1.simon.codec.messages.MsgNameLookupReturn;
+import de.root1.simon.codec.messages.MsgOpenRawChannel;
+import de.root1.simon.codec.messages.MsgOpenRawChannelReturn;
+import de.root1.simon.codec.messages.MsgPing;
+import de.root1.simon.codec.messages.MsgPong;
+import de.root1.simon.codec.messages.MsgRawChannelData;
+import de.root1.simon.codec.messages.MsgToString;
+import de.root1.simon.codec.messages.MsgToStringReturn;
+import de.root1.simon.exceptions.LookupFailedException;
+import de.root1.simon.exceptions.SessionException;
+import de.root1.simon.exceptions.SimonException;
+import de.root1.simon.exceptions.SimonRemoteException;
+import de.root1.simon.utils.Utils;
+
 /**
  * This class is the "brain" of SIMON on server side, as well as on client side.
  *
  * It handles all the I/O and delegates the required tasks
- *
+ * 
  * @author ACHR
  */
 public class Dispatcher implements IoHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    /**
-     * The table that holds all the registered/bind remote objects
-     */
+
+    /** The table that holds all the registered/bind remote objects */
     private final LookupTable lookupTable;
-    /**
-     * a simple counter that is used for creating sequence IDs
-     */
+
+    /** a simple counter that is used for creating sequence IDs */
     private final AtomicInteger sequenceIdCounter = new AtomicInteger(0);
+
     /**
      * The map that holds the relation between the sequenceID and the received
      * result. If a request is placed, the map contains the sequenceID and the
-     * corresponding monitor object. If the result is present, the monitor
-     * object is replaced with the result
+     * corresponding monitor object. If the result is present, the monitor object
+     * is replaced with the result
      */
     private final Map<Integer, Object> requestMonitorAndResultMap = Collections.synchronizedMap(new HashMap<Integer, Object>());
-    /**
-     * This map contains pairs of sessions and list of open requests This is
-     * needed to do a clean shutdown of a session
-     */
-    private final Map<IoSession, List<Integer>> sessionHasRequestPlaced = Collections.synchronizedMap(new HashMap<IoSession, List<Integer>>());
-    /**
-     * the thread-pool where the worker-threads live in
-     */
-    private ExecutorService messageProcessorPool = null;
-    /**
-     * Shutdown flag. If set to true, the dispatcher is going to shutdown itself
-     * and all related stuff
-     */
-    private boolean shutdownInProgress;
-    /**
-     * indicates if the dispatcher is running or not
-     */
-    private boolean isRunning;
-    /**
-     * an identifier string to determine to which server this dispatcher is
-     * connected to
-     */
-    private final String serverString;
-    /**
-     * A map that contains the token<->RawChannelDatalisteners relation
-     */
-    private final HashMap<Integer, RawChannelDataListener> rawChannelMap = new HashMap<Integer, RawChannelDataListener>();
-    /**
-     * a list of currently used tokens
-     */
-    private final ArrayList<Integer> tokenList = new ArrayList<Integer>();
-    /**
-     * the dispatcher's reference to the pingwatchdog
-     */
-    private final PingWatchdog pingWatchdog;
-    /**
-     * the timout value in milliseconds that is used by PipngWatchdog for
-     * keep-alive check
-     */
-    private int pingTimeOut = Statics.DEFAULT_WRITE_TIMEOUT;
-    /**
-     * A map containing remote object names and a related list with closed
-     * listeners
-     */
-    private final Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
-    /**
-     * Classloader used to load remote interface classes
-     */
-    private final ClassLoader classLoader;
-    private boolean released = false;
-    private final SimonRefQueue<SimonPhantomRef> simonRefQueue;
 
     /**
-     * Method used by the PingWatchdog for getting the current ping/keepalive
-     * timeout
-     *
+     * This map contains pairs of sessions and list of open requests
+     * This is needed to do a clean shutdown of a session
+     */
+    private final Map<IoSession, List<Integer>> sessionHasRequestPlaced = Collections.synchronizedMap(new HashMap<IoSession, List<Integer>>());
+
+    /** the thread-pool where the worker-threads live in */
+    private ExecutorService messageProcessorPool = null;
+
+    /** Shutdown flag. If set to true, the dispatcher is going to shutdown itself and all related stuff */
+    private boolean shutdownInProgress;
+
+    /** indicates if the dispatcher is running or not */
+    private boolean isRunning;
+
+    /** an identifier string to determine to which server this dispatcher is connected to  */
+    private final String serverString;
+
+    /** A map that contains the token<->RawChannelDatalisteners relation */
+    private final HashMap<Integer, RawChannelDataListener> rawChannelMap = new HashMap<Integer, RawChannelDataListener>();
+    
+    /** a list of currently used tokens */
+    private final ArrayList<Integer> tokenList = new ArrayList<Integer>();
+    
+    /** the dispatcher's reference to the pingwatchdog */
+    private final PingWatchdog pingWatchdog;
+
+    /** the timout value in milliseconds that is used by PipngWatchdog for keep-alive check */
+    private int pingTimeOut = Statics.DEFAULT_WRITE_TIMEOUT;
+
+    /**
+     * A map containing remote object names and a related list with closed listeners
+     */
+    private final Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
+
+    /**
+     * Method used by the PingWatchdog for getting the current ping/keepalive timeout
      * @return the pingTimeOut
      */
     protected int getPingTimeout() {
@@ -126,7 +131,7 @@ public class Dispatcher implements IoHandler {
 
     /**
      * Method used by the Registry while setting the keep alive timeout
-     *
+     * 
      * @param pingTimeOut the pingTimeOut to set
      */
     protected void setPingTimeOut(int pingTimeOut) {
@@ -134,11 +139,9 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Method used by the Loopup-Classes to remove a list of closed listener for
-     * a given remote object
+     * Method used by the Loopup-Classes to remove a list of closed listener for a given remote object
      *
-     * @param remoteObjectName the remote object that correlates to the closed
-     * listenert
+     * @param remoteObjectName the remote object that correlates to the closed listenert
      * @return the list of removed closed listeners
      */
     protected List<ClosedListener> removeClosedListenerList(String remoteObjectName) {
@@ -146,9 +149,7 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Method used by the Lookup-Classes to register a closed listener with a
-     * given remote object name
-     *
+     * Method used by the Lookup-Classes to register a closed listener with a given remote object name
      * @param listener the listener to add
      * @param remoteObjectName the obejct that we listen for closed situations
      */
@@ -163,9 +164,7 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Method used by the lookup-Classes to remove a single closed listener from
-     * a remote object
-     *
+     * Method used by the lookup-Classes to remove a single closed listener from a remote object
      * @param listener the listener to remove
      * @param remoteObjectName the related remote object
      */
@@ -189,22 +188,17 @@ public class Dispatcher implements IoHandler {
 
     /**
      *
-     * Creates a packet dispatcher which delegates the packet-reading to
-     * {@link ProcessMessageRunnable}'s which run in the given
-     * <code>threadPool</code>
+     * Creates a packet dispatcher which delegates
+     * the packet-reading to {@link ProcessMessageRunnable}'s which run in the given <code>threadPool</code>
      *
-     * @param serverString an identifier string to determine to which server
-     * this dispatcher is connected to. this must be set to <code>null</code> if
-     * this dispatcher is a server dispatcher.
-     * @param threadPool the pool where the {@link ProcessMessageRunnable}'s run
-     * in
+     * @param serverString an identifier string to determine to which server this dispatcher is
+     * connected to. this must be set to <code>null</code> if this dispatcher is a server dispatcher.
+     * @param threadPool the pool where the {@link ProcessMessageRunnable}'s run in
      */
-    public Dispatcher(String serverString, /* See: http://dev.root1.de/issues/127 */ ClassLoader classLoader, ExecutorService threadPool) {
+    public Dispatcher(String serverString, ExecutorService threadPool) {
         logger.debug("begin");
 
         isRunning = true;
-        
-        this.simonRefQueue = new SimonRefQueue<SimonPhantomRef>(this);
 
         this.serverString = serverString;
         this.lookupTable = new LookupTable(this);
@@ -212,8 +206,6 @@ public class Dispatcher implements IoHandler {
         this.messageProcessorPool = threadPool;
 
         this.pingWatchdog = new PingWatchdog(this);
-
-        this.classLoader = classLoader;
 
         logger.debug("end");
     }
@@ -235,7 +227,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgNameLookup msgNameLookup = new MsgNameLookup();
         msgNameLookup.setSequence(sequenceId);
@@ -252,6 +244,7 @@ public class Dispatcher implements IoHandler {
         logger.trace("end sequenceId={}", sequenceId);
 
         return result;
+
     }
 
     /**
@@ -270,7 +263,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgInterfaceLookup msgInterfaceLookup = new MsgInterfaceLookup();
         msgInterfaceLookup.setSequence(sequenceId);
@@ -311,32 +304,23 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         // register remote instance objects in the lookup-table
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
-
-                // prevent sending a client callback-proxy from server back to client
+                
                 if (Utils.isSimonProxy(args[i])) {
-  
-                    // issue #94
-                    SimonProxy sp = Simon.getSimonProxy(args[i]);
-                    SimonEndpointReference ser = new SimonEndpointReference(sp);
-                    logger.debug("Argument {} is a SimonProxy/Local Endpoint. Sending: {}", i, ser);
-                    args[i] = ser;
-                    
-                    // old (<1.2.0) behavior
-//                    throw new SimonException("Given method parameter no# " + (i + 1) + " is a local endpoint of a remote object. Endpoints can not be transferred.");
+                    throw new SimonException("Given method parameter no# "+(i+1)+" is a local endpoint of a remote object. Endpoints can not be transferred.");
                 }
-
+                
                 if (Utils.isValidRemote(args[i])) {
-                    
                     SimonRemoteInstance sri = new SimonRemoteInstance(session, args[i]);
 
                     logger.debug("SimonRemoteInstance found! id={}", sri.getId());
 
-                    lookupTable.putRemoteInstance(session.getId(), sri, args[i]);
+                    lookupTable.putRemoteInstanceBinding(session.getId(), sri.getId(), args[i]);
+
                     args[i] = sri; // overwrite arg with wrapped remote instance-interface
                 }
             }
@@ -351,15 +335,16 @@ public class Dispatcher implements IoHandler {
         session.write(msgInvoke);
 
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
-        int customWaitTimeout = Simon.getCustomInvokeTimeout(method);
-        
-        if (customWaitTimeout>0) {
-            waitForResult(session, monitor, customWaitTimeout);
-        } else {        
-            waitForResult(session, monitor);
-        }
 
+        waitForResult(session, monitor);
         MsgInvokeReturn result = (MsgInvokeReturn) getRequestResult(sequenceId);
+        logger.debug("got answer for sequenceId={}", sequenceId);
+
+//		if (result.hasError()) {
+//			logger.debug("An error occured. Returning SimonRemoteException. Error: {}",result.getErrorMsg());
+//			logger.debug("end sequenceId={}", sequenceId);
+//			return new SimonRemoteException(result.getErrorMsg());
+//		}
 
         logger.debug("end sequenceId={}", sequenceId);
         return result.getReturnValue();
@@ -383,7 +368,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgToString msgInvoke = new MsgToString();
         msgInvoke.setSequence(sequenceId);
@@ -424,7 +409,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgHashCode msgInvoke = new MsgHashCode();
         msgInvoke.setSequence(sequenceId);
@@ -452,10 +437,8 @@ public class Dispatcher implements IoHandler {
      * Forwards an "equals()" call to the remote side to be handled there
      *
      * @param session the session to which the invocation is sent
-     * @param remoteObjectName the name of the remote object that has to be
-     * compared
-     * @param objectToCompareWith the object to which the remote object is
-     * compared with
+     * @param remoteObjectName the name of the remote object that has to be compared
+     * @param objectToCompareWith the object to which the remote object is compared with
      * @return the result of the comparison
      * @throws SimonRemoteException
      */
@@ -467,7 +450,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgEquals msgEquals = new MsgEquals();
         msgEquals.setSequence(sequenceId);
@@ -492,61 +475,46 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Waits at most one hour for the result of request described by the
-     * monitor. If result is not present within this time, a
-     * SimonRemoteException will be placed as the result. This is to ensure that
-     * the client cannot wait forever for a result.
+     * Waits at most one hour for the result of request described by the monitor.
+     * If result is not present within this time, a SimonRemoteException will be placed as the result.
+     * This is to ensure that the client cannot wait forever for a result.
      *
      * @param session the session on which the request was placed
      * @param monitor the monitor related to the request
      */
-    private void waitForResult(IoSession session, final SequenceMonitor monitor) {
-        // wait at most 1hr
-        // 60min: 60min * 60sec * 1000ms = 3600000ms
-        waitForResult(session, monitor, 3600000);
-    }
-    
-    /**
-     * Waits at most <code>timeout</code> ms for the result of request described by the
-     * monitor. If result is not present within this time, a
-     * SimonRemoteException will be placed as the result. This is to ensure that
-     * the client cannot wait forever for a result.
-     *
-     * @param session the session on which the request was placed
-     * @param monitor the monitor related to the request
-     * @param timeout timeout for waiting for result
-     */
-    private void waitForResult(IoSession session, final SequenceMonitor monitor, int timeout) {
+    private void waitForResult(IoSession session, final Monitor monitor) {
+
         int sequenceId = monitor.getSequenceId();
         int counter = 0;
 
         // wait for result
-        long startWaiting = System.currentTimeMillis();
-        
-        // just make sure that the while-loop cannot wait forever for the result
-        long waitLoopCount = timeout / Statics.MONITOR_WAIT_TIMEOUT;
-        
-        while (!isRequestResultPresent(sequenceId)) {
+        synchronized (monitor) {
+            try {
+                long startWaiting = System.currentTimeMillis();
+                while (!isRequestResultPresent(sequenceId)) {
 
-            if (counter++ == waitLoopCount) {
-                putResultToQueue(session, sequenceId, new InvokeTimeoutException("Waited too long for invocation result."));
-            }
+                    // just make sure that the while-loop cannot wait forever for the result
+                    // 60min: 60min * 60sec * 1000ms = 3600000ms
+                    // 3600000ms / 200ms = 18000 loops with 200ms wait time
+                    if (counter++ == 18000) {
+                        putResultToQueue(session, sequenceId, new SimonRemoteException("Waited too long for invocation result."));
+                    }
 
-            if (monitor.waitForSignal(Statics.MONITOR_WAIT_TIMEOUT)) {
-                return;
-            }
+                    monitor.wait(Statics.MONITOR_WAIT_TIMEOUT);
 
-            if (logger.isTraceEnabled()) { // used IF to avoid calculating if no trace enabled
-                logger.trace("still waiting for result for sequenceId={}. Waiting since {}ms.", sequenceId, (System.currentTimeMillis() - startWaiting));
+                    logger.trace("still waiting for result for sequenceId={}. Waiting since {}ms.", sequenceId, (System.currentTimeMillis()-startWaiting));
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
 
     /**
-     * This method is called from worker-threads which processed an invocation
-     * and have data ready that has to be returned to the "caller". after adding
-     * the result to the map (means: replacing the monitor with the result), the
-     * waiting request-method is waked.
+     * This method is called from worker-threads which processed an invocation and have data
+     * ready that has to be returned to the "caller".
+     * after adding the result to the map (means: replacing the monitor with the result),
+     * the waiting request-method is waked.
      *
      * @param sequenceId the sequence id that is waiting for the result
      * @param o the result itself
@@ -556,9 +524,6 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("sequenceId={} msg={}", sequenceId, o);
 
-        
-        boolean isResultForOutstandingRequest=false;
-        
         // remove the sequenceId from the map/list of open requests
         synchronized (sessionHasRequestPlaced) {
 
@@ -567,37 +532,28 @@ public class Dispatcher implements IoHandler {
             // check if there is already a list with requests for this session
             List<Integer> requestListForSession = sessionHasRequestPlaced.get(session);
 
-            if (requestListForSession!=null) {
-                
-                synchronized (requestListForSession) {
-                    
-                    if (requestListForSession.contains(sequenceId)) {
-                        requestListForSession.remove((Integer) sequenceId);
+            assert requestListForSession != null;
 
-                        // if there is no more request open, remove the session from the list
-                        if (requestListForSession.isEmpty()) {
-                            sessionHasRequestPlaced.remove(session);
-                        }
-                        isResultForOutstandingRequest=true;
-                    } else {
-                        logger.debug("Session {} and sequenceId {} do currently not wait for a result.", Utils.longToHexString(session.getId()), sequenceId);
-                    }
-                    
+            synchronized (requestListForSession) {
+                assert requestListForSession.contains(sequenceId);
+                requestListForSession.remove((Integer) sequenceId);
+                // if there is no more request open, remove the session from the list
+                if (requestListForSession.isEmpty()) {
+                    sessionHasRequestPlaced.remove(session);
                 }
-                
-            } else {
-                logger.warn("Session {} has no outstanding requests. Result no longer awaited?", Utils.longToHexString(session.getId()));
             }
 
+
         }
-        if (isResultForOutstandingRequest) {
-            // retrieve monitor
-            SequenceMonitor monitor = (SequenceMonitor) requestMonitorAndResultMap.get(sequenceId);
-            // replace monitor with result
-            requestMonitorAndResultMap.put(sequenceId, o);
-            monitor.signal();
-        } else {
-            logger.warn("Result '{}' for session {} and sequenceId {} dropped.", new Object[]{o,Utils.longToHexString(session.getId()),sequenceId});
+
+        // retrieve monitor
+        Object monitor = requestMonitorAndResultMap.get(sequenceId);
+        // replace monitor with result
+        requestMonitorAndResultMap.put(sequenceId, o);
+
+        // notify monitor
+        synchronized (monitor) {
+            monitor.notify();
         }
         logger.debug("end");
     }
@@ -609,6 +565,35 @@ public class Dispatcher implements IoHandler {
         return lookupTable;
     }
 
+//	/**
+//	 * 
+//	 * Removes the return type from the list of awaited result types for a specific request ID.
+//	 * 
+//	 * @param sequenceId the request id which was waiting for a result of the type saved in the list
+//	 * @return the return type which has been removed
+//	 */
+//	protected Class<?> removeRequestReturnType(int sequenceId) {
+//		
+//		synchronized (requestReturnType) {
+//			return requestReturnType.remove(sequenceId);
+//		}
+//		
+//	}
+//	/**
+//	 * 
+//	 * All received results are saved in a queue. With this method you can get the received result 
+//	 * by its sequenceId.
+//	 * <br/>
+//	 * <b>Attention:</b> Be sure that you only call this method if you were notified by the receiver! 
+//	 * 
+//	 * @param sequenceId the sequenceId which is related to the result
+//	 * @return the received result
+//	 */
+//	protected Object getResult(int sequenceId){
+//		synchronized (requestMonitorAndResultMap) {
+//			return getRequestResult(sequenceId);			
+//		}
+//	}
     /**
      *
      * Initiates a shutdown at the dispatcher and all related things
@@ -616,9 +601,6 @@ public class Dispatcher implements IoHandler {
      */
     public void shutdown() {
         logger.debug("begin");
-        
-        // need to be done before shutdown-status is set
-        simonRefQueue.cleanup();
 
         shutdownInProgress = true;
         messageProcessorPool.shutdown();
@@ -631,7 +613,6 @@ public class Dispatcher implements IoHandler {
                 // nothing to do
             }
         }
-        
         lookupTable.cleanup();
         isRunning = false;
         logger.debug("shutdown completed");
@@ -640,11 +621,9 @@ public class Dispatcher implements IoHandler {
 
     /**
      *
-     * Returns the identifier string which determines to which server this
-     * dispatcher is connected to
+     * Returns the identifier string which determines to which server this dispatcher is connected to
      *
-     * @return the identifier string. this is <code>null</code> if this
-     * dispatcher is a server dispatcher
+     * @return the identifier string. this is <code>null</code> if this dispatcher is a server dispatcher
      */
     public String getServerString() {
         return serverString;
@@ -652,7 +631,6 @@ public class Dispatcher implements IoHandler {
 
     /**
      * Returns whether this is an server dispatcher or not
-     *
      * @return true if server dispatcher, false if not
      */
     protected boolean isServerDispatcher() {
@@ -661,7 +639,6 @@ public class Dispatcher implements IoHandler {
 
     /**
      * Returns whether the dispatcher is still in run() or not
-     *
      * @return boolean
      */
     protected boolean isRunning() {
@@ -669,38 +646,33 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Internal method for checking for invalid state before executing
-     * invoke-actions. If the state is okay, the method will simply return
-     * without any notice.
+     * Internal method for checking for invalid state before executing invoke-actions.
+     * If the state is okay, the method will simply return without any notice.
      *
-     * @param method the method name that we will try to call afterwards...
-     * Could be left to \"\", but it's useful for logging purpose
-     * @throws SessionException occurs when the system is already in shutdown
-     * process and no further remote call can be made
+     * @param method the method name that we will try to call afterwards... Could be left to \"\", but it's useful for logging purpose
+     * @throws SessionException occurs when the system is already in shutdown process and no further remote call can be made
      */
     private void checkForInvalidState(IoSession session, String method) throws SessionException {
-        if (shutdownInProgress && isRunning) {
+        if (shutdownInProgress) {
             throw new SessionException("Cannot handle method call \"" + method + "\" while shutdown.");
         }
-        if (!isRunning ) {
-            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed Dispatcher for Session "+Utils.longToHexString(session.getId())+".");
-        } else if (session.isClosing()) {
-            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed Session("+Utils.longToHexString(session.getId())+").");
+        if (!isRunning || session.isClosing()) {
+            throw new SessionException("Cannot handle method call \"" + method + "\" on already closed session. isRunning="+isRunning+" isClosing="+session.isClosing());
         }
     }
 
     /**
      *
-     * create a monitor that waits for the request-result that is associated
-     * with the given request-id
+     * create a monitor that waits for the request-result that
+     * is associated with the given request-id
      *
      * @param sequenceId
      * @return the monitor used for waiting for the result
      */
-    private SequenceMonitor createMonitor(final IoSession session, final int sequenceId) {
+    private Monitor createMonitor(final IoSession session, final int sequenceId) {
         logger.debug("begin");
 
-        final SequenceMonitor monitor = new SequenceMonitor(sequenceId);
+        final Monitor monitor = new Monitor(sequenceId);
 
         synchronized (sessionHasRequestPlaced) {
             // check if there is already a list with requests for this session
@@ -725,10 +697,10 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Returns the result of the already placed request. Make sure that you
-     * where notified about the received result. Checks if the request result is
-     * an {@link SimonRemoteException}. If yes, the exception is thrown, if not,
-     * the result is returned
+     * Returns the result of the already placed request.
+     * Make sure that you where notified about the received result.
+     * Checks if the request result is an {@link SimonRemoteException}.
+     * If yes, the exception is thrown, if not, the result is returned
      *
      * @param sequenceId the sequence-id related to the result
      * @return the result of the request. May be null if there is no result yet.
@@ -748,15 +720,13 @@ public class Dispatcher implements IoHandler {
 
     /**
      * Returns whether the given sequenceId already has a result present or not
-     *
      * @param sequenceId the sequence-id related to the result
      * @return true, if the result is present, false if not
      */
     private boolean isRequestResultPresent(final int sequenceId) {
         boolean present = false;
         // if the contained object is NOT an instance of Monitor, present=true
-        logger.trace("result={}", requestMonitorAndResultMap.get(sequenceId));
-        if (!(requestMonitorAndResultMap.get(sequenceId) instanceof SequenceMonitor)) {
+        if (!(requestMonitorAndResultMap.get(sequenceId) instanceof Monitor)) {
             present = true;
         }
         logger.debug("Result for sequenceId={} present: {}", sequenceId, present);
@@ -765,9 +735,10 @@ public class Dispatcher implements IoHandler {
 
     /**
      *
-     * Generates a sequence ID<br> IDs have a unique value from
-     * 0..Integer.MAX_VALUE<br> The range should be big enough so that there
-     * should not be two oder more identical IDs
+     * Generates a sequence ID<br>
+     * IDs have a unique value from 0..Integer.MAX_VALUE<br>
+     * The range should be big enough so that there should
+     * not be two oder more identical IDs
      *
      * @return a request ID
      */
@@ -777,9 +748,8 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Interrupts all waiting requests for given session. Returned value would
-     * be a SimonRemoteException
-     *
+     * Interrupts all waiting requests for given session.
+     * Returned value would be a SimonRemoteException
      * @param session the session which requests to be interrupted
      */
     private void interruptWaitingRequests(IoSession session) {
@@ -788,7 +758,7 @@ public class Dispatcher implements IoHandler {
         if (remove != null) {
             List<Integer> removeCopy = new ArrayList<Integer>(remove);
             for (Integer sequenceId : removeCopy) {
-                putResultToQueue(session, sequenceId, new SimonRemoteException("session was closed. sessionId=" + Utils.longToHexString(session.getId()) + " sequenceId=" + sequenceId));
+                putResultToQueue(session, sequenceId, new SimonRemoteException("session was closed. sessionid="+Utils.longToHexString(session.getId())));
             }
         }
     }
@@ -801,8 +771,8 @@ public class Dispatcher implements IoHandler {
     public void exceptionCaught(IoSession session, Throwable throwable)
             throws Exception {
 
-        logger.error("exception Caught. thread={} session={}. Exception:\n {}", new Object[]{Thread.currentThread().getName(), Utils.longToHexString(session.getId()), Utils.getStackTraceAsString(throwable)});
-
+        logger.error("exception Caught. session={}. Exception\n {}", new Object[]{Utils.longToHexString(session.getId()), Utils.getStackTraceAsString(throwable)});
+            
         logger.debug("Closing the session now! session={}", Utils.longToHexString(session.getId()));
         session.close(true);
     }
@@ -834,7 +804,7 @@ public class Dispatcher implements IoHandler {
     @Override
     public void sessionClosed(IoSession session) throws Exception {
         String id = Utils.longToHexString(session.getId());
-
+        
         logger.debug("{} ################################################", id);
         logger.debug("{} ######## session closed", id);
 
@@ -843,12 +813,13 @@ public class Dispatcher implements IoHandler {
 
         // remove attached references
         logger.debug("{} ######## Removing session attributes ...", id);
+
         logger.debug("{} ########  -> {}", id, Statics.SESSION_ATTRIBUTE_DISPATCHER);
         session.removeAttribute(Statics.SESSION_ATTRIBUTE_DISPATCHER);
+
         logger.debug("{} ########  -> {}", id, Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
         session.removeAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
 
-        logger.debug("{} ######## notify closed listeners", id);
         // notify all still attached closed listeners that the one and only session to the server is closed.
         Iterator<String> iterator = remoteObjectClosedListenersList.keySet().iterator();
         while (iterator.hasNext()) {
@@ -860,41 +831,10 @@ public class Dispatcher implements IoHandler {
             list.clear();
         }
 
-        // see issue #130
-        if (!isReleased()) {
-            logger.debug("{} ######## Releasing dispatcher {}", id, this);
-            AbstractLookup.releaseDispatcher(this);
-        } else {
-            logger.debug("{} ######## Dispatcher {} already released. Nothing to do.", id, this);
-        }
+        // fix for issue #57
+        AbstractLookup.releaseDispatcher(this);
 
-        logger.debug("{} ######## Session close *DONE*", id);
         logger.debug("{} ################################################", id);
-    }
-
-    /**
-     * Indicates whether someone has set this dispatcher as "released". This
-     * should only happen at one place:
-     * {@link AbstractLookup#releaseDispatcher(de.root1.simon.Dispatcher)}.
-     *
-     * @return true if released, false of not
-     */
-    boolean isReleased() {
-        return released;
-    }
-
-    /**
-     * Method used by AbstractLookup when releasing dispatcher.
-     * {@link AbstractLookup#releaseDispatcher(de.root1.simon.Dispatcher)} is
-     * shutting down the dispatcher + closing the session. After the session has
-     * been closed, {@link Dispatcher#sessionClosed(org.apache.mina.core.session.IoSession)
-     * } will be triggered. As the release has already been done or is in
-     * progress, we don't need to release again. So, release in "sessionClosed"
-     * should only happen when someone else (crash, error, ...) closes the
-     * session. That's for what this flag is good for.
-     */
-    void setReleased() {
-        this.released = true;
     }
 
     /*
@@ -926,7 +866,7 @@ public class Dispatcher implements IoHandler {
     }
 
     private void sendPing(IoSession session) throws SessionException {
-        checkForInvalidState(session, "sendPing()");
+        checkForInvalidState(session, "ping()");
         pingWatchdog.waitForPong(session);
 
         final int sequenceId = generateSequenceId();
@@ -942,7 +882,7 @@ public class Dispatcher implements IoHandler {
     }
 
     public void sendPong(IoSession session) throws SessionException {
-        checkForInvalidState(session, "sendPong()");
+        checkForInvalidState(session, "pong()");
 
         final int sequenceId = generateSequenceId();
 
@@ -967,10 +907,8 @@ public class Dispatcher implements IoHandler {
 
     /**
      * Opens the a raw channel on the given session with the specified token
-     *
      * @return the opened RawChannel
-     * @throws SimonRemoteException if a problem occured while opening the raw
-     * channel
+     * @throws SimonRemoteException if a problem occured while opening the raw channel
      */
     protected RawChannel openRawChannel(IoSession session, int channelToken) throws SimonRemoteException {
         checkForInvalidState(session, "openRawChannel()");
@@ -981,7 +919,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgOpenRawChannel msgOpenRawChannel = new MsgOpenRawChannel();
         msgOpenRawChannel.setSequence(sequenceId);
@@ -996,10 +934,6 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("got answer for sequenceId={}", sequenceId);
         logger.debug("end sequenceId={}", sequenceId);
-        
-        if (result.hasError()) {
-            throw new SimonRemoteException(result.getErrorMsg());
-        }
 
         if (result.getReturnValue() == true) {
             logger.debug("Creating RawChannel object with token={}", channelToken);
@@ -1009,10 +943,9 @@ public class Dispatcher implements IoHandler {
         throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
     }
 
-    /**
+    /** 
      * TODO document me
-     *
-     * @throws SimonException
+     * @throws SimonException 
      */
     protected int prepareRawChannel(RawChannelDataListener listener) throws SimonException {
         int channelToken = getRawChannelToken();
@@ -1023,8 +956,8 @@ public class Dispatcher implements IoHandler {
         return channelToken;
     }
 
-    /**
-     * TODO document me
+    /** 
+     * TODO document me 
      */
     protected boolean isRawChannelDataListenerRegistered(int channelToken) {
         logger.trace("searching in map for token={} map={}", channelToken, rawChannelMap);
@@ -1033,8 +966,8 @@ public class Dispatcher implements IoHandler {
         }
     }
 
-    /**
-     * TODO document me
+    /** 
+     * TODO document me 
      */
     protected RawChannelDataListener getRawChannelDataListener(int channelToken) {
         logger.trace("getting listener token={} map={}", channelToken, rawChannelMap);
@@ -1043,10 +976,9 @@ public class Dispatcher implements IoHandler {
         }
     }
 
-    /**
+    /** 
      * TODO document me
-     *
-     * @throws SimonException
+     * @throws SimonException 
      */
     private int getRawChannelToken() throws SimonException {
         synchronized (tokenList) {
@@ -1076,10 +1008,9 @@ public class Dispatcher implements IoHandler {
 
     /**
      * TODO document me
-     *
      * @param channelToken
      */
-    protected void unprepareRawChannel(int channelToken) throws RawChannelException {
+    protected void unprepareRawChannel(int channelToken) {
         logger.debug("token={}", channelToken);
         releaseToken(channelToken);
         synchronized (rawChannelMap) {
@@ -1090,13 +1021,12 @@ public class Dispatcher implements IoHandler {
 
     /**
      * TODO document me
-     *
      * @param session
      * @param channelToken
      * @param byteBuffer
      * @throws SimonRemoteException
      */
-    protected void writeRawData(IoSession session, int channelToken, ByteBuffer byteBuffer) throws SimonRemoteException, RawChannelException {
+    protected void writeRawData(IoSession session, int channelToken, ByteBuffer byteBuffer) throws SimonRemoteException {
         checkForInvalidState(session, "writeRawData()");
 
         final int sequenceId = generateSequenceId();
@@ -1104,7 +1034,7 @@ public class Dispatcher implements IoHandler {
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgRawChannelData msgRawChannelData = new MsgRawChannelData();
         msgRawChannelData.setSequence(sequenceId);
@@ -1116,24 +1046,19 @@ public class Dispatcher implements IoHandler {
         logger.debug("data send. waiting for answer for sequenceId={}", sequenceId);
 
         waitForResult(session, monitor);
-
-        //retrieve the return msg to remove the monitor etc.
-        MsgRawChannelDataReturn requestResult = (MsgRawChannelDataReturn) getRequestResult(sequenceId); 
-        
-        if (requestResult.hasError()) {
-            throw new RawChannelException(requestResult.getErrorMsg());
-        }
+//		MsgRawChannelDataReturn result = (MsgRawChannelDataReturn) getRequestResult(sequenceId);			
+        getRequestResult(sequenceId); //retrieve the return msg to remove the monitor etc.
 
         logger.debug("end. got ack for data send for sequenceId={} and channelToken={}", sequenceId, channelToken);
     }
 
     /**
      * Triggers a close of a raw channel
-     *
+     * 
      * @param session the related IoSession
      * @param channelToken the related channel token
      */
-    protected void closeRawChannel(IoSession session, int channelToken) throws SimonRemoteException, RawChannelException {
+    protected void closeRawChannel(IoSession session, int channelToken) throws SimonRemoteException {
         checkForInvalidState(session, "closeRawChannel()");
 
         final int sequenceId = generateSequenceId();
@@ -1142,7 +1067,7 @@ public class Dispatcher implements IoHandler {
 
 
         // create a monitor that waits for the request-result
-        final SequenceMonitor monitor = createMonitor(session, sequenceId);
+        final Monitor monitor = createMonitor(session, sequenceId);
 
         MsgCloseRawChannel msgCloseRawChannel = new MsgCloseRawChannel();
         msgCloseRawChannel.setSequence(sequenceId);
@@ -1158,20 +1083,15 @@ public class Dispatcher implements IoHandler {
         logger.debug("got answer for sequenceId={}", sequenceId);
         logger.debug("end sequenceId={}", sequenceId);
 
-        if (result.hasError()) {
-            throw new RawChannelException(result.getErrorMsg());
-        }
-        
         if (result.getReturnValue() == true) {
             return;
         }
 
-        throw new SimonRemoteException("channel could not be closed. Maybe token was wrong?!");
+        throw new SimonRemoteException("channel could not be opened. Maybe token was wrong?!");
     }
 
     /**
      * Returns the PingWatchdog that checks the session connectivity
-     *
      * @return the current instance of PingWatchdog
      */
     protected PingWatchdog getPingWatchdog() {
@@ -1179,49 +1099,11 @@ public class Dispatcher implements IoHandler {
     }
 
     /**
-     * Returns a list of ClosedListeners which listen for closed event for given
-     * remote object name
-     *
+     * Returns a list of ClosedListeners which listen for closed event for given remote object name
      * @param remoteObjectName the remote objects name
      * @return the list with listeners
      */
     protected List<ClosedListener> getClosedListenerList(String remoteObjectName) {
         return remoteObjectClosedListenersList.get(remoteObjectName);
-    }
-
-    /**
-     * Classloader used to load remote interface classes etc.
-     *
-     * @return ClassLoader
-     * @since 1.2.0
-     */
-    ClassLoader getClassLoader() {
-        return classLoader;
-    }
-
-    void sendReleaseRef(IoSession session, String refId) throws SessionException {
-        checkForInvalidState(session, "sendReleaseRef()");
-        logger.debug("#######################");
-        logger.debug("########### ReleaseRef for {}", refId);
-        logger.debug("#######################");
-
-        logger.debug("begin session={} refId={}", session, refId);
-
-        MsgReleaseRef msgReleaseRef = new MsgReleaseRef();
-        msgReleaseRef.setRefId(refId);
-        // we don't care about seq id in this case, but we need it for the protocol
-        msgReleaseRef.setSequence(generateSequenceId()); 
-
-        session.write(msgReleaseRef);
-
-        logger.debug("end. data send.");
-    }
-
-    /**
-     * TODO document me
-     * @return 
-     */
-    SimonRefQueue<SimonPhantomRef> getRefQueue() {
-        return simonRefQueue;
     }
 }

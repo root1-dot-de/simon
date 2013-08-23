@@ -5,8 +5,11 @@
 
 package de.root1.simon.samples.loginsessionfactory.shared;
 
-public interface LoginInterface {
+import de.root1.simon.SimonRemote;
+import de.root1.simon.exceptions.SimonRemoteException;
 
-   public SessionInterface login(String user, String pass) throws LoginFailedException;
+public interface LoginInterface extends SimonRemote {
+
+   public SessionInterface login(String user, String pass) throws SimonRemoteException, LoginFailedException;
 
 }

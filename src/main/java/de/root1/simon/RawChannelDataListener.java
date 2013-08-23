@@ -18,29 +18,11 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.exceptions.RawChannelException;
 import java.nio.ByteBuffer;
 
-/**
- * Interface to be implemented for receiving data ia RawChannel.
- * 
- * @author achristian
- */
 public interface RawChannelDataListener {
 
-    /**
-     * Called by SIMON when data is received through a RawChannel.
-     * Implementation is responsible for processing/storing/... received data.
-     * 
-     * @param data ByteBuffer with received data
-     * @throws RawChannelException if an error occurs while writing data
-     */
-    void write(ByteBuffer data) throws RawChannelException;
+    void write(ByteBuffer data);
 
-    /**
-     * Called by SIMON when a RawChannel is closed.
-     * Implementation can use this to close filestreams or whetever is needed to process/Store/... received data.
-     * @throws RawChannelException  if an error occurs while closing.
-     */
-    void close() throws RawChannelException;
+    void close();
 }

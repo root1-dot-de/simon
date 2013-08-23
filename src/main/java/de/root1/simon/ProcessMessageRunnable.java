@@ -18,7 +18,6 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.exceptions.RawChannelException;
 import de.root1.simon.codec.messages.*;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SessionException;
@@ -33,7 +32,6 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.logging.Level;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -42,19 +40,18 @@ import org.slf4j.LoggerFactory;
 /**
  * This class is feed with all kind of messages (requests/invokes and returns)
  * and is then run on a thread pool.
- *
- * The message gets then processed and answered. Either ProcessMessageRunnable
- * invokes the requested method and returns the result to the remote, or it
+ * 
+ * The message gets then processed and answered. Either ProcessMessageRunnable 
+ * invokes the requested method and returns the result to the remote, or it 
  * passes the result to the dispatcher where then the requesting call is getting
  * answered.
- *
+ * 
  * @author achr
  *
  */
 public class ProcessMessageRunnable implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final Logger invokeLogger = LoggerFactory.getLogger("de.root1.simon.InvokeLogger");
     private AbstractMessage abstractMessage;
     private IoSession session;
     private Dispatcher dispatcher;
@@ -69,9 +66,6 @@ public class ProcessMessageRunnable implements Runnable {
     public void run() {
 
         logger.debug("ProcessMessageRunnable: {} on sessionId {}", abstractMessage, Utils.longToHexString(session.getId()));
-
-        ProcessMessageThread currentThread = (ProcessMessageThread) Thread.currentThread();
-        currentThread.setSessionId(session.getId());
 
         int msgType = abstractMessage.getMsgType();
 
@@ -156,14 +150,10 @@ public class ProcessMessageRunnable implements Runnable {
             case SimonMessageConstants.MSG_PONG:
                 processPong();
                 break;
-
+                
             case SimonMessageConstants.MSG_ERROR:
                 processError();
-                break;
-
-            case SimonMessageConstants.MSG_RELEASE_REF:
-                processReleaseRef();
-                break;
+                break;                
 
             default:
                 // FIXME what to do here ?!
@@ -232,24 +222,19 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     private void processCloseRawChannel() {
+        logger.debug("begin");
+
+        logger.debug("processing MsgCloseRawChannel...");
+        MsgCloseRawChannel msg = (MsgCloseRawChannel) abstractMessage;
+
+        dispatcher.unprepareRawChannel(msg.getChannelToken());
+
         MsgCloseRawChannelReturn returnMsg = new MsgCloseRawChannelReturn();
-        try {
-            logger.debug("begin");
+        returnMsg.setSequence(msg.getSequence());
+        returnMsg.setReturnValue(true);
+        session.write(returnMsg);
 
-            logger.debug("processing MsgCloseRawChannel...");
-            MsgCloseRawChannel msg = (MsgCloseRawChannel) abstractMessage;
-
-            dispatcher.unprepareRawChannel(msg.getChannelToken());
-
-            returnMsg.setSequence(msg.getSequence());
-            returnMsg.setReturnValue(true);
-        } catch (RawChannelException ex) {
-            logger.warn("Error occured during RawChannelDataListener#close()", ex);
-            returnMsg.setErrorMsg(ex.getMessage());
-        } finally {
-            session.write(returnMsg);
-            logger.debug("end");
-        }
+        logger.debug("end");
     }
 
     private void processCloseRawChannelReturn() {
@@ -262,32 +247,26 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     private void processRawChannelData() {
-        MsgRawChannelDataReturn returnMsg = new MsgRawChannelDataReturn();
-        try {
-            logger.debug("begin");
+        logger.debug("begin");
 
-            logger.debug("processing MsgRawChannelData...");
-            MsgRawChannelData msg = (MsgRawChannelData) abstractMessage;
+        logger.debug("processing MsgRawChannelData...");
+        MsgRawChannelData msg = (MsgRawChannelData) abstractMessage;
 
-            RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
-            if (rawChannelDataListener != null) {
-                logger.debug("writing data to {} for token {}.", rawChannelDataListener, msg.getChannelToken());
-                ByteBuffer data = msg.getData();
-                data.flip();
-                rawChannelDataListener.write(data);
-                logger.debug("data forwarded to listener for token {}", msg.getChannelToken());
-                returnMsg.setSequence(msg.getSequence());
-            } else {
-                logger.error("trying to forward data to a not registered or already closed listener: token={} data={}", msg.getChannelToken(), msg.getData());
-            }
-
-        } catch (RawChannelException ex) {
-            logger.warn("Error occured during RawChannelDataListener#write()", ex);
-            returnMsg.setErrorMsg(ex.getMessage());
-        } finally {
+        RawChannelDataListener rawChannelDataListener = dispatcher.getRawChannelDataListener(msg.getChannelToken());
+        if (rawChannelDataListener != null) {
+            logger.debug("writing data to {} for token {}.", rawChannelDataListener, msg.getChannelToken());
+            ByteBuffer data = msg.getData();
+            data.flip();
+            rawChannelDataListener.write(data);
+            logger.debug("data forwarded to listener for token {}", msg.getChannelToken());
+            MsgRawChannelDataReturn returnMsg = new MsgRawChannelDataReturn();
+            returnMsg.setSequence(msg.getSequence());
             session.write(returnMsg);
-            logger.debug("end");
+        } else {
+            logger.error("trying to forward data to a not registered or already closed listener: token={} data={}", msg.getChannelToken(), msg.getData());
         }
+
+        logger.debug("end");
     }
 
     /**
@@ -305,29 +284,11 @@ public class ProcessMessageRunnable implements Runnable {
         MsgNameLookupReturn ret = new MsgNameLookupReturn();
         ret.setSequence(msg.getSequence());
         try {
+            Class<?>[] interfaces = null;
 
-            Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
-            SimonRemoteMarker marker = Utils.getMarker(remoteObject);
-            String[] interfaceNames;
-            if (marker != null) {
-                RemoteObjectContainer container = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName);
+            interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
 
-                Class<?>[] interfaces = null;
-                interfaces = container.getRemoteObjectInterfaces();
-                interfaceNames = new String[interfaces.length];
-                for (int i = 0; i < interfaceNames.length; i++) {
-                    interfaceNames[i] = interfaces[i].getCanonicalName();
-                }
-            } else {
-                Class<?>[] interfaces = null;
-                interfaces = Utils.findAllRemoteInterfaces(dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject().getClass());
-
-                interfaceNames = new String[interfaces.length];
-                for (int i = 0; i < interfaceNames.length; i++) {
-                    interfaceNames[i] = interfaces[i].getCanonicalName();
-                }
-            }
-            ret.setInterfaces(interfaceNames);
+            ret.setInterfaces(interfaces);
         } catch (LookupFailedException e) {
             logger.debug("Lookup for remote object '{}' failed: {}", remoteObjectName, e.getMessage());
             ret.setErrorMsg("Error: " + e.getClass() + "->" + e.getMessage() + "\n" + Utils.getStackTraceAsString(e));
@@ -355,13 +316,7 @@ public class ProcessMessageRunnable implements Runnable {
 
             RemoteObjectContainer container = dispatcher.getLookupTable().getRemoteObjectContainerByInterface(canonicalInterfaceName);
 
-            Class<?>[] interfaces = container.getRemoteObjectInterfaces();
-            String[] interfaceNames = new String[interfaces.length];
-            for (int i = 0; i < interfaceNames.length; i++) {
-                interfaceNames[i] = interfaces[i].getCanonicalName();
-            }
-
-            ret.setInterfaces(interfaceNames);
+            ret.setInterfaces(container.getRemoteObjectInterfaces());
             ret.setRemoteObjectName(container.getRemoteObjectName());
 
         } catch (LookupFailedException e) {
@@ -398,9 +353,8 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     /**
-     * This method is processed on the remote end (where the object to call
-     * lives) that finally calls the method and returns the result to the
-     * calling end.
+     * This method is processed on the remote end that finally calls the method
+     * and returns the result to the calling end.
      */
     private void processInvoke() {
         logger.debug("begin");
@@ -437,99 +391,84 @@ public class ProcessMessageRunnable implements Runnable {
             // replace existing SimonRemote objects with proxy object
             if (arguments != null) {
 
-                try {
-                    for (int i = 0; i < arguments.length; i++) {
+                for (int i = 0; i < arguments.length; i++) {
 
-                        // search the arguments for remote endpoint references
-                        if (arguments[i] instanceof SimonEndpointReference) {
+                    // search the arguments for remote instances
+                    if (arguments[i] instanceof SimonRemoteInstance) {
 
-                            SimonEndpointReference ser = (SimonEndpointReference) arguments[i];
-                            logger.debug("SimonEndpointReference in args found: ", ser);
-                            arguments[i] = dispatcher.getLookupTable().getRemoteObjectContainer(ser.getRemoteObjectName()).getRemoteObject();
-                            logger.debug("Original object for SimonEndpointReference injected: " + arguments[i]);
+                        final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
 
+                        logger.debug("SimonCallback in args found. id={}", simonCallback.getId());
+
+                        List<String> interfaceNames = simonCallback.getInterfaceNames();
+                        Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
+                        for (int j = 0; j < interfaceNames.size(); j++) {
+                            listenerInterfaces[j] = Class.forName(interfaceNames.get(j));
                         }
 
-                        // search the arguments for remote instances
-                        if (arguments[i] instanceof SimonRemoteInstance) {
-
-                            final SimonRemoteInstance simonCallback = (SimonRemoteInstance) arguments[i];
-
-                            logger.debug("SimonCallback in args found. id={}", simonCallback.getId());
-
-                            List<String> interfaceNames = simonCallback.getInterfaceNames();
-                            Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
-                            for (int j = 0; j < interfaceNames.size(); j++) {
-                                // See: http://dev.root1.de/issues/127
-                                listenerInterfaces[j] = Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
-                            }
-
-                            // re-implant the proxy object
-                            SimonProxy simonProxy = new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false);
-                            arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, simonProxy);
-                            logger.debug("proxy object for SimonCallback injected");
-                        }
+                        // re-implant the proxy object
+                        arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces));
+                        logger.debug("proxy object for SimonCallback injected");
                     }
-                } catch (ClassNotFoundException ex) {
-                    throw new ClassNotFoundException("Callback interface class(es) not found with classloader [" + dispatcher.getClassLoader() + "].", ex);
                 }
             }
             // ------------
 
             logger.debug("ron={} method={} args={}", new Object[]{remoteObjectName, method, arguments});
-            invokeLogger.debug("Invoke on remote object '{}': method='{}' args='{}'", new Object[]{remoteObjectName, method, arguments});
 
             Object remoteObject = dispatcher.getLookupTable().getRemoteObjectContainer(remoteObjectName).getRemoteObject();
 
             try {
                 result = method.invoke(remoteObject, arguments);
             } catch (IllegalArgumentException ex) {
-                logger.error("IllegalArgumentException while invoking remote method. Arguments obviously do not match the methods parameter types. Errormsg: " + ex.getMessage());
+                logger.error("IllegalArgumentException while invoking remote method. Arguments obviously do not match the methods parameter types. Errormsg: "+ex.getMessage());
                 logger.error("***** Analysis of arguments and paramtypes ... ron={} method={} ", remoteObjectName, method.getName());
-                if (arguments != null && arguments.length != 0) {
+                if (arguments != null && arguments.length!=0) {
                     for (int i = 0; i < arguments.length; i++) {
                         logger.error("***** arguments[" + i + "]: " + (arguments[i] == null ? "null" : arguments[i].getClass().getCanonicalName()) + " toString: " + (arguments[i] == null ? "null" : arguments[i].toString()));
+//                        if (arguments[i]!=null) {
+//                            for (Method m : arguments[i].getClass().getMethods()){
+//                                logger.error("***** arguments[" + i + "] has method: {}",m);
+//                            }
+//                        }
                     }
                 } else {
                     logger.error("***** no arguments available.");
                 }
 
                 Class<?>[] paramType = method.getParameterTypes();
-                if (paramType != null && paramType.length != 0) {
+                if (paramType != null && paramType.length!=0) {
                     for (int i = 0; i < paramType.length; i++) {
+//                        logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getClass().getCanonicalName()));
                         logger.error("***** paramType[" + i + "]: " + (paramType[i] == null ? "null" : paramType[i].getCanonicalName()));
                     }
                 } else {
                     logger.error("***** no paramtypes available.");
                 }
-
-                for (Method m : remoteObject.getClass().getMethods()) {
-                    logger.error("***** remoteObject '{}' has method: {}", remoteObjectName, m);
+                
+                for (Method m : remoteObject.getClass().getMethods()){
+                    logger.error("***** remoteObject '{}' has method: {}",remoteObjectName, m);
                 }
-
+                
                 logger.error("***** method signature: {}", method.toString());
                 logger.error("***** generic method signature: {}", method.toGenericString());
-                logger.error("***** Error stacktrace:\n{}", Utils.getStackTraceAsString(ex));
                 logger.error("***** Analysis of arguments and paramtypes ... *DONE*");
+                ex.printStackTrace();
                 throw ex;
             }
-
-            // check for re-transmitting callback
+//            catch (Throwable ex) {
+//                result = Utils.getRootCause(ex);
+//                System.err.println("undeclared throwable exception: root cause: "+result);
+//            }
+            
             if (Utils.isSimonProxy(result)) {
-
-
-                SimonProxy sp = Simon.getSimonProxy(result);
-                SimonEndpointReference ser = new SimonEndpointReference(sp);
-                logger.debug("Result of method is SimonProxy/Local Endpoint. Sending: {}", ser);
-                result = ser;
-//                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
+                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
             }
 
-            // check for normal remote objects?!
             if (dispatcher.getLookupTable().isSimonRemoteRegistered(result)) {
-                throw new SimonException("Result '" + result + "' of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
+                throw new SimonException("Result of method '" + method + "' is a registered remote object. Endpoints can not be transferred.");
             }
-
+            
             if (method.getReturnType() == void.class) {
                 result = new SimonVoid();
             }
@@ -539,10 +478,10 @@ public class ProcessMessageRunnable implements Runnable {
 
                 logger.debug("Result of method '{}' is SimonRemote: {}", method, result);
 
-                SimonRemoteInstance sri = new SimonRemoteInstance(session, result);
+                SimonRemoteInstance simonCallback = new SimonRemoteInstance(session, result);
 
-                dispatcher.getLookupTable().putRemoteInstance(session.getId(), sri, result);
-                result = sri;
+                dispatcher.getLookupTable().putRemoteInstanceBinding(session.getId(), simonCallback.getId(), result);
+                result = simonCallback;
 
             }
 
@@ -554,8 +493,8 @@ public class ProcessMessageRunnable implements Runnable {
             } else {
                 result = e.getTargetException();
             }
-        } catch (Exception e) {
-            SimonRemoteException sre = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to underlying exception: " + e.getClass());
+        } catch (Exception e) { 
+            SimonRemoteException sre = new SimonRemoteException("Errow while invoking '" + remoteObjectName + "#" + method + "' due to underlying exception: "+e.getClass());
             sre.initCause(e);
             result = sre;
         }
@@ -565,7 +504,7 @@ public class ProcessMessageRunnable implements Runnable {
             logger.warn("Result '{}' is not serializable", result);
             result = new SimonRemoteException("Result of method '" + method + "' must be serializable and therefore implement 'java.io.Serializable' or 'de.root1.simon.SimonRemote'");
         }
-
+        
         MsgInvokeReturn returnMsg = new MsgInvokeReturn();
         returnMsg.setSequence(msg.getSequence());
 
@@ -586,8 +525,9 @@ public class ProcessMessageRunnable implements Runnable {
 
         logger.debug("processing MsgInvokeReturn...");
         MsgInvokeReturn msg = (MsgInvokeReturn) abstractMessage;
-        logger.debug("put result to queue={}", msg);
         dispatcher.putResultToQueue(session, msg.getSequence(), msg);
+
+        logger.debug("put result to queue={}", msg);
 
         logger.debug("end");
     }
@@ -636,7 +576,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         boolean equalsResult = false;
         try {
-
+            
             if (objectToCompareWith instanceof SimonRemoteInstance) {
                 SimonRemoteInstance sri = (SimonRemoteInstance) objectToCompareWith;
                 logger.debug("Got a SimonRemoteInstance(ron='{}') to compare with, looking for real object...", sri.getRemoteObjectName());
@@ -719,42 +659,30 @@ public class ProcessMessageRunnable implements Runnable {
         String errorMessage = msg.getErrorMessage();
         Throwable throwable = msg.getThrowable();
         boolean isDecodeError = msg.isDecodeError();
-
+        
         String exceptionMessage = "";
-
+        
         // if error happened on the local while reading a message
         if (isDecodeError) {
-            if (remoteObjectName != null && remoteObjectName.length() > 0) {
-                exceptionMessage = "An error occured while reading a message for remote object '" + remoteObjectName + "'. Error message: " + errorMessage;
+            if (remoteObjectName!=null && remoteObjectName.length()>0) {
+                exceptionMessage = "An error occured while reading a message for remote object '"+remoteObjectName+"'. Error message: "+errorMessage;
             } else {
-                exceptionMessage = "An error occured while reading a message. Error message: " + errorMessage;
+                exceptionMessage = "An error occured while reading a message. Error message: "+errorMessage;
             }
-            // if error happened on remote while writing a message
+        // if error happened on remote while writing a message
         } else {
-            if (remoteObjectName != null && remoteObjectName.length() > 0) {
-                exceptionMessage = "An error occured on remote while writing a message to remote object '" + remoteObjectName + "'. Error message: " + errorMessage;
+            if (remoteObjectName!=null && remoteObjectName.length()>0) {
+                exceptionMessage = "An error occured on remote while writing a message to remote object '"+remoteObjectName+"'. Error message: "+errorMessage;
             } else {
-                exceptionMessage = "An error occured on remote while writing a message. Error message: " + errorMessage;
+                exceptionMessage = "An error occured on remote while writing a message. Error message: "+errorMessage;
             }
         }
-
+        
         SimonException se = new SimonException(exceptionMessage);
         se.initCause(throwable);
         CloseFuture closeFuture = session.close(true);
         closeFuture.awaitUninterruptibly();
         logger.debug("end");
         throw se;
-    }
-
-    private void processReleaseRef() {
-        logger.debug("begin");
-
-        logger.debug("processing MsgReleaseRef...");
-        MsgReleaseRef msg = (MsgReleaseRef) abstractMessage;
-
-        logger.debug("Removing ref for {} on session {}", msg.getRefId(), session.getId());
-        dispatcher.getLookupTable().removeCallbackRef(session.getId(), msg.getRefId());
-
-        logger.debug("end");
     }
 }
