@@ -90,11 +90,15 @@ abstract class AbstractLookup implements Lookup {
     }
 
     @Override
-    public boolean release(Object proxyObject) {
+    public boolean release(Object remoteObject) {
         logger.debug("begin");
 
+        if (remoteObject==null) {
+            throw new IllegalArgumentException("the argument is not a releaseable remote object. Given object was: " + remoteObject);
+        }
+        
         // retrieve the proxy object
-        SimonProxy proxy = Simon.getSimonProxy(proxyObject);
+        SimonProxy proxy = Simon.getSimonProxy(remoteObject);
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
 
@@ -113,7 +117,6 @@ abstract class AbstractLookup implements Lookup {
                     closedListener.closed();
                 }
                 removeClosedListenerList.clear();
-                removeClosedListenerList = null;
             }
 
             result = AbstractLookup.releaseDispatcher(dispatcher);

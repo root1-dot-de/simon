@@ -780,12 +780,10 @@ public class Simon {
      *
      * Retrieves {@link SimonProxy} invocation handler wrapped in a simple proxy
      *
-     * @param o
-     *            the object that holds the proxy
+     * @param o the object that holds the proxy
      * @return the extracted SimonProxy
-     * @throws IllegalArgumentException
-     *             if the object does not contain a SimonProxy invocation
-     *             handler
+     * @throws IllegalArgumentException if the object does not contain a
+     * SimonProxy invocation handler
      */
     protected static SimonProxy getSimonProxy(Object o) throws IllegalArgumentException {
         if (o instanceof Proxy) {
@@ -795,10 +793,10 @@ public class Simon {
                 logger.trace("Yeeha. It's a SimonProxy ...");
                 return (SimonProxy) invocationHandler;
             } else {
-                throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy. Object was: " + o);
+                throw new IllegalArgumentException("the proxys invocationhandler is not an instance of SimonProxy. Given object was: " + o);
             }
         } else {
-            throw new IllegalArgumentException("the argument is not an instance of java.lang.reflect.Proxy. Object was: " + o);
+            throw new IllegalArgumentException("the argument is not a releaseable remote object. Given object was: " + o);
         }
     }
 
