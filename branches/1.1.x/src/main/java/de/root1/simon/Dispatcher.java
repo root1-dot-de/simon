@@ -120,6 +120,7 @@ public class Dispatcher implements IoHandler {
      * A map containing remote object names and a related list with closed listeners
      */
     private final Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
+    private boolean gularShutdown;
 
     /**
      * Method used by the PingWatchdog for getting the current ping/keepalive timeout
@@ -831,8 +832,13 @@ public class Dispatcher implements IoHandler {
             list.clear();
         }
 
-        // fix for issue #57
-        AbstractLookup.releaseDispatcher(this);
+        if (!isRegularShutdown()) {
+            logger.debug("{} ######## Abnormal shutdown. Closing dispatcher", id);
+            // fix for issue #57
+            AbstractLookup.releaseDispatcher(this);
+        } else {
+            logger.debug("{} ######## Regular shutdown. Assuming Dispatcher is already closed.", id);
+        }
 
         logger.debug("{} ################################################", id);
     }
@@ -1105,5 +1111,22 @@ public class Dispatcher implements IoHandler {
      */
     protected List<ClosedListener> getClosedListenerList(String remoteObjectName) {
         return remoteObjectClosedListenersList.get(remoteObjectName);
+    }
+
+    /**
+     * Flags a "regular shutdown". This is used Dispatcher#sessionClosed() to determine whether 
+     * at end of sessionClosed(), dispatcher needs a explicit shutdown (due to an error), 
+     * or if a release was triggered, which cleans up the dispatcher before session is closed
+     */
+    void setRegularShutdown() {
+        gularShutdown=true;
+    }
+    
+    /**
+     * @see Dispatcher#setRegularShutdown() 
+     * @return true if shutdown is wanted, false if shutdown was not explicitly triggered by AbstractLookup#release()
+     */
+    boolean isRegularShutdown() {
+        return gularShutdown;
     }
 }
