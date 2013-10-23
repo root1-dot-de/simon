@@ -119,13 +119,6 @@ abstract class AbstractLookup implements Lookup {
                 removeClosedListenerList.clear();
             }
             
-            /*
-             * Set flag for a regular shutdown
-             * Otherwise Dispatcher#sessio0nClosed(), which is triggered later, 
-             * might cleanup the server connection, another thread created in the meanwhile
-             */
-            dispatcher.setRegularShutdown();
-
             result = AbstractLookup.releaseDispatcher(dispatcher);
         } else {
             result = false;
@@ -358,9 +351,7 @@ abstract class AbstractLookup implements Lookup {
 
         boolean result = false;
 
-        logger.trace("Waiting to enter synchronized");
         synchronized (serverDispatcherRelation) {
-            logger.trace("Entered synchronized");
 
             // if there's an instance of this connection known ...
             if (serverDispatcherRelation.containsKey(serverString)) {
@@ -375,6 +366,7 @@ abstract class AbstractLookup implements Lookup {
                     // .. and shutdown the dispatcher if there's no further reference
                     logger.debug("refCount reached 0. shutting down session {} and all related stuff.", Utils.longToHexString(ctsc.getSession().getId()));
                     ctsc.getDispatcher().shutdown();
+                    ctsc.getDispatcher().setReleased();
 
                     CloseFuture closeFuture = ctsc.getSession().close(false);
 
@@ -396,9 +388,8 @@ abstract class AbstractLookup implements Lookup {
                 logger.debug("no ServerDispatcherRelation found for {}. Maybe remote object is already released?", serverString);
             }
 
-            logger.trace("Leaving synchronized");
         }
-        logger.trace("Left synchronized");
+        
         return result;
     }
 

@@ -120,7 +120,8 @@ public class Dispatcher implements IoHandler {
      * A map containing remote object names and a related list with closed listeners
      */
     private final Map<String, List<ClosedListener>> remoteObjectClosedListenersList = Collections.synchronizedMap(new HashMap<String, List<ClosedListener>>());
-    private boolean gularShutdown;
+    
+    private boolean released = false;
 
     /**
      * Method used by the PingWatchdog for getting the current ping/keepalive timeout
@@ -814,13 +815,12 @@ public class Dispatcher implements IoHandler {
 
         // remove attached references
         logger.debug("{} ######## Removing session attributes ...", id);
-
         logger.debug("{} ########  -> {}", id, Statics.SESSION_ATTRIBUTE_DISPATCHER);
         session.removeAttribute(Statics.SESSION_ATTRIBUTE_DISPATCHER);
-
         logger.debug("{} ########  -> {}", id, Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
         session.removeAttribute(Statics.SESSION_ATTRIBUTE_LOOKUPTABLE);
 
+        logger.debug("{} ######## notify closed listeners", id);
         // notify all still attached closed listeners that the one and only session to the server is closed.
         Iterator<String> iterator = remoteObjectClosedListenersList.keySet().iterator();
         while (iterator.hasNext()) {
@@ -832,15 +832,41 @@ public class Dispatcher implements IoHandler {
             list.clear();
         }
 
-        if (!isRegularShutdown()) {
-            logger.debug("{} ######## Abnormal shutdown. Closing dispatcher", id);
-            // fix for issue #57
+        // see issue #130
+        if (!isReleased()) {
+            logger.debug("{} ######## Releasing dispatcher {}", id, this);
             AbstractLookup.releaseDispatcher(this);
         } else {
-            logger.debug("{} ######## Regular shutdown. Assuming Dispatcher is already closed.", id);
+            logger.debug("{} ######## Dispatcher {} already released. Nothing to do.", id, this);
         }
 
+        logger.debug("{} ######## Session close *DONE*", id);
         logger.debug("{} ################################################", id);
+    }
+
+    /**
+     * Indicates whether someone has set this dispatcher as "released". This
+     * should only happen at one place:
+     * {@link AbstractLookup#releaseDispatcher(de.root1.simon.Dispatcher)}.
+     *
+     * @return true if released, false of not
+     */
+    boolean isReleased() {
+        return released;
+    }
+
+    /**
+     * Method used by AbstractLookup when releasing dispatcher.
+     * {@link AbstractLookup#releaseDispatcher(de.root1.simon.Dispatcher)} is
+     * shutting down the dispatcher + closing the session. After the session has
+     * been closed, {@link Dispatcher#sessionClosed(org.apache.mina.core.session.IoSession)
+     * } will be triggered. As the release has already been done or is in
+     * progress, we don't need to release again. So, release in "sessionClosed"
+     * should only happen when someone else (crash, error, ...) closes the
+     * session. That's for what this flag is good for.
+     */
+    void setReleased() {
+        this.released = true;
     }
 
     /*
@@ -1113,20 +1139,4 @@ public class Dispatcher implements IoHandler {
         return remoteObjectClosedListenersList.get(remoteObjectName);
     }
 
-    /**
-     * Flags a "regular shutdown". This is used Dispatcher#sessionClosed() to determine whether 
-     * at end of sessionClosed(), dispatcher needs a explicit shutdown (due to an error), 
-     * or if a release was triggered, which cleans up the dispatcher before session is closed
-     */
-    void setRegularShutdown() {
-        gularShutdown=true;
-    }
-    
-    /**
-     * @see Dispatcher#setRegularShutdown() 
-     * @return true if shutdown is wanted, false if shutdown was not explicitly triggered by AbstractLookup#release()
-     */
-    boolean isRegularShutdown() {
-        return gularShutdown;
-    }
 }
