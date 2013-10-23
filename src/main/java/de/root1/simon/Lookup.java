@@ -4,8 +4,6 @@
  */
 package de.root1.simon;
 
-import de.root1.simon.ClosedListener;
-import de.root1.simon.SimonProxyConfig;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.ssl.SslContextFactory;
@@ -76,7 +74,7 @@ public interface Lookup {
     Object lookup(String lookupString) throws LookupFailedException, EstablishConnectionFailed;
 
     /**
-     * Releases are remote object. If provided object is null, method will simply return.
+     * Releases are remote object.
      * Releasing a remote objects leads to:
      * <ul>
      * <li>release of related SIMON resources (threads, ...)</li>
@@ -86,6 +84,7 @@ public interface Lookup {
      *
      * @param remoteObject
      * @return true, in case of a normal and clean release. false if remoteobject is already released
+     * @throws IllegalArgumentException in case of argument is not a releaseable remote object
      */
     boolean release(Object remoteObject);
     
