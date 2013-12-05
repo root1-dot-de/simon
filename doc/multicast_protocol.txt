@@ -1,0 +1,23 @@
+First brainstorming ...
+
+1) Client send to "who's out there" message to multicast address:
+
+"[SIMON|FindServer]"
+
+2) Server sends response back to asking client. Message contains:
+
+"[hostname:port|remoteobjectname_1,remoteobjectname_2,...,remoteobjectname_n]"
+
+Things to decide:
+
+1) What about number of users connected with remote objects?
+2) Security? Allow/Disallow showing number of users?
+	--> Can be implemented by dev in server logic
+	
+3) What about 
+	1) asking for servers
+	2) query server for more details, i.e. number of users (also statistics? -> security?)
+		--> can be implemented in server logic
+		
+4) What other details are interesting?
+	--> statistics should not be available automatically with multicast. Can be implemented by dev in server logic	
