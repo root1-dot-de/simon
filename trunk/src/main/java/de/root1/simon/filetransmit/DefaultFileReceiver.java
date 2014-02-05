@@ -152,7 +152,7 @@ public class DefaultFileReceiver implements FileReceiver {
         if (!folder.exists()) {
             throw new IllegalArgumentException("Folder "+folder+" does not exist");
         }
-        if (folder.isDirectory()) {
+        if (!folder.isDirectory()) {
             throw new IllegalArgumentException("Folder "+folder+" is not a folder");
         }
         this.downloadFolder = folder;
