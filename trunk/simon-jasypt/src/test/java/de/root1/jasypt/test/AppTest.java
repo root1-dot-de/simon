@@ -59,9 +59,15 @@ public class AppTest
         JasyptSimonPBE js3 = new JasyptSimonPBE("AnotherSecretPw");
         
         String x = "MyDataString";
+        
+        System.out.println("x.getBytes().length="+x.getBytes().length);
+        
         byte[] encrypted = js1.encrypt(x.getBytes());
+        System.out.println("encrypted.length="+encrypted.length);
         byte[] decrypted = js2.decrypt(encrypted);
+        System.out.println("decrypted.length="+decrypted.length);
         String y = new String(decrypted);
+        System.out.println("y.getBytes().length="+y.getBytes().length);
         
         assertEquals("Encoding+Decoding with same PW should work", x, y);
         
