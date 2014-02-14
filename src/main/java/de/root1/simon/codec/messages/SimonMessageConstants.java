@@ -25,10 +25,10 @@ package de.root1.simon.codec.messages;
  */
 public final class SimonMessageConstants {
 	
-    public static final int TYPE_LEN = 2;
-    public static final int SEQUENCE_LEN = 4;
-    public static final int BODYSIZE_LEN = 4;
-    public static final int HEADER_LEN = TYPE_LEN + SEQUENCE_LEN + BODYSIZE_LEN;
+    public static final int TYPE_LEN = 1; // byte
+    public static final int SEQUENCE_LEN = 4; // int
+    public static final int BODYSIZE_LEN = 4; // int
+    public static final int HEADER_LEN = TYPE_LEN + SEQUENCE_LEN + BODYSIZE_LEN; // = 9
     
     // ---------------------
 
