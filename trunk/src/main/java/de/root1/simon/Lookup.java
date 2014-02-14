@@ -88,6 +88,4 @@ public interface Lookup {
      */
     boolean release(Object remoteObject);
     
-    public void setCustomEncryption(CustomEncryption ce);
-    public CustomEncryption getCustomEncryption();
 }

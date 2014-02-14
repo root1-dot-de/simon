@@ -91,8 +91,6 @@ public final class Registry {
     // See: http://dev.root1.de/issues/127
     private ClassLoader classLoader = getClass().getClassLoader();
     
-    private CustomEncryption customEncryption;
-    
     /**
      * started flag
      * @since 1.2.0
@@ -210,11 +208,6 @@ public final class Registry {
             // only add the logging filter if trace is enabled
             if (logger.isTraceEnabled()) {
                 acceptor.getFilterChain().addLast("logger", new LoggingFilter());
-            }
-
-            // add encryption filter if available
-            if (getCustomEncryption()!=null) {
-                acceptor.getFilterChain().addLast("customencryption", new CustomEncryptionFilter(getCustomEncryption()));
             }
 
             // don't use a threading model on filter level
@@ -484,14 +477,6 @@ public final class Registry {
      */
     public void setClassLoader(ClassLoader classLoader){
         this.classLoader = classLoader;
-    }
-
-    public void setCustomEncryption(CustomEncryption customEncryption) {
-        this.customEncryption = customEncryption;
-    }
-
-    public CustomEncryption getCustomEncryption() {
-        return customEncryption;
     }
 
 }
