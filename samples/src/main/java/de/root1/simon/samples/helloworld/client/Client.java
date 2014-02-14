@@ -4,7 +4,6 @@
  */
 package de.root1.simon.samples.helloworld.client;
 
-import de.root1.simon.jasypt.JasyptSimonPBE;
 import de.root1.simon.Lookup;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import java.io.IOException;
@@ -22,7 +21,6 @@ public class Client {
         
         // 'lookup' the server object
         Lookup nameLookup = Simon.createNameLookup("127.0.0.1", 22222);
-        nameLookup.setCustomEncryption(new JasyptSimonPBE("DonaldDuck"));
         
         ServerInterface server = (ServerInterface) nameLookup.lookup("server");
 

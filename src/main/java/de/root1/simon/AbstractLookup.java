@@ -67,8 +67,6 @@ abstract class AbstractLookup implements Lookup {
     
     static final Monitor monitorCompleteShutdown = new Monitor();
     
-    private CustomEncryption customEncryption;
-
     /**
      * A simple container class that relates the dispatcher to a session
      */
@@ -242,11 +240,6 @@ abstract class AbstractLookup implements Lookup {
                     filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
                 }
                 
-                // add encryption filter if available
-                if (getCustomEncryption()!=null) {
-                    filters.add(new FilterEntry("customencryption", new CustomEncryptionFilter(getCustomEncryption())));
-                }
-
                 // don't use a threading model on filter level
 //                filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
 
@@ -424,14 +417,6 @@ abstract class AbstractLookup implements Lookup {
         }
         
         return result;
-    }
-    
-    public void setCustomEncryption(CustomEncryption ce) {
-        this.customEncryption = ce;
-    }
-
-    public CustomEncryption getCustomEncryption() {
-        return customEncryption;
     }
     
 }
