@@ -439,7 +439,10 @@ public final class Registry {
      * @return boolean
      */
     public boolean isRunning() {
-        return (dispatcher.isRunning() || acceptor.isActive() || (filterchainWorkerPool!=null && !filterchainWorkerPool.isTerminated()));
+        return (dispatcher!=null 
+                && acceptor!=null 
+                && acceptor!=null 
+                && (dispatcher.isRunning() || acceptor.isActive() || (filterchainWorkerPool!=null && !filterchainWorkerPool.isTerminated())));
     }
 
     /**
