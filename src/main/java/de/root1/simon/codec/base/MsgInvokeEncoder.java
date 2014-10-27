@@ -72,7 +72,7 @@ public class MsgInvokeEncoder<T extends MsgInvoke> extends AbstractMessageEncode
 
             MsgInvokeReturn mir = new MsgInvokeReturn();
             mir.setSequence(message.getSequence());
-            mir.setReturnValue(new SimonRemoteException(errorMsg));
+            mir.setReturnValue(new SimonRemoteException(errorMsg, e));
 
             try {
                 dispatcher.messageReceived(session, mir);
