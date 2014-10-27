@@ -1224,4 +1224,9 @@ public class Dispatcher implements IoHandler {
     SimonRefQueue<SimonPhantomRef> getRefQueue() {
         return simonRefQueue;
     }
+
+    @Override
+    public void inputClosed(IoSession is) throws Exception {
+        // new method. nothing to do yet.
+    }
 }
