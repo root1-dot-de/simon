@@ -1225,9 +1225,9 @@ public class Dispatcher implements IoHandler {
         return simonRefQueue;
     }
 
-    // rollback to 2.0.7
-//    @Override
-//    public void inputClosed(IoSession is) throws Exception {
-//        // new method. nothing to do yet.
-//    }
+    // See: https://issues.apache.org/jira/browse/DIRMINA-785
+    @Override
+    public void inputClosed(IoSession is) throws Exception {
+        is.close(true);
+    }
 }
