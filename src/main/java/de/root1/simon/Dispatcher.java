@@ -1225,8 +1225,9 @@ public class Dispatcher implements IoHandler {
         return simonRefQueue;
     }
 
-    @Override
-    public void inputClosed(IoSession is) throws Exception {
-        // new method. nothing to do yet.
-    }
+    // rollback to 2.0.7
+//    @Override
+//    public void inputClosed(IoSession is) throws Exception {
+//        // new method. nothing to do yet.
+//    }
 }
