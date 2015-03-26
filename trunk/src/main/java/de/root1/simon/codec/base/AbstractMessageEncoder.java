@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import de.root1.simon.codec.messages.AbstractMessage;
 import de.root1.simon.codec.messages.MsgError;
+import de.root1.simon.codec.messages.SimonMessageConstants;
 import de.root1.simon.exceptions.SimonException;
 
 /**
@@ -41,24 +42,19 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private MsgError msgError = null;
 
-//    /**
-//     * Creates a new message encoder
-//     * @param msgType specifies a unique ID for the type of message
-//     */
-//    protected AbstractMessageEncoder() {
-//    }
-
     @Override
     public void encode(IoSession session, T message, ProtocolEncoderOutput out) throws Exception {
-        IoBuffer buf = IoBuffer.allocate(16);
+        
+        IoBuffer buf = null;
         try {
         
-            putMessageToBuffer(buf, session, message);
+            buf = putMessageToBuffer(session, message);
         
         } catch (Throwable t) {
 
-            // clear/erase the buffer from any failed encoding
-            buf.clear();
+            if (buf!=null) {
+                buf.clear();
+            }
 
             // form an error message
             MsgError error = new MsgError();
@@ -70,7 +66,7 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
 //            msgType = SimonMessageConstants.MSG_ERROR;
             
             // put the message into the buffer
-            putMessageToBuffer(buf, session, message);
+            buf = putMessageToBuffer(session, message);
             msgError = error;
         }
         
@@ -94,16 +90,23 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
             se.initCause(throwable);
         }
     }
-
-    private void putMessageToBuffer(IoBuffer buf, IoSession session, T message) {
-        buf.setAutoExpand(true); // Enable auto-expand for easier encoding
-
-        // Encode the body
+    
+    /**
+     * put message + message header into a single enclosed buffer
+     * 
+     * @param session
+     * @param message
+     * @return complete message in a buffer
+     */
+    private IoBuffer putMessageToBuffer(IoSession session, T message) {
+        
+        // Encode the message body
         IoBuffer msgBuffer = IoBuffer.allocate(16);
         msgBuffer.setAutoExpand(true);
-        
         encodeBody(session, message, msgBuffer);
 
+        IoBuffer buf = IoBuffer.allocate(SimonMessageConstants.HEADER_LEN+msgBuffer.position() /* position = length of message in this case */);
+        
         // Encode the header
         buf.put(message.getMsgType()); // header contains message type
         buf.putInt(message.getSequence()); // header contains sequence
@@ -114,6 +117,8 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
         buf.put(msgBuffer); // after the header, the message is sent
         
         buf.flip();
+        
+        return buf;
     }
 
     /**
