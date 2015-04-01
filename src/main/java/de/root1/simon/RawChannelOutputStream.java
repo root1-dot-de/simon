@@ -90,4 +90,12 @@ public class RawChannelOutputStream extends OutputStream {
         }
     }
     
+    /**
+     * Return <code>true</code>, is channel is already closed and <code>false</code> is still open and <i>useable</i>.
+     * @return closed-state of outputstream
+     */
+    public boolean isClosed() {
+        return rawChannel.isClosed();
+    }
+    
 }
