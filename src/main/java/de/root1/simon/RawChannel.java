@@ -74,9 +74,9 @@ import de.root1.simon.exceptions.SimonRemoteException;
 public class RawChannel {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private Dispatcher dispatcher;
-    private IoSession session;
-    private int channelToken;
+    private final Dispatcher dispatcher;
+    private final IoSession session;
+    private final int channelToken;
     private boolean channelOpen = true;
 
     /**
@@ -116,16 +116,29 @@ public class RawChannel {
             throw new IllegalStateException("Instance of RawChannel already closed!");
         }
     }
+    
+    /**
+     * Return <code>true</code>, is channel is already closed and <code>false</code> is still open and <i>useable</i>.
+     * @return closed-state of channel
+     */
+    public boolean isClosed() {
+        return !channelOpen;
+    }
 
     /**
      * Signals on the remote station that the transmission has finished. This
      * also closes the raw channel. So after calling this method, each write()
      * call fails!
+     * @throws IllegalStateException if the channel is already closed.
      * @throws SimonRemoteException
      * @throws RawChannelException if the remote {@link RawChannelDataListener#close()} has problems closing.
      */
-    public void close() throws SimonRemoteException, RawChannelException {
-        dispatcher.closeRawChannel(session, channelToken);
-        channelOpen = false;
+    public void close() throws IllegalStateException, SimonRemoteException, RawChannelException {
+        if (channelOpen) {
+            dispatcher.closeRawChannel(session, channelToken);
+            channelOpen = false;
+        } else {
+            throw new IllegalStateException("Instance of RawChannel already closed!");
+        }
     }
 }
