@@ -655,6 +655,25 @@ public class Simon {
     }
 
     /**
+     * Sets the default connect timeout for establishing a connection via Lookup
+     * @param millis time in milliseconds to wait for the established connection
+     */
+    public static void setDefaultConnectTimeout(int millis) {
+        logger.debug("setting default connect timeout to {} ms.", millis);
+        Statics.DEFAULT_CONNECT_TIMEOUT = millis;
+    }
+    
+    /**
+     * Gets the default connect timeout in milliseconds. This value is the
+     * used default value for all new connections.
+     * 
+     * @return time in milliseconds to wait for the established connection
+     */
+    public static int getDefaultConnectTimeout() {
+        return Statics.DEFAULT_CONNECT_TIMEOUT;
+    }
+    
+    /**
      * Sets the keep alive default interval time in seconds. This value is used
      * as a default value for all new connections.
      *
@@ -664,6 +683,7 @@ public class Simon {
         logger.debug("setting default keep alive interval to {} sec.", seconds);
         Statics.DEFAULT_IDLE_TIME = seconds;
     }
+    
 
     /**
      * Gets the default keep-alive interval time in seconds. This value is the

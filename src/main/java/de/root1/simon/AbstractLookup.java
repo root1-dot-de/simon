@@ -293,8 +293,10 @@ abstract class AbstractLookup implements Lookup {
                     } else {
                         future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
                     }
-                    future.awaitUninterruptibly(); // Wait until the connection attempt is finished.
-
+                    boolean finished = future.awaitUninterruptibly(Statics.DEFAULT_CONNECT_TIMEOUT);
+                    if (!finished) {
+                        logger.debug("Connect timed out after {} ms", Statics.DEFAULT_CONNECT_TIMEOUT);
+                    }
 
                 } catch (Exception e) {
 
