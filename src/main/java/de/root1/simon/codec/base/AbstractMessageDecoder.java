@@ -125,6 +125,8 @@ public abstract class AbstractMessageDecoder implements MessageDecoder {
     }
 
     /**
+     * @param session
+     * @param in
      * @return <tt>null</tt> if the whole body is not read yet
      */
     protected abstract AbstractMessage decodeBody(IoSession session, IoBuffer in);
