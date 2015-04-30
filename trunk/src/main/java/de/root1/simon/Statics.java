@@ -41,6 +41,7 @@ public class Statics {
     protected static final int DEFAULT_SOCKET_TIMEOUT = 100;
     protected static final long MONITOR_WAIT_TIMEOUT = 200;
     protected static final int WAIT_FOR_SHUTDOWN_SLEEPTIME = 50;
+    protected static int DEFAULT_CONNECT_TIMEOUT = 20000;
 
     // values in seconds
     protected static int DEFAULT_IDLE_TIME = 30;
@@ -56,4 +57,5 @@ public class Statics {
     protected static final String PUBLISH_CLIENT_THREAD_NAME = "Simon.PublishClient";
     
     public static final String NO_ERROR = "{#}";
+    
 }
