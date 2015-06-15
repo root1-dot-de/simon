@@ -168,6 +168,7 @@ public class Dispatcher implements IoHandler {
      *
      * @param listener the listener to remove
      * @param remoteObjectName the related remote object
+     * @return true if listener has been removed
      */
     protected boolean removeClosedListener(ClosedListener listener, String remoteObjectName) {
         if (remoteObjectClosedListenersList.containsKey(remoteObjectName)) {
@@ -225,7 +226,8 @@ public class Dispatcher implements IoHandler {
      * @param session the related session over which the invoke request comes
      * @param remoteObjectName the remote object to lookup
      * @return the name lookup return message
-     * @throws SimonRemoteException
+     * @throws LookupFailedException if lookup fails
+     * @throws SimonRemoteException if something else goes wrong
      */
     protected MsgNameLookupReturn invokeNameLookup(IoSession session, String remoteObjectName) throws LookupFailedException, SimonRemoteException {
         checkForInvalidState(session, "Simon.lookup({...}, " + remoteObjectName + ")");
@@ -261,6 +263,7 @@ public class Dispatcher implements IoHandler {
      * @param session the related session over which the invoke request comes
      * @param canonicalInterfaceName the canonical name of the interface
      * @return the interface lookup return message
+     * @throws LookupFailedException if lookup fails
      * @throws SimonRemoteException
      */
     protected MsgInterfaceLookupReturn invokeInterfaceLookup(IoSession session, String canonicalInterfaceName) throws LookupFailedException, SimonRemoteException {
@@ -413,7 +416,7 @@ public class Dispatcher implements IoHandler {
      * @param session the related session over which the invoke request comes
      * @param remoteObjectName the remote object
      * @return the result of the remote "hashCode()" call
-     * @throws SimonRemoteException
+     * @throws SimonRemoteException if something goes wrong
      */
     protected int invokeHashCode(IoSession session, String remoteObjectName) throws SimonRemoteException {
 
@@ -457,7 +460,7 @@ public class Dispatcher implements IoHandler {
      * @param objectToCompareWith the object to which the remote object is
      * compared with
      * @return the result of the comparison
-     * @throws SimonRemoteException
+     * @throws SimonRemoteException if something goes wrong
      */
     protected boolean invokeEquals(IoSession session, String remoteObjectName, Object objectToCompareWith) throws SimonRemoteException {
         checkForInvalidState(session, "equals()");
@@ -548,6 +551,7 @@ public class Dispatcher implements IoHandler {
      * the result to the map (means: replacing the monitor with the result), the
      * waiting request-method is waked.
      *
+     * @param session the underlying session
      * @param sequenceId the sequence id that is waiting for the result
      * @param o the result itself
      */
@@ -604,6 +608,7 @@ public class Dispatcher implements IoHandler {
 
     /**
      * for internal use only
+     * @return the associated lookup table
      */
     protected LookupTable getLookupTable() {
         return lookupTable;
@@ -656,7 +661,7 @@ public class Dispatcher implements IoHandler {
      * @return true if server dispatcher, false if not
      */
     protected boolean isServerDispatcher() {
-        return (serverString == null ? true : false);
+        return (serverString == null);
     }
 
     /**

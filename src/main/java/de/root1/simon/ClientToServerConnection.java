@@ -63,7 +63,7 @@ public class ClientToServerConnection {
 
     /**
      * Sets the socket connector used by SIMON to connect to server
-     * @param connector
+     * @param connector nio socket connector
      */
     protected void setConnector(NioSocketConnector connector) {
         this.connector = connector;
@@ -74,9 +74,9 @@ public class ClientToServerConnection {
      *
      * @param serverString the used server string
      * @param dispatcher the used dispatcher
-     * @param session
-     * @param connector
-     * @param filterchainWorkerPool
+     * @param session the underlying session
+     * @param connector the used ioconnector
+     * @param filterchainWorkerPool the executorservice for the filter chain
      */
     protected ClientToServerConnection(String serverString,
             Dispatcher dispatcher,
