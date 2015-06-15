@@ -61,17 +61,20 @@ public class TestRawChannel {
     @Before
     public void setUp() {
         try {
-            registry = Simon.createRegistry(InetAddress.getLocalHost(), 2000);
+            registry = Simon.createRegistry(InetAddress.getLocalHost());
             registry.start();
             logger.info("Registry created");
             RawChannelServerImpl rcsi = new RawChannelServerImpl();
             registry.bind(BIND_NAME, rcsi);
             logger.info("remote bound");
         } catch (UnknownHostException ex) {
+            ex.printStackTrace();
             throw new AssertionError("Unable to setup test");
         } catch (IOException ex) {
+            ex.printStackTrace();
             throw new AssertionError("Unable to setup test");
         } catch (NameBindingException ex) {
+            ex.printStackTrace();
             throw new AssertionError("Unable to setup test");
         }
 
@@ -115,7 +118,7 @@ public class TestRawChannel {
         try {
 
             logger.info("Doing lookup ...");
-            Lookup lookup = Simon.createNameLookup(InetAddress.getLocalHost(), 2000);
+            Lookup lookup = Simon.createNameLookup(InetAddress.getLocalHost());
             RawChannelServer rcs = (RawChannelServer) lookup.lookup(BIND_NAME);
             logger.info("Doing lookup ... *done*");
 
