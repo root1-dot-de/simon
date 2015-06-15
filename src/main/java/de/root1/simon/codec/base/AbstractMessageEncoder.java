@@ -35,6 +35,7 @@ import de.root1.simon.exceptions.SimonException;
  * the encoding of body to a subclass.
  *
  * @author ACHR
+ * @param <T> A class of type AbstractMessage
  */
 public abstract class AbstractMessageEncoder<T extends AbstractMessage> implements MessageEncoder<T> {
 	
@@ -75,7 +76,7 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
         
         if (msgError!=null) {
             session.close(false);
-            String exceptionMessage = "";
+            String exceptionMessage;
             String remoteObjectName = msgError.getRemoteObjectName();
             String errorMessage = msgError.getErrorMessage();
             Throwable throwable = msgError.getThrowable();
