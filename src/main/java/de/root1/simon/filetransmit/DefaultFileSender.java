@@ -20,8 +20,11 @@ package de.root1.simon.filetransmit;
 
 import de.root1.simon.RawChannel;
 import de.root1.simon.Simon;
+import de.root1.simon.exceptions.RawChannelException;
+import de.root1.simon.exceptions.SimonRemoteException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
@@ -31,14 +34,15 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A default implementation to send files to
- * <code>DefaultFileReceiver</code>. You can create your own by overwriting
- * methods, or by creating an own implementation which makes use of server's 
- * <code>FileReceiver</code> implementation.
+ * A default implementation to send files to <code>DefaultFileReceiver</code>.
+ * You can create your own by overwriting methods, or by creating an own
+ * implementation which makes use of server's <code>FileReceiver</code>
+ * implementation.
  *
  * @since 1.2.0
  * @author achristian
@@ -50,10 +54,10 @@ public class DefaultFileSender {
      */
     private final static Logger logger = LoggerFactory.getLogger(DefaultFileSender.class);
     private int txBLockSize = 8 * 1024; // 8k
-    private AtomicInteger sendId = new AtomicInteger(0);
-    private FileReceiver fileReceiver;
-    private ExecutorService sendPool;
-    public List<FileSenderProgressListener> listeners = Collections.synchronizedList(new ArrayList<FileSenderProgressListener>());
+    private final AtomicInteger sendId = new AtomicInteger(0);
+    private final FileReceiver fileReceiver;
+    private final ExecutorService sendPool;
+    private final List<FileSenderProgressListener> listeners = Collections.synchronizedList(new ArrayList<FileSenderProgressListener>());
 
     /**
      * Close the file sender. All uploads in progress will continue until
@@ -64,9 +68,8 @@ public class DefaultFileSender {
     }
 
     /**
-     * Close the file sender and wait at most
-     * <code>timeout</code> milliseconds to complete or in case of error abort
-     * all downloads
+     * Close the file sender and wait at most <code>timeout</code> milliseconds
+     * to complete or in case of error abort all downloads
      *
      * @param timeout milliseconds to wait for close completion
      * @return true if this file sender completed all uploads and terminated, or
@@ -79,7 +82,8 @@ public class DefaultFileSender {
     }
 
     /**
-     * File sending is done via SendTask which is thrown into the <code>sendPool</code>
+     * File sending is done via SendTask which is thrown into the
+     * <code>sendPool</code>
      */
     private class SendTask implements Runnable {
 
@@ -89,9 +93,11 @@ public class DefaultFileSender {
 
         /**
          * Init the file send operation
+         *
          * @param f the file to send
          * @param id a unique ID for the file
-         * @param overwriteExisting a flag which is used to tell the server whether any existing file will be overwritten or not
+         * @param overwriteExisting a flag which is used to tell the server
+         * whether any existing file will be overwritten or not
          */
         private SendTask(File f, int id, boolean overwriteExisting) {
             this.f = f;
@@ -104,12 +110,18 @@ public class DefaultFileSender {
             int token;
             long bytesSent = 0;
             RawChannel rawChannel = null;
+            FileInputStream fis = null;
+            FileChannel fc = null;
+
+            boolean success = false;
+
             try {
                 token = fileReceiver.requestChannelToken(f.getName(), f.length(), overwriteExisting);
                 logger.debug("FileReceiver provided token {} for file {}", token, f.getName());
                 rawChannel = Simon.openRawChannel(token, fileReceiver);
 
-                FileChannel fc = new FileInputStream(f).getChannel();
+                fis = new FileInputStream(f);
+                fc = fis.getChannel();
 
                 // we send the file in 512byte packages through the RawChannel
                 ByteBuffer data = ByteBuffer.allocate(getTxBLockSize());
@@ -122,25 +134,54 @@ public class DefaultFileSender {
                     }
                     data.clear();
                 }
-                for (FileSenderProgressListener listener : getListenersCopy()) {
-                    listener.completed(id, f);
-                }
-                if (rawChannel != null) {
-                    rawChannel.close();
-                }
+                success = true;
 
             } catch (Exception ex) {
                 for (FileSenderProgressListener listener : getListenersCopy()) {
                     listener.aborted(id, f, ex);
                 }
             } finally {
+                
+                // close all relevant channels and streams
+                if (rawChannel != null) {
+                    try {
+                        rawChannel.close();
+                    } catch (Exception ex) {
+                        for (FileSenderProgressListener listener : getListenersCopy()) {
+                            listener.aborted(id, f, ex);
+                        }
+                    }
+                }
+                if (fc != null) {
+                    try {
+                        fc.close();
+                    } catch (IOException ex) {
+                        // as we want to close the channel, we are not interested in any exception
+                    }
+                }
+                if (fis != null) {
+                    try {
+                        fis.close();
+                    } catch (IOException ex) {
+                        // as we want to close the stream, we are not interested in any exception
+                    }
+                }
+
+                // if transfer was successful, inform listeners
+                if (success) {
+                    for (FileSenderProgressListener listener : getListenersCopy()) {
+                        listener.completed(id, f);
+                    }
+                }
             }
             logger.debug("ID={} Sending done", id);
         }
     }
 
     /**
-     * Creates a file sender and connects it to the given file receiver. Files will be sent sequentially.
+     * Creates a file sender and connects it to the given file receiver. Files
+     * will be sent sequentially.
+     *
      * @param fileReceiver the receiving object
      */
     public DefaultFileSender(FileReceiver fileReceiver) {
@@ -149,8 +190,8 @@ public class DefaultFileSender {
     }
 
     /**
-     * Creates a file sender and connects it to the given receiver. 
-     * 
+     * Creates a file sender and connects it to the given receiver.
+     *
      * @param fileReceiver the receiving object
      * @param txThreads number of max. concurrent uploads
      */
@@ -161,6 +202,7 @@ public class DefaultFileSender {
 
     /**
      * Set the block size for writing data
+     *
      * @param blockSize number of bytes to write in one block
      */
     public void setTxBlockSize(int blockSize) {
@@ -169,7 +211,8 @@ public class DefaultFileSender {
 
     /**
      * Gets the block size for writing data
-     * @return  number of bytes to write in one block
+     *
+     * @return number of bytes to write in one block
      */
     public int getTxBLockSize() {
         return txBLockSize;
@@ -177,13 +220,16 @@ public class DefaultFileSender {
 
     /**
      * Send local file to connected file receiver
-     * 
-     * @param f the file to send. 
-     * @return a generated ID for the file. Can be used to identify the file in progress listener. Especially useful when transmitting files with same names one after another. When Integer.MAX_VALUE is reached, ID is reset back to 0.
+     *
+     * @param f the file to send.
+     * @return a generated ID for the file. Can be used to identify the file in
+     * progress listener. Especially useful when transmitting files with same
+     * names one after another. When Integer.MAX_VALUE is reached, ID is reset
+     * back to 0.
      */
     public int sendFile(File f) {
         int id = sendId.getAndIncrement();
-        
+
         if (id == Integer.MAX_VALUE) {
             sendId.set(0);
             id = 0;
@@ -196,10 +242,14 @@ public class DefaultFileSender {
     }
 
     /**
-     * @see DefaultFileSender#sendFile(java.io.File) 
-     * @param f the file to send. 
-     * @param overwriteExisting if true, any existing file with same name will be overwritten on target
-     * @return a generated ID for the file. Can be used to identify the file in progress listener. Especially useful when transmitting files with same names one after another. When Integer.MAX_VALUE is reached, ID is reset back to 0.
+     * @see DefaultFileSender#sendFile(java.io.File)
+     * @param f the file to send.
+     * @param overwriteExisting if true, any existing file with same name will
+     * be overwritten on target
+     * @return a generated ID for the file. Can be used to identify the file in
+     * progress listener. Especially useful when transmitting files with same
+     * names one after another. When Integer.MAX_VALUE is reached, ID is reset
+     * back to 0.
      */
     public int sendFile(File f, boolean overwriteExisting) {
         int id = sendId.getAndIncrement();
@@ -212,7 +262,8 @@ public class DefaultFileSender {
 
     /**
      * Adds a progress listener
-     * @param listener progress listener implementation
+     *
+     * @param progressListener progress listener implementation
      */
     public void addProgressListener(FileSenderProgressListener progressListener) {
         listeners.add(progressListener);
@@ -220,7 +271,8 @@ public class DefaultFileSender {
 
     /**
      * Removes a progress listener
-     * @param listener progress listener implementation
+     *
+     * @param progressListener progress listener implementation
      */
     public void removeProgressListener(FileSenderProgressListener progressListener) {
         listeners.remove(progressListener);
