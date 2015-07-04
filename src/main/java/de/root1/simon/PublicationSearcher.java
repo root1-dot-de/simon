@@ -31,12 +31,12 @@ import java.util.List;
 public class PublicationSearcher extends Thread {
 
     private static final int groupPort = Simon.DEFAULT_PORT;
-    private InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
+    private final InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
     private long searchTime = 2000;
     private final List<SimonPublication> foundPublications;
     private boolean shutdown = false;
     private int searchProgress = 0;
-    private List<SearchProgressListener> listeners = new ArrayList<SearchProgressListener>();
+    private final List<SearchProgressListener> listeners = new ArrayList<>();
 
     /**
      * Creates a searcher instance that searches for published remote objects on
@@ -52,7 +52,7 @@ public class PublicationSearcher extends Thread {
      */
     protected PublicationSearcher(SearchProgressListener listener, int searchTime) throws IOException {
         setName(Statics.PUBLISH_CLIENT_THREAD_NAME);
-        foundPublications = new ArrayList<SimonPublication>();
+        foundPublications = new ArrayList<>();
         addSearchProgressListener(listener);
         this.searchTime = searchTime;
     }

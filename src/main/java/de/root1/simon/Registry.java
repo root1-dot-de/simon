@@ -19,8 +19,11 @@
 package de.root1.simon;
 
 import de.root1.simon.codec.base.SimonProtocolCodecFactory;
+import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
+import de.root1.simon.exceptions.SimonException;
+import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.Utils;
 import java.io.IOException;
@@ -28,6 +31,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import javax.net.ssl.SSLContext;
 import org.apache.mina.core.service.IoAcceptor;
@@ -42,9 +50,9 @@ import org.slf4j.LoggerFactory;
 /**
  * The SIMON server acts as a registry for remote objects. So, Registry is
  * SIMON's internal server implementation
- * 
+ *
  * @author achristian
- * 
+ *
  */
 public final class Registry {
 
@@ -52,64 +60,82 @@ public final class Registry {
      * TODO document me
      */
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     /**
      * The address in which the registry is listening
      */
     private InetAddress address;
-    
+
     /**
      * The port on which the registry is listening
      */
     private int port;
-    
+
     /**
      * The Distaptcher for all incoming connections
      */
     private Dispatcher dispatcher;
-    
+
     /**
      * the socket acceptor
      */
     private IoAcceptor acceptor;
-    
-    /** The pool in which the dispatcher, acceptor and registry lives */
+
+    /**
+     * The pool in which the dispatcher, acceptor and registry lives
+     */
     private ExecutorService threadPool;
-    
+
     /**
      * A thread pool for the filterchain => more performance
      */
     private ExecutorService filterchainWorkerPool;
-    
+
     /**
      * Name of the protocol factory to use
      */
     private String protocolFactoryClassName;
     private SslContextFactory sslContextFactory;
-    
+
     // See: http://dev.root1.de/issues/127
     private ClassLoader classLoader = getClass().getClassLoader();
-    
+
     /**
      * started flag
+     *
      * @since 1.2.0
      */
     private boolean started;
-    
+
     /**
      * stopped flag
+     *
      * @since 1.2.0
      */
     private boolean stopped;
+
+    /**
+     * @since 1.3.0
+     */
+    private SimonRemotePublishingService srp;
+    
+    /**
+     * Map that holds remote object names and corresponding UUID
+     * @since 1.3.0
+     */
+    private Map<String, UUID> nameToUUID = new HashMap<>();
 
     /**
      * Creates a registry
      *
      * @param address the interface address on which the socketserver listens on
      * @param port the port on which the socketserver listens on
-     * @param threadPool the thread pool implementation which is forwarded to the dispatcher
-     * @param protocolFactoryClassName the full classname of the class that describes to network protocol
-     * @throws IOException if there are problems with creating the mina socketserver
+     * @param threadPool the thread pool implementation which is forwarded to
+     * the dispatcher
+     * @param protocolFactoryClassName the full classname of the class that
+     * describes to network protocol
+     * @throws IOException if there are problems with creating the mina
+     * socketserver
      */
     protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName) throws IOException {
         this(address, port, threadPool, protocolFactoryClassName, null);
@@ -120,10 +146,14 @@ public final class Registry {
      *
      * @param address the interface address on which the socketserver listens on
      * @param port the port on which the socketserver listens on
-     * @param threadPool the thread pool implementation which is forwarded to the dispatcher
-     * @param protocolFactoryClassName the full classname of the class that describes to network protocol
-     * @param sslContextFactory the factory which is used to get the server ssl context
-     * @throws IOException if there are problems with creating the mina socketserver
+     * @param threadPool the thread pool implementation which is forwarded to
+     * the dispatcher
+     * @param protocolFactoryClassName the full classname of the class that
+     * describes to network protocol
+     * @param sslContextFactory the factory which is used to get the server ssl
+     * context
+     * @throws IOException if there are problems with creating the mina
+     * socketserver
      */
     protected Registry(InetAddress address, int port, ExecutorService threadPool, String protocolFactoryClassName, SslContextFactory sslContextFactory) throws IOException {
         logger.debug("begin");
@@ -136,14 +166,15 @@ public final class Registry {
     }
 
     /**
-     * Starts the registry thread. After stopping, a registry cannot start again. 
-     * One need to create a new registry.
+     * Starts the registry thread. After stopping, a registry cannot start
+     * again. One need to create a new registry.
      *
-     * @throws IOException
-     *             if there's a problem getting a selector for the non-blocking
-     *             network communication, or if the
-     * @throws IllegalArgumentException if specified protocol codec cannot be used
-     * @throws IllegalStateException if registry is already started or has been stopped.
+     * @throws IOException if there's a problem getting a selector for the
+     * non-blocking network communication, or if the
+     * @throws IllegalArgumentException if specified protocol codec cannot be
+     * used
+     * @throws IllegalStateException if registry is already started or has been
+     * stopped.
      */
     public void start() throws IOException {
 
@@ -178,19 +209,21 @@ public final class Registry {
                     channel.configureBlocking(false);
                     ServerSocket socket = channel.socket();
                     int receiveBufferSize = socket.getReceiveBufferSize();
-                    try {socket.close(); channel.close();} catch (Exception e) {} // close the temporary socket and channel and ignore all errors
+                    try {
+                        socket.close();
+                        channel.close();
+                    } catch (Exception e) {
+                    } // close the temporary socket and channel and ignore all errors
                     logger.debug("setting 'ReceiveBufferSize' on NioSocketAcceptor to {}", receiveBufferSize);
                     nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
                 } catch (IOException ex) {
                     logger.debug("Not able to get readbuffersize from a default NIO socket. Error: {}", ex.getMessage());
-                    if (nioSocketAcceptor.getSessionConfig().getReadBufferSize()==1024 && System.getProperty("os.name").equals("Windows 7")) {
+                    if (nioSocketAcceptor.getSessionConfig().getReadBufferSize() == 1024 && System.getProperty("os.name").equals("Windows 7")) {
                         logger.warn("Server may have a drastic performance loss. Please consult 'http://dev.root1.de/issues/show/77' for more details.");
                     }
                 }
                 // end of workaround
             }
-
-
 
             if (sslContextFactory != null) {
                 SSLContext context = sslContextFactory.getSslContext();
@@ -212,8 +245,6 @@ public final class Registry {
             // don't use a threading model on filter level
             //filterchainWorkerPool = new OrderedThreadPoolExecutor();
             //acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
-
-
             SimonProtocolCodecFactory protocolFactory = null;
             try {
 
@@ -233,16 +264,13 @@ public final class Registry {
             protocolFactory.setup(true);
             acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
 
-
             acceptor.setHandler(dispatcher);
             logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec", Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
             setKeepAliveInterval(Statics.DEFAULT_IDLE_TIME);
             setKeepAliveTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
 
-
             logger.trace("Listening on {} on port {}", address, port);
             acceptor.bind(new InetSocketAddress(address, port));
-
 
             logger.debug("acceptor thread created and started");
             logger.debug("end");
@@ -252,14 +280,13 @@ public final class Registry {
         } catch (IOException e) {
             started = false;
             throw e;
-        } 
+        }
     }
 
     /**
      * Sets the keep alive timeout time in seconds for this registry.
      *
-     * @param seconds
-     *            time in seconds
+     * @param seconds time in seconds
      */
     public void setKeepAliveTimeout(int seconds) {
         acceptor.getSessionConfig().setWriteTimeout(seconds);
@@ -270,8 +297,7 @@ public final class Registry {
     /**
      * Sets the keep alive interval time in seconds for this registry
      *
-     * @param seconds
-     *            time in seconds
+     * @param seconds time in seconds
      */
     public void setKeepAliveInterval(int seconds) {
         acceptor.getSessionConfig().setIdleTime(IdleStatus.BOTH_IDLE, seconds);
@@ -297,9 +323,10 @@ public final class Registry {
     }
 
     /**
-     * Stops the registry. This clears the {@link LookupTable} in the dispatcher, stops the
-     * acceptor and the {@link Dispatcher}. After stopping this registry, no
-     * further connection/communication is possible with this registry.
+     * Stops the registry. This clears the {@link LookupTable} in the
+     * dispatcher, stops the acceptor and the {@link Dispatcher}. After stopping
+     * this registry, no further connection/communication is possible with this
+     * registry.
      *
      */
     public void stop() {
@@ -315,7 +342,7 @@ public final class Registry {
         logger.trace("Dispose Acceptor ...");
         acceptor.dispose();
 
-        if (filterchainWorkerPool!=null) {
+        if (filterchainWorkerPool != null) {
             logger.trace("Shutdown FilterchainWorkerPool ...");
             filterchainWorkerPool.shutdown();
         }
@@ -326,24 +353,22 @@ public final class Registry {
     /**
      * Binds a remote object to the registry's own {@link LookupTable}
      *
-     * @param name
-     *            a name for object to bind
-     * @param remoteObject
-     *            the object to bind
-     * @throws NameBindingException
-     *             if there are problems binding the remoteobject to the
-     *             registry
-     * @throws IllegalStateException if registry is not yet started or already stopped
+     * @param name a name for object to bind
+     * @param remoteObject the object to bind
+     * @throws NameBindingException if there is alreay an object with that name
+     * bound to registry
+     * @throws IllegalStateException if registry is not yet started or already
+     * stopped
      */
     public void bind(String name, Object remoteObject) throws NameBindingException {
-        
+
         if (!started) {
             throw new IllegalStateException("Registry not yet started.");
         }
         if (stopped) {
             throw new IllegalStateException("Registry already stopped.");
         }
-        
+
         if (!Utils.isValidRemote(remoteObject)) {
             throw new IllegalArgumentException("Provided remote object is not marked with SimonRemote or Remote annotation!");
         }
@@ -363,12 +388,9 @@ public final class Registry {
      * so that they can be found with {@link Simon#searchRemoteObjects(int)} or
      * {@link Simon#searchRemoteObjects(SearchProgressListener, int)}
      *
-     * @param name
-     *            a name for the object to bind and publish
-     * @param remoteObject
-     *            the object to bind and publish
-     * @throws NameBindingException
-     *             if binding fails
+     * @param name a name for the object to bind and publish
+     * @param remoteObject the object to bind and publish
+     * @throws NameBindingException if binding fails
      */
     public void bindAndPublish(String name, Object remoteObject) throws NameBindingException {
         bind(name, remoteObject);
@@ -376,44 +398,177 @@ public final class Registry {
             Simon.publish(new SimonPublication(address, port, name));
         } catch (IOException e) {
             unbind(name);
-            throw new NameBindingException("can't publish '" + name + "'. object is not bind! error=" + e.getMessage());
+            throw new NameBindingException("can't publish '" + name + "'. object is not bound! error=" + e.getMessage(), e);
         }
     }
-    
-    
-    public void bindAndPublishRemote(String name, Object remoteObject, InetSocketAddress remoteRegistry) throws NameBindingException {
+
+    /**
+     * Binds the given object to the loal registry and publishes it to the given remote registry location
+     * @param name name of the object
+     * @param remoteObject the remote object
+     * @param remoteRegistry the address and port of the remote registry the object should be published on
+     * @throws NameBindingException if object already bound or published
+     * @throws SimonRemoteException in case of problems communicating with the remote registry
+     * @since 1.3.0
+     */
+    public void bindAndPublishRemote(String name, Object remoteObject, InetSocketAddress remoteRegistry) throws NameBindingException, SimonRemoteException {
+        SimonPublication publication = new SimonPublication(address, port, name);
         bind(name, remoteObject);
+        
+        InterfaceLookup remotePublishLookup = Simon.createInterfaceLookup(remoteRegistry.getAddress(), remoteRegistry.getPort());
         try {
-            Simon.publishRemote(new SimonPublication(address, port, name), remoteRegistry);
-        } catch (IOException e) {
+            SimonRemotePublishingService simonRemotePublish = (SimonRemotePublishingService) remotePublishLookup.lookup(SimonRemotePublishingService.class.getCanonicalName());
+            UUID id = simonRemotePublish.publish(publication);
+            nameToUUID.put(name, id);
+            remotePublishLookup.release(simonRemotePublish);
+        } catch (LookupFailedException ex) {
+            // rollback
             unbind(name);
-            throw new NameBindingException("can't publish '" + name + "'. object is not bind! error=" + e.getMessage());
+            throw new SimonRemoteException("Remote registry is not prepared for remote publishing", ex);
+        } catch (EstablishConnectionFailed ex) {
+            // rollback
+            unbind(name); 
+            throw new SimonRemoteException("Establishing connection to remote registry failed.", ex);
+        } catch (SimonException ex) {
+            // rollback
+            unbind(name); 
+            throw new NameBindingException("Error publishing on remote registry", ex);
         }
+
+    }
+    
+    /**
+     * 
+     * Unpublish a remote object from a remote registry
+     * @param name name of the object to unbind
+     * @param remoteRegistry
+     * @return 
+     * @since 1.3.0
+     */
+    public boolean unpublishRemote(String name, InetSocketAddress remoteRegistry) {
+        
+        InterfaceLookup remotePublishLookup = Simon.createInterfaceLookup(remoteRegistry.getAddress(), remoteRegistry.getPort());
+        boolean success = false;
+        try {
+            SimonRemotePublishingService simonRemotePublish = (SimonRemotePublishingService) remotePublishLookup.lookup(SimonRemotePublishingService.class.getCanonicalName());
+            success = simonRemotePublish.unpublish(nameToUUID.get(name));
+            remotePublishLookup.release(simonRemotePublish);
+        } catch (LookupFailedException ex) {
+            throw new SimonRemoteException("Remote registry is not prepared for remote publishing", ex);
+        } catch (EstablishConnectionFailed ex) {
+            throw new SimonRemoteException("Establishing connection to remote registry failed.", ex);
+        } 
+        return success;
+    }
+    
+    /**
+     * 
+     * @param remoteRegistry
+     * @param name
+     * @return 
+     */
+    public List<SimonPublication> getRemotePublications(InetSocketAddress remoteRegistry, String name) {
+        List<SimonPublication> list = new ArrayList<>();
+        InterfaceLookup remotePublishLookup = Simon.createInterfaceLookup(remoteRegistry.getAddress(), remoteRegistry.getPort());
+        boolean success = false;
+        try {
+            SimonRemotePublishingService simonRemotePublish = (SimonRemotePublishingService) remotePublishLookup.lookup(SimonRemotePublishingService.class.getCanonicalName());
+            list.addAll(simonRemotePublish.searchRemoteObject(name));
+            remotePublishLookup.release(simonRemotePublish);
+        } catch (LookupFailedException ex) {
+            throw new SimonRemoteException("Remote registry is not prepared for remote publishing", ex);
+        } catch (EstablishConnectionFailed ex) {
+            throw new SimonRemoteException("Establishing connection to remote registry failed.", ex);
+        } 
+        return list;
+    }
+    
+    /**
+     * Start the RemotePublishingService on the local registry.
+     *
+     * @throws SimonException in case of remote publishing service already
+     * started/running
+     * @since 1.3.0
+     */
+    public void startRemotePublishingService() throws SimonException {
+        srp = new SimonRemotePublishingServiceImpl();
+        try {
+            bind(SimonRemotePublishingService.REMOTE_OBJECT_NAME, srp);
+        } catch (NameBindingException ex) {
+            throw new SimonException("RemoteOublishingService already bound to registry", ex);
+        }
+    }
+
+    /**
+     * @return true, if stopping succeeded, false, if not yet started and
+     * therefore cannot stop
+     * @since 1.3.0
+     */
+    public boolean stopRemotePublishingService() {
+        if (srp != null) {
+            ((SimonRemotePublishingServiceImpl) srp).shutdownService();
+            srp = null;
+            return unbind(SimonRemotePublishingService.REMOTE_OBJECT_NAME);
+        }
+        return false;
+    }
+
+    /**
+     * Is the Remote Publishing Service running?
+     * @return true if running, false if not started or already stopped
+     * @since 1.3.0
+     */
+    public boolean isRemotePublishingService() {
+        return srp != null;
     }
 
     /**
      * Unbinds a remote object from the registry's own {@link LookupTable}. If
      * it's published, it's removed from the list of published objects
      *
-     * @param name
-     *            the object to unbind (and unpublish, if published)
+     * @param name the object to unbind (and unpublish, if published)
      * @return true, if unpublish succeeded, false, if object wasn't published
-     *         and though can't be unpublished
+     * and though can't be unpublished
      */
     public boolean unbind(String name) {
         //TODO what to do with already connected users?
         dispatcher.getLookupTable().releaseRemoteBinding(name);
         return Simon.unpublish(new SimonPublication(address, port, name));
     }
+    
+    /**
+     * Unbinds a remote object from the registry's own {@link LookupTable}. If
+     * it's published, it's removed from the list of published objects. And it's also unpublished from remote registry
+     *
+     * @param name the object to unbind (and unpublish, if published)
+     * @param remoteRegistry socket address of remote registry
+     * @return true, if unpublish succeeded, false, if object wasn't published
+     * and though can't be unpublished
+     * @since 1.3.0
+     */
+    public boolean unbind(String name, InetSocketAddress remoteRegistry) {
+        //TODO what to do with already connected users?
+        dispatcher.getLookupTable().releaseRemoteBinding(name);
+        return Simon.unpublish(new SimonPublication(address, port, name)) && unpublishRemote(name, remoteRegistry);
+    }
+    
+    /**
+     * 
+     * @param name
+     * @throws IOException 
+     * @since 1.3.0
+     */
+    public void publish(String name) throws IOException {
+        Simon.publish(new SimonPublication(address, port, name));
+    }
 
     /**
      * Unpublish a already published remote object.
      *
-     * @param name
-     *            the object to unpublish, if published
+     * @param name the object to unpublish, if published
      *
      * @return true, if unpublish succeeded, false, if object wasn't published
-     *         and though can't be unpublished
+     * and though can't be unpublished
      */
     public boolean unpublish(String name) {
         return Simon.unpublish(new SimonPublication(address, port, name));
@@ -428,10 +583,8 @@ public final class Registry {
      * bind(name, remoteObject);
      * </code>
      *
-     * @param name
-     *            the name of the object to rebind
-     * @param remoteObject
-     *            the object to rebind
+     * @param name the name of the object to rebind
+     * @param remoteObject the object to rebind
      */
     public void rebind(String name, Object remoteObject) {
         unbind(name);
@@ -449,10 +602,10 @@ public final class Registry {
      * @return boolean
      */
     public boolean isRunning() {
-        return (dispatcher!=null 
-                && acceptor!=null 
-                && acceptor!=null 
-                && (dispatcher.isRunning() || acceptor.isActive() || (filterchainWorkerPool!=null && !filterchainWorkerPool.isTerminated())));
+        return (dispatcher != null
+                && acceptor != null
+                && acceptor != null
+                && (dispatcher.isRunning() || acceptor.isActive() || (filterchainWorkerPool != null && !filterchainWorkerPool.isTerminated())));
     }
 
     /**
@@ -460,7 +613,7 @@ public final class Registry {
      * the session of the given remote object (an instance of {@link SimonProxy}
      *
      * @return an implementation of {@link SimonRegistryStatistics} that gives
-     *         access to the statistics data of this {@link Registry}
+     * access to the statistics data of this {@link Registry}
      */
     public SimonRegistryStatistics getStatistics() {
         return new RegistryStatistics(acceptor.getStatistics());
@@ -468,27 +621,32 @@ public final class Registry {
 
     /**
      * Returns the {@link Dispatcher} associated with this registry.
+     *
      * @return the related dispatcher
      */
     protected Dispatcher getDispatcher() {
         return dispatcher;
     }
-    
+
     /**
-     * The classloader which is used to load remote interface classes (used in remote callbacks f.i.).
+     * The classloader which is used to load remote interface classes (used in
+     * remote callbacks f.i.).
+     *
      * @return ClassLoader
      * @since 1.2.0
      */
-    public ClassLoader getClassLoader(){
+    public ClassLoader getClassLoader() {
         return classLoader;
     }
 
     /**
-     * Set the classloader which is used to load remote interface classes (used in remote callbacks f.i.)
-     * @param classLoader 
+     * Set the classloader which is used to load remote interface classes (used
+     * in remote callbacks f.i.)
+     *
+     * @param classLoader
      * @since 1.2.0
      */
-    public void setClassLoader(ClassLoader classLoader){
+    public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 

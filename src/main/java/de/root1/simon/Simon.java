@@ -58,13 +58,16 @@ public class Simon {
     /**
      * Official port assigned by IANA
      *
-     * @see <a href="http://www.iana.org/assignments/service-names-port-numbers">IANA Port Assignments</a>
+     * @see
+     * <a href="http://www.iana.org/assignments/service-names-port-numbers">IANA
+     * Port Assignments</a>
      * @since 1.2.0
      */
     public final static int DEFAULT_PORT = 4753;
-    
+
     /**
-     * Map holding custom invoke timeouts for specific remote methods (including callbacks).
+     * Map holding custom invoke timeouts for specific remote methods (including
+     * callbacks).
      */
     private static final Map<Method, Integer> customInvokeTimeoutMap = new HashMap<Method, Integer>();
 
@@ -99,7 +102,6 @@ public class Simon {
             } catch (IOException ex) {
                 java.util.logging.Logger.getLogger(Simon.class.getName()).log(Level.SEVERE, null, ex);
             }
-
 
             System.out.println("ENABLING SIMON DEBUG LOG *DONE*");
         }
@@ -274,7 +276,8 @@ public class Simon {
 
     /**
      * Creates a interface lookup object that is used to lookup remote objects.
-     * The connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.
+     * The connection is done via SIMON's default port
+     * {@link Simon#DEFAULT_PORT}.
      * <br> Lookup is made via a known interface of the remote object.
      *
      * @param host the name of the host on which the registry server runs
@@ -288,7 +291,8 @@ public class Simon {
 
     /**
      * Creates a interface lookup object that is used to lookup remote objects.
-     * The connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.
+     * The connection is done via SIMON's default port
+     * {@link Simon#DEFAULT_PORT}.
      * <br> Lookup is made via a known interface of the remote object.
      *
      * @param address the address of the host on which the registry server runs
@@ -328,7 +332,8 @@ public class Simon {
 
     /**
      * Creates a name lookup object that is used to lookup remote objects. The
-     * connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.<br>
+     * connection is done via SIMON's default port
+     * {@link Simon#DEFAULT_PORT}.<br>
      * Lookup is made via a known name of the remote object.
      *
      * @param host the name of the host on which the registry server runs
@@ -342,7 +347,8 @@ public class Simon {
 
     /**
      * Creates a name lookup object that is used to lookup remote objects. The
-     * connection is done via SIMON's default port {@link Simon#DEFAULT_PORT}.<br>
+     * connection is done via SIMON's default port
+     * {@link Simon#DEFAULT_PORT}.<br>
      * Lookup is made via a known name of the remote object.
      *
      * @param address the address of the host on which the registry server runs
@@ -423,7 +429,8 @@ public class Simon {
      * previously constructed threads when they are available. This is the most
      * common setting. Old, for 60 seconds unused threads will be removed. These
      * pools will typically improve the performance of programs that execute
-     * many short-lived asynchronous tasks. See documentation of {@link Executors#newCachedThreadPool()}<br>
+     * many short-lived asynchronous tasks. See documentation of
+     * {@link Executors#newCachedThreadPool()}<br>
      *
      * If size has value >=1, a new pool has a fixed size by the given value
      *
@@ -434,44 +441,25 @@ public class Simon {
     }
 
     /**
-     * Sets the DGC's interval time in milliseconds
-     *
-     * @param milliseconds time in milliseconds
-     * @deprecated	use {@link Simon#setDefaultKeepAliveInterval(int)} instead!
-     */
-    public static void setDgcInterval(int milliseconds) {
-        Statics.DEFAULT_IDLE_TIME = milliseconds / 1000;
-    }
-
-    /**
-     * Gets the DGC's interval time in milliseconds
-     *
-     * @return the current set DGC interval
-     * @deprecated	use {@link Simon#getKeepAliveInterval()} instead!
-     */
-    public static int getDgcInterval() {
-        return Statics.DEFAULT_IDLE_TIME * 1000;
-    }
-
-    /**
      * Sets the default connect timeout for establishing a connection via Lookup
+     *
      * @param millis time in milliseconds to wait for the established connection
      */
     public static void setDefaultConnectTimeout(int millis) {
         logger.debug("setting default connect timeout to {} ms.", millis);
         Statics.DEFAULT_CONNECT_TIMEOUT = millis;
     }
-    
+
     /**
-     * Gets the default connect timeout in milliseconds. This value is the
-     * used default value for all new connections.
-     * 
+     * Gets the default connect timeout in milliseconds. This value is the used
+     * default value for all new connections.
+     *
      * @return time in milliseconds to wait for the established connection
      */
     public static int getDefaultConnectTimeout() {
         return Statics.DEFAULT_CONNECT_TIMEOUT;
     }
-    
+
     /**
      * Sets the keep alive default interval time in seconds. This value is used
      * as a default value for all new connections.
@@ -482,7 +470,6 @@ public class Simon {
         logger.debug("setting default keep alive interval to {} sec.", seconds);
         Statics.DEFAULT_IDLE_TIME = seconds;
     }
-    
 
     /**
      * Gets the default keep-alive interval time in seconds. This value is the
@@ -583,19 +570,6 @@ public class Simon {
         publishments.add(simonPublication);
 
     }
-    
-    protected static void publishRemote(SimonPublication simonPublication, InetSocketAddress remoteRegistry) throws IOException {
-        InterfaceLookup remotePublishLookup = Simon.createInterfaceLookup(remoteRegistry.getAddress(), remoteRegistry.getPort());
-        try {
-            SimonRemotePublish simonRemotePublish = (SimonRemotePublish) remotePublishLookup.lookup(SimonRemotePublish.class.getCanonicalName());
-            simonRemotePublish.publish(simonPublication);
-            remotePublishLookup.release(simonRemotePublish);
-        } catch (LookupFailedException ex) {
-            
-        } catch (EstablishConnectionFailed ex) {
-            
-        }
-    }    
 
     /**
      * Unpublishs a already published {@link SimonPublication}. If there are no
@@ -667,16 +641,15 @@ public class Simon {
 
     /**
      * Sets class name for the protocol codec factory to use for all future
-     * <code>createRegistry()</code> or
-     * <code>lookup()</code> calls. <i>This does not affect already created
-     * registry or already established sessions.</i>
+     * <code>createRegistry()</code> or <code>lookup()</code> calls. <i>This
+     * does not affect already created registry or already established
+     * sessions.</i>
      *
      * @param protocolFactoryClassName a class name like
      * "com.mydomain.myproject.codec.mySimonProtocolCodecFactory" which points
-     * to a class, that extends
-     *            {@link SimonProtocolCodecFactory}. <i>The important thing is, that this
-     * class correctly overrides
-     *            {@link SimonProtocolCodecFactory#setup(boolean)}. For further details,
+     * to a class, that extends {@link SimonProtocolCodecFactory}. <i>The
+     * important thing is, that this class correctly overrides
+     * {@link SimonProtocolCodecFactory#setup(boolean)}. For further details,
      * look at {@link SimonProtocolCodecFactory}!</i>
      * @throws IllegalAccessException if the class or its nullary constructor is
      * not accessible.
@@ -687,7 +660,7 @@ public class Simon {
      * @throws ClassNotFoundException if the class is not found by the
      * classloader. if so, please check your classpath.
      * @throws ClassCastException if the given class is no instance of
-     *             {@link SimonProtocolCodecFactory}
+     * {@link SimonProtocolCodecFactory}
      */
     public static void setProtocolCodecFactory(String protocolFactoryClassName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException {
         // testwise try to get the factory. if the specified class' name is not useable,
@@ -696,7 +669,7 @@ public class Simon {
         // if the above worked, save the class' name
         Simon.protocolFactoryClassName = protocolFactoryClassName;
     }
-    
+
     /**
      * Returns the current set class name for the protocol codec factory
      *
@@ -721,13 +694,12 @@ public class Simon {
 
     /**
      * Opens a raw channel to transfer data from the current station to the
-     * remote station described by the given
-     * <code>simonRemote</code>
+     * remote station described by the given <code>simonRemote</code>
      *
      * @param channelToken a token that identifies the already prepared raw
      * channel from the remote station. Those token can only be created on the
      * remote station. Thus a remote call which does the
-     *            {@link Simon#prepareRawChannel(RawChannelDataListener, Object)} is needed
+     * {@link Simon#prepareRawChannel(RawChannelDataListener, Object)} is needed
      * in advance.
      * @param simonRemote the remote object which lives on the remote station
      * which has a prepared raw data channel, related to the
@@ -749,19 +721,19 @@ public class Simon {
     }
 
     /**
-     * Prepare
-     * <code>simonRemote</code>'s internal message dispatcher for receiving raw
-     * data.<br/> The result of this method is a token, which identifies the
-     * channel on both sides: <ul> <li>on the <i>receiving side</i> with the
-     * registered
-     * {@link RawChannelDataListener},</li> <li>and on the <i>sending side</i>
-     * for opening the {@link RawChannel} by calling {@link Simon#openRawChannel(int, Object)}.</li>
+     * Prepare <code>simonRemote</code>'s internal message dispatcher for
+     * receiving raw data.<br/> The result of this method is a token, which
+     * identifies the channel on both sides: <ul> <li>on the <i>receiving
+     * side</i> with the registered {@link RawChannelDataListener},</li> <li>and
+     * on the <i>sending side</i>
+     * for opening the {@link RawChannel} by calling
+     * {@link Simon#openRawChannel(int, Object)}.</li>
      * </ul> <br> This method has to be called on the receiving side.
      *
      * @param listener the listener which gets all the received data related to
      * this channel
-     * @param simonRemote a reference to the remote object whos {@link Dispatcher}
-     * is prepared to receive raw data.
+     * @param simonRemote a reference to the remote object whos
+     * {@link Dispatcher} is prepared to receive raw data.
      * @return a token that identifies the prepared channel
      * @throws SimonException
      */
@@ -797,11 +769,12 @@ public class Simon {
     }
 
     /**
-     * Searches the {@link LookupTable} for the given remote object and
-     * returns {@link Dispatcher} which is attached to this {@link LookupTable}.
+     * Searches the {@link LookupTable} for the given remote object and returns
+     * {@link Dispatcher} which is attached to this {@link LookupTable}.
      *
      * @param remoteObject
-     * @return the related {@link Dispatcher} or null, if no related dispatcher found
+     * @return the related {@link Dispatcher} or null, if no related dispatcher
+     * found
      */
     private static Dispatcher getDispatcher(Object remoteObject) {
         for (LookupTable lookupTable : lookupTableList) {
@@ -870,11 +843,12 @@ public class Simon {
 
         return false;
     }
-    
+
     /**
      * Returns the SIMON internal session id of a current running remote call.
-     * This method only works if called within a remote call. Means: Don't use it 
-     * anywhere else than in the remote implementation. Be careful!
+     * This method only works if called within a remote call. Means: Don't use
+     * it anywhere else than in the remote implementation. Be careful!
+     *
      * @return SIMON internal session id
      * @throws IllegalStateException if called from outside a remote call
      */
@@ -886,35 +860,36 @@ public class Simon {
         }
         throw new IllegalStateException("Method must be invoked within a remote-call-implementation!");
     }
-   
+
     /**
      * Sets a custom invoke timeout for a remote method
-     * 
+     *
      * @param method Method for which the custom timeout should be set
-     * @param timeout timeout in milliseconds. A value &lt;= 0 resets to default.
+     * @param timeout timeout in milliseconds. A value &lt;= 0 resets to
+     * default.
      */
     public static void setCustomInvokeTimeout(Method method, int timeout) {
-        if (timeout>0) {
+        if (timeout > 0) {
             customInvokeTimeoutMap.put(method, timeout);
         } else {
             customInvokeTimeoutMap.remove(method);
         }
     }
-    
+
     /**
      * Returns custom invoke timeout for specific remote method.
-     * 
+     *
      * @param method remote method
-     * @return value &gt; 0 defines custome timeout in milliseconds, value &lt;=0 defines default timeout
+     * @return value &gt; 0 defines custome timeout in milliseconds, value
+     * &lt;=0 defines default timeout
      */
     static int getCustomInvokeTimeout(Method method) {
         Integer customTimeout = customInvokeTimeoutMap.get(method);
-        if (customTimeout==null || customTimeout.intValue()<=0)
+        if (customTimeout == null || customTimeout.intValue() <= 0) {
             return 0;
-        
+        }
+
         return customTimeout.intValue();
     }
-
-
 
 }

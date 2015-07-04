@@ -35,11 +35,11 @@ import org.slf4j.LoggerFactory;
 public final class PublishService extends Thread {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private MulticastSocket socket;
-    private InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
-    private int groupPort = Simon.DEFAULT_PORT;
+    private final MulticastSocket socket;
+    private final InetAddress groupAddress = InetAddress.getByName("239.1.2.3");
+    private final int groupPort = Simon.DEFAULT_PORT;
     private boolean shutdown;
-    private List<SimonPublication> publishments;
+    private final List<SimonPublication> publishments;
 
     protected PublishService(List<SimonPublication> publishments) throws IOException {
         logger.debug("preparing publish service");
@@ -50,6 +50,7 @@ public final class PublishService extends Thread {
         this.publishments = publishments;
     }
 
+    @Override
     public void run() {
         logger.debug("publish service up and running");
         while (!shutdown) {
