@@ -281,7 +281,7 @@ public class Utils {
 
         } else { // deeper search
 
-            logger.trace("No SimonRemote annotation found for {} {}. Searching for interfaces that extend SimonRemote Marker or use SimonRemote Annotation.", type, clazz.getName());
+            logger.trace("No SimonRemote annotation found for {} {}. Searching for interfaces that extend SimonRemoteMarker or use SimonRemote Annotation.", type, clazz.getName());
             /*
              * There's no initial annotation
              * Need to search for a Interface in any superclass/superinterface that extends SimonRemote
@@ -295,10 +295,6 @@ public class Utils {
                     // interface is annotated
                     interfaceSet.add((Class<?>) interfaze);
 
-                } else if (de.root1.simon.SimonRemote.class.isAssignableFrom(interfaze)) {
-                    // interfaces extends SimonRemote marker interface
-                    interfaceSet.add((Class<?>) interfaze);
-
                 } else {
                     // no remote interface found
                     // checking for super interface
@@ -310,21 +306,6 @@ public class Utils {
             // check also super classes
             if (clazz.getSuperclass() != null && !clazz.getSuperclass().equals(Object.class)) {
                 interfaceSet.addAll(doFindAllRemoteInterfaces(clazz.getSuperclass()));
-            }
-
-            // check all interfaces ...
-            Class<?>[] interfaces = clazz.getInterfaces();
-            for (Class<?> interfaze : interfaces) {
-
-                // ... for annotation
-                if (interfaze.isAnnotationPresent(SimonRemote.class) || de.root1.simon.SimonRemote.class.isAssignableFrom(interfaze)) {
-                    interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze));
-                }
-
-                // ... and superclasses
-                if (interfaze.getSuperclass() != null) {
-                    interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));
-                }
             }
 
         }
@@ -405,9 +386,6 @@ public class Utils {
             }
         }
         if (getMarker(remoteObject) != null) {
-            return true;
-        }
-        if (remoteObject instanceof de.root1.simon.SimonRemote) {
             return true;
         }
         return false;

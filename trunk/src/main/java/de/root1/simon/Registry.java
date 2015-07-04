@@ -33,7 +33,6 @@ import javax.net.ssl.SSLContext;
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.executor.OrderedThreadPoolExecutor;
 import org.apache.mina.filter.logging.LoggingFilter;
 import org.apache.mina.filter.ssl.SslFilter;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
@@ -375,6 +374,17 @@ public final class Registry {
         bind(name, remoteObject);
         try {
             Simon.publish(new SimonPublication(address, port, name));
+        } catch (IOException e) {
+            unbind(name);
+            throw new NameBindingException("can't publish '" + name + "'. object is not bind! error=" + e.getMessage());
+        }
+    }
+    
+    
+    public void bindAndPublishRemote(String name, Object remoteObject, InetSocketAddress remoteRegistry) throws NameBindingException {
+        bind(name, remoteObject);
+        try {
+            Simon.publishRemote(new SimonPublication(address, port, name), remoteRegistry);
         } catch (IOException e) {
             unbind(name);
             throw new NameBindingException("can't publish '" + name + "'. object is not bind! error=" + e.getMessage());
