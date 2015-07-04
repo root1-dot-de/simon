@@ -18,22 +18,32 @@
  */
 package de.root1.simon.exceptions;
 
-
 /**
- * TODO Documentation to be done
+ * Generic Exception for SIMON
  *
  * @author achristian
  *
  */
 public class SimonException extends SimonRemoteException {
-	
-	private static final long serialVersionUID = 1L;
 
-	/**
-	 * TODO Documentation to be done
-	 */
-	public SimonException(String msg) {
-		super(msg);
-	}
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 
+     * @param message
+     */
+    public SimonException(String message) {
+        super(message);
+    }
+
+    /**
+     *
+     * @param message
+     * @param cause
+     * @since 1.3.0
+     */
+    public SimonException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
 }

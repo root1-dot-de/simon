@@ -18,6 +18,7 @@
  */
 package de.root1.simon;
 
+import java.io.Serializable;
 import java.net.*;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author achristian
  *
  */
-public final class SimonPublication {
+public final class SimonPublication implements Serializable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private static final String SIMON_PUBLISHMENT_HEADER = "[SIMON|";
