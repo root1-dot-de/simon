@@ -136,39 +136,7 @@ public class SimonRemoteInstance implements Serializable {
                 logger.trace("Getting all (sub)interfaces...");
                 Utils.putAllInterfaceNames(remoteObject, interfaceNames);
 
-            } else {
-
-                logger.trace("Searching for explicit remote interfaces marked with {} ...", de.root1.simon.SimonRemote.class.getCanonicalName());
-
-                Class[] remoteInterfaces = remoteObject.getClass().getInterfaces();
-
-                // check each interface if THIS is the one which implements "SimonRemote"
-                for (Class<?> interfaceClazz : remoteInterfaces) {
-
-
-                    String remoteObjectInterfaceClassNameTemp = interfaceClazz.getCanonicalName();
-
-                    logger.trace("Checking interfacename='{}' for '{}'", remoteObjectInterfaceClassNameTemp, de.root1.simon.SimonRemote.class.getCanonicalName());
-
-                    // Get the interfaces of the implementing interface
-                    Class<?>[] remoteObjectInterfaceSubInterfaces = interfaceClazz.getInterfaces();
-
-                    for (Class<?> remoteObjectInterfaceSubInterface : remoteObjectInterfaceSubInterfaces) {
-
-                        logger.trace("Checking child interfaces for '{}': child={}", remoteObjectInterfaceClassNameTemp, remoteObjectInterfaceSubInterface);
-
-                        if (remoteObjectInterfaceSubInterface.equals(de.root1.simon.SimonRemote.class)) {
-                            logger.trace("Adding {} to the list of remote interfaces", remoteObjectInterfaceClassNameTemp);
-                            if (!interfaceNames.contains(remoteObjectInterfaceClassNameTemp)) {
-                                interfaceNames.add(remoteObjectInterfaceClassNameTemp);
-                            } else {
-                                logger.trace("{} already in list. skipping.", remoteObjectInterfaceClassNameTemp);
-                            }
-                        }
-                    }
-
-                }
-            }
+            } 
         }
         logger.debug("end");
     }
