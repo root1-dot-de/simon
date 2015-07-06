@@ -19,10 +19,11 @@
 package de.root1.simon;
 
 import java.util.concurrent.ExecutorService;
+import org.apache.mina.api.IoSession;
 
-import org.apache.mina.core.service.IoConnector;
-import org.apache.mina.core.session.IoSession;
-import org.apache.mina.transport.socket.nio.NioSocketConnector;
+//import org.apache.mina.core.service.IoConnector;
+//import org.apache.mina.core.session.IoSession;
+//import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

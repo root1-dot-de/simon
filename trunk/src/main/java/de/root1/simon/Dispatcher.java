@@ -31,9 +31,13 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.mina.core.service.IoHandler;
-import org.apache.mina.core.session.IdleStatus;
-import org.apache.mina.core.session.IoSession;
+import org.apache.mina.api.IdleStatus;
+import org.apache.mina.api.IoHandler;
+import org.apache.mina.api.IoService;
+import org.apache.mina.api.IoSession;
+//import org.apache.mina.core.service.IoHandler;
+//import org.apache.mina.core.session.IdleStatus;
+//import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1234,5 +1238,45 @@ public class Dispatcher implements IoHandler {
     @Override
     public void inputClosed(IoSession is) throws Exception {
         is.close(true);
+    }
+
+    @Override
+    public void sessionOpened(IoSession session) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void sessionClosed(IoSession session) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void sessionIdle(IoSession session, IdleStatus status) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void messageReceived(IoSession session, Object message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void messageSent(IoSession session, Object message) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void serviceActivated(IoService service) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void serviceInactivated(IoService service) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void exceptionCaught(IoSession session, Exception cause) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
