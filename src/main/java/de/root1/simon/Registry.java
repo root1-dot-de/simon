@@ -25,25 +25,32 @@ import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.ssl.SslContextFactory;
+import de.root1.simon.utils.MinaUtils;
 import de.root1.simon.utils.Utils;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.SocketOption;
 import java.nio.channels.ServerSocketChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import javax.net.ssl.SSLContext;
-import org.apache.mina.core.service.IoAcceptor;
-import org.apache.mina.core.session.IdleStatus;
+import org.apache.mina.api.IoFilter;
+import org.apache.mina.examples.http.BogusSslContextFactory;
+//import org.apache.mina.core.service.IoAcceptor;
+//import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.logging.LoggingFilter;
-import org.apache.mina.filter.ssl.SslFilter;
-import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
+import org.apache.mina.service.server.AbstractIoServer;
+import org.apache.mina.transport.nio.NioTcpServer;
+//import org.apache.mina.filter.ssl.SslFilter;
+//import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +86,7 @@ public final class Registry {
     /**
      * the socket acceptor
      */
-    private IoAcceptor acceptor;
+    private AbstractIoServer acceptor;
 
     /**
      * The pool in which the dispatcher, acceptor and registry lives
@@ -118,12 +125,13 @@ public final class Registry {
      * @since 1.3.0
      */
     private SimonRemotePublishingService srp;
-    
+
     /**
      * Map that holds remote object names and corresponding UUID
+     *
      * @since 1.3.0
      */
-    private Map<String, UUID> nameToUUID = new HashMap<>();
+    private final Map<String, UUID> nameToUUID = new HashMap<>();
 
     /**
      * Creates a registry
@@ -191,11 +199,11 @@ public final class Registry {
             dispatcher = new Dispatcher(null, classLoader, threadPool);
             logger.debug("dispatcher created");
 
-            acceptor = new NioSocketAcceptor();
+            acceptor = new NioTcpServer();
 
             // currently this check is senseless. But in future we may provide more acceptor types?!
-            if (acceptor instanceof NioSocketAcceptor) {
-                NioSocketAcceptor nioSocketAcceptor = (NioSocketAcceptor) acceptor;
+            if (acceptor instanceof NioTcpServer) {
+                NioTcpServer nioSocketAcceptor = (NioTcpServer) acceptor;
 
                 logger.debug("setting 'TcpNoDelay' on NioSocketAcceptor");
                 nioSocketAcceptor.getSessionConfig().setTcpNoDelay(true);
@@ -215,7 +223,9 @@ public final class Registry {
                     } catch (Exception e) {
                     } // close the temporary socket and channel and ignore all errors
                     logger.debug("setting 'ReceiveBufferSize' on NioSocketAcceptor to {}", receiveBufferSize);
-                    nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
+                    // TODO FIXME
+//                    nioSocketAcceptor.getSessionConfig().setReceiveBufferSize(receiveBufferSize);
+
                 } catch (IOException ex) {
                     logger.debug("Not able to get readbuffersize from a default NIO socket. Error: {}", ex.getMessage());
                     if (nioSocketAcceptor.getSessionConfig().getReadBufferSize() == 1024 && System.getProperty("os.name").equals("Windows 7")) {
@@ -223,28 +233,29 @@ public final class Registry {
                     }
                 }
                 // end of workaround
-            }
 
-            if (sslContextFactory != null) {
-                SSLContext context = sslContextFactory.getSslContext();
+                if (sslContextFactory != null) {
+                    SSLContext context = sslContextFactory.getSslContext();
 
-                if (context != null) {
-                    SslFilter sslFilter = new SslFilter(context);
-                    acceptor.getFilterChain().addLast("sslFilter", sslFilter);
-                    logger.debug("SSL ON");
-                } else {
-                    logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
+                    if (context != null) {
+                        // TODO Check if this works as expected --> Test with JUnit Tests?
+                        nioSocketAcceptor.getSessionConfig().setSslContext(context);
+
+                        logger.debug("SSL ON");
+                    } else {
+                        logger.warn("SSLContext retrieved from SslContextFactory was 'null', so starting WITHOUT SSL!");
+                    }
                 }
             }
 
             // only add the logging filter if trace is enabled
             if (logger.isTraceEnabled()) {
-                acceptor.getFilterChain().addLast("logger", new LoggingFilter());
+                //acceptor.getFilterChain().addLast("logger", new LoggingFilter());
+
+                // FIXME there's no add or remove filter method in MINA?!
+                MinaUtils.addFilterLast(acceptor, new LoggingFilter());
             }
 
-            // don't use a threading model on filter level
-            //filterchainWorkerPool = new OrderedThreadPoolExecutor();
-            //acceptor.getFilterChain().addLast("executor", new ExecutorFilter(filterchainWorkerPool));
             SimonProtocolCodecFactory protocolFactory = null;
             try {
 
@@ -262,9 +273,11 @@ public final class Registry {
             }
 
             protocolFactory.setup(true);
-            acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
+//            acceptor.getFilterChain().addLast("codec", new ProtocolCodecFilter(protocolFactory));
+            MinaUtils.addFilterLast(acceptor, new ProtocolCodecFilter(protocolFactory));
 
-            acceptor.setHandler(dispatcher);
+            acceptor.setIoHandler(dispatcher);
+            
             logger.trace("Configuring acceptor with default values: write_timeout={}sec dgc_interval={}sec", Statics.DEFAULT_WRITE_TIMEOUT, Statics.DEFAULT_IDLE_TIME);
             setKeepAliveInterval(Statics.DEFAULT_IDLE_TIME);
             setKeepAliveTimeout(Statics.DEFAULT_WRITE_TIMEOUT);
@@ -403,18 +416,22 @@ public final class Registry {
     }
 
     /**
-     * Binds the given object to the loal registry and publishes it to the given remote registry location
+     * Binds the given object to the loal registry and publishes it to the given
+     * remote registry location
+     *
      * @param name name of the object
      * @param remoteObject the remote object
-     * @param remoteRegistry the address and port of the remote registry the object should be published on
+     * @param remoteRegistry the address and port of the remote registry the
+     * object should be published on
      * @throws NameBindingException if object already bound or published
-     * @throws SimonRemoteException in case of problems communicating with the remote registry
+     * @throws SimonRemoteException in case of problems communicating with the
+     * remote registry
      * @since 1.3.0
      */
     public void bindAndPublishRemote(String name, Object remoteObject, InetSocketAddress remoteRegistry) throws NameBindingException, SimonRemoteException {
         SimonPublication publication = new SimonPublication(address, port, name);
         bind(name, remoteObject);
-        
+
         InterfaceLookup remotePublishLookup = Simon.createInterfaceLookup(remoteRegistry.getAddress(), remoteRegistry.getPort());
         try {
             SimonRemotePublishingService simonRemotePublish = (SimonRemotePublishingService) remotePublishLookup.lookup(SimonRemotePublishingService.class.getCanonicalName());
@@ -427,26 +444,27 @@ public final class Registry {
             throw new SimonRemoteException("Remote registry is not prepared for remote publishing", ex);
         } catch (EstablishConnectionFailed ex) {
             // rollback
-            unbind(name); 
+            unbind(name);
             throw new SimonRemoteException("Establishing connection to remote registry failed.", ex);
         } catch (SimonException ex) {
             // rollback
-            unbind(name); 
+            unbind(name);
             throw new NameBindingException("Error publishing on remote registry", ex);
         }
 
     }
-    
+
     /**
-     * 
+     *
      * Unpublish a remote object from a remote registry
+     *
      * @param name name of the object to unbind
      * @param remoteRegistry
-     * @return 
+     * @return
      * @since 1.3.0
      */
     public boolean unpublishRemote(String name, InetSocketAddress remoteRegistry) {
-        
+
         InterfaceLookup remotePublishLookup = Simon.createInterfaceLookup(remoteRegistry.getAddress(), remoteRegistry.getPort());
         boolean success = false;
         try {
@@ -457,15 +475,15 @@ public final class Registry {
             throw new SimonRemoteException("Remote registry is not prepared for remote publishing", ex);
         } catch (EstablishConnectionFailed ex) {
             throw new SimonRemoteException("Establishing connection to remote registry failed.", ex);
-        } 
+        }
         return success;
     }
-    
+
     /**
-     * 
+     *
      * @param remoteRegistry
      * @param name
-     * @return 
+     * @return
      */
     public List<SimonPublication> getRemotePublications(InetSocketAddress remoteRegistry, String name) {
         List<SimonPublication> list = new ArrayList<>();
@@ -479,10 +497,10 @@ public final class Registry {
             throw new SimonRemoteException("Remote registry is not prepared for remote publishing", ex);
         } catch (EstablishConnectionFailed ex) {
             throw new SimonRemoteException("Establishing connection to remote registry failed.", ex);
-        } 
+        }
         return list;
     }
-    
+
     /**
      * Start the RemotePublishingService on the local registry.
      *
@@ -515,6 +533,7 @@ public final class Registry {
 
     /**
      * Is the Remote Publishing Service running?
+     *
      * @return true if running, false if not started or already stopped
      * @since 1.3.0
      */
@@ -535,10 +554,11 @@ public final class Registry {
         dispatcher.getLookupTable().releaseRemoteBinding(name);
         return Simon.unpublish(new SimonPublication(address, port, name));
     }
-    
+
     /**
      * Unbinds a remote object from the registry's own {@link LookupTable}. If
-     * it's published, it's removed from the list of published objects. And it's also unpublished from remote registry
+     * it's published, it's removed from the list of published objects. And it's
+     * also unpublished from remote registry
      *
      * @param name the object to unbind (and unpublish, if published)
      * @param remoteRegistry socket address of remote registry
@@ -551,11 +571,11 @@ public final class Registry {
         dispatcher.getLookupTable().releaseRemoteBinding(name);
         return Simon.unpublish(new SimonPublication(address, port, name)) && unpublishRemote(name, remoteRegistry);
     }
-    
+
     /**
-     * 
+     *
      * @param name
-     * @throws IOException 
+     * @throws IOException
      * @since 1.3.0
      */
     public void publish(String name) throws IOException {

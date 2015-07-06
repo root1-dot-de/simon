@@ -796,7 +796,7 @@ public class Simon {
      * of given object
      * @since 1.1.0
      */
-    public static Object markAsRemote(Object o) {
+    public static Object markAsRemote(Object o) throws IllegalRemoteObjectException {
         Class<?>[] interfaces = o.getClass().getInterfaces();
         if (interfaces.length == 0) {
             throw new IllegalRemoteObjectException("There need to be at least one interface to mark the given object as simon remote");

@@ -21,13 +21,13 @@ package de.root1.simon.codec;
 import java.nio.charset.Charset;
 import java.util.List;
 
-import org.apache.mina.core.filterchain.IoFilterAdapter;
-import org.apache.mina.core.filterchain.IoFilterChain;
-import org.apache.mina.core.session.IoSession;
+//import org.apache.mina.core.filterchain.IoFilterAdapter;
+//import org.apache.mina.core.filterchain.IoFilterChain;
+//import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-import org.apache.mina.filter.codec.textline.TextLineCodecFactory;
+//import org.apache.mina.filter.codec.textline.TextLineCodecFactory;
 import org.apache.mina.filter.logging.LoggingFilter;
-import org.apache.mina.util.Base64;
+//import org.apache.mina.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +40,7 @@ import de.root1.simon.utils.FilterEntry;
  * @version 200901291551
  *
  */
-public class SimonProxyFilter extends IoFilterAdapter {
+public class SimonProxyFilter extends  {
 	
 	private final Logger logger = LoggerFactory.getLogger(getClass());
 	
