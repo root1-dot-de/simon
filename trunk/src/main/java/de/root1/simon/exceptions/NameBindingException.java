@@ -19,22 +19,18 @@
 package de.root1.simon.exceptions;
 
 /**
- *
- * This exception is thrown, if one tried to bind a remote object a second time.
+ * 
+ * This exception is thrown, if one uses to bind a remote object a second time.
  * This means a remote object with the same name is already bind.
- *
+ * 
  * @author ACHR
  */
 public class NameBindingException extends Exception {
+	
+	private static final long serialVersionUID = 2999458111410425350L;
 
-    private static final long serialVersionUID = 1L;
-
-    public NameBindingException(String msg) {
-        super(msg);
-    }
-
-    public NameBindingException(String msg, Exception e) {
-        super(msg, e);
-    }
+	public NameBindingException(String msg){
+		super(msg);
+	}
 
 }
