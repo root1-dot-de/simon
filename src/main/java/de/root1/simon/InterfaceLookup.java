@@ -26,8 +26,7 @@ import de.root1.simon.utils.SimonClassLoaderHelper;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import org.apache.mina.api.IoSession;
-//import org.apache.mina.core.session.IoSession;
+import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
