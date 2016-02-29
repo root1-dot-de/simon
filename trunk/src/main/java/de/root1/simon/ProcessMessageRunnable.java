@@ -740,7 +740,7 @@ public class ProcessMessageRunnable implements Runnable {
 
         SimonException se = new SimonException(exceptionMessage);
         se.initCause(throwable);
-        CloseFuture closeFuture = session.close(true);
+        CloseFuture closeFuture = session.closeNow();
         closeFuture.awaitUninterruptibly();
         logger.debug("end");
         throw se;
