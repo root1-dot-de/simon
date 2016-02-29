@@ -270,9 +270,14 @@ public class Utils {
             } else {
                 /*
                  * there is no interfaces specified with the annotation's value field. 
-                 * Using all visible interfaces in from the initial class as a remote interface.
+                 * Using all visible interfaces from the class as a remote interface.
                  * "All" means: All first-level interfaces, independant from any SimonRemote annotation or extension
+                 * If class itself is an interface, just use this
                  */
+                if (clazz.isInterface()) {
+                    interfaceSet.add(clazz);
+                } 
+                
                 for (Class<?> interfaze : clazz.getInterfaces()) {
                     interfaceSet.add((Class<?>) interfaze);
                 }
@@ -294,8 +299,13 @@ public class Utils {
                 if (interfaze.isAnnotationPresent(SimonRemote.class)) {
                     // interface is annotated
                     interfaceSet.add((Class<?>) interfaze);
-
-                } else {
+                    
+                    // Check for parent interfaces (made with 'interface extends anotherinterface')
+                    for(Class<?> parentInterface : interfaze.getInterfaces()) {
+                        interfaceSet.addAll(doFindAllRemoteInterfaces(parentInterface));
+                    }
+                } 
+                else {
                     // no remote interface found
                     // checking for super interface
                     interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));
