@@ -50,6 +50,13 @@ public interface Lookup {
     ClassLoader getClassLoader();
 
     void setClassLoader(ClassLoader classLoader);
+    
+    /**
+     * Sets the address that is used as the source address for the lookup-request.
+     * This might be useful if client machine has more than one network interface or server requires a specific client subnet
+     * @param sourceAddress 
+     */
+    void setSourceAddress(InetAddress sourceAddress);
 
     InetAddress getServerAddress();
 

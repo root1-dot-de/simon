@@ -59,14 +59,18 @@ abstract class AbstractLookup implements Lookup {
     private final static Logger logger = LoggerFactory.getLogger(AbstractLookup.class);
 
     /**
-     * A relation map between server-connection-string and ClientToServerConnection objects.<br>
+     * A relation map between server-connection-string and
+     * ClientToServerConnection objects.<br>
      * This is used to re-use already existing connections.<br>
-     * This member has static access. So it's reachable from every lookup implementation class
+     * This member has static access. So it's reachable from every lookup
+     * implementation class
      */
     static final Map<String, ClientToServerConnection> serverDispatcherRelation = new HashMap<String, ClientToServerConnection>();
-    
+
     static final Monitor monitorCompleteShutdown = new Monitor();
-    
+
+    protected InetAddress sourceAddress;
+
     /**
      * A simple container class that relates the dispatcher to a session
      */
@@ -90,26 +94,31 @@ abstract class AbstractLookup implements Lookup {
     }
 
     @Override
+    public void setSourceAddress(InetAddress sourceAddress) {
+        this.sourceAddress = sourceAddress;
+    }
+
+    @Override
     public boolean release(Object remoteObject) {
         logger.debug("begin");
 
-        if (remoteObject==null) {
+        if (remoteObject == null) {
             throw new IllegalArgumentException("the argument is not a releaseable remote object. Given object was: " + remoteObject);
         }
-        
+
         // retrieve the proxy object
         SimonProxy proxy = Simon.getSimonProxy(remoteObject);
-        
+
         if (!proxy.isRegularLookup()) {
             throw new IllegalArgumentException("Provided proxy is callback object and is not manually releasable. Please release your lookup'ed object(s) instead or wait for GC to release it.");
-        } 
+        }
 
         logger.debug("releasing proxy {}", proxy.getDetailString());
 
         // release the proxy and get the related dispatcher
         Dispatcher dispatcher = proxy.getDispatcher();
         boolean result;
-        if (dispatcher!=null) {
+        if (dispatcher != null) {
             // get the list with listeners that have to be notified about the release and the followed close-event
             List<ClosedListener> removeClosedListenerList = dispatcher.removeClosedListenerList(proxy.getRemoteObjectName());
 
@@ -156,25 +165,26 @@ abstract class AbstractLookup implements Lookup {
      *
      * Creates a unique string for a server by using the host and port
      *
-     * @param host
-     *            the servers host
-     * @param port
-     *            the port the server listens on
+     * @param host the servers host
+     * @param port the port the server listens on
      * @return a server string
      */
     String createServerString(InetAddress host, int port) {
-        return host.getHostAddress() + ":" + port;
+        return (sourceAddress != null ? sourceAddress.getHostAddress() + "@" : "") + host.getHostAddress() + ":" + port;
     }
 
     /**
-     * Creates a connection to the server and returns a container that holds the dispatcher session relation
+     * Creates a connection to the server and returns a container that holds the
+     * dispatcher session relation
+     *
      * @param remoteObjectName the remote object name
      * @param serverAddress the address of the server
      * @param serverPort the server registrys port
      * @param sslContextFactory the used ssl context factory
      * @param proxyConfig the used proxy configuration
      * @return a container with the created session and dispatcher
-     * @throws EstablishConnectionFailed if connection to server can't be established
+     * @throws EstablishConnectionFailed if connection to server can't be
+     * established
      */
     SessionDispatcherContainer buildSessionDispatcherContainer(String remoteObjectName, InetAddress serverAddress, int serverPort, SslContextFactory sslContextFactory, SimonProxyConfig proxyConfig) throws EstablishConnectionFailed {
 
@@ -196,7 +206,6 @@ abstract class AbstractLookup implements Lookup {
                 dispatcher = ctsc.getDispatcher();
                 session = ctsc.getSession();
                 logger.debug("Got ClientToServerConnection from list");
-
 
             } else {
 
@@ -220,7 +229,6 @@ abstract class AbstractLookup implements Lookup {
                 // create a list of used filters
                 List<FilterEntry> filters = new ArrayList<FilterEntry>();
 
-
                 // check for SSL
                 if (sslContextFactory != null) {
                     SSLContext context = sslContextFactory.getSslContext();
@@ -239,10 +247,9 @@ abstract class AbstractLookup implements Lookup {
                 if (logger.isTraceEnabled()) {
                     filters.add(new FilterEntry(LoggingFilter.class.getName(), new LoggingFilter()));
                 }
-                
+
                 // don't use a threading model on filter level
 //                filters.add(new FilterEntry(filterchainWorkerPool.getClass().getName(), new ExecutorFilter(filterchainWorkerPool)));
-
                 // add the simon protocol
                 SimonProtocolCodecFactory protocolFactory = null;
                 try {
@@ -287,12 +294,21 @@ abstract class AbstractLookup implements Lookup {
                 ConnectFuture future = null;
                 try {
 
+                    InetSocketAddress remote;
+                    
                     // decide whether the connection goes via proxy or not
                     if (proxyConfig == null) {
-                        future = connector.connect(new InetSocketAddress(serverAddress, serverPort));
+                        remote = new InetSocketAddress(serverAddress, serverPort);
                     } else {
-                        future = connector.connect(new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort()));
+                        remote = new InetSocketAddress(proxyConfig.getProxyHost(), proxyConfig.getProxyPort());
                     }
+                    
+                    if (sourceAddress!=null) {
+                        future = connector.connect(remote, new InetSocketAddress(sourceAddress, 0 /* let oS decide on source port */));
+                    } else {
+                        future = connector.connect(remote); // let OS choose the source address
+                    }
+
                     boolean finished = future.awaitUninterruptibly(Statics.DEFAULT_CONNECT_TIMEOUT);
                     if (!finished) {
                         logger.debug("Connect timed out after {} ms", Statics.DEFAULT_CONNECT_TIMEOUT);
@@ -302,11 +318,11 @@ abstract class AbstractLookup implements Lookup {
 
                     if (session != null) {
                         logger.trace("session != null. closing it...");
-                        session.close(true);
+                        session.closeNow();
                     }
                     connector.dispose();
                     dispatcher.shutdown();
-                    if (filterchainWorkerPool!=null) {
+                    if (filterchainWorkerPool != null) {
                         filterchainWorkerPool.shutdown();
                     }
 
@@ -321,7 +337,7 @@ abstract class AbstractLookup implements Lookup {
                 } else {
                     connector.dispose();
                     dispatcher.shutdown();
-                    if (filterchainWorkerPool!=null) {
+                    if (filterchainWorkerPool != null) {
                         filterchainWorkerPool.shutdown();
                     }
                     throw new EstablishConnectionFailed("Could not establish connection to " + connectionTarget + ". Maybe host or network is down?");
@@ -343,7 +359,9 @@ abstract class AbstractLookup implements Lookup {
     }
 
     /**
-     * Awaits a complete network shutdown. Means: Waits until all network connections are closed or timeout occurs.
+     * Awaits a complete network shutdown. Means: Waits until all network
+     * connections are closed or timeout occurs.
+     *
      * @param timeout timeout for awaiting complete network shutdown
      * @since 1.2.0
      */
@@ -351,26 +369,23 @@ abstract class AbstractLookup implements Lookup {
         monitorCompleteShutdown.waitForSignal(timeout);
     }
 
-    
     /**
-     * Releases a {@link Dispatcher}. If there is no more
-     * server string referencing the Dispatcher, the Dispatcher will be
-     * released/shutdown.
+     * Releases a {@link Dispatcher}. If there is no more server string
+     * referencing the Dispatcher, the Dispatcher will be released/shutdown.
      *
-     * @param dispatcher
-     *            the iDispatcher to release
+     * @param dispatcher the iDispatcher to release
      * @return true if the Dispatcher is shut down, false if there's still a
-     *         reference pending
+     * reference pending
      */
-    protected static boolean releaseDispatcher(Dispatcher dispatcher) { 
-        
+    protected static boolean releaseDispatcher(Dispatcher dispatcher) {
+
         boolean result = false;
 
         synchronized (serverDispatcherRelation) {
 
             // get the serverstring the dispatcher is connected to
             String serverString = dispatcher.getServerString();
-            
+
             // if there's an instance of this connection known ...
             if (serverDispatcherRelation.containsKey(serverString)) {
 
@@ -386,20 +401,20 @@ abstract class AbstractLookup implements Lookup {
                     ctsc.getDispatcher().shutdown();
                     ctsc.getDispatcher().setReleased();
 
-                    CloseFuture closeFuture = ctsc.getSession().close(false);
+                    CloseFuture closeFuture = ctsc.getSession().closeOnFlush();
 
                     closeFuture.addListener(new IoFutureListener<IoFuture>() {
 
                         @Override
                         public void operationComplete(IoFuture future) {
-                            
+
                             // shutdown threads/executors in filterchain once the session has been closed
-                            if (ctsc.getFilterchainWorkerPool()!=null) {
+                            if (ctsc.getFilterchainWorkerPool() != null) {
                                 ctsc.getFilterchainWorkerPool().shutdown();
                             }
                             // dispose the MINA connector
                             ctsc.getConnector().dispose();
-                            
+
                             if (serverDispatcherRelation.isEmpty()) {
                                 logger.debug("serverDispatcherRelation map is empty. Signalling complete network connection shutdown now.");
                                 monitorCompleteShutdown.signal();
@@ -417,8 +432,8 @@ abstract class AbstractLookup implements Lookup {
             }
 
         }
-        
+
         return result;
     }
-    
+
 }

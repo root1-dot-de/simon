@@ -809,7 +809,7 @@ public class Dispatcher implements IoHandler {
         logger.error("exception Caught. thread={} session={}. Exception:\n {}", new Object[]{Thread.currentThread().getName(), Utils.longToHexString(session.getId()), Utils.getStackTraceAsString(throwable)});
 
         logger.debug("Closing the session now! session={}", Utils.longToHexString(session.getId()));
-        session.close(true);
+        session.closeNow();
     }
 
     /*
@@ -1233,6 +1233,6 @@ public class Dispatcher implements IoHandler {
     // See: https://issues.apache.org/jira/browse/DIRMINA-785
     @Override
     public void inputClosed(IoSession is) throws Exception {
-        is.close(true);
+        is.closeNow();
     }
 }
