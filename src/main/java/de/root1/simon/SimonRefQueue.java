@@ -34,14 +34,15 @@ import org.slf4j.LoggerFactory;
  * decreased by 1.
  *
  * @author achristian
+ * @param <T>
  * @since 1.2.0
  */
 public class SimonRefQueue <T extends SimonPhantomRef> extends ReferenceQueue<T> implements Runnable {
     
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private List<Reference> refs = new ArrayList<Reference>();
+    private final List<Reference> refs = new ArrayList<Reference>();
     private static final int REMOVE_TIMEOUT = 5000;
-    private Thread refCleanerThread;
+    private final Thread refCleanerThread;
     private final Dispatcher dispatcher;
 
     SimonRefQueue(Dispatcher dispatcher) {

@@ -96,7 +96,7 @@ public class PingWatchdog {
 
         private void closeSession() {
             logger.debug("PingPong failure for session session {} and monitor {}. Closing it immediately.", Utils.longToHexString(session.getId()), monitor);
-            session.close(true);
+            session.closeNow();
         }
 
         public void pongReceived() {
