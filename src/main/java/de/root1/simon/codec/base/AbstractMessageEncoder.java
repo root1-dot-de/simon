@@ -75,7 +75,7 @@ public abstract class AbstractMessageEncoder<T extends AbstractMessage> implemen
         out.write(buf);
         
         if (msgError!=null) {
-            session.close(false);
+            session.closeOnFlush();
             String exceptionMessage;
             String remoteObjectName = msgError.getRemoteObjectName();
             String errorMessage = msgError.getErrorMessage();
