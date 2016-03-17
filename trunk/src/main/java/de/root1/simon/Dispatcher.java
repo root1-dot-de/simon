@@ -312,7 +312,6 @@ public class Dispatcher implements IoHandler {
 
         logger.debug("begin sequenceId={} session={}", sequenceId, session);
 
-
         // create a monitor that waits for the request-result
         final SequenceMonitor monitor = createMonitor(session, sequenceId);
 

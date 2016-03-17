@@ -34,8 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The InvocationHandler which redirects each method call over the network to the related dispatcher
- * 
+ * The InvocationHandler which redirects each method call over the network to
+ * the related dispatcher
+ *
  * @author achristian
  *
  */
@@ -43,29 +44,45 @@ public class SimonProxy implements InvocationHandler {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    /** name of the corresponding remote object in the remote lookup table */
+    /**
+     * name of the corresponding remote object in the remote lookup table
+     */
     private String remoteObjectName;
 
-    /** a reference to the associated dispatcher */
+    /**
+     * a reference to the associated dispatcher
+     */
     private Dispatcher dispatcher;
 
-    /** a reference to the session which is the reference to the related network connection */
+    /**
+     * a reference to the session which is the reference to the related network
+     * connection
+     */
     private IoSession session;
 
-    /** the interfaces that the remote object has exported */
+    /**
+     * the interfaces that the remote object has exported
+     */
     Class<?>[] remoteInterfaces;
 
-    /** flag that indicates whether this simonproxy has been created via regular lookup, or during runtime as callback */
+    /**
+     * flag that indicates whether this simonproxy has been created via regular
+     * lookup, or during runtime as callback
+     */
     private final boolean regularLookup;
 
     /**
      *
-     * Constructor which sets the reference to the dispatcher and the remote object name
+     * Constructor which sets the reference to the dispatcher and the remote
+     * object name
      *
      * @param dispatcher a reference to the underlying dispatcher
-     * @param session a reference to the {@link IoSession} of the corresponding network connection
+     * @param session a reference to the {@link IoSession} of the corresponding
+     * network connection
      * @param remoteObjectName name of the remote object
-     * @param remoteInterfaces the interfaces that the remote object has exported
+     * @param remoteInterfaces the interfaces that the remote object has
+     * exported
+     * @param regularLookup
      */
     protected SimonProxy(Dispatcher dispatcher, IoSession session, String remoteObjectName, Class<?>[] remoteInterfaces, boolean regularLookup) {
         this.dispatcher = dispatcher;
@@ -74,7 +91,7 @@ public class SimonProxy implements InvocationHandler {
         this.remoteObjectName = remoteObjectName;
         this.remoteInterfaces = remoteInterfaces;
         this.regularLookup = regularLookup;
-        
+
         // register phantom reference for releasing remote object on gc'ed proxy object
         // only for callbacks!
         if (remoteObjectName.startsWith(SimonRemoteInstance.PREFIX)) {
@@ -84,14 +101,15 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      *
-     * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
+     * @see java.lang.reflect.InvocationHandler#invoke(java.lang.Object,
+     * java.lang.reflect.Method, java.lang.Object[])
      */
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         logger.debug("begin");
 
         if (dispatcher == null) {
-            logger.debug("Hey, you cannot use a already closed connection ... s&h§/&*$$");
+            logger.debug("Hey, you cannot use an already closed connection ... s&h§/&*$$");
             logger.debug("end");
             throw new SimonRemoteException("Cannot invoke method " + method.getName() + ". Connection to server is already closed.");
         }
@@ -119,7 +137,7 @@ public class SimonProxy implements InvocationHandler {
                     // if one tries to compare this proxy with another proxy: Do it locally here by comparing the string representation
 //                    return o.toString().equals(this.toString());
                     o = new SimonRemoteInstance(session, args[0]);
-                    logger.debug("Given argument is a SimonProxy, created SimonRemoteInstance: {}",(SimonRemoteInstance)o);
+                    logger.debug("Given argument is a SimonProxy, created SimonRemoteInstance: {}", (SimonRemoteInstance) o);
 
                 } else { // else, it's a standard object -> check for serializeable and do a remote-equals ...
                     logger.debug("It's a standard object");
@@ -127,11 +145,6 @@ public class SimonProxy implements InvocationHandler {
                     if (o != null && !(o instanceof Serializable)) {
                         throw new IllegalArgumentException("SIMON remote objects can only compared with objects that are serializable!");
                     }
-
-//                    // in case of 'null', the return value is false, we don't have to transport it to the remote...
-//                    if (o == null) {
-//                        return false;
-//                    }
 
                 }
                 return remoteEquals(o);
@@ -158,7 +171,6 @@ public class SimonProxy implements InvocationHandler {
          */
         Object result = dispatcher.invokeMethod(session, remoteObjectName, method, args);
 
-
         // Check for exceptions ...
         if (result instanceof Throwable) {
             logger.debug("return value: {}", result);
@@ -171,23 +183,20 @@ public class SimonProxy implements InvocationHandler {
         }
 
         if (result instanceof SimonEndpointReference) {
-            
+
             SimonEndpointReference ser = (SimonEndpointReference) result;
             result = dispatcher.getLookupTable().getRemoteObjectContainer(ser.getRemoteObjectName()).getRemoteObject();
             logger.debug("Result of method {} is a {}. Injecting original object: {}", new Object[]{method, ser, result});
-            
-        }
-        else
-        // TODO 20110429 Check if this block can be moved to ProcessMessageRunnable#processInvokeReturn()
-        if (result instanceof SimonRemoteInstance) {
+
+        } else if (result instanceof SimonRemoteInstance) {
 
             // creating a proxy for the callback
             SimonRemoteInstance simonCallback = (SimonRemoteInstance) result;
 
             List<String> interfaceNames = simonCallback.getInterfaceNames();
             Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
-            for (int j=0;j<interfaceNames.size();j++){
-                listenerInterfaces[j]=Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
+            for (int j = 0; j < interfaceNames.size(); j++) {
+                listenerInterfaces[j] = Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
             }
 
             SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId(), new Class<?>[]{}, false);
@@ -195,7 +204,7 @@ public class SimonProxy implements InvocationHandler {
             // reimplant the proxy object
             result = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler);
         }
-        
+
         logger.debug("end");
 
         // see: http://www.webreference.com/internet/reflection/4.html
@@ -218,7 +227,8 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      *
-     * Returns the {@link SocketAddress} of the remote host connected with this proxy
+     * Returns the {@link SocketAddress} of the remote host connected with this
+     * proxy
      *
      * @return the {@link SocketAddress} of the remote host
      */
@@ -228,7 +238,8 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      *
-     * Returns the {@link SocketAddress} of the local host connected with this proxy
+     * Returns the {@link SocketAddress} of the local host connected with this
+     * proxy
      *
      * @return the {@link SocketAddress} of the local host
      */
@@ -238,8 +249,8 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      *
-     * Redirects the toString() call to the remote host to be called there.
-     * The result is a String in the format:<br>
+     * Redirects the toString() call to the remote host to be called there. The
+     * result is a String in the format:<br>
      * <pre>
      * [Proxy={name of the remote object}|invocationHandler={result of proxy's super.toString()}|remote={result of remote toString() call}]
      * </pre>
@@ -259,7 +270,8 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      *
-     * Redirects hashCode() method call to the remote host and returns his result
+     * Redirects hashCode() method call to the remote host and returns his
+     * result
      *
      * @return the result of the remote hashCode() call
      * @throws IOException
@@ -270,7 +282,8 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      *
-     * Redirects hashEquals() method call to the remote host and returns his result
+     * Redirects hashEquals() method call to the remote host and returns his
+     * result
      *
      * @param object the object to compare with
      * @return the result of the remote equals() call
@@ -282,7 +295,8 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      *
-     * Releases this proxy. This cancels also the session on the {@link Dispatcher}.
+     * Releases this proxy. This cancels also the session on the
+     * {@link Dispatcher}.
      *
      * @return the {@link Dispatcher} related to this proxy.
      */
@@ -312,6 +326,7 @@ public class SimonProxy implements InvocationHandler {
 
     /**
      * Returns the proxy's remote object name in the related lookup table
+     *
      * @return the remote object name
      */
     protected String getRemoteObjectName() {
@@ -328,17 +343,19 @@ public class SimonProxy implements InvocationHandler {
     }
 
     /**
-     * Returns the {@link Dispatcher} instance related to this proxy.
-     * May return null in case of an already shutdown session
+     * Returns the {@link Dispatcher} instance related to this proxy. May return
+     * null in case of an already shutdown session
+     *
      * @return an instance of {@link Dispatcher}
      */
     protected Dispatcher getDispatcher() {
         return dispatcher;
     }
-    
+
     /**
      * Returns true if this proxy has been cerated in ciontext of a lookup-call.
      * False in case of callback object
+     *
      * @return boolean
      */
     protected boolean isRegularLookup() {
