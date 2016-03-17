@@ -33,7 +33,6 @@ import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.logging.Level;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -55,9 +54,9 @@ public class ProcessMessageRunnable implements Runnable {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final Logger invokeLogger = LoggerFactory.getLogger("de.root1.simon.InvokeLogger");
-    private AbstractMessage abstractMessage;
-    private IoSession session;
-    private Dispatcher dispatcher;
+    private final AbstractMessage abstractMessage;
+    private final IoSession session;
+    private final Dispatcher dispatcher;
 
     protected ProcessMessageRunnable(Dispatcher dispatcher, IoSession session, AbstractMessage abstractMessage) {
         this.dispatcher = dispatcher;
