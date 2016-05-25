@@ -56,9 +56,8 @@ public class SimonClassLoaderHelper {
         } else if (isChild(callerClassLoader, contextClassLoader)) {
             result = contextClassLoader;
         } else {
-            // this else branch could be merged into the previous one,
-            // but I show it here to emphasize the ambiguous case:
-            result = contextClassLoader;
+            // no relationship at all...
+            result = specialClassLoader != null ? specialClassLoader : contextClassLoader;
         }
 
         final ClassLoader systemLoader = ClassLoader.getSystemClassLoader();
