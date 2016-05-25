@@ -30,7 +30,7 @@ public class NameLookup extends AbstractLookup {
     private final int serverPort;
     private SslContextFactory sslContextFactory;
     private SimonProxyConfig proxyConfig;
-    private ClassLoader classLoader = getClass().getClassLoader();
+    private ClassLoader classLoader;
 
     protected NameLookup(String host, int port) throws UnknownHostException {
         this(InetAddress.getByName(host), port);
