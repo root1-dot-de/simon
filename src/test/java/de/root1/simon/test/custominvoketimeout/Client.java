@@ -22,7 +22,7 @@ public class Client {
         
         ClientCallbackImpl cc = new ClientCallbackImpl();
         
-        Lookup lookup = Simon.createNameLookup("localhost");
+        Lookup lookup = Simon.createNameLookup("127.0.0.1");
         Server server = (Server) lookup.lookup("server");
         
         server.doSomething(cc);

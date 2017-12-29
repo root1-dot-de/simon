@@ -9,6 +9,7 @@ import de.root1.simon.InterfaceLookup;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
+import de.root1.simon.test.PortNumberGenerator;
 import java.net.Inet4Address;
 import org.junit.After;
 import org.junit.Assert;
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 public class TestSourceAddress {
     
     private final Logger logger = LoggerFactory.getLogger(TestSourceAddress.class);
+    private int PORT = 0;
 
     public TestSourceAddress() {
     }
@@ -38,6 +40,7 @@ public class TestSourceAddress {
 
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
     }
 
     @After
@@ -55,12 +58,12 @@ public class TestSourceAddress {
             logger.info("Begin useDifferentSourceAddress...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry();
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createInterfaceLookup("localhost");
+            Lookup lookup = Simon.createInterfaceLookup("127.0.0.1",PORT);
 
             logger.info("canonical interface name: "+RemoteObject.class.getCanonicalName());
 
@@ -84,7 +87,7 @@ public class TestSourceAddress {
             // ----
             
             
-            Lookup lookup2 = Simon.createInterfaceLookup("localhost");
+            Lookup lookup2 = Simon.createInterfaceLookup("127.0.0.1",PORT);
 
             logger.info("canonical interface name: "+RemoteObject.class.getCanonicalName());
 

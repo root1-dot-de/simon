@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class TestSimon {
 
     private final Logger logger = LoggerFactory.getLogger(TestSimon.class);
+    private int PORT = 0;
     
     public TestSimon() {
     }
@@ -50,6 +51,7 @@ public class TestSimon {
 
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
     }
 
     @After
@@ -63,10 +65,10 @@ public class TestSimon {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             RemoteObject roiRemote1 = (RemoteObject) lookup.lookup("roi");
             RemoteObject roiRemote2 = (RemoteObject) lookup.lookup("roi");
@@ -86,15 +88,15 @@ public class TestSimon {
     }
     
     @Test
-    @Ignore // ignored temporarily due to JVM Bug: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7179799
+    //@Ignore // ignored temporarily due to JVM Bug: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7179799
     public void testCreateRegistryTwice() {
 
 
         try {
-            Registry r = Simon.createRegistry(22224);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             Thread.sleep(2000);
-            Registry r2 = Simon.createRegistry(22224);
+            Registry r2 = Simon.createRegistry(PORT);
             r2.start();
             Thread.sleep(500);
             r.stop();

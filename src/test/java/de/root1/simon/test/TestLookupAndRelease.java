@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 public class TestLookupAndRelease {
 
     private final Logger logger = LoggerFactory.getLogger(TestLookupAndRelease.class);
+    private int PORT = 0;  
 
     public TestLookupAndRelease() {
     }
@@ -38,10 +39,13 @@ public class TestLookupAndRelease {
     //}
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();  logger.info("set up");
+        
     }
 
     @After
     public void tearDown() {
+        logger.info("tear down");
     }
 
     // TODO add test methods here.
@@ -55,12 +59,12 @@ public class TestLookupAndRelease {
             logger.info("Begin ...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(33333);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 33333);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -86,10 +90,10 @@ public class TestLookupAndRelease {
             Thread.sleep(5000);
 
             RemoteObjectImpl roi2 = new RemoteObjectImpl();
-            Registry r2 = Simon.createRegistry(33333);
+            Registry r2 = Simon.createRegistry(PORT);
             r2.start();
             r2.bind("roi2", roi2);
-            Lookup lookup2 = Simon.createNameLookup("localhost", 33333);
+            Lookup lookup2 = Simon.createNameLookup("127.0.0.1", PORT);
 
             RemoteObject roiRemote2 = (RemoteObject) lookup.lookup("roi2");
             roiRemote2.helloWorld();
@@ -117,7 +121,7 @@ public class TestLookupAndRelease {
         Registry r = null;
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
-            r = Simon.createRegistry();
+            r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
 
@@ -131,7 +135,7 @@ public class TestLookupAndRelease {
 
 
                     logger.info("bound roi to registry ...");
-                    Lookup lookup = Simon.createNameLookup("localhost");
+                    Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
                     RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -169,7 +173,7 @@ public class TestLookupAndRelease {
     public void testMultithreadedLookupAndRelease() throws Exception {
 
         RemoteObjectImpl roi = new RemoteObjectImpl();
-        Registry r = Simon.createRegistry();
+        Registry r = Simon.createRegistry(PORT);
         r.start();
         r.bind("server", roi);
         int count = 3;
@@ -185,7 +189,7 @@ public class TestLookupAndRelease {
                     try {
                         String name = Thread.currentThread().getName();
                         logger.info("Thread {} doing lookup", name);
-                        Lookup lookup = Simon.createNameLookup("127.0.0.1");
+                        Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
                         RemoteObject server = (RemoteObject) lookup.lookup("server");
                         logger.info("Thread {} got remote object", name);
                         server.helloWorldArg(Thread.currentThread().getName());
@@ -202,11 +206,11 @@ public class TestLookupAndRelease {
                         logger.info("Thread {} ALL DONE", name);
                         s.release();
                     } catch (UnknownHostException ex) {
-                        ex.printStackTrace();
+                        throw new AssertionError(ex);
                     } catch (LookupFailedException ex) {
-                        ex.printStackTrace();
+                        throw new AssertionError(ex);
                     } catch (EstablishConnectionFailed ex) {
-                        ex.printStackTrace();
+                        throw new AssertionError(ex);
                     }
 
                 }
