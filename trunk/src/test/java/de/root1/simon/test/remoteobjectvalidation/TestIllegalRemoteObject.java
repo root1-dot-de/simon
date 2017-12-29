@@ -9,6 +9,7 @@ import de.root1.simon.NameLookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import de.root1.simon.exceptions.IllegalRemoteObjectException;
+import de.root1.simon.test.PortNumberGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 public class TestIllegalRemoteObject {
 
     private final Logger logger = LoggerFactory.getLogger(TestIllegalRemoteObject.class);
+    private int PORT = 0;
 
     public TestIllegalRemoteObject() {
     }
@@ -34,6 +36,7 @@ public class TestIllegalRemoteObject {
     //}
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
     }
 
     @After
@@ -48,13 +51,13 @@ public class TestIllegalRemoteObject {
 
             Server server = new Server();
 
-            registry = Simon.createRegistry(22222);
+            registry = Simon.createRegistry(PORT);
             registry.start();
             registry.bind("server", server);
             logger.info("Server ready.");
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             IServer iServer = (IServer) lookup.lookup("server");
 

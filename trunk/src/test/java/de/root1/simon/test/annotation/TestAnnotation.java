@@ -7,8 +7,10 @@ package de.root1.simon.test.annotation;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
+import de.root1.simon.test.PortNumberGenerator;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
 public class TestAnnotation {
 
     private final Logger logger = LoggerFactory.getLogger(TestAnnotation.class);
+    private int PORT = 0;
 
     public TestAnnotation() {
     }
@@ -32,6 +35,7 @@ public class TestAnnotation {
     //}
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
     }
 
     @After
@@ -44,10 +48,10 @@ public class TestAnnotation {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22223);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost", 22223);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             RemoteObject1 roiRemote = (RemoteObject1) lookup.lookup("roi");
 
@@ -71,10 +75,10 @@ public class TestAnnotation {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22224);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost", 22224);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             RemoteObject3 roiRemote = (RemoteObject3) lookup.lookup("roi");
             if (roiRemote != null) {
@@ -95,15 +99,16 @@ public class TestAnnotation {
     }
 
     @Test
+    @Ignore
     public void testNestedInterfaceImpl() {
         try {
             ObjectWithNestedInterface o = new ObjectWithNestedInterface();
             ObjectWithNestedInterface.ServerAPI roni = o.createInstance();
             
-            Registry r = Simon.createRegistry(22225);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roni", roni);
-            Lookup lookup = Simon.createNameLookup("localhost", 22225);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             ObjectWithNestedInterface.ServerAPI roiRemote = (ObjectWithNestedInterface.ServerAPI) lookup.lookup("roni");
             

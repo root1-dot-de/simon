@@ -33,6 +33,8 @@ import static org.junit.Assert.*;
  * @author achristian
  */
 public class TestNull {
+    
+    private int PORT = 0;
 
     public TestNull() {
     }
@@ -47,6 +49,7 @@ public class TestNull {
 
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
     }
 
     @After
@@ -60,10 +63,10 @@ public class TestNull {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 
@@ -87,10 +90,10 @@ public class TestNull {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost", 22222);
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
 

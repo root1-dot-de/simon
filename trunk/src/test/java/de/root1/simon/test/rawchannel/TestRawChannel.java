@@ -25,6 +25,7 @@ import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.exceptions.RawChannelException;
+import de.root1.simon.test.PortNumberGenerator;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -51,6 +52,7 @@ public class TestRawChannel {
     private static final String TESTFILE_RECEIVER = TEMPDIR + "TestFileForReceiver.dat";
     private static final String TESTFILE_SENDER = TEMPDIR + "TestFile.dat";
     private Registry registry;
+    private int PORT = 0;
 
 //    @BeforeClass
 //    public static void setUpClass() throws Exception {
@@ -60,8 +62,9 @@ public class TestRawChannel {
 //    }
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
         try {
-            registry = Simon.createRegistry(InetAddress.getLocalHost());
+            registry = Simon.createRegistry(PORT);
             registry.start();
             logger.info("Registry created");
             RawChannelServerImpl rcsi = new RawChannelServerImpl();
@@ -118,7 +121,7 @@ public class TestRawChannel {
         try {
 
             logger.info("Doing lookup ...");
-            Lookup lookup = Simon.createNameLookup(InetAddress.getLocalHost());
+            Lookup lookup = Simon.createNameLookup("127.0.0.1", PORT);
             RawChannelServer rcs = (RawChannelServer) lookup.lookup(BIND_NAME);
             logger.info("Doing lookup ... *done*");
 

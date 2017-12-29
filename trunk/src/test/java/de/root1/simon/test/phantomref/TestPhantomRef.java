@@ -25,6 +25,7 @@ import de.root1.simon.LookupTableMBean;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
 import de.root1.simon.SimonProxy;
+import de.root1.simon.test.PortNumberGenerator;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -47,6 +48,7 @@ import org.slf4j.LoggerFactory;
 public class TestPhantomRef {
 
     private final Logger logger = LoggerFactory.getLogger(TestPhantomRef.class);
+    private int PORT = 0;
     
     public TestPhantomRef() {
     }
@@ -61,6 +63,7 @@ public class TestPhantomRef {
 
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
     }
 
     @After
@@ -74,10 +77,10 @@ public class TestPhantomRef {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry();
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("localhost");
+            Lookup lookup = Simon.createNameLookup("127.0.0.1",PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
             roiRemote.setCallback(new ClientCallbackImpl());
@@ -167,10 +170,10 @@ public class TestPhantomRef {
         try {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry();
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
-            Lookup lookup = Simon.createNameLookup("127.0.0.1");
+            Lookup lookup = Simon.createNameLookup("127.0.0.1",PORT);
 
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
             for(int i=0;i<1;i++) {

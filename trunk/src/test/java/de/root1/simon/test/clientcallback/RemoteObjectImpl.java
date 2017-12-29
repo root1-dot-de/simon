@@ -6,6 +6,8 @@
 package de.root1.simon.test.clientcallback;
 
 import de.root1.simon.annotation.SimonRemote;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -13,6 +15,8 @@ import de.root1.simon.annotation.SimonRemote;
  */
 @SimonRemote(value={RemoteObject.class})
 public class RemoteObjectImpl implements RemoteObject {
+    
+    Logger logger = LoggerFactory.getLogger(getClass());
 
     ClientCallback callback;
     private int i;
@@ -40,7 +44,7 @@ public class RemoteObjectImpl implements RemoteObject {
     
     @Override
     public boolean equals(Object obj) {
-        System.out.println("EQUALS ON "+this.getClass().getCanonicalName()+" CALLED! this="+this+" other="+obj);
+        logger.info("EQUALS ON "+this.getClass().getCanonicalName()+" CALLED! this="+this+" other="+obj);
         return super.equals(obj);
     }
 
@@ -52,12 +56,12 @@ public class RemoteObjectImpl implements RemoteObject {
     @Override
     public Session getSessionObject() {
         int id = i++;
-        System.out.println("Created session#"+id);
+        logger.info("Created session#"+id);
         return new SessionImpl(id);
     }
 
     @Override
     public void setSessionObject(Session s) {
-        System.out.println("got Session #"+s.getId()+" back from client");
+        logger.info("got Session #"+s.getId()+" back from client");
     }
 }

@@ -9,6 +9,7 @@ import de.root1.simon.InterfaceLookup;
 import de.root1.simon.Lookup;
 import de.root1.simon.Registry;
 import de.root1.simon.Simon;
+import de.root1.simon.test.PortNumberGenerator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -22,6 +23,7 @@ import org.slf4j.LoggerFactory;
 public class TestInterfaceLookup {
     
     private final Logger logger = LoggerFactory.getLogger(TestInterfaceLookup.class);
+    private int PORT = 0;
 
     public TestInterfaceLookup() {
     }
@@ -36,6 +38,7 @@ public class TestInterfaceLookup {
 
     @Before
     public void setUp() {
+        PORT = PortNumberGenerator.getNextPort();
     }
 
     @After
@@ -53,12 +56,12 @@ public class TestInterfaceLookup {
             logger.info("Begin interfaceLookupAndReleaseTwice...");
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
-            Registry r = Simon.createRegistry(22222);
+            Registry r = Simon.createRegistry(PORT);
             r.start();
             r.bind("roi", roi);
 
             logger.info("bound roi to registry ...");
-            Lookup lookup = Simon.createInterfaceLookup("localhost", 22222);
+            Lookup lookup = Simon.createInterfaceLookup("127.0.0.1", PORT);
 
             logger.info("canonical interface name: "+RemoteObject.class.getCanonicalName());
 
@@ -85,10 +88,10 @@ public class TestInterfaceLookup {
             // ----------------
 
             RemoteObjectImpl roi2 = new RemoteObjectImpl();
-            Registry r2 = Simon.createRegistry(22222);
+            Registry r2 = Simon.createRegistry(PORT);
             r2.start();
             r2.bind("roi2", roi2);
-            Lookup lookup2 = Simon.createInterfaceLookup("localhost", 22222);
+            Lookup lookup2 = Simon.createInterfaceLookup("127.0.0.1", PORT);
 
             
 
