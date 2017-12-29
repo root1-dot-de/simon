@@ -171,10 +171,12 @@ public class TestPhantomRef {
             RemoteObjectImpl roi = new RemoteObjectImpl();
 
             Registry r = Simon.createRegistry(PORT);
+            r.setClassLoader(getClass().getClassLoader());
             r.start();
             r.bind("roi", roi);
             Lookup lookup = Simon.createNameLookup("127.0.0.1",PORT);
-
+            lookup.setClassLoader(getClass().getClassLoader());
+            
             RemoteObject roiRemote = (RemoteObject) lookup.lookup("roi");
             for(int i=0;i<1;i++) {
                 ServerCallback serverCallback = roiRemote.getServerCallback();
