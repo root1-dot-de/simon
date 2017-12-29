@@ -5,7 +5,6 @@
 
 package de.root1.simon.samples.rawchannel.shared;
 
-import de.root1.simon.SimonRemote;
 import de.root1.simon.exceptions.SimonRemoteException;
 
 public interface RawChannelServer {

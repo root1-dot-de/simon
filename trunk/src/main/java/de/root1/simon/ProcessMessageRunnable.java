@@ -315,7 +315,8 @@ public class ProcessMessageRunnable implements Runnable {
                 interfaces = container.getRemoteObjectInterfaces();
                 interfaceNames = new String[interfaces.length];
                 for (int i = 0; i < interfaceNames.length; i++) {
-                    interfaceNames[i] = interfaces[i].getCanonicalName();
+//                    interfaceNames[i] = interfaces[i].getCanonicalName();
+                    interfaceNames[i] = interfaces[i].getName();
                 }
             } else {
                 Class<?>[] interfaces = null;
@@ -323,7 +324,9 @@ public class ProcessMessageRunnable implements Runnable {
 
                 interfaceNames = new String[interfaces.length];
                 for (int i = 0; i < interfaceNames.length; i++) {
-                    interfaceNames[i] = interfaces[i].getCanonicalName();
+//                    interfaceNames[i] = interfaces[i].getCanonicalName();
+                    interfaceNames[i] = interfaces[i].getName();
+                    
                 }
             }
             ret.setInterfaces(interfaceNames);

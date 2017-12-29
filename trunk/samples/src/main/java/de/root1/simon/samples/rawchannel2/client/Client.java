@@ -7,7 +7,6 @@ package de.root1.simon.samples.rawchannel2.client;
 
 import de.root1.simon.Lookup;
 import de.root1.simon.Simon;
-import de.root1.simon.SimonRemote;
 import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.exceptions.LookupFailedException;
 import de.root1.simon.exceptions.SimonRemoteException;
