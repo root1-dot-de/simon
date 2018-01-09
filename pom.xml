@@ -100,17 +100,18 @@
         <repository>
             <id>root1-releases</id>
             <name>internal releases</name>
-            <url>ftp://maven.root1.de/releases/</url>
+            <url>http://maven.root1.de/repository/releases/</url>
         </repository>
         <snapshotRepository>
             <id>root1-snapshots</id>
             <name>internal snapshots</name>
-            <url>ftp://maven.root1.de/snapshots/</url>
+            <url>http://maven.root1.de/repository/snapshots/</url>
         </snapshotRepository>      
     </distributionManagement>  
 
     <build>
         <!-- Required for ftp repo -->
+<!--
         <extensions>
             <extension>
                 <groupId>org.apache.maven.wagon</groupId>
@@ -118,6 +119,7 @@
                 <version>2.10</version>
             </extension>
         </extensions>
+-->
         <plugins>
 <!--            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
