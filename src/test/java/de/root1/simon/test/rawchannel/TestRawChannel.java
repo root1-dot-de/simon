@@ -32,7 +32,6 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Random;
-import java.util.logging.Level;
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
 import org.junit.Before;
@@ -178,19 +177,19 @@ public class TestRawChannel {
             logger.info("Awaiting network connections shutdown *done*");
 
         } catch (UnknownHostException ex) {
-            throw new AssertionError("An UnknownHostException occured which should not be the case with localhost comunication.");
+            throw new AssertionError("An UnknownHostException occured which should not be the case with localhost comunication.", ex);
         } catch (LookupFailedException ex) {
-            throw new AssertionError("A LookupFailedException occured which should not be the case in test case.");
+            throw new AssertionError("A LookupFailedException occured which should not be the case in test case.", ex);
         } catch (SimonRemoteException ex) {
-            throw new AssertionError("A unexcepted SimonRemoteException occured which should not be the case.");
+            throw new AssertionError("A unexcepted SimonRemoteException occured which should not be the case.", ex);
         } catch (IOException ex) {
-            throw new AssertionError("A unexcepted IOException occured which should not be the case in test case.");
+            throw new AssertionError("A unexcepted IOException occured which should not be the case in test case.", ex);
         } catch (EstablishConnectionFailed ex) {
-            throw new AssertionError("Establishing connection failed during test run ...");
+            throw new AssertionError("Establishing connection failed during test run ...", ex);
         } catch (IllegalStateException ex) {
-            throw new AssertionError("Establishing connection failed during test run ...");
+            throw new AssertionError("Establishing connection failed during test run ...", ex);
         } catch (RawChannelException ex) {
-            throw new AssertionError("Establishing connection failed during test run ...");
+            throw new AssertionError("Establishing connection failed during test run ...", ex);
         }
         logger.info("test done");
     }

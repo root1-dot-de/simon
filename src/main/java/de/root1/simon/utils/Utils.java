@@ -18,7 +18,9 @@
  */
 package de.root1.simon.utils;
 
+import de.root1.simon.Dispatcher;
 import de.root1.simon.SimonProxy;
+import de.root1.simon.SimonRemoteInstance;
 import de.root1.simon.SimonRemoteMarker;
 import de.root1.simon.annotation.SimonRemote;
 import java.io.ByteArrayOutputStream;
@@ -39,6 +41,7 @@ import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -46,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Stack;
+import org.apache.mina.core.session.IoSession;
 import org.xml.sax.SAXException;
 
 /**
@@ -64,7 +68,9 @@ public class Utils {
      * @deprecated use JVM argument
      * "java.util.logging.config.file=./log/mylogconfig.properties"
      */
+    @Deprecated
     public static boolean DEBUG = false;
+    
     /**
      * A map that memories some method hashes so that they need not to be
      * re-generated each time the hash is used. If memory is getting short, some
@@ -72,7 +78,7 @@ public class Utils {
      * clear the map ourselves.
      */
     private static final WeakHashMap<Method, Long> methodHashes = new WeakHashMap<Method, Long>();
-    
+
     private static final String SIMON_REMOTE_ANNOTATION_CLASSNAME = de.root1.simon.annotation.SimonRemote.class.getName();
 
     /**
@@ -153,10 +159,10 @@ public class Utils {
      */
     public static SimonProtocolCodecFactory getProtocolFactoryInstance(String protocolFactory)
             throws ClassNotFoundException, InstantiationException,
-            IllegalAccessException {
+            IllegalAccessException, InvocationTargetException {
         Class<?> clazz = Class.forName(protocolFactory);
         try {
-            SimonProtocolCodecFactory instance = (SimonProtocolCodecFactory) clazz.newInstance();
+            SimonProtocolCodecFactory instance = (SimonProtocolCodecFactory) clazz.getDeclaredConstructors()[0].newInstance();
             return instance;
         } catch (ClassCastException e) {
             throw new ClassCastException(
@@ -276,8 +282,8 @@ public class Utils {
                  */
                 if (clazz.isInterface()) {
                     interfaceSet.add(clazz);
-                } 
-                
+                }
+
                 for (Class<?> interfaze : clazz.getInterfaces()) {
                     interfaceSet.add((Class<?>) interfaze);
                 }
@@ -299,13 +305,12 @@ public class Utils {
                 if (interfaze.isAnnotationPresent(SimonRemote.class)) {
                     // interface is annotated
                     interfaceSet.add((Class<?>) interfaze);
-                    
+
                     // Check for parent interfaces (made with 'interface extends anotherinterface')
-                    for(Class<?> parentInterface : interfaze.getInterfaces()) {
+                    for (Class<?> parentInterface : interfaze.getInterfaces()) {
                         interfaceSet.addAll(doFindAllRemoteInterfaces(parentInterface));
                     }
-                } 
-                else {
+                } else {
                     // no remote interface found
                     // checking for super interface
                     interfaceSet.addAll(doFindAllRemoteInterfaces(interfaze.getSuperclass()));
@@ -323,8 +328,8 @@ public class Utils {
     }
 
     /**
-     * Checks whether the object is annotated with
-     * <code>SimonRemote</code> or not
+     * Checks whether the object is annotated with <code>SimonRemote</code> or
+     * not
      *
      * @param remoteObject the object to check
      * @return true, if object is annotated, false if not
@@ -334,15 +339,15 @@ public class Utils {
             throw new IllegalArgumentException("Cannot check a null-argument. You have to provide a proxy object instance ...");
         }
         boolean isRemoteAnnotated = remoteObject.getClass().isAnnotationPresent(de.root1.simon.annotation.SimonRemote.class);
-        
+
         // if annotation is not found via current CL, try again with remoteobject's CL (but only if it's not the Bootstrap-CL (which means null)
         // see: http://dev.root1.de/issues/173
         if (!isRemoteAnnotated) {
-            
+
             // get CL only once, as getting CL requires a native call --> avoid too many JNI calls
             ClassLoader remoteObjectCL = remoteObject.getClass().getClassLoader();
-            
-            if (remoteObjectCL!=null) {
+
+            if (remoteObjectCL != null) {
                 try {
                     isRemoteAnnotated = remoteObject.getClass().isAnnotationPresent(
                             (Class<? extends Annotation>) remoteObjectCL.loadClass(SIMON_REMOTE_ANNOTATION_CLASSNAME));
@@ -355,8 +360,7 @@ public class Utils {
     }
 
     /**
-     * Returns the value of the
-     * <code>SimonRemote</code> annotation.
+     * Returns the value of the <code>SimonRemote</code> annotation.
      *
      * @param remoteObject the object to query
      * @return the annotation value
@@ -547,7 +551,6 @@ public class Utils {
         // java.vm.specification.name=Dalvik Virtual Machine Specification
         // AND
         // java.vm.vendor=The Android Project
-
         if (System.getProperty("java.vm.specification.name", "").equals("Dalvik Virtual Machine Specification")
                 && System.getProperty("java.vm.vendor", "").equals("The Android Project")) {
             return true;

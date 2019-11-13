@@ -18,16 +18,18 @@ import de.root1.simon.samples.loginsessionfactory.shared.LoginInterface;
 public class Client {
 
     public static void main(String[] args) throws IOException, LookupFailedException, EstablishConnectionFailed {
+        System.setProperty("de.root1.simon.debug", "true");
+        
         // 'lookup' the server object
         Lookup nameLookup = Simon.createNameLookup("127.0.0.1", 22222);
         LoginInterface server = (LoginInterface) nameLookup.lookup("server");
         try {
             // use the serverobject as it would exist on your local machine
-            SessionInterface session = server.login("myAuthorizedUser", "myAuthorizedPass");
+            SessionInterface[] session = server.login("myAuthorizedUser", "myAuthorizedPass");
 
-            session.sessionMethodA();
-            session.sessionMethodB();
-            session.sessionMethodC();
+            session[0].sessionMethodA();
+            session[0].sessionMethodB();
+            session[0].sessionMethodC();
 
         } catch (SimonRemoteException ex) {
             ex.printStackTrace();

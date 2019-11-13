@@ -15,9 +15,9 @@ public class LoginInterfaceImpl implements LoginInterface {
 
    private static final long serialVersionUID = 1L;
 
-   public SessionInterface login(String user, String pass) throws LoginFailedException {
+   public SessionInterface[] login(String user, String pass) throws LoginFailedException {
         if (user.equals("myAuthorizedUser") && pass.equals("myAuthorizedPass")) {
-            return new SessionInterfaceImpl();
+            return new SessionInterface[]{new SessionInterfaceImpl()};
         }
         throw new LoginFailedException("Login for user " + user + " failed. Invalid password?");
    }

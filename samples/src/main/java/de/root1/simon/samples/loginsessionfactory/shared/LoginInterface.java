@@ -7,6 +7,6 @@ package de.root1.simon.samples.loginsessionfactory.shared;
 
 public interface LoginInterface {
 
-   public SessionInterface login(String user, String pass) throws LoginFailedException;
+   public SessionInterface[] login(String user, String pass) throws LoginFailedException;
 
 }

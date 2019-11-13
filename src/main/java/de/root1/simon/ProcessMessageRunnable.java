@@ -27,12 +27,18 @@ import de.root1.simon.exceptions.SimonRemoteException;
 import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.Stack;
+import java.util.logging.Level;
 import org.apache.mina.core.future.CloseFuture;
 import org.apache.mina.core.session.IoSession;
 import org.slf4j.Logger;
@@ -326,7 +332,7 @@ public class ProcessMessageRunnable implements Runnable {
                 for (int i = 0; i < interfaceNames.length; i++) {
 //                    interfaceNames[i] = interfaces[i].getCanonicalName();
                     interfaceNames[i] = interfaces[i].getName();
-                    
+
                 }
             }
             ret.setInterfaces(interfaceNames);
@@ -400,8 +406,8 @@ public class ProcessMessageRunnable implements Runnable {
     }
 
     /**
-     * This method is processed on the remote end (where the object to call
-     * lives) that finally calls the method and returns the result to the
+     * This method is processed on the remote end (where the parentObject to
+     * call lives) that finally calls the method and returns the result to the
      * calling end.
      */
     private void processInvoke() {
@@ -436,7 +442,7 @@ public class ProcessMessageRunnable implements Runnable {
         try {
 
             // ------------
-            // replace existing SimonRemote objects with proxy object
+            // replace existing SimonRemote objects with proxy parentObject
             if (arguments != null) {
 
                 try {
@@ -466,7 +472,7 @@ public class ProcessMessageRunnable implements Runnable {
                                 listenerInterfaces[j] = Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
                             }
 
-                            // re-implant the proxy object
+                            // re-implant the proxy parentObject
                             SimonProxy simonProxy = new SimonProxy(dispatcher, session, simonCallback.getId(), listenerInterfaces, false);
                             arguments[i] = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, simonProxy);
                             logger.debug("proxy object for SimonCallback injected");
@@ -519,12 +525,11 @@ public class ProcessMessageRunnable implements Runnable {
             // check for re-transmitting callback
             if (Utils.isSimonProxy(result)) {
 
-
                 SimonProxy sp = Simon.getSimonProxy(result);
                 SimonEndpointReference ser = new SimonEndpointReference(sp);
                 logger.debug("Result of method is SimonProxy/Local Endpoint. Sending: {}", ser);
                 result = ser;
-//                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote object. Endpoints can not be transferred.");
+//                throw new SimonException("Result of method '" + method + "' is a local endpoint of a remote parentObject. Endpoints can not be transferred.");
             }
 
             // check for normal remote objects?!
@@ -537,16 +542,17 @@ public class ProcessMessageRunnable implements Runnable {
             }
 
             // register "SimonCallback"-results in lookup-table
-            if (Utils.isValidRemote(result)) {
-
-                logger.debug("Result of method '{}' is SimonRemote: {}", method, result);
-
-                SimonRemoteInstance sri = new SimonRemoteInstance(session, result);
-
-                dispatcher.getLookupTable().putRemoteInstance(session.getId(), sri, result);
-                result = sri;
-
-            }
+            result = replaceSimonRemoteWithProxy(result);
+//            if (Utils.isValidRemote(result)) {
+//
+//                logger.debug("Result of method '{}' is SimonRemote: {}", method, result);
+//
+//                SimonRemoteInstance sri = new SimonRemoteInstance(session, result);
+//
+//                dispatcher.getLookupTable().putRemoteInstance(session.getId(), sri, result);
+//                result = sri;
+//
+//            }
 
         } catch (IllegalArgumentException e) {
             result = e;
@@ -577,6 +583,157 @@ public class ProcessMessageRunnable implements Runnable {
 
         session.write(returnMsg);
         logger.debug("end");
+    }
+
+    class ReflectionObjectField {
+
+        private Object parentObject;
+        private final Field field;
+        private final String path;
+
+        private ReflectionObjectField(Object parentObject, Field field, String rootPath) {
+            this.parentObject = parentObject;
+            this.field = field;
+            this.path = rootPath + "." + field.getName();
+        }
+
+        public Object getParentObject() {
+            return parentObject;
+        }
+
+        public void setParentObject(Object parentObject) {
+            this.parentObject = parentObject;
+        }
+
+        public Field getField() {
+            return field;
+        }
+
+        public Object getValue() {
+            field.setAccessible(true);
+            try {
+                return field.get(parentObject);
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                throw new RuntimeException("Error getting value on path " + path, ex);
+            }
+        }
+
+        public void setValue(Object newValue) {
+            field.setAccessible(true);
+            try {
+                field.set(parentObject, newValue);
+            } catch (IllegalArgumentException | IllegalAccessException ex) {
+                throw new RuntimeException("Error setting value on path " + path, ex);
+            }
+        }
+
+        private String getPath() {
+            return path;
+        }
+
+        @Override
+        public String toString() {
+            return field.getClass().getName() + "@" + path;
+        }
+
+    }
+
+    private static final Set<Class> IGNORED_TYPES = new HashSet(Arrays.asList(
+            boolean.class, Boolean.class, 
+            char.class, Character.class, 
+            byte.class, Byte.class, 
+            short.class, Short.class, 
+            int.class, Integer.class, 
+            long.class, Long.class, 
+            float.class, Float.class, 
+            double.class, Double.class, 
+            void.class, Void.class, 
+            String.class));
+    
+    private static boolean requiresDeepDive(Object o) {
+        return 
+                !o.getClass().isPrimitive() 
+                && !IGNORED_TYPES.contains(o.getClass()) 
+                && !IGNORED_TYPES.contains(o.getClass().getComponentType());
+    }
+
+    private Object replaceSimonRemoteWithProxy(Object object) {
+
+        logger.debug("Checking object {}@{}", object.getClass(), object.hashCode());
+        
+        logger.trace("isPrimitive={}", object.getClass().isPrimitive());
+        logger.trace("class={}", object.getClass());
+        logger.trace("compType={}", object.getClass().getComponentType());
+        
+        // check on first level
+        if (Utils.isValidRemote(object)) {
+
+            SimonRemoteInstance sri = new SimonRemoteInstance(session, object);
+            dispatcher.getLookupTable().putRemoteInstance(session.getId(), sri, object);
+            object = sri;
+
+        } else if (requiresDeepDive(object) && object.getClass().isArray()) {
+            logger.debug("detected array!");
+            Object[] o = (Object[]) object;
+            Object[] newObject = new Object[o.length];
+            // we don't care for empty arrays
+            if (o.length>0) {
+                logger.debug("Array not empty!");
+                if (Utils.isValidRemote(o[0])) {
+                    logger.debug("Need to replace array with SRI array");
+                    for (int i = 0; i < o.length; i++) {
+                        SimonRemoteInstance sri = new SimonRemoteInstance(session, o[i]);
+                        dispatcher.getLookupTable().putRemoteInstance(session.getId(), sri, o[i]);
+                        logger.debug("replacing array index {} with SRI", i);
+                        newObject[i] = sri;
+                    }
+                }
+                object = newObject;
+            }
+            
+            
+        } else if (requiresDeepDive(object)){
+
+            // digg into parentObject
+            logger.debug("Need to digg into object {}@{}", object.getClass(), object.hashCode());
+            Stack<ReflectionObjectField> stack = new Stack();
+
+            // initial stack fill
+            Field[] declaredFields = object.getClass().getDeclaredFields();
+            for (Field field : declaredFields) {
+                if (!field.getType().isPrimitive() && !IGNORED_TYPES.contains(field.getType())) {
+                    stack.push(new ReflectionObjectField(object, field, object.getClass()+"@"+object.hashCode()));
+                }
+            }
+
+            while (!stack.isEmpty()) {
+                ReflectionObjectField rof = stack.pop();
+                Object o = rof.getValue();
+                logger.debug("Checking rof=" + rof);
+
+                if (Utils.isValidRemote(o)) {
+
+                    logger.info("rof " + rof + " is SimonRemoteInstance!");
+                    SimonRemoteInstance sri = new SimonRemoteInstance(session, o);
+
+                    dispatcher.getLookupTable().putRemoteInstance(session.getId(), sri, o);
+                    o = sri;
+                    rof.setValue(o);
+
+                } else {
+
+                    // dig deeper
+                    logger.debug("Need to digg deeper into rof=" + rof);
+                    for (Field field : o.getClass().getDeclaredFields()) {
+                        if (!field.getType().isPrimitive() && !IGNORED_TYPES.contains(field.getType())) {
+                            stack.push(new ReflectionObjectField(object, field, "#"));
+                        }
+                    }
+                }
+            }
+
+        }
+        return object;
     }
 
     /**
@@ -652,7 +809,6 @@ public class ProcessMessageRunnable implements Runnable {
                 equalsResult = tthis.equals(objectToCompareWith);
             }
             logger.debug("this='{}' objectToCompareWith='{}' equalsResult={}", new Object[]{tthis.toString(), (objectToCompareWith == null ? "NULL" : objectToCompareWith.toString()), equalsResult});
-
 
         } catch (LookupFailedException e) {
             // TODO Auto-generated catch block

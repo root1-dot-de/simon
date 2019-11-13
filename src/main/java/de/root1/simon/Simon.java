@@ -27,6 +27,7 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.InetAddress;
@@ -688,8 +689,9 @@ public class Simon {
      * classloader. if so, please check your classpath.
      * @throws ClassCastException if the given class is no instance of
      *             {@link SimonProtocolCodecFactory}
+     * @throws InvocationTargetException if something goes wrong when creating the protocol codec factory instance
      */
-    public static void setProtocolCodecFactory(String protocolFactoryClassName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException {
+    public static void setProtocolCodecFactory(String protocolFactoryClassName) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ClassCastException, InvocationTargetException {
         // testwise try to get the factory. if the specified class' name is not useable,
         // exceptions will be thrown and forwarded
         Utils.getProtocolFactoryInstance(protocolFactoryClassName);

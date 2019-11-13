@@ -5,12 +5,14 @@
 
 package de.root1.simon.samples.loginsessionfactory.shared;
 
+import java.io.Serializable;
+
 
 /**
  *
  * @author ACHR
  */
-public interface SessionInterface {
+public interface SessionInterface extends Serializable {
 
     public void sessionMethodA();
     public void sessionMethodB();

@@ -24,6 +24,7 @@ import de.root1.simon.exceptions.NameBindingException;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.Utils;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -225,8 +226,8 @@ public final class Registry {
             } catch (InstantiationException e) {
                 logger.error("InstantiationException while preparing ProtocolFactory", e);
                 throw new IllegalArgumentException(e);
-            } catch (IllegalAccessException e) {
-                logger.error("IllegalAccessException while preparing ProtocolFactory", e);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                logger.error(e.getClass().getName()+" while preparing ProtocolFactory", e);
                 throw new IllegalArgumentException(e);
             }
 

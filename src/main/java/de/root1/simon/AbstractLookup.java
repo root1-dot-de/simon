@@ -24,6 +24,7 @@ import de.root1.simon.exceptions.EstablishConnectionFailed;
 import de.root1.simon.ssl.SslContextFactory;
 import de.root1.simon.utils.FilterEntry;
 import de.root1.simon.utils.Utils;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -262,8 +263,8 @@ abstract class AbstractLookup implements Lookup {
                 } catch (InstantiationException e) {
                     logger.error("InstantiationException while preparing ProtocolFactory: {}", e.getMessage());
                     throw new IllegalArgumentException(e);
-                } catch (IllegalAccessException e) {
-                    logger.error("IllegalAccessException while preparing ProtocolFactory: {}", e.getMessage());
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    logger.error("{} while preparing ProtocolFactory: {}", e.getClass().getCanonicalName(), e.getMessage());
                     throw new IllegalArgumentException(e);
                 }
 

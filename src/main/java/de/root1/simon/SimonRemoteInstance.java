@@ -44,6 +44,7 @@ public class SimonRemoteInstance implements Serializable {
     private String id = null;
     /** the remote object name of the simon proxy to which the SimonRemote belongs */
     private String remoteObjectName = null;
+    private String remoteObjectClass;
     private long sessionId;
 
     /**
@@ -72,6 +73,8 @@ public class SimonRemoteInstance implements Serializable {
 
         String IP = session.getRemoteAddress().toString();
         sessionId = session.getId();
+        
+        remoteObjectClass = remoteObject.getClass().getCanonicalName();
 
         StringBuilder sb = new StringBuilder();
 
@@ -176,6 +179,10 @@ public class SimonRemoteInstance implements Serializable {
         return remoteObjectName;
     }
 
+    public String getRemoteObjectClass() {
+        return remoteObjectClass;
+    }
+    
     /**
      * Returns the underlying socket session id
      * @return session id

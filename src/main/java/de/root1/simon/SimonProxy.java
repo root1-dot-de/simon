@@ -23,6 +23,7 @@ import de.root1.simon.utils.SimonClassLoaderHelper;
 import de.root1.simon.utils.Utils;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -182,6 +183,8 @@ public class SimonProxy implements InvocationHandler {
             throw (Throwable) result;
         }
 
+        logger.debug("result: class={} isArray={} compType={}", result.getClass(), result.getClass().isArray(), result.getClass().getComponentType());
+
         if (result instanceof SimonEndpointReference) {
 
             SimonEndpointReference ser = (SimonEndpointReference) result;
@@ -203,21 +206,45 @@ public class SimonProxy implements InvocationHandler {
 
             // reimplant the proxy object
             result = Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler);
+
+        } else if (result.getClass().isArray() && result.getClass().getComponentType().equals(Object.class)) {
+
+            logger.debug("Array detected");
+            Object[] array = (Object[]) result;
+
+            for (int i = 0; i < array.length; i++) {
+                if (array[i] instanceof SimonRemoteInstance) {
+                    logger.debug("SRI found at index {}", i);
+                    SimonRemoteInstance simonCallback = (SimonRemoteInstance) array[i];
+
+                    List<String> interfaceNames = simonCallback.getInterfaceNames();
+                    Class<?>[] listenerInterfaces = new Class<?>[interfaceNames.size()];
+                    for (int j = 0; j < interfaceNames.size(); j++) {
+                        listenerInterfaces[j] = Class.forName(interfaceNames.get(j), true, dispatcher.getClassLoader());
+                    }
+
+                    SimonProxy handler = new SimonProxy(dispatcher, session, simonCallback.getId(), new Class<?>[]{}, false);
+
+                    // reimplant the proxy object into array
+                    Array.set(array, i, Proxy.newProxyInstance(SimonClassLoaderHelper.getClassLoader(this.getClass()), listenerInterfaces, handler));
+                }
+            }
+
+            logger.debug("end");
+
+            // see: http://www.webreference.com/internet/reflection/4.html
+            // quote:
+            // "If the called method has declared the return type void,
+            // the value returned by invoke does not matter.
+            // Returning null is the simplest option."
+            if (result instanceof SimonVoid) {
+                return null;
+            }
+
         }
-
-        logger.debug("end");
-
-        // see: http://www.webreference.com/internet/reflection/4.html
-        // quote:
-        // "If the called method has declared the return type void,
-        // the value returned by invoke does not matter.
-        // Returning null is the simplest option."
-        if (result instanceof SimonVoid) {
-            return null;
-        }
-
         return result;
     }
+    
 
     private void shutdownServerConnection(Method method) {
         logger.error("Problematic error while invoking '{}#{}'. Shutting down server connection.", remoteObjectName, method);
